@@ -1,54 +1,61 @@
 # BROADROADS: Isometric Gear Refinery Arena ⚡
 
 > **A bite-sized, single-screen 3D action game utilizing Three.js, optimized for mobile touch controls.**
-> Survive intense waves of void horrors, harvest raw elemental minerals, and strike the runic anvil to forge upgraded armor, blades, and greaves in 3-minute combat loops.
+> Survive waves of void horrors, harvest raw elemental minerals, and strike the runic anvil to forge upgraded armor, blades, and greaves in 3-minute combat loops.
+> **Now supporting Single Player (Classic & Endless) and Serverless Online Co-op Multiplayer (WebRTC P2P)!**
 
 ---
 
-## 🌟 Key Features
+## 🌟 Game Modes & Features
 
-- **Isometric 3D Combat Arena**: Built with Three.js featuring dynamic lighting, soft shadows, particle bursts, screen shake, and floating combat text.
-- **Mobile-First Touch Architecture**:
-  - Virtual floating thumbstick for fluid 360° isometric movement.
-  - Action buttons cluster: **STRIKE** (3-hit combo & whirlwind), **DASH** (with i-frames and speed burst), **NOVA** (screen-clearing runic burst), and **AUTO** (one-thumb auto-attack toggle).
-- **The Runic Gear Refinery**:
-  - Between waves, tap or drag raw mineral drops into the crucible slots.
-  - Interactive recipe synthesis: Combine minerals (Flame Pyrite, Aether Shard, Titanium Ingot, Void Catalyst) into tiered equipment upgrades.
-  - Real-time 3D hero model evolution: Weapons and effects dynamically transform upon forging.
-  - One-tap **AUTO-FORGE** button for rapid 10-second mobile crafting between rounds.
-- **5 Progressive Waves & Boss Battle**:
-  - Wave 1: Void Crawlers (nimble swarmers).
-  - Wave 2: Runic Brutes (armored behemoths).
-  - Wave 3: Astral Sparkcasters (ranged plasma snipers).
-  - Wave 4: Mixed elite vanguard.
-  - Wave 5: **IGNIS REX - ANVIL OVERLORD** (massive boss with ground slams and phase bars).
-- **Synthesized Audio Engine**:
-  - 100% self-contained Web Audio API synthesizer. Zero external sound files or CDN audio latency.
-  - Sword whooshes, hit crunches, crystal pickups, metallic anvil strikes, and fanfare chords.
+### 1. Game Modes
+- ⚔️ **Single Player**:
+  - **🏆 Classic Survival**: Survive 5 escalating waves culminating in the giant Forge Overlord boss showdown.
+  - **♾️ Endless Horde**: Infinite scaling waves, recurring boss encounters every 5 rounds, and record-tracking for highest wave survived.
+- 🌐 **Online Co-op Multiplayer (Peer-to-Peer WebRTC)**:
+  - **Serverless P2P (PeerJS)**: Zero backend server needed. Runs free on static hosts (Vercel, GitHub Pages).
+  - **4-Letter Room Codes**: Quick shareable code (e.g. `BR-7K9W`) or direct invite link (`?room=XXXX`).
+  - **Real-Time Synchronization**: 25Hz low-latency player positions, rotations, attacks, animations, and shared enemy waves.
+  - **Co-op Revive System**: When a teammate falls to 0 HP, they enter a downed state. Standing in their runic circle for 3 seconds channels celestial energy to revive them with 50% HP!
 
 ---
 
-## 🕹️ Controls
+### 2. Hero Classes & Playstyles
+Choose your hero class before entering the arena:
+- 🛡️ **Runic Paladin**:
+  - **Weapon**: Heavy Greatblade & Aegis Shield.
+  - **Basic Attack**: 3-hit melee combo with sweeping energy crescent waves and a 360° whirlwind finisher.
+  - **Special Skill**: `⚡ Cataclysm Nova` — radial ground slam shockwave that decimates surrounding hordes.
+  - **Passive**: +25% Max HP & auto-recharging shield.
+- 🏹 **Cyber Gunner**:
+  - **Weapon**: Dual Plasma Blasters.
+  - **Basic Attack**: Twin high-velocity piercing plasma bolts with long range.
+  - **Special Skill**: `🚀 Orbital Barrage` — calls down 8 homing plasma missiles raining from orbit.
+  - **Passive**: +30% Movement Speed & agile kiting.
+- 🔮 **Void Arcanist**:
+  - **Weapon**: Floating Cosmic Runic Orb.
+  - **Basic Attack**: Volatile astral sparks that arc chain-lightning to secondary targets.
+  - **Special Skill**: `🌌 Singularity Vortex` — summons a swirling gravitational black hole that pulls all enemies to its center, shredding them with crushing vortex damage.
+  - **Passive**: +28% Critical Strike Chance & faster special meter charging.
 
-### Mobile (Touch)
-- **Move**: Left thumb virtual joystick.
-- **Strike**: Tap `⚔️ STRIKE` for 3-hit melee slash combo.
-- **Dash**: Tap `💨 DASH` for dodge roll with invulnerability frames.
-- **Runic Nova**: Tap `⚡ NOVA` when fully charged by combat hits.
-- **Auto-Aim**: Tap `🎯 AUTO` to auto-target nearby threats.
-- **Refinery**: Tap material cards to insert into the crucible, or hit `⚡ AUTO-FORGE`.
+---
 
-### Desktop (Keyboard & Mouse)
-- **Move**: `W`, `A`, `S`, `D` or Arrow Keys.
-- **Strike**: `Spacebar`, `F`, or Left Click.
-- **Dash**: `Shift` or Right Click.
-- **Nova Skill**: `E` or `Q`.
+## 🕹️ Controls Guide
+
+| Action | Mobile (Touch) | Desktop (Mouse & Keyboard) |
+| :--- | :--- | :--- |
+| **Move** | Left virtual joystick | `W`, `A`, `S`, `D` or Arrow Keys |
+| **Strike / Shoot** | Tap `⚔️ STRIKE` or tap canvas | `Space`, `F`, `J`, or Left Click |
+| **Dash / Dodge** | Tap `💨 DASH` button | `Shift`, `K`, or Right Click |
+| **Special Skill** | Tap `⚡ NOVA / BARRAGE / VORTEX` | `E`, `Q`, or `L` |
+| **Auto-Attack** | Tap `🎯 AUTO` toggle | `C` or `R` |
+| **Refinery Craft**| Tap mineral cards to insert | Tap/Click minerals + `🔨 STRIKE ANVIL` |
 
 ---
 
 ## 🔨 Refinery Crafting Recipes
 
-| Combination | Crafted Gear | Stat Upgrades |
+| Combination | Crafted Upgrade | Stat Bonuses |
 | :--- | :--- | :--- |
 | **Pyrite + Pyrite** | 🔥 Infernal Greataxe | `+28 ATK & Flaming Slash` |
 | **Pyrite + Aether** | 🥾 Zephyr Flame Greaves | `+25% SPD & Fire Trail` |
@@ -65,16 +72,13 @@
 
 ## 🚀 Development & Deployment
 
-### Run Locally
 ```bash
+# Install dependencies
 npm install
+
+# Start local dev server
 npm run dev
-```
 
-### Production Build
-```bash
+# Build for production
 npm run build
-npm run preview
 ```
-
-Deployable directly to **Vercel**, **Netlify**, or **GitHub Pages**.

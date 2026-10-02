@@ -4,17 +4,19 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
   <title>BROADROADS | Isometric Gear Refinery Arena</title>
-  <meta name="description" content="Fast-paced 3D isometric action arena & gear refinery. Survive waves, harvest raw materials, and forge legendary gear.">
+  <meta name="description" content="Fast-paced 3D isometric action arena & gear refinery. Single Player & Online Co-op WebRTC Multiplayer.">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@500;700;900&family=JetBrains+Mono:wght@500;700&family=Outfit:wght@400;600;800;900&display=swap" rel="stylesheet">
   <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  <!-- PeerJS for Zero-Config Serverless WebRTC Multiplayer -->
+  <script src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js"></script>
 
   <style>
     :root {
       --bg-dark: #060814;
-      --bg-card: rgba(13, 19, 38, 0.85);
-      --bg-glass: rgba(18, 26, 52, 0.7);
+      --bg-card: rgba(13, 19, 38, 0.88);
+      --bg-glass: rgba(18, 26, 52, 0.75);
       --border-cyan: rgba(0, 245, 212, 0.5);
       --border-gold: rgba(255, 183, 3, 0.55);
       --neon-cyan: #00f5d4;
@@ -81,8 +83,14 @@
       display: flex;
       justify-content: space-between;
       align-items: flex-start;
-      gap: 12px;
+      gap: 10px;
       pointer-events: auto;
+    }
+
+    .vitals-container {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
     }
 
     .hero-vitals {
@@ -94,6 +102,12 @@
       padding: 10px 14px;
       min-width: 180px;
       box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5), inset 0 0 15px rgba(0, 245, 212, 0.1);
+    }
+
+    .teammate-vitals {
+      border-color: var(--neon-purple);
+      box-shadow: 0 4px 16px rgba(0,0,0,0.5), inset 0 0 10px rgba(157, 78, 221, 0.15);
+      display: none;
     }
 
     .vitals-header {
@@ -200,6 +214,14 @@
       letter-spacing: 0.5px;
     }
 
+    .mode-badge {
+      font-family: var(--font-mono);
+      font-size: 9px;
+      color: var(--neon-cyan);
+      letter-spacing: 1px;
+      margin-top: 2px;
+    }
+
     /* Materials Pouch HUD */
     .materials-hud {
       display: flex;
@@ -280,6 +302,32 @@
       transition: width 0.15s ease-out;
     }
 
+    /* Downed / Revive Alert Notification */
+    #revive-banner {
+      position: absolute;
+      top: 140px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: rgba(255, 0, 84, 0.85);
+      border: 2px solid #fff;
+      border-radius: 30px;
+      padding: 8px 24px;
+      color: #fff;
+      font-family: var(--font-title);
+      font-weight: 900;
+      font-size: 14px;
+      letter-spacing: 1.5px;
+      box-shadow: 0 0 25px rgba(255, 0, 84, 0.8);
+      display: none;
+      z-index: 20;
+      animation: pulseAlert 0.8s infinite alternate;
+    }
+
+    @keyframes pulseAlert {
+      from { transform: translateX(-50%) scale(1); }
+      to { transform: translateX(-50%) scale(1.06); }
+    }
+
     /* Floating Combat Text */
     #fct-layer {
       position: absolute;
@@ -309,7 +357,7 @@
       100% { opacity: 0; transform: translate(-50%, -50px) scale(0.9); }
     }
 
-    /* Mobile Virtual Controls & Action Cluster */
+    /* Mobile Controls & Action Cluster */
     .mobile-controls {
       position: absolute;
       bottom: 0;
@@ -320,7 +368,7 @@
       z-index: 25;
     }
 
-    /* Joystick Area (Left) */
+    /* Joystick Area */
     #joystick-zone {
       position: absolute;
       bottom: 24px;
@@ -358,7 +406,7 @@
       pointer-events: none;
     }
 
-    /* Action Buttons Cluster (Right) */
+    /* Action Buttons Cluster */
     .action-cluster {
       position: absolute;
       bottom: 24px;
@@ -385,7 +433,7 @@
       justify-content: center;
       cursor: pointer;
       box-shadow: 0 6px 18px rgba(0, 0, 0, 0.6);
-      transition: transform 0.08s ease, border-color 0.15s, box-shadow 0.15s, background-color 0.15s;
+      transition: transform 0.08s ease, border-color 0.15s, box-shadow 0.15s;
       position: relative;
       outline: none;
       touch-action: manipulation;
@@ -399,7 +447,6 @@
       transform: scale(0.90) !important;
     }
 
-    /* Big Strike Button */
     .btn-attack {
       grid-column: 2;
       grid-row: 2;
@@ -412,12 +459,6 @@
       box-shadow: 0 0 25px rgba(255, 0, 84, 0.5);
     }
 
-    .btn-attack:hover {
-      box-shadow: 0 0 35px rgba(255, 0, 84, 0.8);
-      border-color: #ff3377;
-    }
-
-    /* Dash Button */
     .btn-dash {
       grid-column: 1;
       grid-row: 2;
@@ -425,11 +466,6 @@
       box-shadow: 0 0 15px rgba(0, 245, 212, 0.35);
     }
 
-    .btn-dash:hover {
-      box-shadow: 0 0 25px rgba(0, 245, 212, 0.7);
-    }
-
-    /* Nova Special Skill */
     .btn-special {
       grid-column: 2;
       grid-row: 1;
@@ -447,7 +483,6 @@
       100% { box-shadow: 0 0 30px rgba(157, 78, 221, 1), 0 0 45px rgba(0, 245, 212, 0.4); transform: scale(1.05); }
     }
 
-    /* Auto Toggle Button */
     .btn-auto {
       grid-column: 1;
       grid-row: 1;
@@ -459,11 +494,6 @@
       background: rgba(255, 183, 3, 0.3) !important;
       border-color: var(--neon-gold) !important;
       box-shadow: 0 0 25px rgba(255, 183, 3, 0.9) !important;
-    }
-
-    .btn-auto.active .btn-lbl {
-      color: var(--neon-gold);
-      font-weight: 900;
     }
 
     .btn-icon {
@@ -505,7 +535,7 @@
       left: 0;
       width: 100%;
       height: 100%;
-      background: rgba(4, 7, 18, 0.88);
+      background: rgba(4, 7, 18, 0.90);
       backdrop-filter: blur(16px);
       -webkit-backdrop-filter: blur(16px);
       z-index: 50;
@@ -519,6 +549,299 @@
     @keyframes modalFadeIn {
       from { opacity: 0; transform: scale(0.97); }
       to { opacity: 1; transform: scale(1); }
+    }
+
+    /* MAIN MENU / MODE SELECTOR MODAL */
+    .menu-card {
+      background: linear-gradient(155deg, rgba(16, 24, 48, 0.98), rgba(8, 12, 26, 0.99));
+      border: 2px solid var(--border-cyan);
+      border-radius: 24px;
+      width: min(94%, 640px);
+      max-height: 94vh;
+      overflow-y: auto;
+      padding: 24px;
+      text-align: center;
+      box-shadow: 0 25px 70px rgba(0, 0, 0, 0.8), 0 0 50px rgba(0, 245, 212, 0.25);
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    .game-logo {
+      font-family: var(--font-title);
+      font-size: 36px;
+      font-weight: 900;
+      letter-spacing: 5px;
+      color: #fff;
+      text-transform: uppercase;
+      background: linear-gradient(180deg, #ffffff 20%, #00f5d4 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      text-shadow: 0 0 25px rgba(0, 245, 212, 0.5);
+      line-height: 1;
+    }
+
+    .game-subtitle {
+      font-family: var(--font-mono);
+      font-size: 11px;
+      color: var(--neon-gold);
+      letter-spacing: 3px;
+      text-transform: uppercase;
+      margin-top: -6px;
+    }
+
+    /* Menu Navigation Tabs */
+    .mode-tabs {
+      display: flex;
+      background: rgba(0, 0, 0, 0.5);
+      border-radius: 12px;
+      padding: 4px;
+      gap: 6px;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    .tab-btn {
+      flex: 1;
+      padding: 10px;
+      background: transparent;
+      border: none;
+      color: var(--text-muted);
+      font-family: var(--font-title);
+      font-size: 13px;
+      font-weight: 800;
+      letter-spacing: 1px;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+
+    .tab-btn.active {
+      background: rgba(0, 245, 212, 0.2);
+      color: var(--neon-cyan);
+      box-shadow: 0 0 15px rgba(0, 245, 212, 0.3);
+    }
+
+    /* Hero Class Cards */
+    .class-selection-title {
+      font-family: var(--font-title);
+      font-size: 12px;
+      letter-spacing: 1.5px;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      text-align: left;
+      margin-top: 4px;
+    }
+
+    .class-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 10px;
+    }
+
+    .class-card {
+      background: rgba(13, 19, 38, 0.8);
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      border-radius: 14px;
+      padding: 12px 8px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 4px;
+      cursor: pointer;
+      transition: all 0.15s;
+      position: relative;
+    }
+
+    .class-card:hover {
+      transform: translateY(-2px);
+      border-color: rgba(0, 245, 212, 0.5);
+    }
+
+    .class-card.selected {
+      border-color: var(--neon-cyan);
+      background: rgba(0, 245, 212, 0.15);
+      box-shadow: 0 0 20px rgba(0, 245, 212, 0.4);
+    }
+
+    .class-card-icon {
+      font-size: 28px;
+    }
+
+    .class-card-name {
+      font-family: var(--font-title);
+      font-size: 13px;
+      font-weight: 800;
+      color: #fff;
+    }
+
+    .class-card-desc {
+      font-size: 10px;
+      color: var(--text-muted);
+      line-height: 1.3;
+      text-align: center;
+    }
+
+    .class-card-special {
+      font-family: var(--font-mono);
+      font-size: 9px;
+      color: var(--neon-gold);
+      margin-top: 2px;
+    }
+
+    /* Sub-Mode / Multiplayer Content Panels */
+    .tab-content {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .mode-sub-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 10px;
+    }
+
+    .sub-mode-card {
+      background: rgba(13, 19, 38, 0.7);
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      border-radius: 14px;
+      padding: 14px;
+      text-align: left;
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+
+    .sub-mode-card.selected {
+      border-color: var(--neon-gold);
+      background: rgba(255, 183, 3, 0.15);
+      box-shadow: 0 0 20px rgba(255, 183, 3, 0.3);
+    }
+
+    .sub-mode-title {
+      font-family: var(--font-title);
+      font-size: 14px;
+      font-weight: 900;
+      color: #fff;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .sub-mode-desc {
+      font-size: 11px;
+      color: var(--text-muted);
+      margin-top: 4px;
+      line-height: 1.3;
+    }
+
+    /* Multiplayer Room Panel */
+    .mp-panel {
+      background: rgba(0, 0, 0, 0.4);
+      border: 1px solid rgba(157, 78, 221, 0.4);
+      border-radius: 14px;
+      padding: 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .mp-actions-row {
+      display: flex;
+      gap: 10px;
+    }
+
+    .btn-mp-sub {
+      flex: 1;
+      padding: 10px;
+      background: rgba(157, 78, 221, 0.2);
+      border: 1px solid var(--neon-purple);
+      color: #fff;
+      font-family: var(--font-title);
+      font-size: 12px;
+      font-weight: 800;
+      border-radius: 10px;
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+
+    .btn-mp-sub:hover, .btn-mp-sub.active {
+      background: var(--neon-purple);
+      color: #060814;
+    }
+
+    .room-code-box {
+      background: rgba(0, 0, 0, 0.6);
+      border: 1px dashed var(--neon-cyan);
+      border-radius: 10px;
+      padding: 10px;
+      font-family: var(--font-mono);
+      font-size: 20px;
+      font-weight: 900;
+      color: var(--neon-cyan);
+      letter-spacing: 4px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .join-input-group {
+      display: flex;
+      gap: 8px;
+    }
+
+    .join-input {
+      flex: 1;
+      background: rgba(0, 0, 0, 0.6);
+      border: 1px solid rgba(255, 255, 255, 0.25);
+      border-radius: 10px;
+      padding: 10px;
+      font-family: var(--font-mono);
+      font-size: 16px;
+      color: #fff;
+      text-transform: uppercase;
+      letter-spacing: 2px;
+      text-align: center;
+      outline: none;
+    }
+
+    .join-input:focus {
+      border-color: var(--neon-cyan);
+    }
+
+    .lobby-status-pill {
+      font-family: var(--font-mono);
+      font-size: 11px;
+      padding: 6px 12px;
+      border-radius: 20px;
+      background: rgba(255, 255, 255, 0.08);
+      color: var(--text-muted);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+    }
+
+    .btn-start {
+      background: linear-gradient(135deg, #00f5d4, #00bbf9);
+      border: none;
+      color: #060814;
+      font-family: var(--font-title);
+      font-size: 18px;
+      font-weight: 900;
+      letter-spacing: 3px;
+      text-transform: uppercase;
+      padding: 16px;
+      border-radius: 14px;
+      cursor: pointer;
+      box-shadow: 0 8px 30px rgba(0, 245, 212, 0.6);
+      transition: all 0.15s;
+      width: 100%;
+    }
+
+    .btn-start:hover {
+      box-shadow: 0 10px 40px rgba(0, 245, 212, 0.9);
+      transform: translateY(-2px);
     }
 
     /* REFINERY MODAL STYLING */
@@ -574,7 +897,6 @@
       border-radius: 20px;
     }
 
-    /* Refinery Crucible Workshop */
     .crucible-section {
       background: rgba(7, 11, 24, 0.7);
       border: 1px solid rgba(0, 245, 212, 0.25);
@@ -617,31 +939,11 @@
       box-shadow: 0 0 15px rgba(0, 245, 212, 0.4);
     }
 
-    .slot-icon {
-      font-size: 26px;
-      margin-bottom: 2px;
-    }
+    .slot-icon { font-size: 26px; margin-bottom: 2px; }
+    .slot-name { font-family: var(--font-mono); font-size: 9px; color: var(--text-muted); text-transform: uppercase; }
+    .forge-plus { font-family: var(--font-title); font-size: 24px; font-weight: 900; color: var(--neon-gold); }
+    .forge-arrow { font-size: 22px; color: var(--neon-cyan); }
 
-    .slot-name {
-      font-family: var(--font-mono);
-      font-size: 9px;
-      color: var(--text-muted);
-      text-transform: uppercase;
-    }
-
-    .forge-plus {
-      font-family: var(--font-title);
-      font-size: 24px;
-      font-weight: 900;
-      color: var(--neon-gold);
-    }
-
-    .forge-arrow {
-      font-size: 22px;
-      color: var(--neon-cyan);
-    }
-
-    /* Result Preview */
     .forge-result-preview {
       display: flex;
       align-items: center;
@@ -668,25 +970,10 @@
       border: 1px solid var(--neon-gold);
     }
 
-    .result-info {
-      flex: 1;
-    }
+    .result-info { flex: 1; }
+    .result-name { font-family: var(--font-title); font-size: 14px; font-weight: 800; color: var(--neon-gold); }
+    .result-stats { font-family: var(--font-mono); font-size: 11px; color: var(--neon-cyan); }
 
-    .result-name {
-      font-family: var(--font-title);
-      font-size: 14px;
-      font-weight: 800;
-      color: var(--neon-gold);
-      letter-spacing: 0.5px;
-    }
-
-    .result-stats {
-      font-family: var(--font-mono);
-      font-size: 11px;
-      color: var(--neon-cyan);
-    }
-
-    /* Forge Buttons Row */
     .forge-actions-row {
       display: flex;
       gap: 12px;
@@ -709,15 +996,7 @@
       border-radius: 12px;
       cursor: pointer;
       box-shadow: 0 4px 20px rgba(255, 183, 3, 0.5);
-      transition: transform 0.1s, box-shadow 0.15s;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 8px;
-    }
-
-    .btn-forge:active {
-      transform: scale(0.97);
+      transition: all 0.15s;
     }
 
     .btn-forge:disabled {
@@ -735,17 +1014,10 @@
       font-family: var(--font-title);
       font-size: 12px;
       font-weight: 800;
-      letter-spacing: 1px;
       border-radius: 12px;
       cursor: pointer;
-      transition: all 0.15s;
     }
 
-    .btn-quick-auto:hover {
-      background: rgba(0, 245, 212, 0.3);
-    }
-
-    /* Inventory Materials Grid */
     .materials-bag-grid {
       display: grid;
       grid-template-columns: repeat(4, 1fr);
@@ -761,12 +1033,10 @@
       flex-direction: column;
       align-items: center;
       cursor: pointer;
-      transition: transform 0.15s, border-color 0.15s, background 0.15s;
       position: relative;
     }
 
-    .mat-card:hover, .mat-card:active {
-      transform: translateY(-2px);
+    .mat-card:hover {
       border-color: var(--neon-cyan);
       background: rgba(18, 26, 52, 0.9);
     }
@@ -784,26 +1054,10 @@
       border-radius: 8px;
     }
 
-    .mat-card-icon {
-      font-size: 24px;
-      margin: 4px 0;
-    }
+    .mat-card-icon { font-size: 24px; margin: 4px 0; }
+    .mat-card-name { font-family: var(--font-title); font-size: 10px; font-weight: 700; color: #cbd5e1; }
+    .mat-card-type { font-family: var(--font-mono); font-size: 8px; color: var(--text-muted); }
 
-    .mat-card-name {
-      font-family: var(--font-title);
-      font-size: 10px;
-      font-weight: 700;
-      text-align: center;
-      color: #cbd5e1;
-    }
-
-    .mat-card-type {
-      font-family: var(--font-mono);
-      font-size: 8px;
-      color: var(--text-muted);
-    }
-
-    /* Equipped Gear Cards */
     .gear-loadout-grid {
       display: grid;
       grid-template-columns: repeat(4, 1fr);
@@ -822,40 +1076,16 @@
     }
 
     .gear-card.tier-1 { border-color: #94a3b8; }
-    .gear-card.tier-2 { border-color: var(--neon-blue); box-shadow: inset 0 0 10px rgba(0, 187, 249, 0.2); }
-    .gear-card.tier-3 { border-color: var(--neon-purple); box-shadow: inset 0 0 10px rgba(157, 78, 221, 0.2); }
-    .gear-card.tier-4 { border-color: var(--neon-orange); box-shadow: inset 0 0 10px rgba(251, 133, 0, 0.2); }
-    .gear-card.tier-5 { border-color: var(--neon-gold); box-shadow: inset 0 0 15px rgba(255, 183, 3, 0.35); }
+    .gear-card.tier-2 { border-color: var(--neon-blue); }
+    .gear-card.tier-3 { border-color: var(--neon-purple); }
+    .gear-card.tier-4 { border-color: var(--neon-orange); }
+    .gear-card.tier-5 { border-color: var(--neon-gold); }
 
-    .gear-icon {
-      font-size: 22px;
-      margin-bottom: 2px;
-    }
+    .gear-icon { font-size: 22px; margin-bottom: 2px; }
+    .gear-title { font-family: var(--font-title); font-size: 10px; font-weight: 800; color: #f1f5f9; }
+    .gear-tier { font-family: var(--font-mono); font-size: 9px; color: var(--neon-gold); }
+    .gear-stat { font-family: var(--font-mono); font-size: 8px; color: var(--neon-cyan); }
 
-    .gear-title {
-      font-family: var(--font-title);
-      font-size: 10px;
-      font-weight: 800;
-      color: #f1f5f9;
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
-      max-width: 100%;
-    }
-
-    .gear-tier {
-      font-family: var(--font-mono);
-      font-size: 9px;
-      color: var(--neon-gold);
-    }
-
-    .gear-stat {
-      font-family: var(--font-mono);
-      font-size: 8px;
-      color: var(--neon-cyan);
-    }
-
-    /* Bottom Action: Next Wave */
     .btn-next-wave {
       background: linear-gradient(135deg, #00f5d4, #00bbf9);
       border: none;
@@ -869,104 +1099,7 @@
       border-radius: 12px;
       cursor: pointer;
       box-shadow: 0 6px 25px rgba(0, 245, 212, 0.5);
-      transition: all 0.15s;
       width: 100%;
-    }
-
-    /* Title / Start Screen */
-    #start-modal {
-      display: flex;
-    }
-
-    .start-card {
-      background: linear-gradient(155deg, rgba(16, 24, 48, 0.96), rgba(8, 12, 26, 0.98));
-      border: 2px solid var(--border-cyan);
-      border-radius: 24px;
-      width: min(92%, 520px);
-      padding: 30px 24px;
-      text-align: center;
-      box-shadow: 0 25px 70px rgba(0, 0, 0, 0.8), 0 0 50px rgba(0, 245, 212, 0.25);
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      gap: 16px;
-    }
-
-    .game-logo {
-      font-family: var(--font-title);
-      font-size: 38px;
-      font-weight: 900;
-      letter-spacing: 5px;
-      color: #fff;
-      text-transform: uppercase;
-      background: linear-gradient(180deg, #ffffff 20%, #00f5d4 100%);
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
-      text-shadow: 0 0 25px rgba(0, 245, 212, 0.5);
-      line-height: 1;
-    }
-
-    .game-subtitle {
-      font-family: var(--font-mono);
-      font-size: 12px;
-      color: var(--neon-gold);
-      letter-spacing: 3px;
-      text-transform: uppercase;
-      margin-top: -8px;
-    }
-
-    .feature-pills {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 8px;
-      justify-content: center;
-    }
-
-    .feature-pill {
-      background: rgba(255, 255, 255, 0.08);
-      border: 1px solid rgba(255, 255, 255, 0.15);
-      border-radius: 20px;
-      padding: 6px 12px;
-      font-size: 11px;
-      font-family: var(--font-mono);
-      color: #cbd5e1;
-    }
-
-    .controls-hint-box {
-      background: rgba(0, 0, 0, 0.45);
-      border: 1px solid rgba(0, 245, 212, 0.2);
-      border-radius: 12px;
-      padding: 12px 16px;
-      font-family: var(--font-mono);
-      font-size: 11px;
-      color: var(--neon-cyan);
-      display: flex;
-      flex-direction: column;
-      gap: 6px;
-      width: 100%;
-      text-align: left;
-    }
-
-    .btn-start {
-      background: linear-gradient(135deg, #00f5d4, #00bbf9);
-      border: none;
-      color: #060814;
-      font-family: var(--font-title);
-      font-size: 18px;
-      font-weight: 900;
-      letter-spacing: 3px;
-      text-transform: uppercase;
-      padding: 16px 36px;
-      border-radius: 14px;
-      cursor: pointer;
-      box-shadow: 0 8px 30px rgba(0, 245, 212, 0.6);
-      transition: all 0.15s;
-      width: 100%;
-    }
-
-    .btn-start:hover {
-      box-shadow: 0 10px 40px rgba(0, 245, 212, 0.9);
-      transform: translateY(-2px);
     }
 
     /* Game Over / Victory Modal */
@@ -981,7 +1114,6 @@
       flex-direction: column;
       gap: 16px;
       align-items: center;
-      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.8), 0 0 40px rgba(255, 0, 84, 0.3);
     }
 
     .victory-card {
@@ -989,23 +1121,9 @@
       box-shadow: 0 20px 60px rgba(0, 0, 0, 0.8), 0 0 50px rgba(255, 183, 3, 0.4) !important;
     }
 
-    .end-title {
-      font-family: var(--font-title);
-      font-size: 32px;
-      font-weight: 900;
-      letter-spacing: 3px;
-      text-transform: uppercase;
-    }
-
-    .end-title.defeat {
-      color: var(--neon-red);
-      text-shadow: 0 0 20px rgba(255, 0, 84, 0.7);
-    }
-
-    .end-title.victory {
-      color: var(--neon-gold);
-      text-shadow: 0 0 25px rgba(255, 183, 3, 0.8);
-    }
+    .end-title { font-family: var(--font-title); font-size: 32px; font-weight: 900; letter-spacing: 3px; text-transform: uppercase; }
+    .end-title.defeat { color: var(--neon-red); text-shadow: 0 0 20px rgba(255, 0, 84, 0.7); }
+    .end-title.victory { color: var(--neon-gold); text-shadow: 0 0 25px rgba(255, 183, 3, 0.8); }
 
     .stats-table {
       width: 100%;
@@ -1019,22 +1137,10 @@
       gap: 8px;
     }
 
-    .stat-row {
-      display: flex;
-      justify-content: space-between;
-      color: #94a3b8;
-    }
+    .stat-row { display: flex; justify-content: space-between; color: #94a3b8; }
+    .stat-row span:last-child { color: #fff; font-weight: 700; }
 
-    .stat-row span:last-child {
-      color: #fff;
-      font-weight: 700;
-    }
-
-    /* Screen Shake Animation */
-    .shake {
-      animation: screenShake 0.25s cubic-bezier(.36,.07,.19,.97) both;
-    }
-
+    .shake { animation: screenShake 0.25s cubic-bezier(.36,.07,.19,.97) both; }
     @keyframes screenShake {
       10%, 90% { transform: translate3d(-3px, 2px, 0); }
       20%, 80% { transform: translate3d(4px, -3px, 0); }
@@ -1042,13 +1148,9 @@
       40%, 60% { transform: translate3d(5px, -4px, 0); }
     }
 
-    /* Anvil Strike Flash Animation */
     .anvil-flash {
       position: absolute;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
+      top: 0; left: 0; width: 100%; height: 100%;
       background: rgba(255, 255, 255, 0.6);
       pointer-events: none;
       z-index: 100;
@@ -1059,67 +1161,73 @@
 </head>
 <body>
 
-  <!-- 3D Canvas Container -->
   <div id="canvas-container"></div>
-
-  <!-- Screen Shake / Visual Flash Wrapper -->
   <div id="anvil-flash" class="anvil-flash"></div>
 
   <!-- UI Overlay Layer -->
   <div id="ui-layer">
     <!-- Top HUD -->
     <div class="top-hud">
-      <!-- Player Vitals -->
-      <div class="hero-vitals">
-        <div class="vitals-header">
-          <span class="hero-name">BROADROADS HERO</span>
-          <span class="hero-level" id="hero-tier-tag">TIER I</span>
+      <!-- Player & Teammate Vitals -->
+      <div class="vitals-container">
+        <!-- Local Player -->
+        <div class="hero-vitals" id="local-vitals">
+          <div class="vitals-header">
+            <span class="hero-name" id="local-hero-name">HERO (P1)</span>
+            <span class="hero-level" id="hero-tier-tag">TIER I</span>
+          </div>
+          <div class="bar-wrap">
+            <div class="bar-label">
+              <span>HEALTH</span>
+              <span id="hp-text">120/120</span>
+            </div>
+            <div class="bar-bg">
+              <div class="bar-fill hp-fill" id="hp-bar" style="width: 100%;"></div>
+            </div>
+          </div>
+          <div class="bar-wrap">
+            <div class="bar-label">
+              <span>SHIELD</span>
+              <span id="shield-text">60/60</span>
+            </div>
+            <div class="bar-bg">
+              <div class="bar-fill shield-fill" id="shield-bar" style="width: 100%;"></div>
+            </div>
+          </div>
         </div>
-        <div class="bar-wrap">
-          <div class="bar-label">
-            <span>HEALTH</span>
-            <span id="hp-text">120/120</span>
+
+        <!-- Teammate Vitals (Multiplayer Co-op) -->
+        <div class="hero-vitals teammate-vitals" id="teammate-vitals">
+          <div class="vitals-header">
+            <span class="hero-name" style="color: var(--neon-purple);" id="teammate-hero-name">TEAMMATE (P2)</span>
+            <span class="hero-level" id="teammate-tier-tag">TIER I</span>
           </div>
-          <div class="bar-bg">
-            <div class="bar-fill hp-fill" id="hp-bar" style="width: 100%;"></div>
-          </div>
-        </div>
-        <div class="bar-wrap">
-          <div class="bar-label">
-            <span>SHIELD</span>
-            <span id="shield-text">60/60</span>
-          </div>
-          <div class="bar-bg">
-            <div class="bar-fill shield-fill" id="shield-bar" style="width: 100%;"></div>
+          <div class="bar-wrap">
+            <div class="bar-label">
+              <span>HP</span>
+              <span id="teammate-hp-text">100%</span>
+            </div>
+            <div class="bar-bg">
+              <div class="bar-fill hp-fill" id="teammate-hp-bar" style="width: 100%;"></div>
+            </div>
           </div>
         </div>
       </div>
 
-      <!-- Wave Center Status -->
+      <!-- Wave Status -->
       <div class="wave-center-hud">
         <div class="wave-title" id="wave-display-title">WAVE 1 / 5</div>
         <div class="wave-timer-text" id="wave-timer">00:30</div>
         <div class="enemies-count" id="enemies-alive-text">THREATS: 0</div>
+        <div class="mode-badge" id="hud-mode-badge">SOLO: CLASSIC</div>
       </div>
 
-      <!-- Materials HUD Pill Bar -->
+      <!-- Materials HUD -->
       <div class="materials-hud">
-        <div class="mat-pill">
-          <div class="mat-dot dot-pyrite"></div>
-          <span id="hud-pyrite">0</span>
-        </div>
-        <div class="mat-pill">
-          <div class="mat-dot dot-aether"></div>
-          <span id="hud-aether">0</span>
-        </div>
-        <div class="mat-pill">
-          <div class="mat-dot dot-titanium"></div>
-          <span id="hud-titanium">0</span>
-        </div>
-        <div class="mat-pill">
-          <div class="mat-dot dot-catalyst"></div>
-          <span id="hud-catalyst">0</span>
-        </div>
+        <div class="mat-pill"><div class="mat-dot dot-pyrite"></div><span id="hud-pyrite">0</span></div>
+        <div class="mat-pill"><div class="mat-dot dot-aether"></div><span id="hud-aether">0</span></div>
+        <div class="mat-pill"><div class="mat-dot dot-titanium"></div><span id="hud-titanium">0</span></div>
+        <div class="mat-pill"><div class="mat-dot dot-catalyst"></div><span id="hud-catalyst">0</span></div>
       </div>
     </div>
 
@@ -1134,19 +1242,22 @@
       </div>
     </div>
 
+    <!-- Downed Teammate Banner -->
+    <div id="revive-banner">⚠️ TEAMMATE DOWN! STAND CLOSE TO REVIVE!</div>
+
     <!-- Floating Combat Text Overlay -->
     <div id="fct-layer"></div>
 
     <!-- Mobile Virtual Controls -->
     <div class="mobile-controls">
-      <!-- Virtual Joystick (Left) -->
+      <!-- Virtual Joystick -->
       <div id="joystick-zone">
         <div class="joystick-base" id="joystick-base">
           <div class="joystick-knob" id="joystick-knob"></div>
         </div>
       </div>
 
-      <!-- Action Cluster (Right) -->
+      <!-- Action Cluster -->
       <div class="action-cluster">
         <!-- Auto Attack Toggle -->
         <button class="btn-action btn-auto" id="btn-auto" title="Toggle Auto-Attack (C)">
@@ -1155,8 +1266,8 @@
         </button>
 
         <!-- Special Skill -->
-        <button class="btn-action btn-special ready" id="btn-special" title="Runic Nova (E / Q)">
-          <span class="btn-icon">⚡</span>
+        <button class="btn-action btn-special ready" id="btn-special" title="Special Skill (E / Q)">
+          <span class="btn-icon" id="special-btn-icon">⚡</span>
           <span class="btn-lbl" id="special-lbl">NOVA</span>
           <div class="cooldown-overlay" id="special-cooldown">READY</div>
         </button>
@@ -1170,7 +1281,7 @@
 
         <!-- Attack Button -->
         <button class="btn-action btn-attack" id="btn-attack" title="Melee Strike (Space / Left Click)">
-          <span class="btn-icon">⚔️</span>
+          <span class="btn-icon" id="attack-btn-icon">⚔️</span>
           <span class="btn-lbl">STRIKE</span>
         </button>
       </div>
@@ -1188,33 +1299,24 @@
         <div class="forge-timer-badge" id="refinery-countdown">NEXT WAVE: 25s</div>
       </div>
 
-      <!-- The Crucible -->
       <div class="crucible-section">
         <div class="crucible-slots">
-          <!-- Slot 1 -->
           <div class="forge-slot" id="forge-slot-1">
             <span class="slot-icon" id="slot-1-icon">➕</span>
             <span class="slot-name" id="slot-1-name">SLOT A</span>
           </div>
-
           <div class="forge-plus">+</div>
-
-          <!-- Slot 2 -->
           <div class="forge-slot" id="forge-slot-2">
             <span class="slot-icon" id="slot-2-icon">➕</span>
             <span class="slot-name" id="slot-2-name">SLOT B</span>
           </div>
-
           <div class="forge-arrow">➔</div>
-
-          <!-- Output Preview Slot -->
           <div class="forge-slot filled" id="forge-slot-out" style="border-color: var(--neon-gold);">
             <span class="slot-icon" id="slot-out-icon">⚔️</span>
             <span class="slot-name" id="slot-out-name">UPGRADE</span>
           </div>
         </div>
 
-        <!-- Recipe Forecast Text -->
         <div class="forge-result-preview">
           <div class="result-icon" id="preview-icon">💎</div>
           <div class="result-info">
@@ -1223,45 +1325,35 @@
           </div>
         </div>
 
-        <!-- Forge Action Buttons -->
         <div class="forge-actions-row">
-          <button class="btn-forge" id="btn-do-forge" disabled>
-            <span>🔨</span> STRIKE ANVIL
-          </button>
-          <button class="btn-quick-auto" id="btn-quick-forge">
-            ⚡ AUTO-FORGE
-          </button>
+          <button class="btn-forge" id="btn-do-forge" disabled><span>🔨</span> STRIKE ANVIL</button>
+          <button class="btn-quick-auto" id="btn-quick-forge">⚡ AUTO-FORGE</button>
         </div>
       </div>
 
-      <!-- Raw Materials Pouch (Inventory to click/tap) -->
       <div>
         <div style="font-family: var(--font-title); font-size: 11px; letter-spacing: 1px; color: var(--text-muted); margin-bottom: 6px;">
           RAW ENEMY DROPS (TAP TO INSERT INTO CRUCIBLE)
         </div>
         <div class="materials-bag-grid">
-          <!-- Pyrite -->
           <div class="mat-card" id="card-pyrite" data-type="pyrite">
             <span class="mat-badge-count" id="bag-pyrite-count">0</span>
             <span class="mat-card-icon">🔥</span>
             <span class="mat-card-name" style="color: var(--neon-orange);">Flame Pyrite</span>
             <span class="mat-card-type">Weapon / Burn</span>
           </div>
-          <!-- Aether -->
           <div class="mat-card" id="card-aether" data-type="aether">
             <span class="mat-badge-count" id="bag-aether-count">0</span>
             <span class="mat-card-icon">🔷</span>
             <span class="mat-card-name" style="color: var(--neon-cyan);">Aether Shard</span>
             <span class="mat-card-type">Speed / Shield</span>
           </div>
-          <!-- Titanium -->
           <div class="mat-card" id="card-titanium" data-type="titanium">
             <span class="mat-badge-count" id="bag-titanium-count">0</span>
             <span class="mat-card-icon">🟢</span>
             <span class="mat-card-name" style="color: var(--neon-green);">Titanium Ingot</span>
             <span class="mat-card-type">Armor / Health</span>
           </div>
-          <!-- Catalyst -->
           <div class="mat-card" id="card-catalyst" data-type="catalyst">
             <span class="mat-badge-count" id="bag-catalyst-count">0</span>
             <span class="mat-card-icon">🟣</span>
@@ -1271,34 +1363,29 @@
         </div>
       </div>
 
-      <!-- Current Equipped Gear Loadout -->
       <div>
         <div style="font-family: var(--font-title); font-size: 11px; letter-spacing: 1px; color: var(--text-muted); margin-bottom: 6px;">
-          HERO EQUIPMENT LOADOUT
+          EQUIPMENT LOADOUT
         </div>
         <div class="gear-loadout-grid">
-          <!-- Weapon -->
           <div class="gear-card tier-1" id="gear-card-weapon">
             <span class="gear-icon">⚔️</span>
             <span class="gear-title" id="gear-name-weapon">Broad Blade</span>
             <span class="gear-tier" id="gear-tier-weapon">T1 Common</span>
             <span class="gear-stat" id="gear-stat-weapon">+25 ATK</span>
           </div>
-          <!-- Armor -->
           <div class="gear-card tier-1" id="gear-card-armor">
             <span class="gear-icon">🛡️</span>
             <span class="gear-title" id="gear-name-armor">Iron Cuirass</span>
             <span class="gear-tier" id="gear-tier-armor">T1 Common</span>
             <span class="gear-stat" id="gear-stat-armor">+120 HP</span>
           </div>
-          <!-- Greaves -->
           <div class="gear-card tier-1" id="gear-card-boots">
             <span class="gear-icon">🥾</span>
             <span class="gear-title" id="gear-name-boots">Runic Striders</span>
             <span class="gear-tier" id="gear-tier-boots">T1 Common</span>
             <span class="gear-stat" id="gear-stat-boots">+0% SPD</span>
           </div>
-          <!-- Relic -->
           <div class="gear-card tier-1" id="gear-card-relic">
             <span class="gear-icon">💍</span>
             <span class="gear-title" id="gear-name-relic">Void Ring</span>
@@ -1308,37 +1395,97 @@
         </div>
       </div>
 
-      <!-- Enter Next Wave Button -->
-      <button class="btn-next-wave" id="btn-next-wave">
-        ⚔️ BATTLE READY: DEPLOY TO ARENA
-      </button>
+      <button class="btn-next-wave" id="btn-next-wave">⚔️ BATTLE READY: DEPLOY TO ARENA</button>
     </div>
   </div>
 
-  <!-- START GAME SCREEN -->
-  <div class="modal-overlay" id="start-modal">
-    <div class="start-card">
+  <!-- START GAME & MODE / CLASS SELECTOR MODAL -->
+  <div class="modal-overlay" id="start-modal" style="display: flex;">
+    <div class="menu-card">
       <h1 class="game-logo">BROADROADS</h1>
       <div class="game-subtitle">ISOMETRIC GEAR REFINERY ARENA</div>
 
-      <div class="feature-pills">
-        <span class="feature-pill">⚡ 3-Minute Combat Loops</span>
-        <span class="feature-pill">🔨 Tap & Drag Refinery</span>
-        <span class="feature-pill">📱 Mobile Touch + Desktop</span>
-        <span class="feature-pill">👾 5 Progressive Waves</span>
+      <!-- Mode Selector Tabs -->
+      <div class="mode-tabs">
+        <button class="tab-btn active" id="tab-solo">⚔️ SINGLE PLAYER</button>
+        <button class="tab-btn" id="tab-mp">🌐 ONLINE CO-OP (P2P)</button>
       </div>
 
-      <div class="controls-hint-box">
-        <div><strong>⚔️ STRIKE:</strong> Tap button, click on arena, or press <code>Space</code> / <code>F</code></div>
-        <div><strong>💨 DASH:</strong> Tap button, right click, or press <code>Shift</code></div>
-        <div><strong>⚡ NOVA:</strong> Tap button or press <code>E</code> / <code>Q</code> (Starts fully charged!)</div>
-        <div><strong>🎯 AUTO:</strong> Tap button or press <code>C</code> for auto-aim & attack</div>
-        <div><strong>🕹️ MOVE:</strong> Left thumb joystick, WASD, or Arrow Keys</div>
+      <!-- Single Player Sub-Modes -->
+      <div class="tab-content" id="solo-panel">
+        <div class="mode-sub-grid">
+          <div class="sub-mode-card selected" id="sub-mode-classic" data-sub="classic">
+            <div class="sub-mode-title">🏆 Classic Survival</div>
+            <div class="sub-mode-desc">Survive 5 intense waves culminating in the Forge Overlord boss showdown.</div>
+          </div>
+          <div class="sub-mode-card" id="sub-mode-endless" data-sub="endless">
+            <div class="sub-mode-title">♾️ Endless Horde</div>
+            <div class="sub-mode-desc">Infinite scaling waves with recurring bosses. Test your ultimate refinery build!</div>
+          </div>
+        </div>
       </div>
 
-      <button class="btn-start" id="btn-start-game">
-        ENTER ARENA
-      </button>
+      <!-- Multiplayer WebRTC Panel -->
+      <div class="tab-content" id="mp-panel" style="display: none;">
+        <div class="mp-panel">
+          <div class="mp-actions-row">
+            <button class="btn-mp-sub active" id="btn-host-room">Create Room (Host)</button>
+            <button class="btn-mp-sub" id="btn-join-room-tab">Join Room (Guest)</button>
+          </div>
+
+          <!-- Host View -->
+          <div id="host-view">
+            <div style="font-size: 11px; color: var(--text-muted); margin-bottom: 4px;">SHARE ROOM CODE WITH A FRIEND:</div>
+            <div class="room-code-box" id="display-room-code">
+              <span id="room-code-text">ROAD-....</span>
+              <button id="btn-copy-code" style="background: none; border: 1px solid var(--neon-cyan); color: var(--neon-cyan); border-radius: 6px; padding: 2px 8px; font-size: 11px; cursor: pointer;">COPY</button>
+            </div>
+            <div class="lobby-status-pill" id="host-status-pill">⏳ Waiting for teammate to join...</div>
+          </div>
+
+          <!-- Join View -->
+          <div id="join-view" style="display: none;">
+            <div style="font-size: 11px; color: var(--text-muted); margin-bottom: 4px;">ENTER 4-LETTER ROOM CODE:</div>
+            <div class="join-input-group">
+              <input type="text" class="join-input" id="input-room-code" placeholder="XXXX" maxlength="6">
+              <button class="btn-mp-sub" id="btn-connect-peer" style="flex: 0 0 100px;">CONNECT</button>
+            </div>
+            <div class="lobby-status-pill" id="guest-status-pill">Enter room code above</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Hero Class Selection -->
+      <div>
+        <div class="class-selection-title">CHOOSE HERO CLASS & PLAYSTYLE</div>
+        <div class="class-grid">
+          <!-- Paladin -->
+          <div class="class-card selected" id="class-paladin" data-class="paladin">
+            <div class="class-card-icon">🛡️</div>
+            <div class="class-card-name">Paladin</div>
+            <div class="class-card-desc">Heavy blade & aegis shield. Sweeping slashes + whirlwind.</div>
+            <div class="class-card-special">Special: Cataclysm Nova</div>
+          </div>
+
+          <!-- Gunner -->
+          <div class="class-card" id="class-gunner" data-class="gunner">
+            <div class="class-card-icon">🏹</div>
+            <div class="class-card-name">Gunner</div>
+            <div class="class-card-desc">Dual plasma blasters. Rapid long-range piercing bolts.</div>
+            <div class="class-card-special">Special: Orbital Barrage</div>
+          </div>
+
+          <!-- Arcanist -->
+          <div class="class-card" id="class-arcanist" data-class="arcanist">
+            <div class="class-card-icon">🔮</div>
+            <div class="class-card-name">Arcanist</div>
+            <div class="class-card-desc">Cosmic runic orb. Chain lightning + void singularity.</div>
+            <div class="class-card-special">Special: Black Hole Vortex</div>
+          </div>
+        </div>
+      </div>
+
+      <button class="btn-start" id="btn-start-game">ENTER ARENA</button>
     </div>
   </div>
 
@@ -1349,35 +1496,19 @@
       <p id="end-subtitle" style="font-size: 13px; color: var(--text-muted);">The void horrors overwhelmed your defenses.</p>
 
       <div class="stats-table">
-        <div class="stat-row">
-          <span>Waves Survived</span>
-          <span id="stat-waves-cleared">0 / 5</span>
-        </div>
-        <div class="stat-row">
-          <span>Horrors Slain</span>
-          <span id="stat-kills">0</span>
-        </div>
-        <div class="stat-row">
-          <span>Gear Refined</span>
-          <span id="stat-refined">0</span>
-        </div>
-        <div class="stat-row">
-          <span>Total Damage</span>
-          <span id="stat-damage">0</span>
-        </div>
-        <div class="stat-row">
-          <span>Run Time</span>
-          <span id="stat-time">02:45</span>
-        </div>
+        <div class="stat-row"><span>Game Mode</span><span id="stat-mode">Solo Classic</span></div>
+        <div class="stat-row"><span>Waves Survived</span><span id="stat-waves-cleared">0 / 5</span></div>
+        <div class="stat-row"><span>Horrors Slain</span><span id="stat-kills">0</span></div>
+        <div class="stat-row"><span>Gear Refined</span><span id="stat-refined">0</span></div>
+        <div class="stat-row"><span>Total Damage</span><span id="stat-damage">0</span></div>
+        <div class="stat-row"><span>Run Time</span><span id="stat-time">02:45</span></div>
       </div>
 
-      <button class="btn-start" id="btn-restart-game">
-        PLAY AGAIN
-      </button>
+      <button class="btn-start" id="btn-restart-game">PLAY AGAIN</button>
     </div>
   </div>
 
-  <!-- GAME ENGINE SCRIPT -->
+  <!-- GAME ENGINE & MULTIPLAYER LOGIC -->
   <script>
   (function() {
     'use strict';
@@ -1394,9 +1525,7 @@
       init() {
         if (!this.ctx) {
           const AudioContext = window.AudioContext || window.webkitAudioContext;
-          if (AudioContext) {
-            this.ctx = new AudioContext();
-          }
+          if (AudioContext) this.ctx = new AudioContext();
         }
         if (this.ctx && this.ctx.state === 'suspended') {
           this.ctx.resume();
@@ -1428,6 +1557,50 @@
 
           osc.start(now);
           osc.stop(now + 0.17);
+        } catch(e) {}
+      }
+
+      playLaserShot() {
+        if (this.muted || !this.ctx) return;
+        try {
+          const now = this.ctx.currentTime;
+          const osc = this.ctx.createOscillator();
+          const gain = this.ctx.createGain();
+
+          osc.type = 'sine';
+          osc.frequency.setValueAtTime(880, now);
+          osc.frequency.exponentialRampToValueAtTime(220, now + 0.12);
+
+          gain.gain.setValueAtTime(0.25, now);
+          gain.gain.exponentialRampToValueAtTime(0.01, now + 0.12);
+
+          osc.connect(gain);
+          gain.connect(this.ctx.destination);
+
+          osc.start(now);
+          osc.stop(now + 0.13);
+        } catch(e) {}
+      }
+
+      playMagicSpark() {
+        if (this.muted || !this.ctx) return;
+        try {
+          const now = this.ctx.currentTime;
+          const osc = this.ctx.createOscillator();
+          const gain = this.ctx.createGain();
+
+          osc.type = 'triangle';
+          osc.frequency.setValueAtTime(1200, now);
+          osc.frequency.exponentialRampToValueAtTime(400, now + 0.18);
+
+          gain.gain.setValueAtTime(0.2, now);
+          gain.gain.exponentialRampToValueAtTime(0.01, now + 0.18);
+
+          osc.connect(gain);
+          gain.connect(this.ctx.destination);
+
+          osc.start(now);
+          osc.stop(now + 0.19);
         } catch(e) {}
       }
 
@@ -1464,10 +1637,8 @@
             osc.frequency.setValueAtTime(freq, now + idx * 0.04);
             gain.gain.setValueAtTime(0.2, now + idx * 0.04);
             gain.gain.exponentialRampToValueAtTime(0.01, now + idx * 0.04 + 0.12);
-
             osc.connect(gain);
             gain.connect(this.ctx.destination);
-
             osc.start(now + idx * 0.04);
             osc.stop(now + idx * 0.04 + 0.13);
           });
@@ -1543,6 +1714,25 @@
         } catch(e) {}
       }
 
+      playReviveChime() {
+        if (this.muted || !this.ctx) return;
+        try {
+          const now = this.ctx.currentTime;
+          [440, 554.37, 659.25, 880].forEach((freq, idx) => {
+            const osc = this.ctx.createOscillator();
+            const gain = this.ctx.createGain();
+            osc.type = 'sine';
+            osc.frequency.setValueAtTime(freq, now + idx * 0.07);
+            gain.gain.setValueAtTime(0.3, now + idx * 0.07);
+            gain.gain.exponentialRampToValueAtTime(0.01, now + idx * 0.07 + 0.3);
+            osc.connect(gain);
+            gain.connect(this.ctx.destination);
+            osc.start(now + idx * 0.07);
+            osc.stop(now + idx * 0.07 + 0.32);
+          });
+        } catch(e) {}
+      }
+
       playFanfare() {
         if (this.muted || !this.ctx) return;
         try {
@@ -1570,7 +1760,7 @@
        ========================================================================== */
     const GAME_CONFIG = {
       TOTAL_WAVES: 5,
-      WAVE_DURATION: 30, // seconds
+      WAVE_DURATION: 30,
       REFINERY_DURATION: 25,
       ARENA_RADIUS: 14,
     };
@@ -1593,6 +1783,10 @@
        ========================================================================== */
     const state = {
       phase: 'title', // 'title', 'playing', 'refinery', 'gameover', 'victory'
+      gameMode: 'solo', // 'solo', 'multiplayer'
+      soloSubMode: 'classic', // 'classic', 'endless'
+      heroClass: 'paladin', // 'paladin', 'gunner', 'arcanist'
+
       currentWave: 1,
       waveTimeRemaining: GAME_CONFIG.WAVE_DURATION,
       refineryTimeRemaining: GAME_CONFIG.REFINERY_DURATION,
@@ -1601,13 +1795,7 @@
       totalDamageDealt: 0,
       gearRefinedCount: 0,
 
-      materials: {
-        pyrite: 2,
-        aether: 2,
-        titanium: 2,
-        catalyst: 1
-      },
-
+      // Local Player Stats
       hero: {
         hp: 120,
         maxHp: 120,
@@ -1624,12 +1812,34 @@
         isDashing: false,
         dashDuration: 0,
         dashDirection: new THREE.Vector3(0, 0, 1),
-        specialCharge: 100, // Starts 100% READY!
+        specialCharge: 100, // Starts 100% Ready!
         specialMaxCharge: 100,
         autoAttack: false,
         attackCombo: 0,
         attackCooldown: 0,
-        invincibleTimer: 0
+        invincibleTimer: 0,
+        isDowned: false,
+        reviveProgress: 0
+      },
+
+      // Teammate (Remote Peer) State
+      teammate: {
+        connected: false,
+        name: 'Player 2',
+        class: 'gunner',
+        hp: 120,
+        maxHp: 120,
+        shield: 60,
+        maxShield: 60,
+        tier: 1,
+        isDowned: false
+      },
+
+      materials: {
+        pyrite: 2,
+        aether: 2,
+        titanium: 2,
+        catalyst: 1
       },
 
       gear: {
@@ -1647,7 +1857,175 @@
     };
 
     /* ==========================================================================
-       4. THREE.JS 3D SCENE & RENDERER SETUP
+       4. PEER-TO-PEER WEBRTC MULTIPLAYER MANAGER (PEERJS)
+       ========================================================================== */
+    class NetworkManager {
+      constructor() {
+        this.peer = null;
+        this.conn = null;
+        this.isHost = false;
+        this.roomCode = '';
+        this.syncInterval = null;
+      }
+
+      initHost() {
+        this.isHost = true;
+        // Generate random 4-letter room code (e.g. ROAD)
+        const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+        let code = '';
+        for (let i = 0; i < 4; i++) code += chars.charAt(Math.floor(Math.random() * chars.length));
+        this.roomCode = 'BR-' + code;
+
+        const peerId = 'broadroads-' + code.toLowerCase();
+        document.getElementById('room-code-text').textContent = this.roomCode;
+        document.getElementById('host-status-pill').textContent = '⏳ Registering room code...';
+
+        try {
+          this.peer = new Peer(peerId, { debug: 1 });
+          this.peer.on('open', (id) => {
+            document.getElementById('host-status-pill').textContent = '🟢 Room Live! Waiting for partner to join...';
+          });
+
+          this.peer.on('connection', (conn) => {
+            this.handleConnection(conn);
+          });
+
+          this.peer.on('error', (err) => {
+            console.warn('Host peer error, falling back:', err);
+            document.getElementById('host-status-pill').textContent = '⚠️ Re-generating code...';
+            setTimeout(() => this.initHost(), 1000);
+          });
+        } catch (e) {
+          console.error('Peer init error:', e);
+        }
+      }
+
+      joinRoom(code) {
+        this.isHost = false;
+        const cleaned = code.replace(/[^A-Za-z0-9]/g, '').toLowerCase().slice(-4);
+        const hostPeerId = 'broadroads-' + cleaned;
+        document.getElementById('guest-status-pill').textContent = '🔄 Connecting to host...';
+
+        try {
+          this.peer = new Peer({ debug: 1 });
+          this.peer.on('open', (myId) => {
+            const conn = this.peer.connect(hostPeerId, { reliable: true });
+            this.handleConnection(conn);
+          });
+
+          this.peer.on('error', (err) => {
+            document.getElementById('guest-status-pill').textContent = '❌ Failed to connect. Check code.';
+          });
+        } catch(e) {
+          console.error('Join error:', e);
+        }
+      }
+
+      handleConnection(conn) {
+        this.conn = conn;
+
+        this.conn.on('open', () => {
+          state.teammate.connected = true;
+          document.getElementById('teammate-vitals').style.display = 'block';
+
+          if (this.isHost) {
+            document.getElementById('host-status-pill').textContent = '✅ Teammate Connected! Ready to deploy.';
+            this.send({ type: 'LOBBY_SYNC', class: state.heroClass, isHost: true });
+          } else {
+            document.getElementById('guest-status-pill').textContent = '✅ Connected to Host! Waiting for launch...';
+            this.send({ type: 'LOBBY_SYNC', class: state.heroClass, isHost: false });
+          }
+
+          // Start continuous 25Hz positional sync
+          if (this.syncInterval) clearInterval(this.syncInterval);
+          this.syncInterval = setInterval(() => this.syncLocalPlayer(), 40);
+        });
+
+        this.conn.on('data', (data) => {
+          this.handlePacket(data);
+        });
+
+        this.conn.on('close', () => {
+          state.teammate.connected = false;
+          document.getElementById('teammate-vitals').style.display = 'none';
+          if (remoteHero) remoteHero.group.visible = false;
+        });
+      }
+
+      send(data) {
+        if (this.conn && this.conn.open) {
+          this.conn.send(data);
+        }
+      }
+
+      syncLocalPlayer() {
+        if (!this.conn || !this.conn.open || state.phase !== 'playing') return;
+
+        this.send({
+          type: 'PLAYER_SYNC',
+          x: hero.position.x,
+          z: hero.position.z,
+          rot: hero.group.rotation.y,
+          vx: hero.velocity.x,
+          vy: hero.velocity.y,
+          hp: state.hero.hp,
+          maxHp: state.hero.maxHp,
+          shield: state.hero.shield,
+          class: state.heroClass,
+          isDowned: state.hero.isDowned
+        });
+      }
+
+      handlePacket(packet) {
+        if (!packet) return;
+
+        if (packet.type === 'LOBBY_SYNC') {
+          state.teammate.class = packet.class;
+          if (remoteHero) remoteHero.setClass(packet.class);
+        } else if (packet.type === 'START_GAME') {
+          // Guest receives start trigger from Host
+          state.heroClass = document.querySelector('.class-card.selected').dataset.class || 'paladin';
+          resetGame();
+        } else if (packet.type === 'PLAYER_SYNC') {
+          if (remoteHero) {
+            remoteHero.group.visible = true;
+            remoteHero.targetPos.set(packet.x, 0, packet.z);
+            remoteHero.targetRot = packet.rot;
+            remoteHero.isDowned = packet.isDowned;
+          }
+
+          state.teammate.hp = packet.hp;
+          state.teammate.maxHp = packet.maxHp;
+          state.teammate.isDowned = packet.isDowned;
+
+          // Update teammate HUD
+          const pct = Math.max(0, Math.min(100, (packet.hp / packet.maxHp) * 100));
+          document.getElementById('teammate-hp-bar').style.width = pct + '%';
+          document.getElementById('teammate-hp-text').textContent = packet.isDowned ? 'DOWNED!' : `${Math.round(pct)}%`;
+
+          checkCoopReviveState();
+        } else if (packet.type === 'ATTACK') {
+          if (remoteHero) remoteHero.triggerAttack(packet.facing, packet.combo);
+        } else if (packet.type === 'SPECIAL') {
+          if (remoteHero) remoteHero.triggerSpecial(packet.pos);
+        } else if (packet.type === 'REVIVE_EVENT') {
+          state.hero.isDowned = false;
+          state.hero.hp = state.hero.maxHp * 0.5;
+          state.hero.shield = state.hero.maxShield;
+          sound.playReviveChime();
+          updateVitalsHUD();
+          document.getElementById('revive-banner').style.display = 'none';
+        } else if (packet.type === 'ENEMY_SYNC' && !this.isHost) {
+          // Guest syncs enemy states from Host
+          syncEnemiesFromHost(packet.enemies);
+        }
+      }
+    }
+
+    const net = new NetworkManager();
+
+    /* ==========================================================================
+       5. THREE.JS 3D SCENE & ENVIRONMENT
        ========================================================================== */
     const container = document.getElementById('canvas-container');
     const scene = new THREE.Scene();
@@ -1667,7 +2045,6 @@
     renderer.toneMappingExposure = 1.2;
     container.appendChild(renderer.domElement);
 
-    // Dynamic Lighting
     const ambientLight = new THREE.AmbientLight(0x2a3654, 1.4);
     scene.add(ambientLight);
 
@@ -1676,12 +2053,6 @@
     sunLight.castShadow = true;
     sunLight.shadow.mapSize.width = 1024;
     sunLight.shadow.mapSize.height = 1024;
-    sunLight.shadow.camera.near = 10;
-    sunLight.shadow.camera.far = 70;
-    sunLight.shadow.camera.left = -18;
-    sunLight.shadow.camera.right = 18;
-    sunLight.shadow.camera.top = 18;
-    sunLight.shadow.camera.bottom = -18;
     sunLight.shadow.bias = -0.001;
     scene.add(sunLight);
 
@@ -1689,43 +2060,26 @@
     forgePointLight.position.set(0, 3, 0);
     scene.add(forgePointLight);
 
-    /* ==========================================================================
-       5. 3D ARENA PLATFORM & VISUAL ENVIRONMENT
-       ========================================================================== */
+    // Arena Platform
     const arenaGroup = new THREE.Group();
     scene.add(arenaGroup);
 
     const arenaGeo = new THREE.CylinderGeometry(15, 16, 2, 8);
-    const arenaMat = new THREE.MeshStandardMaterial({
-      color: 0x0f1528,
-      roughness: 0.5,
-      metalness: 0.6,
-      flatShading: true
-    });
+    const arenaMat = new THREE.MeshStandardMaterial({ color: 0x0f1528, roughness: 0.5, metalness: 0.6, flatShading: true });
     const arenaMesh = new THREE.Mesh(arenaGeo, arenaMat);
     arenaMesh.position.y = -1;
     arenaMesh.receiveShadow = true;
     arenaGroup.add(arenaMesh);
 
     const runeRingGeo = new THREE.RingGeometry(8, 8.4, 48);
-    const runeRingMat = new THREE.MeshBasicMaterial({
-      color: 0x00f5d4,
-      side: THREE.DoubleSide,
-      transparent: true,
-      opacity: 0.7
-    });
+    const runeRingMat = new THREE.MeshBasicMaterial({ color: 0x00f5d4, side: THREE.DoubleSide, transparent: true, opacity: 0.7 });
     const runeRing = new THREE.Mesh(runeRingGeo, runeRingMat);
     runeRing.rotation.x = -Math.PI / 2;
     runeRing.position.y = 0.02;
     arenaGroup.add(runeRing);
 
     const outerRingGeo = new THREE.RingGeometry(14.6, 14.9, 8);
-    const outerRingMat = new THREE.MeshBasicMaterial({
-      color: 0xffb703,
-      side: THREE.DoubleSide,
-      transparent: true,
-      opacity: 0.85
-    });
+    const outerRingMat = new THREE.MeshBasicMaterial({ color: 0xffb703, side: THREE.DoubleSide, transparent: true, opacity: 0.85 });
     const outerRing = new THREE.Mesh(outerRingGeo, outerRingMat);
     outerRing.rotation.x = -Math.PI / 2;
     outerRing.position.y = 0.02;
@@ -1762,94 +2116,77 @@
       dustPositions[i + 2] = (Math.random() - 0.5) * 80;
     }
     dustGeo.setAttribute('position', new THREE.BufferAttribute(dustPositions, 3));
-    const dustMat = new THREE.PointsMaterial({
-      size: 0.35,
-      color: 0x88c0d0,
-      transparent: true,
-      opacity: 0.5,
-      blending: THREE.AdditiveBlending
-    });
-    const dustParticles = new THREE.Points(dustGeo, dustMat);
+    const dustParticles = new THREE.Points(dustGeo, new THREE.PointsMaterial({
+      size: 0.35, color: 0x88c0d0, transparent: true, opacity: 0.5, blending: THREE.AdditiveBlending
+    }));
     scene.add(dustParticles);
 
     /* ==========================================================================
-       6. 3D HERO CHARACTER ENTITY
+       6. HERO ENTITY (CLASS-CUSTOMIZED) & REMOTE HERO (CO-OP)
        ========================================================================== */
     class HeroEntity {
-      constructor() {
+      constructor(isRemote = false) {
+        this.isRemote = isRemote;
         this.group = new THREE.Group();
         this.position = this.group.position;
-        this.position.set(0, 0, 0);
+        this.position.set(isRemote ? 3 : 0, 0, 0);
 
-        const armorMat = new THREE.MeshStandardMaterial({
-          color: 0x1e293b,
+        this.armorMat = new THREE.MeshStandardMaterial({
+          color: isRemote ? 0x2e1065 : 0x1e293b,
           metalness: 0.85,
           roughness: 0.25
         });
 
         // Torso
-        const torsoGeo = new THREE.CylinderGeometry(0.55, 0.42, 1.25, 8);
-        this.torso = new THREE.Mesh(torsoGeo, armorMat);
+        this.torso = new THREE.Mesh(new THREE.CylinderGeometry(0.55, 0.42, 1.25, 8), this.armorMat);
         this.torso.position.y = 1.1;
         this.torso.castShadow = true;
         this.group.add(this.torso);
 
         // Core Crystal
-        const coreGeo = new THREE.SphereGeometry(0.22, 8, 8);
         this.coreMat = new THREE.MeshStandardMaterial({
-          color: 0x00f5d4,
-          emissive: 0x00f5d4,
+          color: isRemote ? 0x9d4edd : 0x00f5d4,
+          emissive: isRemote ? 0x9d4edd : 0x00f5d4,
           emissiveIntensity: 1.0
         });
-        this.core = new THREE.Mesh(coreGeo, this.coreMat);
+        this.core = new THREE.Mesh(new THREE.SphereGeometry(0.22, 8, 8), this.coreMat);
         this.core.position.set(0, 1.2, 0.45);
         this.group.add(this.core);
 
-        // Helm
-        const helmGeo = new THREE.SphereGeometry(0.42, 8, 8);
-        this.helm = new THREE.Mesh(helmGeo, armorMat);
+        // Helm & Visor
+        this.helm = new THREE.Mesh(new THREE.SphereGeometry(0.42, 8, 8), this.armorMat);
         this.helm.position.y = 2.0;
         this.helm.castShadow = true;
         this.group.add(this.helm);
 
-        // Visor
-        const visorGeo = new THREE.BoxGeometry(0.48, 0.14, 0.25);
-        this.visorMat = new THREE.MeshBasicMaterial({ color: 0x00f5d4 });
-        this.visor = new THREE.Mesh(visorGeo, this.visorMat);
+        this.visorMat = new THREE.MeshBasicMaterial({ color: isRemote ? 0xff0054 : 0x00f5d4 });
+        this.visor = new THREE.Mesh(new THREE.BoxGeometry(0.48, 0.14, 0.25), this.visorMat);
         this.visor.position.set(0, 2.0, 0.35);
         this.group.add(this.visor);
 
-        // Pauldrons
-        const pauldronGeo = new THREE.BoxGeometry(0.4, 0.4, 0.48);
-        const leftP = new THREE.Mesh(pauldronGeo, armorMat);
-        leftP.position.set(-0.7, 1.5, 0);
-        this.group.add(leftP);
-        const rightP = new THREE.Mesh(pauldronGeo, armorMat);
-        rightP.position.set(0.7, 1.5, 0);
-        this.group.add(rightP);
+        // Weapon Arm Mounts
+        this.weaponArmRight = new THREE.Group();
+        this.weaponArmRight.position.set(0.75, 1.3, 0);
+        this.group.add(this.weaponArmRight);
 
-        // Weapon Arm Group
-        this.weaponArm = new THREE.Group();
-        this.weaponArm.position.set(0.75, 1.3, 0);
-        this.group.add(this.weaponArm);
+        this.weaponArmLeft = new THREE.Group();
+        this.weaponArmLeft.position.set(-0.75, 1.3, 0);
+        this.group.add(this.weaponArmLeft);
 
-        // 3D Blade
-        const bladeGeo = new THREE.BoxGeometry(0.22, 1.8, 0.1);
+        // Paladin Weapon (Greatblade)
         this.bladeMat = new THREE.MeshStandardMaterial({
           color: 0xffffff,
-          emissive: 0x00f5d4,
+          emissive: isRemote ? 0x9d4edd : 0x00f5d4,
           emissiveIntensity: 0.6,
           metalness: 0.9,
           roughness: 0.1
         });
-        this.blade = new THREE.Mesh(bladeGeo, this.bladeMat);
+        this.blade = new THREE.Mesh(new THREE.BoxGeometry(0.22, 1.8, 0.1), this.bladeMat);
         this.blade.position.set(0, 0.9, 0.4);
         this.blade.rotation.x = Math.PI / 4;
-        this.blade.castShadow = true;
-        this.weaponArm.add(this.blade);
+        this.weaponArmRight.add(this.blade);
 
-        // Shield
-        const shieldGeo = new THREE.CircleGeometry(0.7, 6);
+        // Paladin Shield
         this.shieldMat = new THREE.MeshStandardMaterial({
           color: 0x00bbf9,
           emissive: 0x00bbf9,
@@ -1858,23 +2195,40 @@
           opacity: 0.85,
           side: THREE.DoubleSide
         });
-        this.shieldMesh = new THREE.Mesh(shieldGeo, this.shieldMat);
-        this.shieldMesh.position.set(-0.75, 1.2, 0.35);
+        this.shieldMesh = new THREE.Mesh(new THREE.CircleGeometry(0.7, 6), this.shieldMat);
+        this.shieldMesh.position.set(0, 0, 0.35);
         this.shieldMesh.rotation.y = -Math.PI / 6;
-        this.group.add(this.shieldMesh);
+        this.weaponArmLeft.add(this.shieldMesh);
 
-        // Weapon Light
-        this.weaponLight = new THREE.PointLight(0x00f5d4, 1.5, 7);
-        this.weaponLight.position.set(0.7, 1.5, 0.5);
-        this.group.add(this.weaponLight);
+        // Gunner Dual Blasters
+        const blasterGeo = new THREE.BoxGeometry(0.18, 0.3, 0.8);
+        const blasterMat = new THREE.MeshStandardMaterial({ color: 0x334155, metalness: 0.9 });
+        this.blasterR = new THREE.Mesh(blasterGeo, blasterMat);
+        this.blasterR.position.set(0, 0, 0.3);
+        this.weaponArmRight.add(this.blasterR);
 
-        // Shadow Decal
-        const shadowDecalGeo = new THREE.CircleGeometry(0.85, 16);
-        const shadowDecalMat = new THREE.MeshBasicMaterial({ color: 0x000000, transparent: true, opacity: 0.4 });
-        const shadowDecal = new THREE.Mesh(shadowDecalGeo, shadowDecalMat);
-        shadowDecal.rotation.x = -Math.PI / 2;
-        shadowDecal.position.y = 0.03;
-        this.group.add(shadowDecal);
+        this.blasterL = new THREE.Mesh(blasterGeo, blasterMat);
+        this.blasterL.position.set(0, 0, 0.3);
+        this.weaponArmLeft.add(this.blasterL);
+
+        // Arcanist Cosmic Orb
+        this.orbMat = new THREE.MeshStandardMaterial({
+          color: 0x9d4edd,
+          emissive: 0x9d4edd,
+          emissiveIntensity: 0.9,
+          roughness: 0.1
+        });
+        this.magicOrb = new THREE.Mesh(new THREE.DodecahedronGeometry(0.35), this.orbMat);
+        this.magicOrb.position.set(0, 0.4, 0.4);
+        this.weaponArmRight.add(this.magicOrb);
+
+        // Downed Revive Circle Aura
+        const reviveRingGeo = new THREE.RingGeometry(1.8, 2.0, 32);
+        const reviveRingMat = new THREE.MeshBasicMaterial({ color: 0xff0054, side: THREE.DoubleSide, transparent: true, opacity: 0 });
+        this.reviveRing = new THREE.Mesh(reviveRingGeo, reviveRingMat);
+        this.reviveRing.rotation.x = -Math.PI / 2;
+        this.reviveRing.position.y = 0.05;
+        this.group.add(this.reviveRing);
 
         scene.add(this.group);
 
@@ -1883,59 +2237,113 @@
         this.swingProgress = 0;
         this.slashActive = false;
         this.walkCycle = 0;
+
+        // Remote interpolation buffers
+        this.targetPos = new THREE.Vector3(this.position.x, 0, this.position.z);
+        this.targetRot = 0;
+        this.isDowned = false;
+
+        this.setClass(isRemote ? 'gunner' : 'paladin');
+      }
+
+      setClass(classId) {
+        this.classId = classId;
+
+        // Hide all weapons
+        this.blade.visible = false;
+        this.shieldMesh.visible = false;
+        this.blasterR.visible = false;
+        this.blasterL.visible = false;
+        this.magicOrb.visible = false;
+
+        if (classId === 'paladin') {
+          this.blade.visible = true;
+          this.shieldMesh.visible = true;
+        } else if (classId === 'gunner') {
+          this.blasterR.visible = true;
+          this.blasterL.visible = true;
+        } else if (classId === 'arcanist') {
+          this.magicOrb.visible = true;
+        }
       }
 
       updateVisualTier(weaponTier) {
-        if (weaponTier >= 4) {
-          this.bladeMat.emissive.setHex(0xffb703);
-          this.blade.scale.set(1.4, 1.3, 1.4);
-          this.weaponLight.color.setHex(0xffb703);
-        } else if (weaponTier === 3) {
-          this.bladeMat.emissive.setHex(0x9d4edd);
-          this.blade.scale.set(1.25, 1.2, 1.25);
-          this.weaponLight.color.setHex(0x9d4edd);
-        } else if (weaponTier === 2) {
-          this.bladeMat.emissive.setHex(0xfb8500);
-          this.blade.scale.set(1.15, 1.1, 1.15);
-          this.weaponLight.color.setHex(0xfb8500);
-        } else {
-          this.bladeMat.emissive.setHex(0x00f5d4);
-          this.blade.scale.set(1, 1, 1);
-          this.weaponLight.color.setHex(0x00f5d4);
-        }
+        const colors = [0x00f5d4, 0xfb8500, 0x9d4edd, 0xffb703];
+        const hex = colors[Math.min(3, weaponTier - 1)] || 0x00f5d4;
+        this.bladeMat.emissive.setHex(hex);
+        this.orbMat.emissive.setHex(hex);
       }
 
       triggerSlashAnimation(combo) {
         this.swingProgress = 0;
         this.slashActive = true;
+        if (combo === 0) this.weaponArmRight.rotation.set(-0.3, -1.2, 0);
+        else if (combo === 1) this.weaponArmRight.rotation.set(0.6, 1.2, 0);
+        else this.weaponArmRight.rotation.set(0, -Math.PI, 0);
+      }
 
-        if (combo === 0) {
-          this.weaponArm.rotation.set(-0.3, -1.2, 0);
-        } else if (combo === 1) {
-          this.weaponArm.rotation.set(0.6, 1.2, 0);
-        } else {
-          this.weaponArm.rotation.set(0, -Math.PI, 0);
-        }
+      triggerRemoteAttack(facing, combo) {
+        this.group.rotation.y = Math.atan2(facing.x, facing.z);
+        this.triggerSlashAnimation(combo);
+        if (this.classId === 'gunner') sound.playLaserShot();
+        else if (this.classId === 'arcanist') sound.playMagicSpark();
+        else sound.playSlash();
+      }
+
+      triggerRemoteSpecial(pos) {
+        spawnExplosion(new THREE.Vector3(pos.x, 1, pos.z), 0x9d4edd);
+        spawnGroundShockwave(new THREE.Vector3(pos.x, 0, pos.z), 12.0, 0x9d4edd);
+        sound.playNova();
       }
 
       update(dt) {
-        // Handle Dash Burst Motion
+        if (this.isRemote) {
+          // Smooth remote interpolation
+          this.position.lerp(this.targetPos, dt * 15);
+          let diff = this.targetRot - this.group.rotation.y;
+          while (diff < -Math.PI) diff += Math.PI * 2;
+          while (diff > Math.PI) diff -= Math.PI * 2;
+          this.group.rotation.y += diff * Math.min(dt * 15, 1);
+
+          // Handle Downed state visual
+          if (this.isDowned) {
+            this.torso.position.y = 0.5;
+            this.torso.rotation.x = Math.PI / 4;
+            this.reviveRing.material.opacity = 0.8;
+          } else {
+            this.torso.position.y = 1.1;
+            this.torso.rotation.x = 0;
+            this.reviveRing.material.opacity = 0;
+          }
+          return;
+        }
+
+        // Local Player Update
+        if (state.hero.isDowned) {
+          this.torso.position.y = 0.5;
+          this.torso.rotation.x = Math.PI / 4;
+          this.reviveRing.material.opacity = 0.8;
+          // Slow crawl
+          this.position.x += this.velocity.x * 2.0 * dt;
+          this.position.z += this.velocity.y * 2.0 * dt;
+          return;
+        } else {
+          this.torso.position.y = 1.1;
+          this.torso.rotation.x = 0;
+          this.reviveRing.material.opacity = 0;
+        }
+
         if (state.hero.isDashing) {
           state.hero.dashDuration -= dt;
           this.position.x += state.hero.dashDirection.x * 22 * dt;
           this.position.z += state.hero.dashDirection.z * 22 * dt;
-
-          if (state.hero.dashDuration <= 0) {
-            state.hero.isDashing = false;
-          }
+          if (state.hero.dashDuration <= 0) state.hero.isDashing = false;
         } else {
-          // Regular Movement
           const speed = state.hero.moveSpeed;
           this.position.x += this.velocity.x * speed * dt;
           this.position.z += this.velocity.y * speed * dt;
         }
 
-        // Constrain to arena radius
         const dist = Math.sqrt(this.position.x * this.position.x + this.position.z * this.position.z);
         if (dist > GAME_CONFIG.ARENA_RADIUS) {
           const angle = Math.atan2(this.position.z, this.position.x);
@@ -1943,7 +2351,6 @@
           this.position.z = Math.sin(angle) * GAME_CONFIG.ARENA_RADIUS;
         }
 
-        // Update Rotation
         if (this.velocity.lengthSq() > 0.01) {
           this.targetRotation = Math.atan2(this.velocity.x, this.velocity.y);
           this.walkCycle += dt * 14;
@@ -1957,35 +2364,33 @@
         while (diff > Math.PI) diff -= Math.PI * 2;
         this.group.rotation.y += diff * Math.min(dt * 18, 1);
 
-        // Weapon Arm Swing Animation
         if (this.slashActive) {
           this.swingProgress += dt * 6.5;
-          const swingAngle = THREE.MathUtils.lerp(-1.4, 1.4, Math.min(1, this.swingProgress));
-          this.weaponArm.rotation.y = swingAngle;
-
+          this.weaponArmRight.rotation.y = THREE.MathUtils.lerp(-1.4, 1.4, Math.min(1, this.swingProgress));
           if (this.swingProgress >= 1) {
             this.slashActive = false;
-            this.weaponArm.rotation.set(0, 0, 0);
+            this.weaponArmRight.rotation.set(0, 0, 0);
           }
         }
 
-        // Shield visibility
-        if (state.hero.shield > 0) {
-          this.shieldMesh.visible = true;
-          this.shieldMat.opacity = 0.4 + (state.hero.shield / state.hero.maxShield) * 0.5;
-        } else {
-          this.shieldMesh.visible = false;
+        // Float Arcanist Orb
+        if (this.classId === 'arcanist') {
+          this.magicOrb.position.y = 0.4 + Math.sin(Date.now() * 0.005) * 0.15;
+          this.magicOrb.rotation.y += dt * 3;
         }
       }
     }
 
-    const hero = new HeroEntity();
+    const hero = new HeroEntity(false);
+    const remoteHero = new HeroEntity(true);
+    remoteHero.group.visible = false;
 
     /* ==========================================================================
        7. ENEMY SYSTEM
        ========================================================================== */
     class EnemyEntity {
-      constructor(type, spawnPos) {
+      constructor(type, spawnPos, id = null) {
+        this.id = id || Math.random().toString(36).substring(2, 9);
         this.type = type;
         this.group = new THREE.Group();
         this.position = this.group.position;
@@ -1994,90 +2399,68 @@
         this.dead = false;
         this.flashTimer = 0;
 
+        const waveScale = state.soloSubMode === 'endless' ? (state.currentWave * 20) : (state.currentWave * 12);
+
         if (type === 'crawler') {
-          this.maxHp = 45 + (state.currentWave * 15);
+          this.maxHp = 45 + waveScale;
           this.hp = this.maxHp;
           this.speed = 5.2;
           this.damage = 10;
           this.attackRadius = 1.4;
 
-          const bodyGeo = new THREE.OctahedronGeometry(0.7);
-          this.mat = new THREE.MeshStandardMaterial({
-            color: 0x1f0b2e,
-            emissive: 0x9d4edd,
-            emissiveIntensity: 0.4,
-            metalness: 0.8
-          });
-          this.mesh = new THREE.Mesh(bodyGeo, this.mat);
+          this.mesh = new THREE.Mesh(new THREE.OctahedronGeometry(0.7), new THREE.MeshStandardMaterial({
+            color: 0x1f0b2e, emissive: 0x9d4edd, emissiveIntensity: 0.4, metalness: 0.8
+          }));
           this.mesh.position.y = 0.7;
           this.mesh.castShadow = true;
           this.group.add(this.mesh);
 
-          const eyeGeo = new THREE.SphereGeometry(0.18, 6, 6);
-          const eye = new THREE.Mesh(eyeGeo, new THREE.MeshBasicMaterial({ color: 0xff0054 }));
-          eye.position.set(0, 0.75, 0.45);
-          this.group.add(eye);
-
         } else if (type === 'brute') {
-          this.maxHp = 140 + (state.currentWave * 35);
+          this.maxHp = 140 + waveScale * 2;
           this.hp = this.maxHp;
           this.speed = 3.2;
           this.damage = 22;
           this.attackRadius = 2.0;
 
-          const bodyGeo = new THREE.BoxGeometry(1.5, 1.8, 1.3);
-          this.mat = new THREE.MeshStandardMaterial({
-            color: 0x22333b,
-            emissive: 0x38b000,
-            emissiveIntensity: 0.35,
-            metalness: 0.85
-          });
-          this.mesh = new THREE.Mesh(bodyGeo, this.mat);
+          this.mesh = new THREE.Mesh(new THREE.BoxGeometry(1.5, 1.8, 1.3), new THREE.MeshStandardMaterial({
+            color: 0x22333b, emissive: 0x38b000, emissiveIntensity: 0.35, metalness: 0.85
+          }));
           this.mesh.position.y = 1.2;
           this.mesh.castShadow = true;
           this.group.add(this.mesh);
 
         } else if (type === 'caster') {
-          this.maxHp = 65 + (state.currentWave * 18);
+          this.maxHp = 65 + waveScale;
           this.hp = this.maxHp;
           this.speed = 3.6;
           this.damage = 15;
           this.attackRadius = 7.0;
           this.shootTimer = 1.0;
 
-          const obeliskGeo = new THREE.ConeGeometry(0.65, 2.2, 4);
-          this.mat = new THREE.MeshStandardMaterial({
-            color: 0x052942,
-            emissive: 0x00bbf9,
-            emissiveIntensity: 0.65
-          });
-          this.mesh = new THREE.Mesh(obeliskGeo, this.mat);
+          this.mesh = new THREE.Mesh(new THREE.ConeGeometry(0.65, 2.2, 4), new THREE.MeshStandardMaterial({
+            color: 0x052942, emissive: 0x00bbf9, emissiveIntensity: 0.65
+          }));
           this.mesh.position.y = 1.7;
           this.mesh.rotation.x = Math.PI;
           this.mesh.castShadow = true;
           this.group.add(this.mesh);
 
         } else if (type === 'boss') {
-          this.maxHp = 1400;
+          this.maxHp = 1400 + (state.currentWave > 5 ? (state.currentWave - 5) * 500 : 0);
           this.hp = this.maxHp;
           this.speed = 3.8;
           this.damage = 38;
           this.attackRadius = 3.2;
           this.slamTimer = 3.5;
 
-          const bossTorsoGeo = new THREE.BoxGeometry(2.8, 3.4, 2.4);
-          this.mat = new THREE.MeshStandardMaterial({
-            color: 0x3d0b16,
-            emissive: 0xff0054,
-            emissiveIntensity: 0.55
-          });
-          this.mesh = new THREE.Mesh(bossTorsoGeo, this.mat);
+          this.mesh = new THREE.Mesh(new THREE.BoxGeometry(2.8, 3.4, 2.4), new THREE.MeshStandardMaterial({
+            color: 0x3d0b16, emissive: 0xff0054, emissiveIntensity: 0.55
+          }));
           this.mesh.position.y = 2.4;
           this.mesh.castShadow = true;
           this.group.add(this.mesh);
 
-          const crownGeo = new THREE.ConeGeometry(1.2, 1.4, 5);
-          const crown = new THREE.Mesh(crownGeo, new THREE.MeshStandardMaterial({ color: 0xffb703, emissive: 0xffb703 }));
+          const crown = new THREE.Mesh(new THREE.ConeGeometry(1.2, 1.4, 5), new THREE.MeshStandardMaterial({ color: 0xffb703, emissive: 0xffb703 }));
           crown.position.set(0, 4.4, 0);
           this.group.add(crown);
         }
@@ -2088,34 +2471,28 @@
       takeDamage(amount, isCrit) {
         this.hp -= amount;
         this.flashTimer = 0.12;
-        this.mat.emissive.setHex(0xffffff);
-        this.mat.emissiveIntensity = 1.0;
+        this.mesh.material.emissive.setHex(0xffffff);
+        this.mesh.material.emissiveIntensity = 1.0;
 
         spawnFloatingCombatText(this.position.clone().add(new THREE.Vector3(0, 1.6, 0)), Math.round(amount), isCrit);
         state.totalDamageDealt += amount;
 
-        // Charge special ability with hits
         state.hero.specialCharge = Math.min(state.hero.specialMaxCharge, state.hero.specialCharge + 10);
         updateSpecialButton();
 
-        if (this.hp <= 0 && !this.dead) {
-          this.die();
-        }
+        if (this.hp <= 0 && !this.dead) this.die();
       }
 
       die() {
         this.dead = true;
         state.kills++;
-
         state.hero.specialCharge = Math.min(state.hero.specialMaxCharge, state.hero.specialCharge + 15);
         updateSpecialButton();
 
         spawnMaterialDrops(this.position, this.type);
         spawnExplosion(this.position, this.type === 'boss' ? 0xffb703 : 0x00f5d4);
 
-        if (this.type === 'boss') {
-          document.getElementById('boss-hud').style.display = 'none';
-        }
+        if (this.type === 'boss') document.getElementById('boss-hud').style.display = 'none';
       }
 
       update(dt, heroPos) {
@@ -2125,54 +2502,62 @@
           this.flashTimer -= dt;
           if (this.flashTimer <= 0) {
             const baseColors = { crawler: 0x9d4edd, brute: 0x38b000, caster: 0x00bbf9, boss: 0xff0054 };
-            this.mat.emissive.setHex(baseColors[this.type] || 0x000000);
-            this.mat.emissiveIntensity = 0.4;
+            this.mesh.material.emissive.setHex(baseColors[this.type] || 0x000000);
+            this.mesh.material.emissiveIntensity = 0.4;
           }
         }
 
-        const toHero = new THREE.Vector3().subVectors(heroPos, this.position);
-        toHero.y = 0;
-        const dist = toHero.length();
+        // Target nearest living player (local or remote)
+        let target = heroPos;
+        if (state.teammate.connected && remoteHero.group.visible && !remoteHero.isDowned) {
+          const dLocal = this.position.distanceTo(heroPos);
+          const dRemote = this.position.distanceTo(remoteHero.position);
+          if (dRemote < dLocal) target = remoteHero.position;
+        }
+
+        const toTarget = new THREE.Vector3().subVectors(target, this.position);
+        toTarget.y = 0;
+        const dist = toTarget.length();
 
         if (dist > 0.01) {
-          toHero.normalize();
-          this.group.rotation.y = Math.atan2(toHero.x, toHero.z);
+          toTarget.normalize();
+          this.group.rotation.y = Math.atan2(toTarget.x, toTarget.z);
         }
 
         if (this.type === 'crawler') {
-          this.position.x += toHero.x * this.speed * dt;
-          this.position.z += toHero.z * this.speed * dt;
-          if (dist < this.attackRadius) damageHero(this.damage * dt);
+          this.position.x += toTarget.x * this.speed * dt;
+          this.position.z += toTarget.z * this.speed * dt;
+          if (dist < this.attackRadius) damagePlayer(this.damage * dt, target === heroPos);
 
         } else if (this.type === 'brute') {
-          this.position.x += toHero.x * this.speed * dt;
-          this.position.z += toHero.z * this.speed * dt;
-          if (dist < this.attackRadius) damageHero(this.damage * dt * 1.5);
+          this.position.x += toTarget.x * this.speed * dt;
+          this.position.z += toTarget.z * this.speed * dt;
+          if (dist < this.attackRadius) damagePlayer(this.damage * dt * 1.5, target === heroPos);
 
         } else if (this.type === 'caster') {
           if (dist < 6.0) {
-            this.position.x -= toHero.x * this.speed * dt * 0.7;
-            this.position.z -= toHero.z * this.speed * dt * 0.7;
+            this.position.x -= toTarget.x * this.speed * dt * 0.7;
+            this.position.z -= toTarget.z * this.speed * dt * 0.7;
           } else if (dist > 9.0) {
-            this.position.x += toHero.x * this.speed * dt;
-            this.position.z += toHero.z * this.speed * dt;
+            this.position.x += toTarget.x * this.speed * dt;
+            this.position.z += toTarget.z * this.speed * dt;
           }
 
           this.shootTimer -= dt;
           if (this.shootTimer <= 0) {
             this.shootTimer = 2.4;
-            spawnEnemyProjectile(this.position, toHero);
+            spawnEnemyProjectile(this.position, toTarget);
           }
 
         } else if (this.type === 'boss') {
-          this.position.x += toHero.x * this.speed * dt;
-          this.position.z += toHero.z * this.speed * dt;
+          this.position.x += toTarget.x * this.speed * dt;
+          this.position.z += toTarget.z * this.speed * dt;
 
           const pct = Math.max(0, Math.min(100, (this.hp / this.maxHp) * 100));
           document.getElementById('boss-hp-fill').style.width = pct + '%';
           document.getElementById('boss-hp-text').textContent = Math.round(pct) + '%';
 
-          if (dist < this.attackRadius) damageHero(this.damage * dt * 2.0);
+          if (dist < this.attackRadius) damagePlayer(this.damage * dt * 2.0, target === heroPos);
 
           this.slamTimer -= dt;
           if (this.slamTimer <= 0) {
@@ -2189,88 +2574,128 @@
 
     const enemies = [];
 
-    function spawnEnemy(type) {
-      const angle = Math.random() * Math.PI * 2;
-      const radius = GAME_CONFIG.ARENA_RADIUS - 0.5;
-      const spawnPos = new THREE.Vector3(Math.cos(angle) * radius, 0, Math.sin(angle) * radius);
-      const enemy = new EnemyEntity(type, spawnPos);
+    function spawnEnemy(type, pos = null, id = null) {
+      let spawnPos = pos;
+      if (!spawnPos) {
+        const angle = Math.random() * Math.PI * 2;
+        const radius = GAME_CONFIG.ARENA_RADIUS - 0.5;
+        spawnPos = new THREE.Vector3(Math.cos(angle) * radius, 0, Math.sin(angle) * radius);
+      }
+      const enemy = new EnemyEntity(type, spawnPos, id);
       enemies.push(enemy);
     }
 
+    function syncEnemiesFromHost(hostEnemiesList) {
+      if (!hostEnemiesList) return;
+      hostEnemiesList.forEach(item => {
+        let existing = enemies.find(e => e.id === item.id);
+        if (!existing) {
+          spawnEnemy(item.type, new THREE.Vector3(item.x, 0, item.z), item.id);
+        } else {
+          existing.position.set(item.x, 0, item.z);
+          existing.hp = item.hp;
+        }
+      });
+    }
+
     /* ==========================================================================
-       8. PROJECTILES, SLASH WAVES & VFX
+       8. PROJECTILES, SLASH WAVES, ROCKETS & BLACK HOLES
        ========================================================================== */
     const projectiles = [];
     const slashWaves = [];
+    const gunnerRockets = [];
+    const blackHoles = [];
     const shockwaves = [];
     const explosions = [];
 
     function spawnSlashWave(origin, dir, combo) {
       const waveGeo = new THREE.RingGeometry(1.2, 2.4, 16, 1, 0, Math.PI * 0.9);
       const waveColor = (combo === 2) ? 0xffb703 : (combo === 1 ? 0x9d4edd : 0x00f5d4);
-      const waveMat = new THREE.MeshBasicMaterial({
-        color: waveColor,
-        side: THREE.DoubleSide,
-        transparent: true,
-        opacity: 0.85,
-        blending: THREE.AdditiveBlending
-      });
-      const mesh = new THREE.Mesh(waveGeo, waveMat);
+      const mesh = new THREE.Mesh(waveGeo, new THREE.MeshBasicMaterial({
+        color: waveColor, side: THREE.DoubleSide, transparent: true, opacity: 0.85, blending: THREE.AdditiveBlending
+      }));
       mesh.rotation.x = Math.PI / 2;
       mesh.rotation.z = Math.atan2(dir.x, dir.z) + Math.PI / 2;
       mesh.position.copy(origin).add(new THREE.Vector3(0, 1.1, 0));
       scene.add(mesh);
 
       slashWaves.push({
-        mesh: mesh,
-        dir: dir.clone().normalize(),
-        speed: 16.0,
-        lifetime: 0.28,
-        damage: state.hero.attackDamage,
-        combo: combo
+        mesh: mesh, dir: dir.clone().normalize(), speed: 17.0, lifetime: 0.3, damage: state.hero.attackDamage
       });
     }
 
+    function spawnGunnerBolts(origin, dir) {
+      for (let i = -1; i <= 1; i += 2) {
+        const bolt = new THREE.Mesh(new THREE.CylinderGeometry(0.08, 0.08, 1.2, 6), new THREE.MeshBasicMaterial({ color: 0x00f5d4 }));
+        bolt.rotation.x = Math.PI / 2;
+        bolt.rotation.z = Math.atan2(dir.x, dir.z);
+        bolt.position.copy(origin).add(new THREE.Vector3(i * 0.4, 1.2, 0));
+        scene.add(bolt);
+
+        projectiles.push({
+          mesh: bolt, dir: dir.clone().normalize(), speed: 28.0, damage: state.hero.attackDamage * 0.65, lifetime: 0.6, isPlayer: true
+        });
+      }
+    }
+
+    function spawnArcanistSpark(origin, dir) {
+      const spark = new THREE.Mesh(new THREE.SphereGeometry(0.3, 8, 8), new THREE.MeshBasicMaterial({ color: 0x9d4edd }));
+      spark.position.copy(origin).add(new THREE.Vector3(0, 1.3, 0));
+      scene.add(spark);
+
+      projectiles.push({
+        mesh: spark, dir: dir.clone().normalize(), speed: 18.0, damage: state.hero.attackDamage * 0.9, lifetime: 0.8, isPlayer: true, isArcanist: true
+      });
+    }
+
+    function spawnOrbitalRocketBarrage(center) {
+      for (let i = 0; i < 8; i++) {
+        setTimeout(() => {
+          if (enemies.length === 0) return;
+          const target = enemies[Math.floor(Math.random() * enemies.length)];
+          const rocket = new THREE.Mesh(new THREE.ConeGeometry(0.25, 0.8, 6), new THREE.MeshBasicMaterial({ color: 0xffb703 }));
+          rocket.position.set(target.position.x + (Math.random() - 0.5) * 4, 15, target.position.z + (Math.random() - 0.5) * 4);
+          rocket.rotation.x = Math.PI;
+          scene.add(rocket);
+
+          gunnerRockets.push({ mesh: rocket, target: target, speed: 24.0, damage: state.hero.attackDamage * 1.5 });
+        }, i * 90);
+      }
+    }
+
+    function spawnSingularityVortex(center) {
+      const vortexGeo = new THREE.RingGeometry(0.5, 4.0, 32);
+      const vortex = new THREE.Mesh(vortexGeo, new THREE.MeshBasicMaterial({
+        color: 0x9d4edd, side: THREE.DoubleSide, transparent: true, opacity: 0.85, blending: THREE.AdditiveBlending
+      }));
+      vortex.rotation.x = -Math.PI / 2;
+      vortex.position.copy(center);
+      vortex.position.y = 0.08;
+      scene.add(vortex);
+
+      blackHoles.push({ mesh: vortex, center: center.clone(), radius: 4.0, lifetime: 3.5, damage: state.hero.attackDamage * 1.8 });
+    }
+
     function spawnEnemyProjectile(origin, dir) {
-      const projGeo = new THREE.SphereGeometry(0.35, 8, 8);
-      const projMat = new THREE.MeshBasicMaterial({ color: 0x00bbf9 });
-      const mesh = new THREE.Mesh(projGeo, projMat);
+      const mesh = new THREE.Mesh(new THREE.SphereGeometry(0.35, 8, 8), new THREE.MeshBasicMaterial({ color: 0x00bbf9 }));
       mesh.position.copy(origin).add(new THREE.Vector3(0, 1.5, 0));
       scene.add(mesh);
 
-      projectiles.push({
-        mesh: mesh,
-        dir: dir.clone().normalize(),
-        speed: 8.5,
-        damage: 18,
-        lifetime: 3.5
-      });
+      projectiles.push({ mesh: mesh, dir: dir.clone().normalize(), speed: 8.5, damage: 18, lifetime: 3.5, isPlayer: false });
     }
 
     function spawnGroundShockwave(center, maxRadius = 8.5, colorHex = 0xff0054) {
       sound.playHit();
       triggerScreenShake();
-      const waveGeo = new THREE.RingGeometry(0.5, 1.4, 32);
-      const waveMat = new THREE.MeshBasicMaterial({
-        color: colorHex,
-        side: THREE.DoubleSide,
-        transparent: true,
-        opacity: 0.9
-      });
-      const mesh = new THREE.Mesh(waveGeo, waveMat);
+      const mesh = new THREE.Mesh(new THREE.RingGeometry(0.5, 1.4, 32), new THREE.MeshBasicMaterial({
+        color: colorHex, side: THREE.DoubleSide, transparent: true, opacity: 0.9
+      }));
       mesh.rotation.x = -Math.PI / 2;
       mesh.position.copy(center);
       mesh.position.y = 0.05;
       scene.add(mesh);
 
-      shockwaves.push({
-        mesh: mesh,
-        radius: 1.0,
-        maxRadius: maxRadius,
-        speed: 12.0,
-        damage: 30,
-        center: center.clone()
-      });
+      shockwaves.push({ mesh: mesh, radius: 1.0, maxRadius: maxRadius, speed: 12.0, damage: 30, center: center.clone() });
     }
 
     function spawnExplosion(pos, colorHex) {
@@ -2283,31 +2708,16 @@
         positions[i * 3] = pos.x;
         positions[i * 3 + 1] = pos.y + 0.8;
         positions[i * 3 + 2] = pos.z;
-
-        velocities.push(new THREE.Vector3(
-          (Math.random() - 0.5) * 8,
-          Math.random() * 6 + 2,
-          (Math.random() - 0.5) * 8
-        ));
+        velocities.push(new THREE.Vector3((Math.random() - 0.5) * 8, Math.random() * 6 + 2, (Math.random() - 0.5) * 8));
       }
 
       geo.setAttribute('position', new THREE.BufferAttribute(positions, 3));
-      const mat = new THREE.PointsMaterial({
-        color: colorHex || 0x00f5d4,
-        size: 0.45,
-        transparent: true,
-        opacity: 1,
-        blending: THREE.AdditiveBlending
-      });
-      const pSystem = new THREE.Points(geo, mat);
+      const pSystem = new THREE.Points(geo, new THREE.PointsMaterial({
+        color: colorHex || 0x00f5d4, size: 0.45, transparent: true, opacity: 1, blending: THREE.AdditiveBlending
+      }));
       scene.add(pSystem);
 
-      explosions.push({
-        pSystem: pSystem,
-        velocities: velocities,
-        positions: positions,
-        lifetime: 0.6
-      });
+      explosions.push({ pSystem: pSystem, velocities: velocities, positions: positions, lifetime: 0.6 });
     }
 
     /* ==========================================================================
@@ -2329,25 +2739,14 @@
 
       for (let i = 0; i < count; i++) {
         let matMeta = MAT_TYPES[0];
-        if (enemyType === 'crawler') {
-          matMeta = Math.random() > 0.4 ? MAT_TYPES[0] : MAT_TYPES[2];
-        } else if (enemyType === 'brute') {
-          matMeta = Math.random() > 0.5 ? MAT_TYPES[2] : MAT_TYPES[1];
-        } else if (enemyType === 'caster') {
-          matMeta = Math.random() > 0.5 ? MAT_TYPES[1] : MAT_TYPES[3];
-        } else if (enemyType === 'boss') {
-          matMeta = MAT_TYPES[i % 4];
-        }
+        if (enemyType === 'crawler') matMeta = Math.random() > 0.4 ? MAT_TYPES[0] : MAT_TYPES[2];
+        else if (enemyType === 'brute') matMeta = Math.random() > 0.5 ? MAT_TYPES[2] : MAT_TYPES[1];
+        else if (enemyType === 'caster') matMeta = Math.random() > 0.5 ? MAT_TYPES[1] : MAT_TYPES[3];
+        else if (enemyType === 'boss') matMeta = MAT_TYPES[i % 4];
 
-        const gemGeo = new THREE.OctahedronGeometry(0.38);
-        const gemMat = new THREE.MeshStandardMaterial({
-          color: matMeta.color,
-          emissive: matMeta.color,
-          emissiveIntensity: 0.8,
-          roughness: 0.1,
-          metalness: 0.8
-        });
-        const mesh = new THREE.Mesh(gemGeo, gemMat);
+        const mesh = new THREE.Mesh(new THREE.OctahedronGeometry(0.38), new THREE.MeshStandardMaterial({
+          color: matMeta.color, emissive: matMeta.color, emissiveIntensity: 0.8, roughness: 0.1, metalness: 0.8
+        }));
         mesh.position.copy(pos);
         mesh.position.y = 0.5;
         scene.add(mesh);
@@ -2355,11 +2754,7 @@
         droppedMaterials.push({
           id: matMeta.id,
           mesh: mesh,
-          velocity: new THREE.Vector3(
-            (Math.random() - 0.5) * 4,
-            Math.random() * 3 + 2,
-            (Math.random() - 0.5) * 4
-          ),
+          velocity: new THREE.Vector3((Math.random() - 0.5) * 4, Math.random() * 3 + 2, (Math.random() - 0.5) * 4),
           bobOffset: Math.random() * Math.PI * 2
         });
       }
@@ -2368,7 +2763,6 @@
     function updateMaterialDrops(dt, heroPos) {
       for (let i = droppedMaterials.length - 1; i >= 0; i--) {
         const drop = droppedMaterials[i];
-
         if (drop.velocity.y > 0 || drop.mesh.position.y > 0.4) {
           drop.mesh.position.x += drop.velocity.x * dt;
           drop.mesh.position.y += drop.velocity.y * dt;
@@ -2377,14 +2771,12 @@
         } else {
           drop.mesh.position.y = 0.4 + Math.sin(Date.now() * 0.005 + drop.bobOffset) * 0.12;
         }
-
         drop.mesh.rotation.y += dt * 3;
 
         const dist = drop.mesh.position.distanceTo(heroPos);
         if (dist < 5.0 || state.phase === 'refinery') {
           const pullDir = new THREE.Vector3().subVectors(heroPos, drop.mesh.position).normalize();
-          const pullSpeed = Math.max(14, 30 - dist * 3);
-          drop.mesh.position.addScaledVector(pullDir, pullSpeed * dt);
+          drop.mesh.position.addScaledVector(pullDir, Math.max(14, 30 - dist * 3) * dt);
 
           if (dist < 1.1) {
             sound.playPickup();
@@ -2402,65 +2794,68 @@
     }
 
     /* ==========================================================================
-       10. COMBAT ACTIONS & REFINED INPUT
+       10. COMBAT ACTIONS (BY HERO CLASS)
        ========================================================================== */
     function performHeroAttack() {
-      if (state.hero.attackCooldown > 0) return;
+      if (state.hero.attackCooldown > 0 || state.hero.isDowned) return;
 
       state.hero.attackCooldown = 0.28 / state.hero.attackSpeed;
-      sound.playSlash();
-
       const combo = state.hero.attackCombo;
       hero.triggerSlashAnimation(combo);
       state.hero.attackCombo = (state.hero.attackCombo + 1) % 3;
 
       const facingDir = new THREE.Vector3(
-        Math.sin(hero.group.rotation.y),
-        0,
-        Math.cos(hero.group.rotation.y)
+        Math.sin(hero.group.rotation.y), 0, Math.cos(hero.group.rotation.y)
       ).normalize();
 
-      // Launch Glowing Slash Wave Projectile
-      spawnSlashWave(hero.position, facingDir, combo);
+      // Broadcast Attack to Peer in Multiplayer
+      net.send({ type: 'ATTACK', facing: { x: facingDir.x, z: facingDir.z }, combo: combo });
 
-      // Radial Melee Hit Check
-      const attackRange = 3.8;
-      const arcThreshold = (combo === 2) ? -1.0 : Math.cos((Math.PI * 0.75) / 2); // 360 Whirlwind on combo 2
+      // Action based on class
+      if (state.heroClass === 'paladin') {
+        sound.playSlash();
+        spawnSlashWave(hero.position, facingDir, combo);
 
-      let hitAny = false;
-      enemies.forEach(enemy => {
-        if (enemy.dead) return;
-        const toEnemy = new THREE.Vector3().subVectors(enemy.position, hero.position);
-        toEnemy.y = 0;
-        const dist = toEnemy.length();
+        const attackRange = 3.8;
+        const arcThreshold = (combo === 2) ? -1.0 : Math.cos((Math.PI * 0.75) / 2);
+        let hitAny = false;
 
-        if (dist <= attackRange) {
-          toEnemy.normalize();
-          const dot = facingDir.dot(toEnemy);
-          if (dot >= arcThreshold) {
-            hitAny = true;
-            const isCrit = Math.random() < state.hero.critChance;
-            let dmg = state.hero.attackDamage;
-            if (combo === 2) dmg *= 1.6; // Combo finisher bonus
-            if (isCrit) dmg *= state.hero.critMult;
-            dmg *= (0.9 + Math.random() * 0.2);
+        enemies.forEach(enemy => {
+          if (enemy.dead) return;
+          const toEnemy = new THREE.Vector3().subVectors(enemy.position, hero.position);
+          toEnemy.y = 0;
+          const dist = toEnemy.length();
 
-            enemy.takeDamage(dmg, isCrit);
-            enemy.position.addScaledVector(toEnemy, 1.0); // Knockback
+          if (dist <= attackRange) {
+            toEnemy.normalize();
+            if (facingDir.dot(toEnemy) >= arcThreshold) {
+              hitAny = true;
+              const isCrit = Math.random() < state.hero.critChance;
+              let dmg = state.hero.attackDamage * (combo === 2 ? 1.6 : 1.0);
+              if (isCrit) dmg *= state.hero.critMult;
+              enemy.takeDamage(dmg, isCrit);
+              enemy.position.addScaledVector(toEnemy, 1.0);
+            }
           }
-        }
-      });
+        });
+        if (hitAny) sound.playHit();
 
-      if (hitAny) sound.playHit();
+      } else if (state.heroClass === 'gunner') {
+        sound.playLaserShot();
+        spawnGunnerBolts(hero.position, facingDir);
+
+      } else if (state.heroClass === 'arcanist') {
+        sound.playMagicSpark();
+        spawnArcanistSpark(hero.position, facingDir);
+      }
     }
 
     function performDash() {
-      if (state.hero.dashTimer > 0) return;
+      if (state.hero.dashTimer > 0 || state.hero.isDowned) return;
 
       state.hero.dashTimer = state.hero.dashCooldown;
       sound.playDash();
 
-      // Determine Dash Direction (Movement or Facing)
       let dir = new THREE.Vector3();
       if (hero.velocity.lengthSq() > 0.01) {
         dir.set(hero.velocity.x, 0, hero.velocity.y).normalize();
@@ -2473,33 +2868,40 @@
       state.hero.dashDuration = 0.18;
       state.hero.invincibleTimer = 0.35;
 
-      // Spawn Dash Ghost Streak
       spawnExplosion(hero.position, 0x00f5d4);
       triggerScreenShake();
     }
 
     function performSpecialNova() {
-      if (state.hero.specialCharge < state.hero.specialMaxCharge) return;
+      if (state.hero.specialCharge < state.hero.specialMaxCharge || state.hero.isDowned) return;
 
       state.hero.specialCharge = 0;
       updateSpecialButton();
 
-      sound.playNova();
-      triggerScreenShake();
+      net.send({ type: 'SPECIAL', pos: { x: hero.position.x, z: hero.position.z } });
 
-      // Spawn Cosmic Nova Shockwaves & Particles
-      spawnExplosion(hero.position, 0x9d4edd);
-      spawnGroundShockwave(hero.position, 13.0, 0x9d4edd);
+      if (state.heroClass === 'paladin') {
+        sound.playNova();
+        triggerScreenShake();
+        spawnExplosion(hero.position, 0x9d4edd);
+        spawnGroundShockwave(hero.position, 13.0, 0x9d4edd);
 
-      // Hit all enemies in arena
-      enemies.forEach(enemy => {
-        if (enemy.dead) return;
-        const dist = enemy.position.distanceTo(hero.position);
-        if (dist < 13.5) {
-          const dmg = state.hero.attackDamage * 3.8;
-          enemy.takeDamage(dmg, true);
-        }
-      });
+        enemies.forEach(enemy => {
+          if (!enemy.dead && enemy.position.distanceTo(hero.position) < 13.5) {
+            enemy.takeDamage(state.hero.attackDamage * 3.8, true);
+          }
+        });
+
+      } else if (state.heroClass === 'gunner') {
+        sound.playNova();
+        triggerScreenShake();
+        spawnOrbitalRocketBarrage(hero.position);
+
+      } else if (state.heroClass === 'arcanist') {
+        sound.playNova();
+        triggerScreenShake();
+        spawnSingularityVortex(hero.position);
+      }
     }
 
     function toggleAutoAttack() {
@@ -2516,28 +2918,70 @@
       sound.playPickup();
     }
 
-    function damageHero(amount) {
-      if (state.hero.invincibleTimer > 0 || state.phase !== 'playing') return;
+    function damagePlayer(amount, isLocal) {
+      if (isLocal) {
+        if (state.hero.invincibleTimer > 0 || state.phase !== 'playing' || state.hero.isDowned) return;
 
-      if (state.hero.shield > 0) {
-        if (state.hero.shield >= amount) {
-          state.hero.shield -= amount;
-          amount = 0;
+        if (state.hero.shield > 0) {
+          if (state.hero.shield >= amount) {
+            state.hero.shield -= amount;
+            amount = 0;
+          } else {
+            amount -= state.hero.shield;
+            state.hero.shield = 0;
+          }
+        }
+
+        if (amount > 0) {
+          state.hero.hp -= amount;
+          triggerScreenShake();
+        }
+
+        state.hero.shieldRegenTimer = 3.0;
+        updateVitalsHUD();
+
+        if (state.hero.hp <= 0) {
+          if (state.gameMode === 'multiplayer' && state.teammate.connected && !state.teammate.isDowned) {
+            // Enter Downed Co-op state
+            state.hero.isDowned = true;
+            state.hero.hp = 0;
+            document.getElementById('revive-banner').style.display = 'block';
+            document.getElementById('revive-banner').textContent = 'YOU ARE DOWNED! TEAMMATE CAN REVIVE YOU!';
+          } else {
+            handleGameOver(false);
+          }
+        }
+      }
+    }
+
+    function checkCoopReviveState() {
+      if (state.gameMode !== 'multiplayer' || !state.teammate.connected) return;
+
+      const dist = hero.position.distanceTo(remoteHero.position);
+
+      // If teammate is downed, local hero revives them by standing close
+      if (remoteHero.isDowned && !state.hero.isDowned) {
+        document.getElementById('revive-banner').style.display = 'block';
+        document.getElementById('revive-banner').textContent = 'STAND NEAR TEAMMATE TO REVIVE!';
+
+        if (dist < 3.2) {
+          state.hero.reviveProgress += 0.033;
+          document.getElementById('revive-banner').textContent = `REVIVING TEAMMATE... ${Math.round((state.hero.reviveProgress / 3) * 100)}%`;
+
+          if (state.hero.reviveProgress >= 3.0) {
+            state.hero.reviveProgress = 0;
+            net.send({ type: 'REVIVE_EVENT' });
+            remoteHero.isDowned = false;
+            sound.playReviveChime();
+            document.getElementById('revive-banner').style.display = 'none';
+          }
         } else {
-          amount -= state.hero.shield;
-          state.hero.shield = 0;
+          state.hero.reviveProgress = 0;
         }
       }
 
-      if (amount > 0) {
-        state.hero.hp -= amount;
-        triggerScreenShake();
-      }
-
-      state.hero.shieldRegenTimer = 3.0;
-      updateVitalsHUD();
-
-      if (state.hero.hp <= 0) {
+      // Both downed -> Game Over
+      if (state.hero.isDowned && remoteHero.isDowned) {
         handleGameOver(false);
       }
     }
@@ -2559,10 +3003,8 @@
       }
 
       const projected = worldPos.clone().project(camera);
-      const x = (projected.x * 0.5 + 0.5) * window.innerWidth;
-      const y = (-(projected.y * 0.5) + 0.5) * window.innerHeight;
-      item.style.left = `${x}px`;
-      item.style.top = `${y}px`;
+      item.style.left = `${(projected.x * 0.5 + 0.5) * window.innerWidth}px`;
+      item.style.top = `${(-(projected.y * 0.5) + 0.5) * window.innerHeight}px`;
 
       container.appendChild(item);
       setTimeout(() => {
@@ -2597,9 +3039,13 @@
 
       document.getElementById('refinery-modal').style.display = 'none';
       document.getElementById('start-modal').style.display = 'none';
-      document.getElementById('wave-display-title').textContent = `WAVE ${waveNumber} / ${GAME_CONFIG.TOTAL_WAVES}`;
+      document.getElementById('revive-banner').style.display = 'none';
 
-      if (waveNumber === 5) {
+      const modeTitle = state.gameMode === 'multiplayer' ? 'CO-OP' : (state.soloSubMode === 'endless' ? 'ENDLESS' : 'CLASSIC');
+      document.getElementById('wave-display-title').textContent = `WAVE ${waveNumber} ${state.soloSubMode === 'endless' ? '' : '/ 5'}`;
+      document.getElementById('hud-mode-badge').textContent = `${modeTitle.toUpperCase()} • ${state.heroClass.toUpperCase()}`;
+
+      if (waveNumber % 5 === 0) {
         document.getElementById('boss-hud').style.display = 'block';
         spawnEnemy('boss');
       }
@@ -2613,7 +3059,6 @@
       state.waveTimeRemaining -= dt;
       state.runTimer += dt;
 
-      // Charge Special Nova over time (+3% per second)
       if (state.hero.specialCharge < state.hero.specialMaxCharge) {
         state.hero.specialCharge = Math.min(state.hero.specialMaxCharge, state.hero.specialCharge + dt * 3.5);
         updateSpecialButton();
@@ -2628,7 +3073,7 @@
 
       waveSpawnTimer -= dt;
       if (waveSpawnTimer <= 0 && state.waveTimeRemaining > 2) {
-        const interval = Math.max(0.7, 2.5 - state.currentWave * 0.35);
+        const interval = Math.max(0.6, 2.5 - state.currentWave * 0.25);
         waveSpawnTimer = interval;
 
         if (state.currentWave === 1) {
@@ -2637,27 +3082,23 @@
           spawnEnemy(Math.random() > 0.4 ? 'crawler' : 'brute');
         } else if (state.currentWave === 3) {
           spawnEnemy(Math.random() > 0.5 ? 'caster' : 'crawler');
-        } else if (state.currentWave === 4) {
+        } else {
           const r = Math.random();
-          if (r < 0.45) spawnEnemy('crawler');
+          if (r < 0.4) spawnEnemy('crawler');
           else if (r < 0.75) spawnEnemy('brute');
           else spawnEnemy('caster');
-        } else if (state.currentWave === 5) {
-          if (aliveCount < 6) spawnEnemy(Math.random() > 0.5 ? 'crawler' : 'caster');
         }
       }
 
-      if (state.waveTimeRemaining <= 0 || (state.currentWave === 5 && enemies.some(e => e.type === 'boss' && e.dead))) {
+      if (state.waveTimeRemaining <= 0 || (state.currentWave % 5 === 0 && enemies.some(e => e.type === 'boss' && e.dead))) {
         completeWave();
       }
     }
 
     function completeWave() {
-      enemies.forEach(e => {
-        if (!e.dead && e.type !== 'boss') e.die();
-      });
+      enemies.forEach(e => { if (!e.dead && e.type !== 'boss') e.die(); });
 
-      if (state.currentWave >= GAME_CONFIG.TOTAL_WAVES) {
+      if (state.soloSubMode !== 'endless' && state.currentWave >= GAME_CONFIG.TOTAL_WAVES) {
         handleGameOver(true);
       } else {
         openRefinery();
@@ -2774,7 +3215,7 @@
         state.crucible.predictedRecipe = null;
         document.getElementById('preview-icon').textContent = '💎';
         document.getElementById('preview-name').textContent = 'Select Materials';
-        document.getElementById('preview-stats').textContent = 'Insert 2 materials into the crucible';
+        document.getElementById('preview-stats').textContent = 'Insert 2 minerals into the crucible';
         btnForge.disabled = true;
       }
     }
@@ -2842,10 +3283,7 @@
 
       insertMaterialToCrucible(available[0]);
       insertMaterialToCrucible(available[1]);
-
-      setTimeout(() => {
-        executeForge();
-      }, 200);
+      setTimeout(() => executeForge(), 200);
     }
 
     function updateInventoryHUD() {
@@ -2892,9 +3330,12 @@
       const overlay = document.getElementById('special-cooldown');
       const pct = (state.hero.specialCharge / state.hero.specialMaxCharge) * 100;
 
+      const specialNames = { paladin: 'NOVA', gunner: 'BARRAGE', arcanist: 'VORTEX' };
+      const sName = specialNames[state.heroClass] || 'NOVA';
+
       if (state.hero.specialCharge >= state.hero.specialMaxCharge) {
         btn.classList.add('ready');
-        lbl.textContent = 'NOVA';
+        lbl.textContent = sName;
         overlay.style.display = 'none';
       } else {
         btn.classList.remove('ready');
@@ -2940,7 +3381,8 @@
         subtitle.textContent = 'The void horrors shattered your defenses.';
       }
 
-      document.getElementById('stat-waves-cleared').textContent = `${isVictory ? 5 : state.currentWave - 1} / 5`;
+      document.getElementById('stat-mode').textContent = `${state.gameMode.toUpperCase()} (${state.soloSubMode})`;
+      document.getElementById('stat-waves-cleared').textContent = `${isVictory ? 5 : state.currentWave - 1} ${state.soloSubMode === 'endless' ? 'Waves' : '/ 5'}`;
       document.getElementById('stat-kills').textContent = state.kills;
       document.getElementById('stat-refined').textContent = state.gearRefinedCount;
       document.getElementById('stat-damage').textContent = Math.round(state.totalDamageDealt);
@@ -2967,6 +3409,10 @@
       slashWaves.length = 0;
       shockwaves.forEach(s => scene.remove(s.mesh));
       shockwaves.length = 0;
+      gunnerRockets.forEach(r => scene.remove(r.mesh));
+      gunnerRockets.length = 0;
+      blackHoles.forEach(b => scene.remove(b.mesh));
+      blackHoles.length = 0;
 
       state.currentWave = 1;
       state.runTimer = 0;
@@ -2975,25 +3421,43 @@
       state.gearRefinedCount = 0;
 
       state.materials = { pyrite: 2, aether: 2, titanium: 2, catalyst: 1 };
-      state.hero.hp = 120;
-      state.hero.maxHp = 120;
-      state.hero.shield = 60;
-      state.hero.maxShield = 60;
-      state.hero.attackDamage = 30;
-      state.hero.moveSpeed = 8.5;
-      state.hero.critChance = 0.15;
+
+      // Base class stat modifiers
+      if (state.heroClass === 'paladin') {
+        state.hero.maxHp = 140;
+        state.hero.maxShield = 70;
+        state.hero.moveSpeed = 8.5;
+        state.hero.attackDamage = 32;
+        state.hero.critChance = 0.15;
+      } else if (state.heroClass === 'gunner') {
+        state.hero.maxHp = 100;
+        state.hero.maxShield = 50;
+        state.hero.moveSpeed = 10.0;
+        state.hero.attackDamage = 26;
+        state.hero.critChance = 0.20;
+      } else if (state.heroClass === 'arcanist') {
+        state.hero.maxHp = 110;
+        state.hero.maxShield = 80;
+        state.hero.moveSpeed = 8.2;
+        state.hero.attackDamage = 34;
+        state.hero.critChance = 0.28;
+      }
+
+      state.hero.hp = state.hero.maxHp;
+      state.hero.shield = state.hero.maxShield;
       state.hero.dashCooldown = 1.1;
-      state.hero.specialCharge = 100; // Ready!
+      state.hero.specialCharge = 100;
+      state.hero.isDowned = false;
 
-      state.gear = {
-        weapon: { name: 'Broad Blade', tier: 1, icon: '⚔️', stat: '+25 ATK' },
-        armor: { name: 'Iron Cuirass', tier: 1, icon: '🛡️', stat: '+120 HP' },
-        boots: { name: 'Runic Striders', tier: 1, icon: '🥾', stat: '+0% SPD' },
-        relic: { name: 'Void Ring', tier: 1, icon: '💍', stat: '+10% CRIT' }
-      };
-
-      hero.position.set(0, 0, 0);
+      hero.setClass(state.heroClass);
+      hero.position.set(state.gameMode === 'multiplayer' && !net.isHost ? 3 : -3, 0, 0);
       hero.updateVisualTier(1);
+
+      // Update Action Icons based on class
+      const attackIcon = { paladin: '⚔️', gunner: '🔫', arcanist: '🔮' };
+      const specialIcon = { paladin: '⚡', gunner: '🚀', arcanist: '🌌' };
+      document.getElementById('attack-btn-icon').textContent = attackIcon[state.heroClass] || '⚔️';
+      document.getElementById('special-btn-icon').textContent = specialIcon[state.heroClass] || '⚡';
 
       updateInventoryHUD();
       updateGearLoadoutUI();
@@ -3004,47 +3468,37 @@
     }
 
     /* ==========================================================================
-       14. BULLETPROOF ACTION BUTTONS & CONTROLS BINDING
+       14. CONTROLS BINDING & INTERACTION
        ========================================================================== */
-    // Helper to bind touches and clicks reliably across all devices
     function bindAction(el, callback) {
       if (!el) return;
       let lastTrigger = 0;
-
       const trigger = (e) => {
         const now = Date.now();
-        if (now - lastTrigger < 100) return; // Debounce
+        if (now - lastTrigger < 100) return;
         lastTrigger = now;
-
-        if (e) {
-          e.stopPropagation();
-        }
+        if (e) e.stopPropagation();
         sound.init();
         callback();
       };
-
       el.addEventListener('pointerdown', trigger, { passive: true });
       el.addEventListener('click', trigger);
     }
 
-    // Bind Core Combat Actions
     bindAction(document.getElementById('btn-attack'), performHeroAttack);
     bindAction(document.getElementById('btn-dash'), performDash);
     bindAction(document.getElementById('btn-special'), performSpecialNova);
     bindAction(document.getElementById('btn-auto'), toggleAutoAttack);
 
-    // Click/Tap anywhere on 3D canvas attacks towards click point
     container.addEventListener('pointerdown', (e) => {
       sound.init();
       if (state.phase !== 'playing') return;
 
-      // Right Click = Dash, Left Click = Attack
       if (e.button === 2) {
         performDash();
         return;
       }
 
-      // Convert Screen Click to 3D Arena Plane coordinate
       const rect = container.getBoundingClientRect();
       const mouseX = ((e.clientX - rect.left) / rect.width) * 2 - 1;
       const mouseY = -((e.clientY - rect.top) / rect.height) * 2 + 1;
@@ -3086,9 +3540,7 @@
     });
 
     window.addEventListener('pointermove', (e) => {
-      if (joystickActive && e.pointerId === joystickTouchId) {
-        handleJoystickMove(e.clientX, e.clientY);
-      }
+      if (joystickActive && e.pointerId === joystickTouchId) handleJoystickMove(e.clientX, e.clientY);
     });
 
     const endJoystick = (e) => {
@@ -3107,7 +3559,6 @@
       const dy = clientY - joystickOrigin.y;
       const maxRadius = 45;
       const dist = Math.sqrt(dx * dx + dy * dy);
-
       const normX = dist > 0 ? dx / dist : 0;
       const normY = dist > 0 ? dy / dist : 0;
       const clampedDist = Math.min(dist, maxRadius);
@@ -3122,12 +3573,6 @@
       sound.init();
       const k = e.key.toLowerCase();
       keys[k] = true;
-
-      // Start game immediately if on start screen
-      if (state.phase === 'title') {
-        resetGame();
-        return;
-      }
 
       if (e.key === ' ' || k === 'f' || k === 'j') {
         e.preventDefault();
@@ -3144,16 +3589,11 @@
       }
     });
 
-    window.addEventListener('keyup', (e) => {
-      keys[e.key.toLowerCase()] = false;
-    });
+    window.addEventListener('keyup', (e) => { keys[e.key.toLowerCase()] = false; });
 
     function updateKeyboardMovement() {
       if (joystickActive) return;
-
-      let moveX = 0;
-      let moveZ = 0;
-
+      let moveX = 0, moveZ = 0;
       if (keys['w'] || keys['arrowup']) moveZ -= 1;
       if (keys['s'] || keys['arrowdown']) moveZ += 1;
       if (keys['a'] || keys['arrowleft']) moveX -= 1;
@@ -3167,21 +3607,109 @@
       }
     }
 
+    // Menu Mode & Class Selector Tabs
+    document.getElementById('tab-solo').addEventListener('click', () => {
+      sound.playPickup();
+      state.gameMode = 'solo';
+      document.getElementById('tab-solo').classList.add('active');
+      document.getElementById('tab-mp').classList.remove('active');
+      document.getElementById('solo-panel').style.display = 'flex';
+      document.getElementById('mp-panel').style.display = 'none';
+    });
+
+    document.getElementById('tab-mp').addEventListener('click', () => {
+      sound.playPickup();
+      state.gameMode = 'multiplayer';
+      document.getElementById('tab-mp').classList.add('active');
+      document.getElementById('tab-solo').classList.remove('active');
+      document.getElementById('solo-panel').style.display = 'none';
+      document.getElementById('mp-panel').style.display = 'flex';
+      if (!net.roomCode) net.initHost();
+    });
+
+    // Sub-mode toggle
+    document.querySelectorAll('.sub-mode-card').forEach(card => {
+      card.addEventListener('click', () => {
+        sound.playPickup();
+        document.querySelectorAll('.sub-mode-card').forEach(c => c.classList.remove('selected'));
+        card.classList.add('selected');
+        state.soloSubMode = card.dataset.sub;
+      });
+    });
+
+    // Class selection cards
+    document.querySelectorAll('.class-card').forEach(card => {
+      card.addEventListener('click', () => {
+        sound.playPickup();
+        document.querySelectorAll('.class-card').forEach(c => c.classList.remove('selected'));
+        card.classList.add('selected');
+        state.heroClass = card.dataset.class;
+        hero.setClass(state.heroClass);
+      });
+    });
+
+    // Multiplayer Host / Join sub-tabs
+    document.getElementById('btn-host-room').addEventListener('click', () => {
+      sound.playPickup();
+      document.getElementById('btn-host-room').classList.add('active');
+      document.getElementById('btn-join-room-tab').classList.remove('active');
+      document.getElementById('host-view').style.display = 'block';
+      document.getElementById('join-view').style.display = 'none';
+      if (!net.roomCode) net.initHost();
+    });
+
+    document.getElementById('btn-join-room-tab').addEventListener('click', () => {
+      sound.playPickup();
+      document.getElementById('btn-join-room-tab').classList.add('active');
+      document.getElementById('btn-host-room').classList.remove('active');
+      document.getElementById('host-view').style.display = 'none';
+      document.getElementById('join-view').style.display = 'block';
+    });
+
+    document.getElementById('btn-copy-code').addEventListener('click', () => {
+      const code = net.roomCode;
+      navigator.clipboard.writeText(code);
+      document.getElementById('btn-copy-code').textContent = 'COPIED!';
+      setTimeout(() => document.getElementById('btn-copy-code').textContent = 'COPY', 1500);
+    });
+
+    document.getElementById('btn-connect-peer').addEventListener('click', () => {
+      const code = document.getElementById('input-room-code').value.trim();
+      if (code) {
+        sound.init();
+        net.joinRoom(code);
+      }
+    });
+
+    // Auto-fill from URL param ?room=XXXX
+    const urlParams = new URLSearchParams(window.location.search);
+    const roomParam = urlParams.get('room');
+    if (roomParam) {
+      document.getElementById('tab-mp').click();
+      document.getElementById('btn-join-room-tab').click();
+      document.getElementById('input-room-code').value = roomParam;
+      setTimeout(() => net.joinRoom(roomParam), 500);
+    }
+
     // Refinery Button Binds
     bindAction(document.getElementById('card-pyrite'), () => insertMaterialToCrucible('pyrite'));
     bindAction(document.getElementById('card-aether'), () => insertMaterialToCrucible('aether'));
     bindAction(document.getElementById('card-titanium'), () => insertMaterialToCrucible('titanium'));
     bindAction(document.getElementById('card-catalyst'), () => insertMaterialToCrucible('catalyst'));
-
     bindAction(document.getElementById('forge-slot-1'), () => clearCrucibleSlot(1));
     bindAction(document.getElementById('forge-slot-2'), () => clearCrucibleSlot(2));
-
     bindAction(document.getElementById('btn-do-forge'), executeForge);
     bindAction(document.getElementById('btn-quick-forge'), executeAutoForge);
     bindAction(document.getElementById('btn-next-wave'), () => startWave(state.currentWave + 1));
 
-    // Start & Restart Binds
-    bindAction(document.getElementById('btn-start-game'), resetGame);
+    // Start Game Button
+    bindAction(document.getElementById('btn-start-game'), () => {
+      if (state.gameMode === 'multiplayer' && net.conn && net.isHost) {
+        net.send({ type: 'START_GAME' });
+      }
+      resetGame();
+    });
+
     bindAction(document.getElementById('btn-restart-game'), resetGame);
 
     window.addEventListener('resize', () => {
@@ -3201,28 +3729,30 @@
       const dt = Math.min((currentTime - lastTime) / 1000, 0.1);
       lastTime = currentTime;
 
-      // Update Movement & Hero
       updateKeyboardMovement();
       hero.update(dt);
+      if (remoteHero) remoteHero.update(dt);
 
-      // Camera Tracking
-      camera.position.x = THREE.MathUtils.lerp(camera.position.x, hero.position.x * 0.45, dt * 4.0);
-      camera.position.z = THREE.MathUtils.lerp(camera.position.z, 22 + hero.position.z * 0.45, dt * 4.0);
-      camera.lookAt(hero.position.x * 0.35, 0, hero.position.z * 0.35);
+      // Camera Tracking (Follow midpoint if multiplayer)
+      let camTargetX = hero.position.x;
+      let camTargetZ = hero.position.z;
+      if (state.gameMode === 'multiplayer' && remoteHero.group.visible) {
+        camTargetX = (hero.position.x + remoteHero.position.x) * 0.5;
+        camTargetZ = (hero.position.z + remoteHero.position.z) * 0.5;
+      }
 
-      // Background Animations
+      camera.position.x = THREE.MathUtils.lerp(camera.position.x, camTargetX * 0.45, dt * 4.0);
+      camera.position.z = THREE.MathUtils.lerp(camera.position.z, 22 + camTargetZ * 0.45, dt * 4.0);
+      camera.lookAt(camTargetX * 0.35, 0, camTargetZ * 0.35);
+
       dustParticles.rotation.y += dt * 0.03;
-      pylonMeshes.forEach((mesh, idx) => {
-        mesh.rotation.y += dt * (1 + idx * 0.3);
-      });
+      pylonMeshes.forEach((mesh, idx) => { mesh.rotation.y += dt * (1 + idx * 0.3); });
 
-      // Timers & Cooldowns
       if (state.hero.attackCooldown > 0) state.hero.attackCooldown -= dt;
       if (state.hero.dashTimer > 0) state.hero.dashTimer -= dt;
       if (state.hero.invincibleTimer > 0) state.hero.invincibleTimer -= dt;
       updateCooldownOverlays();
 
-      // Shield Regeneration
       if (state.hero.shieldRegenTimer > 0) {
         state.hero.shieldRegenTimer -= dt;
       } else if (state.hero.shield < state.hero.maxShield) {
@@ -3230,30 +3760,26 @@
         updateVitalsHUD();
       }
 
-      // Intelligent Auto-Targeting & Attack
-      if (state.hero.autoAttack && state.phase === 'playing') {
+      // Auto-Attack AI
+      if (state.hero.autoAttack && state.phase === 'playing' && !state.hero.isDowned) {
         let closest = null;
         let minDist = 14.0;
         enemies.forEach(e => {
           if (e.dead) return;
           const d = e.position.distanceTo(hero.position);
-          if (d < minDist) {
-            minDist = d;
-            closest = e;
-          }
+          if (d < minDist) { minDist = d; closest = e; }
         });
 
         if (closest) {
           hero.targetRotation = Math.atan2(closest.position.x - hero.position.x, closest.position.z - hero.position.z);
           hero.group.rotation.y = hero.targetRotation;
-
-          if (minDist <= 3.8 && state.hero.attackCooldown <= 0) {
-            performHeroAttack();
-          }
+          if (minDist <= 3.8 && state.hero.attackCooldown <= 0) performHeroAttack();
         }
       }
 
-      // Waves & Enemy AI
+      // Check Revives in Co-op
+      if (state.gameMode === 'multiplayer') checkCoopReviveState();
+
       if (state.phase === 'playing') {
         updateWaveSpawning(dt);
 
@@ -3269,20 +3795,17 @@
         updateRefineryTimer(dt);
       }
 
-      // Update Drops
       updateMaterialDrops(dt, hero.position);
 
-      // Update Slash Waves
+      // Slash Waves
       for (let i = slashWaves.length - 1; i >= 0; i--) {
         const wave = slashWaves[i];
         wave.mesh.position.addScaledVector(wave.dir, wave.speed * dt);
         wave.lifetime -= dt;
-        wave.mesh.material.opacity = Math.max(0, wave.lifetime / 0.28);
+        wave.mesh.material.opacity = Math.max(0, wave.lifetime / 0.3);
 
-        // Check Hit Against Enemies
         enemies.forEach(enemy => {
-          if (enemy.dead) return;
-          if (enemy.position.distanceTo(wave.mesh.position) < 2.0) {
+          if (!enemy.dead && enemy.position.distanceTo(wave.mesh.position) < 2.0) {
             enemy.takeDamage(wave.damage * 0.7, false);
             enemy.position.addScaledVector(wave.dir, 0.4);
           }
@@ -3294,18 +3817,28 @@
         }
       }
 
-      // Update Enemy Projectiles
+      // Projectiles (Gunner bolts, Arcanist sparks, Enemy plasma)
       for (let i = projectiles.length - 1; i >= 0; i--) {
         const proj = projectiles[i];
         proj.mesh.position.addScaledVector(proj.dir, proj.speed * dt);
         proj.lifetime -= dt;
 
-        if (proj.mesh.position.distanceTo(hero.position) < 1.2) {
-          damageHero(proj.damage);
-          spawnExplosion(proj.mesh.position, 0x00bbf9);
-          scene.remove(proj.mesh);
-          projectiles.splice(i, 1);
-          continue;
+        if (proj.isPlayer) {
+          // Hits enemies
+          enemies.forEach(enemy => {
+            if (!enemy.dead && enemy.position.distanceTo(proj.mesh.position) < 1.4) {
+              enemy.takeDamage(proj.damage, false);
+              spawnExplosion(proj.mesh.position, 0x00f5d4);
+              proj.lifetime = 0;
+            }
+          });
+        } else {
+          // Hits local hero
+          if (proj.mesh.position.distanceTo(hero.position) < 1.2) {
+            damagePlayer(proj.damage, true);
+            spawnExplosion(proj.mesh.position, 0x00bbf9);
+            proj.lifetime = 0;
+          }
         }
 
         if (proj.lifetime <= 0) {
@@ -3314,7 +3847,56 @@
         }
       }
 
-      // Update Shockwaves
+      // Gunner Orbital Rockets
+      for (let i = gunnerRockets.length - 1; i >= 0; i--) {
+        const rocket = gunnerRockets[i];
+        if (rocket.target && !rocket.target.dead) {
+          const toTarget = new THREE.Vector3().subVectors(rocket.target.position, rocket.mesh.position).normalize();
+          rocket.mesh.position.addScaledVector(toTarget, rocket.speed * dt);
+          if (rocket.mesh.position.distanceTo(rocket.target.position) < 1.2) {
+            rocket.target.takeDamage(rocket.damage, true);
+            spawnExplosion(rocket.mesh.position, 0xffb703);
+            scene.remove(rocket.mesh);
+            gunnerRockets.splice(i, 1);
+            continue;
+          }
+        } else {
+          rocket.mesh.position.y -= rocket.speed * dt;
+          if (rocket.mesh.position.y <= 0) {
+            spawnExplosion(rocket.mesh.position, 0xffb703);
+            scene.remove(rocket.mesh);
+            gunnerRockets.splice(i, 1);
+            continue;
+          }
+        }
+      }
+
+      // Arcanist Black Hole Vortexes
+      for (let i = blackHoles.length - 1; i >= 0; i--) {
+        const hole = blackHoles[i];
+        hole.lifetime -= dt;
+        hole.mesh.rotation.z += dt * 4;
+
+        enemies.forEach(enemy => {
+          if (!enemy.dead) {
+            const d = enemy.position.distanceTo(hole.center);
+            if (d < hole.radius) {
+              // Pull toward vortex center
+              const pull = new THREE.Vector3().subVectors(hole.center, enemy.position).normalize();
+              enemy.position.addScaledVector(pull, 6.0 * dt);
+              enemy.takeDamage(hole.damage * dt, false);
+            }
+          }
+        });
+
+        if (hole.lifetime <= 0) {
+          spawnExplosion(hole.center, 0x9d4edd);
+          scene.remove(hole.mesh);
+          blackHoles.splice(i, 1);
+        }
+      }
+
+      // Shockwaves
       for (let i = shockwaves.length - 1; i >= 0; i--) {
         const wave = shockwaves[i];
         wave.radius += wave.speed * dt;
@@ -3322,7 +3904,7 @@
         wave.mesh.material.opacity = Math.max(0, 1 - (wave.radius / wave.maxRadius));
 
         if (wave.center.distanceTo(hero.position) < wave.radius && wave.center.distanceTo(hero.position) > wave.radius - 0.8) {
-          damageHero(wave.damage * dt * 3);
+          damagePlayer(wave.damage * dt * 3, true);
         }
 
         if (wave.radius >= wave.maxRadius) {
@@ -3331,7 +3913,7 @@
         }
       }
 
-      // Update Particle Explosions
+      // Explosions
       for (let i = explosions.length - 1; i >= 0; i--) {
         const exp = explosions[i];
         exp.lifetime -= dt;
@@ -3351,7 +3933,6 @@
         }
       }
 
-      // Render Scene
       renderer.render(scene, camera);
     }
 
