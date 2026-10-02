@@ -2062,6 +2062,9 @@
       }
     ];
 
+    let hero = null;
+    let net = null;
+
     /* ==========================================================================
        3. GAME STATE MANAGEMENT
        ========================================================================== */
@@ -2281,9 +2284,9 @@
       renderClassSelectionCards(monthIndex);
 
       // 5. Update local hero visual if already initialized
-      if (typeof hero !== 'undefined' && hero) {
+      if (hero) {
         hero.setClass(state.heroClass, theme.classes[state.selectedClassIndex]);
-        if (hero.nameplate) hero.nameplate.update(state.username, 1.0, false, typeof net !== 'undefined' && net.isHost);
+        if (hero.nameplate) hero.nameplate.update(state.username, 1.0, false, !!(net && net.isHost));
       }
     }
 
@@ -2397,7 +2400,7 @@
         this.isRemote = isRemote;
         this.peerId = peerId;
         this.username = username;
-        this.isHost = (!isRemote && typeof net !== 'undefined' && net && net.isHost);
+        this.isHost = (!isRemote && !!(net && net.isHost));
         this.group = new THREE.Group();
         this.position = this.group.position;
         this.position.set(isRemote ? 3 : 0, 0, 0);
@@ -2692,7 +2695,7 @@
       }
     }
 
-    const hero = new HeroEntity(false, 'local', state.username, state.heroClass);
+    hero = new HeroEntity(false, 'local', state.username, state.heroClass);
     const remoteHeroes = new Map();
 
     /* ==========================================================================
@@ -3646,7 +3649,7 @@
       }
     }
 
-    const net = new NetworkManager();
+    net = new NetworkManager();
 
     /* ==========================================================================
        10. COMBAT ACTIONS (BY HERO CLASS)
