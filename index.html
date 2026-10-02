@@ -1,0 +1,3475 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <title>BROADROADS | Isometric Gear Refinery Arena</title>
+  <meta name="description" content="Fast-paced 3D isometric action arena & gear refinery. Survive waves, harvest raw materials, and forge legendary gear.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@500;700;900&family=JetBrains+Mono:wght@500;700&family=Outfit:wght@400;600;800;900&display=swap" rel="stylesheet">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+
+  <style>
+    :root {
+      --bg-dark: #060814;
+      --bg-card: rgba(13, 19, 38, 0.82);
+      --bg-glass: rgba(18, 26, 52, 0.65);
+      --border-cyan: rgba(0, 245, 212, 0.45);
+      --border-gold: rgba(255, 183, 3, 0.5);
+      --neon-cyan: #00f5d4;
+      --neon-blue: #00bbf9;
+      --neon-gold: #ffb703;
+      --neon-orange: #fb8500;
+      --neon-purple: #9d4edd;
+      --neon-red: #ff0054;
+      --neon-green: #38b000;
+      --text-main: #f0f4fc;
+      --text-muted: #8896b3;
+      --font-title: 'Chakra Petch', sans-serif;
+      --font-body: 'Outfit', sans-serif;
+      --font-mono: 'JetBrains Mono', monospace;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      user-select: none;
+      -webkit-user-select: none;
+      -webkit-touch-callout: none;
+      touch-action: none;
+    }
+
+    html, body {
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      background-color: var(--bg-dark);
+      color: var(--text-main);
+      font-family: var(--font-body);
+      position: fixed;
+    }
+
+    #canvas-container {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      z-index: 1;
+      display: block;
+    }
+
+    /* Floating UI Container */
+    #ui-layer {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      z-index: 10;
+      pointer-events: none;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      padding: env(safe-area-inset-top, 12px) env(safe-area-inset-right, 16px) env(safe-area-inset-bottom, 16px) env(safe-area-inset-left, 16px);
+    }
+
+    /* Top HUD */
+    .top-hud {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 12px;
+      pointer-events: auto;
+    }
+
+    .hero-vitals {
+      background: var(--bg-card);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border: 1px solid var(--border-cyan);
+      border-radius: 12px;
+      padding: 10px 14px;
+      min-width: 190px;
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5), inset 0 0 15px rgba(0, 245, 212, 0.1);
+    }
+
+    .vitals-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 6px;
+    }
+
+    .hero-name {
+      font-family: var(--font-title);
+      font-weight: 900;
+      font-size: 13px;
+      letter-spacing: 1px;
+      color: var(--neon-cyan);
+      text-transform: uppercase;
+      text-shadow: 0 0 8px rgba(0, 245, 212, 0.6);
+    }
+
+    .hero-level {
+      font-family: var(--font-mono);
+      font-size: 11px;
+      color: var(--neon-gold);
+      background: rgba(255, 183, 3, 0.15);
+      padding: 2px 6px;
+      border-radius: 4px;
+      border: 1px solid rgba(255, 183, 3, 0.3);
+    }
+
+    .bar-wrap {
+      margin-bottom: 5px;
+    }
+
+    .bar-label {
+      font-family: var(--font-mono);
+      font-size: 10px;
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 2px;
+      color: var(--text-muted);
+    }
+
+    .bar-bg {
+      width: 100%;
+      height: 7px;
+      background: rgba(255, 255, 255, 0.1);
+      border-radius: 4px;
+      overflow: hidden;
+      position: relative;
+    }
+
+    .bar-fill {
+      height: 100%;
+      width: 100%;
+      transition: width 0.15s ease-out;
+      border-radius: 4px;
+    }
+
+    .hp-fill {
+      background: linear-gradient(90deg, #ff0054, #ff5400);
+      box-shadow: 0 0 10px rgba(255, 0, 84, 0.7);
+    }
+
+    .shield-fill {
+      background: linear-gradient(90deg, #00bbf9, #00f5d4);
+      box-shadow: 0 0 10px rgba(0, 245, 212, 0.7);
+    }
+
+    /* Wave Banner in HUD */
+    .wave-center-hud {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      background: var(--bg-card);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border: 1px solid var(--border-gold);
+      border-radius: 12px;
+      padding: 8px 18px;
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5), inset 0 0 15px rgba(255, 183, 3, 0.1);
+    }
+
+    .wave-title {
+      font-family: var(--font-title);
+      font-size: 14px;
+      font-weight: 900;
+      letter-spacing: 1.5px;
+      color: var(--neon-gold);
+      text-transform: uppercase;
+      text-shadow: 0 0 8px rgba(255, 183, 3, 0.6);
+    }
+
+    .wave-timer-text {
+      font-family: var(--font-mono);
+      font-size: 18px;
+      font-weight: 700;
+      color: #fff;
+    }
+
+    .enemies-count {
+      font-family: var(--font-mono);
+      font-size: 10px;
+      color: var(--neon-red);
+      letter-spacing: 0.5px;
+    }
+
+    /* Materials Pouch HUD */
+    .materials-hud {
+      display: flex;
+      flex-direction: column;
+      gap: 5px;
+      background: var(--bg-card);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      border-radius: 12px;
+      padding: 8px 12px;
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
+    }
+
+    .mat-pill {
+      display: flex;
+      align-items: center;
+      gap: 7px;
+      font-family: var(--font-mono);
+      font-size: 11px;
+      font-weight: 700;
+    }
+
+    .mat-dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+
+    .dot-pyrite { background: var(--neon-orange); box-shadow: 0 0 8px var(--neon-orange); }
+    .dot-aether { background: var(--neon-cyan); box-shadow: 0 0 8px var(--neon-cyan); }
+    .dot-titanium { background: var(--neon-green); box-shadow: 0 0 8px var(--neon-green); }
+    .dot-catalyst { background: var(--neon-purple); box-shadow: 0 0 8px var(--neon-purple); }
+
+    /* Boss HP Bar */
+    #boss-hud {
+      position: absolute;
+      top: 90px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: min(88%, 460px);
+      background: rgba(15, 6, 20, 0.85);
+      border: 1px solid var(--neon-red);
+      border-radius: 10px;
+      padding: 8px 14px;
+      backdrop-filter: blur(10px);
+      box-shadow: 0 0 20px rgba(255, 0, 84, 0.4);
+      display: none;
+      z-index: 15;
+      pointer-events: auto;
+    }
+
+    .boss-name {
+      font-family: var(--font-title);
+      font-size: 13px;
+      font-weight: 900;
+      color: var(--neon-red);
+      letter-spacing: 1px;
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 4px;
+    }
+
+    .boss-bar-bg {
+      width: 100%;
+      height: 10px;
+      background: rgba(255, 255, 255, 0.1);
+      border-radius: 5px;
+      overflow: hidden;
+    }
+
+    .boss-bar-fill {
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(90deg, #ff0054, #ff5400, #ffb703);
+      box-shadow: 0 0 12px rgba(255, 0, 84, 0.8);
+      transition: width 0.15s ease-out;
+    }
+
+    /* Floating Combat Text */
+    #fct-layer {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+      z-index: 12;
+      overflow: hidden;
+    }
+
+    .fct-item {
+      position: absolute;
+      font-family: var(--font-title);
+      font-weight: 900;
+      font-size: 16px;
+      transform: translate(-50%, -50%);
+      pointer-events: none;
+      animation: fctFloat 0.85s cubic-bezier(0.18, 0.89, 0.32, 1.28) forwards;
+      white-space: nowrap;
+    }
+
+    @keyframes fctFloat {
+      0% { opacity: 0; transform: translate(-50%, 0) scale(0.6); }
+      20% { opacity: 1; transform: translate(-50%, -20px) scale(1.2); }
+      100% { opacity: 0; transform: translate(-50%, -50px) scale(0.9); }
+    }
+
+    /* Mobile Virtual Joystick & Touch Controls */
+    .mobile-controls {
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+      z-index: 20;
+    }
+
+    /* Joystick Area (Left) */
+    #joystick-zone {
+      position: absolute;
+      bottom: 20px;
+      left: 20px;
+      width: 140px;
+      height: 140px;
+      pointer-events: auto;
+      touch-action: none;
+    }
+
+    .joystick-base {
+      width: 120px;
+      height: 120px;
+      border-radius: 50%;
+      background: rgba(18, 26, 52, 0.45);
+      border: 2px solid rgba(0, 245, 212, 0.35);
+      backdrop-filter: blur(8px);
+      box-shadow: 0 0 20px rgba(0, 245, 212, 0.15), inset 0 0 15px rgba(0, 245, 212, 0.1);
+      position: absolute;
+      top: 10px;
+      left: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .joystick-knob {
+      width: 50px;
+      height: 50px;
+      border-radius: 50%;
+      background: radial-gradient(circle, #00f5d4 0%, #00bbf9 100%);
+      box-shadow: 0 0 15px rgba(0, 245, 212, 0.8);
+      position: absolute;
+      transform: translate(0, 0);
+      pointer-events: none;
+    }
+
+    /* Action Buttons Cluster (Right) */
+    .action-cluster {
+      position: absolute;
+      bottom: 24px;
+      right: 20px;
+      display: grid;
+      grid-template-columns: repeat(2, 68px);
+      grid-template-rows: repeat(2, 68px);
+      gap: 14px;
+      pointer-events: auto;
+    }
+
+    .btn-action {
+      width: 68px;
+      height: 68px;
+      border-radius: 50%;
+      background: var(--bg-card);
+      border: 2px solid rgba(255, 255, 255, 0.2);
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+      color: #fff;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      box-shadow: 0 6px 16px rgba(0, 0, 0, 0.5);
+      transition: transform 0.08s ease, border-color 0.15s, box-shadow 0.15s;
+      position: relative;
+      touch-action: none;
+      outline: none;
+    }
+
+    .btn-action:active {
+      transform: scale(0.92);
+    }
+
+    .btn-attack {
+      grid-column: 2;
+      grid-row: 2;
+      width: 76px;
+      height: 76px;
+      margin-left: -8px;
+      margin-top: -8px;
+      background: radial-gradient(circle, rgba(255, 0, 84, 0.3) 0%, rgba(13, 19, 38, 0.9) 100%);
+      border-color: var(--neon-red);
+      box-shadow: 0 0 20px rgba(255, 0, 84, 0.4);
+    }
+
+    .btn-attack:active {
+      background: rgba(255, 0, 84, 0.5);
+      box-shadow: 0 0 30px rgba(255, 0, 84, 0.8);
+    }
+
+    .btn-dash {
+      grid-column: 1;
+      grid-row: 2;
+      border-color: var(--neon-cyan);
+      box-shadow: 0 0 15px rgba(0, 245, 212, 0.3);
+    }
+
+    .btn-special {
+      grid-column: 2;
+      grid-row: 1;
+      border-color: var(--neon-purple);
+      box-shadow: 0 0 15px rgba(157, 78, 221, 0.3);
+    }
+
+    .btn-auto {
+      grid-column: 1;
+      grid-row: 1;
+      border-color: var(--neon-gold);
+      box-shadow: 0 0 12px rgba(255, 183, 3, 0.3);
+      font-size: 10px;
+    }
+
+    .btn-auto.active {
+      background: rgba(255, 183, 3, 0.25);
+      border-color: var(--neon-gold);
+      box-shadow: 0 0 20px rgba(255, 183, 3, 0.7);
+    }
+
+    .btn-icon {
+      font-size: 22px;
+      line-height: 1;
+      margin-bottom: 2px;
+    }
+
+    .btn-lbl {
+      font-family: var(--font-title);
+      font-size: 9px;
+      font-weight: 800;
+      letter-spacing: 0.5px;
+      text-transform: uppercase;
+    }
+
+    .cooldown-overlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      border-radius: 50%;
+      background: rgba(0, 0, 0, 0.65);
+      clip-path: polygon(50% 50%, 50% 0%, 100% 0%, 100% 100%, 0% 100%, 0% 0%, 50% 0%);
+      pointer-events: none;
+      display: none;
+    }
+
+    /* Modals & Overlays */
+    .modal-overlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(4, 7, 18, 0.88);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      z-index: 50;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 16px;
+      animation: modalFadeIn 0.3s ease-out;
+    }
+
+    @keyframes modalFadeIn {
+      from { opacity: 0; transform: scale(0.97); }
+      to { opacity: 1; transform: scale(1); }
+    }
+
+    /* REFINERY MODAL STYLING */
+    .refinery-card {
+      background: linear-gradient(145deg, rgba(16, 24, 48, 0.95), rgba(9, 13, 28, 0.98));
+      border: 2px solid var(--border-cyan);
+      border-radius: 20px;
+      width: min(96%, 680px);
+      max-height: 94vh;
+      overflow-y: auto;
+      padding: 20px;
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.8), 0 0 40px rgba(0, 245, 212, 0.2);
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      position: relative;
+    }
+
+    .refinery-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+      padding-bottom: 12px;
+    }
+
+    .refinery-title-group h2 {
+      font-family: var(--font-title);
+      font-size: 22px;
+      font-weight: 900;
+      letter-spacing: 2px;
+      color: var(--neon-cyan);
+      text-transform: uppercase;
+      text-shadow: 0 0 12px rgba(0, 245, 212, 0.6);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .refinery-sub {
+      font-size: 12px;
+      color: var(--text-muted);
+    }
+
+    .forge-timer-badge {
+      background: rgba(255, 183, 3, 0.15);
+      border: 1px solid var(--neon-gold);
+      color: var(--neon-gold);
+      font-family: var(--font-mono);
+      font-weight: 700;
+      font-size: 13px;
+      padding: 6px 12px;
+      border-radius: 20px;
+    }
+
+    /* Refinery Crucible Workshop */
+    .crucible-section {
+      background: rgba(7, 11, 24, 0.7);
+      border: 1px solid rgba(0, 245, 212, 0.25);
+      border-radius: 16px;
+      padding: 16px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 14px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .crucible-section::before {
+      content: '';
+      position: absolute;
+      top: -50%;
+      left: -50%;
+      width: 200%;
+      height: 200%;
+      background: radial-gradient(circle, rgba(0, 245, 212, 0.05) 0%, transparent 60%);
+      pointer-events: none;
+    }
+
+    .crucible-slots {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      position: relative;
+      z-index: 2;
+    }
+
+    .forge-slot {
+      width: 74px;
+      height: 74px;
+      border-radius: 14px;
+      border: 2px dashed rgba(255, 255, 255, 0.3);
+      background: rgba(18, 26, 52, 0.6);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: all 0.2s;
+      position: relative;
+    }
+
+    .forge-slot.filled {
+      border-style: solid;
+      border-color: var(--neon-cyan);
+      box-shadow: 0 0 15px rgba(0, 245, 212, 0.4);
+    }
+
+    .forge-slot.highlight {
+      border-color: var(--neon-gold);
+      background: rgba(255, 183, 3, 0.15);
+      transform: scale(1.05);
+    }
+
+    .slot-icon {
+      font-size: 26px;
+      margin-bottom: 2px;
+    }
+
+    .slot-name {
+      font-family: var(--font-mono);
+      font-size: 9px;
+      color: var(--text-muted);
+      text-transform: uppercase;
+    }
+
+    .forge-plus {
+      font-family: var(--font-title);
+      font-size: 24px;
+      font-weight: 900;
+      color: var(--neon-gold);
+    }
+
+    .forge-arrow {
+      font-size: 22px;
+      color: var(--neon-cyan);
+    }
+
+    /* Result Preview */
+    .forge-result-preview {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      background: rgba(13, 19, 38, 0.9);
+      border: 1px solid var(--border-gold);
+      border-radius: 12px;
+      padding: 10px 16px;
+      width: 100%;
+      max-width: 440px;
+      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.4);
+      z-index: 2;
+    }
+
+    .result-icon {
+      font-size: 32px;
+      width: 46px;
+      height: 46px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: rgba(255, 183, 3, 0.15);
+      border-radius: 10px;
+      border: 1px solid var(--neon-gold);
+    }
+
+    .result-info {
+      flex: 1;
+    }
+
+    .result-name {
+      font-family: var(--font-title);
+      font-size: 14px;
+      font-weight: 800;
+      color: var(--neon-gold);
+      letter-spacing: 0.5px;
+    }
+
+    .result-stats {
+      font-family: var(--font-mono);
+      font-size: 11px;
+      color: var(--neon-cyan);
+    }
+
+    /* Forge Buttons Row */
+    .forge-actions-row {
+      display: flex;
+      gap: 12px;
+      width: 100%;
+      max-width: 440px;
+      z-index: 2;
+    }
+
+    .btn-forge {
+      flex: 2;
+      background: linear-gradient(135deg, #ffb703, #fb8500);
+      border: none;
+      color: #060814;
+      font-family: var(--font-title);
+      font-size: 15px;
+      font-weight: 900;
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+      padding: 12px;
+      border-radius: 12px;
+      cursor: pointer;
+      box-shadow: 0 4px 20px rgba(255, 183, 3, 0.5);
+      transition: transform 0.1s, box-shadow 0.15s;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+    }
+
+    .btn-forge:active {
+      transform: scale(0.97);
+    }
+
+    .btn-forge:disabled {
+      background: #2b334a;
+      color: #66728e;
+      box-shadow: none;
+      cursor: not-allowed;
+    }
+
+    .btn-quick-auto {
+      flex: 1;
+      background: rgba(0, 245, 212, 0.15);
+      border: 1px solid var(--neon-cyan);
+      color: var(--neon-cyan);
+      font-family: var(--font-title);
+      font-size: 12px;
+      font-weight: 800;
+      letter-spacing: 1px;
+      border-radius: 12px;
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+
+    .btn-quick-auto:hover {
+      background: rgba(0, 245, 212, 0.3);
+    }
+
+    /* Inventory Materials Grid */
+    .materials-bag-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 8px;
+    }
+
+    .mat-card {
+      background: rgba(13, 19, 38, 0.8);
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      border-radius: 12px;
+      padding: 10px 8px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      cursor: pointer;
+      transition: transform 0.15s, border-color 0.15s, background 0.15s;
+      position: relative;
+    }
+
+    .mat-card:hover, .mat-card:active {
+      transform: translateY(-2px);
+      border-color: var(--neon-cyan);
+      background: rgba(18, 26, 52, 0.9);
+    }
+
+    .mat-card.disabled {
+      opacity: 0.4;
+      pointer-events: none;
+    }
+
+    .mat-badge-count {
+      position: absolute;
+      top: 4px;
+      right: 6px;
+      font-family: var(--font-mono);
+      font-size: 11px;
+      font-weight: 700;
+      color: #fff;
+      background: rgba(0, 0, 0, 0.6);
+      padding: 1px 6px;
+      border-radius: 8px;
+    }
+
+    .mat-card-icon {
+      font-size: 24px;
+      margin: 4px 0;
+    }
+
+    .mat-card-name {
+      font-family: var(--font-title);
+      font-size: 10px;
+      font-weight: 700;
+      text-align: center;
+      color: #cbd5e1;
+    }
+
+    .mat-card-type {
+      font-family: var(--font-mono);
+      font-size: 8px;
+      color: var(--text-muted);
+    }
+
+    /* Equipped Gear Cards */
+    .gear-loadout-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 8px;
+    }
+
+    .gear-card {
+      background: rgba(7, 11, 24, 0.8);
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      border-radius: 10px;
+      padding: 8px 6px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      text-align: center;
+    }
+
+    .gear-card.tier-1 { border-color: #94a3b8; }
+    .gear-card.tier-2 { border-color: var(--neon-blue); box-shadow: inset 0 0 10px rgba(0, 187, 249, 0.2); }
+    .gear-card.tier-3 { border-color: var(--neon-purple); box-shadow: inset 0 0 10px rgba(157, 78, 221, 0.2); }
+    .gear-card.tier-4 { border-color: var(--neon-orange); box-shadow: inset 0 0 10px rgba(251, 133, 0, 0.2); }
+    .gear-card.tier-5 { border-color: var(--neon-gold); box-shadow: inset 0 0 15px rgba(255, 183, 3, 0.35); }
+
+    .gear-icon {
+      font-size: 22px;
+      margin-bottom: 2px;
+    }
+
+    .gear-title {
+      font-family: var(--font-title);
+      font-size: 10px;
+      font-weight: 800;
+      color: #f1f5f9;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      max-width: 100%;
+    }
+
+    .gear-tier {
+      font-family: var(--font-mono);
+      font-size: 9px;
+      color: var(--neon-gold);
+    }
+
+    .gear-stat {
+      font-family: var(--font-mono);
+      font-size: 8px;
+      color: var(--neon-cyan);
+    }
+
+    /* Bottom Action: Next Wave */
+    .btn-next-wave {
+      background: linear-gradient(135deg, #00f5d4, #00bbf9);
+      border: none;
+      color: #060814;
+      font-family: var(--font-title);
+      font-size: 16px;
+      font-weight: 900;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      padding: 14px;
+      border-radius: 12px;
+      cursor: pointer;
+      box-shadow: 0 6px 25px rgba(0, 245, 212, 0.5);
+      transition: all 0.15s;
+      width: 100%;
+    }
+
+    .btn-next-wave:active {
+      transform: scale(0.98);
+    }
+
+    /* Title / Start Screen */
+    #start-modal {
+      display: flex;
+    }
+
+    .start-card {
+      background: linear-gradient(155deg, rgba(16, 24, 48, 0.96), rgba(8, 12, 26, 0.98));
+      border: 2px solid var(--border-cyan);
+      border-radius: 24px;
+      width: min(92%, 520px);
+      padding: 30px 24px;
+      text-align: center;
+      box-shadow: 0 25px 70px rgba(0, 0, 0, 0.8), 0 0 50px rgba(0, 245, 212, 0.25);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 18px;
+    }
+
+    .game-logo {
+      font-family: var(--font-title);
+      font-size: 38px;
+      font-weight: 900;
+      letter-spacing: 5px;
+      color: #fff;
+      text-transform: uppercase;
+      background: linear-gradient(180deg, #ffffff 20%, #00f5d4 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      text-shadow: 0 0 25px rgba(0, 245, 212, 0.5);
+      line-height: 1;
+    }
+
+    .game-subtitle {
+      font-family: var(--font-mono);
+      font-size: 12px;
+      color: var(--neon-gold);
+      letter-spacing: 3px;
+      text-transform: uppercase;
+      margin-top: -8px;
+    }
+
+    .feature-pills {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      justify-content: center;
+    }
+
+    .feature-pill {
+      background: rgba(255, 255, 255, 0.08);
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      border-radius: 20px;
+      padding: 6px 12px;
+      font-size: 11px;
+      font-family: var(--font-mono);
+      color: #cbd5e1;
+    }
+
+    .game-lore {
+      font-size: 13px;
+      line-height: 1.5;
+      color: #94a3b8;
+      max-width: 440px;
+    }
+
+    .controls-hint-box {
+      background: rgba(0, 0, 0, 0.4);
+      border-radius: 12px;
+      padding: 10px 16px;
+      font-family: var(--font-mono);
+      font-size: 11px;
+      color: var(--neon-cyan);
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      width: 100%;
+    }
+
+    .btn-start {
+      background: linear-gradient(135deg, #00f5d4, #00bbf9);
+      border: none;
+      color: #060814;
+      font-family: var(--font-title);
+      font-size: 18px;
+      font-weight: 900;
+      letter-spacing: 3px;
+      text-transform: uppercase;
+      padding: 16px 36px;
+      border-radius: 14px;
+      cursor: pointer;
+      box-shadow: 0 8px 30px rgba(0, 245, 212, 0.6);
+      transition: all 0.15s;
+      width: 100%;
+    }
+
+    .btn-start:active {
+      transform: scale(0.97);
+    }
+
+    /* Game Over / Victory Modal */
+    .gameover-card {
+      background: linear-gradient(155deg, rgba(20, 10, 24, 0.96), rgba(8, 6, 16, 0.98));
+      border: 2px solid var(--neon-red);
+      border-radius: 24px;
+      width: min(92%, 460px);
+      padding: 28px 22px;
+      text-align: center;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      align-items: center;
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.8), 0 0 40px rgba(255, 0, 84, 0.3);
+    }
+
+    .victory-card {
+      border-color: var(--neon-gold);
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.8), 0 0 50px rgba(255, 183, 3, 0.4);
+    }
+
+    .end-title {
+      font-family: var(--font-title);
+      font-size: 32px;
+      font-weight: 900;
+      letter-spacing: 3px;
+      text-transform: uppercase;
+    }
+
+    .end-title.defeat {
+      color: var(--neon-red);
+      text-shadow: 0 0 20px rgba(255, 0, 84, 0.7);
+    }
+
+    .end-title.victory {
+      color: var(--neon-gold);
+      text-shadow: 0 0 25px rgba(255, 183, 3, 0.8);
+    }
+
+    .stats-table {
+      width: 100%;
+      background: rgba(0, 0, 0, 0.4);
+      border-radius: 12px;
+      padding: 12px 16px;
+      font-family: var(--font-mono);
+      font-size: 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .stat-row {
+      display: flex;
+      justify-content: space-between;
+      color: #94a3b8;
+    }
+
+    .stat-row span:last-child {
+      color: #fff;
+      font-weight: 700;
+    }
+
+    /* Screen Shake Animation */
+    .shake {
+      animation: screenShake 0.25s cubic-bezier(.36,.07,.19,.97) both;
+    }
+
+    @keyframes screenShake {
+      10%, 90% { transform: translate3d(-2px, 2px, 0); }
+      20%, 80% { transform: translate3d(3px, -2px, 0); }
+      30%, 50%, 70% { transform: translate3d(-4px, 3px, 0); }
+      40%, 60% { transform: translate3d(4px, -3px, 0); }
+    }
+
+    /* Anvil Strike Flash Animation */
+    .anvil-flash {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(255, 255, 255, 0.6);
+      pointer-events: none;
+      z-index: 100;
+      opacity: 0;
+      transition: opacity 0.08s ease-out;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- 3D Canvas Container -->
+  <div id="canvas-container"></div>
+
+  <!-- Screen Shake / Visual Flash Wrapper -->
+  <div id="anvil-flash" class="anvil-flash"></div>
+
+  <!-- UI Overlay Layer -->
+  <div id="ui-layer">
+    <!-- Top HUD -->
+    <div class="top-hud">
+      <!-- Player Vitals -->
+      <div class="hero-vitals">
+        <div class="vitals-header">
+          <span class="hero-name">BROADROADS HERO</span>
+          <span class="hero-level" id="hero-tier-tag">TIER I</span>
+        </div>
+        <div class="bar-wrap">
+          <div class="bar-label">
+            <span>HEALTH</span>
+            <span id="hp-text">100/100</span>
+          </div>
+          <div class="bar-bg">
+            <div class="bar-fill hp-fill" id="hp-bar" style="width: 100%;"></div>
+          </div>
+        </div>
+        <div class="bar-wrap">
+          <div class="bar-label">
+            <span>SHIELD</span>
+            <span id="shield-text">50/50</span>
+          </div>
+          <div class="bar-bg">
+            <div class="bar-fill shield-fill" id="shield-bar" style="width: 100%;"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Wave Center Status -->
+      <div class="wave-center-hud">
+        <div class="wave-title" id="wave-display-title">WAVE 1 / 5</div>
+        <div class="wave-timer-text" id="wave-timer">00:30</div>
+        <div class="enemies-count" id="enemies-alive-text">THREATS: 0</div>
+      </div>
+
+      <!-- Materials HUD Pill Bar -->
+      <div class="materials-hud">
+        <div class="mat-pill">
+          <div class="mat-dot dot-pyrite"></div>
+          <span id="hud-pyrite">0</span>
+        </div>
+        <div class="mat-pill">
+          <div class="mat-dot dot-aether"></div>
+          <span id="hud-aether">0</span>
+        </div>
+        <div class="mat-pill">
+          <div class="mat-dot dot-titanium"></div>
+          <span id="hud-titanium">0</span>
+        </div>
+        <div class="mat-pill">
+          <div class="mat-dot dot-catalyst"></div>
+          <span id="hud-catalyst">0</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Boss HP Bar -->
+    <div id="boss-hud">
+      <div class="boss-name">
+        <span id="boss-display-name">IGNIS REX - ANVIL OVERLORD</span>
+        <span id="boss-hp-text">100%</span>
+      </div>
+      <div class="boss-bar-bg">
+        <div class="boss-bar-fill" id="boss-hp-fill" style="width: 100%;"></div>
+      </div>
+    </div>
+
+    <!-- Floating Combat Text Overlay -->
+    <div id="fct-layer"></div>
+
+    <!-- Mobile Virtual Controls -->
+    <div class="mobile-controls">
+      <!-- Virtual Joystick (Left) -->
+      <div id="joystick-zone">
+        <div class="joystick-base" id="joystick-base">
+          <div class="joystick-knob" id="joystick-knob"></div>
+        </div>
+      </div>
+
+      <!-- Action Cluster (Right) -->
+      <div class="action-cluster">
+        <!-- Auto Attack Toggle -->
+        <button class="btn-action btn-auto" id="btn-auto" title="Toggle Auto-Attack">
+          <span class="btn-icon">🎯</span>
+          <span class="btn-lbl">AUTO</span>
+        </button>
+
+        <!-- Special Skill -->
+        <button class="btn-action btn-special" id="btn-special" title="Runic Nova (E)">
+          <span class="btn-icon">⚡</span>
+          <span class="btn-lbl">NOVA</span>
+          <div class="cooldown-overlay" id="special-cooldown"></div>
+        </button>
+
+        <!-- Dash / Dodge -->
+        <button class="btn-action btn-dash" id="btn-dash" title="Dash (Space/Shift)">
+          <span class="btn-icon">💨</span>
+          <span class="btn-lbl">DASH</span>
+          <div class="cooldown-overlay" id="dash-cooldown"></div>
+        </button>
+
+        <!-- Attack Button -->
+        <button class="btn-action btn-attack" id="btn-attack" title="Melee Strike">
+          <span class="btn-icon">⚔️</span>
+          <span class="btn-lbl">STRIKE</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- REFINERY MODAL (Between Waves) -->
+  <div class="modal-overlay" id="refinery-modal">
+    <div class="refinery-card">
+      <div class="refinery-header">
+        <div class="refinery-title-group">
+          <h2><span>⚡</span> RUNIC GEAR REFINERY</h2>
+          <div class="refinery-sub">Survive & Forge: Tap materials to feed the crucible</div>
+        </div>
+        <div class="forge-timer-badge" id="refinery-countdown">NEXT WAVE: 25s</div>
+      </div>
+
+      <!-- The Crucible -->
+      <div class="crucible-section">
+        <div class="crucible-slots">
+          <!-- Slot 1 -->
+          <div class="forge-slot" id="forge-slot-1">
+            <span class="slot-icon" id="slot-1-icon">➕</span>
+            <span class="slot-name" id="slot-1-name">SLOT A</span>
+          </div>
+
+          <div class="forge-plus">+</div>
+
+          <!-- Slot 2 -->
+          <div class="forge-slot" id="forge-slot-2">
+            <span class="slot-icon" id="slot-2-icon">➕</span>
+            <span class="slot-name" id="slot-2-name">SLOT B</span>
+          </div>
+
+          <div class="forge-arrow">➔</div>
+
+          <!-- Output Preview Slot -->
+          <div class="forge-slot filled" id="forge-slot-out" style="border-color: var(--neon-gold);">
+            <span class="slot-icon" id="slot-out-icon">⚔️</span>
+            <span class="slot-name" id="slot-out-name">UPGRADE</span>
+          </div>
+        </div>
+
+        <!-- Recipe Forecast Text -->
+        <div class="forge-result-preview">
+          <div class="result-icon" id="preview-icon">💎</div>
+          <div class="result-info">
+            <div class="result-name" id="preview-name">Select Materials</div>
+            <div class="result-stats" id="preview-stats">Combine 2 raw minerals to forge new gear</div>
+          </div>
+        </div>
+
+        <!-- Forge Action Buttons -->
+        <div class="forge-actions-row">
+          <button class="btn-forge" id="btn-do-forge" disabled>
+            <span>🔨</span> STRIKE ANVIL
+          </button>
+          <button class="btn-quick-auto" id="btn-quick-forge">
+            ⚡ AUTO-FORGE
+          </button>
+        </div>
+      </div>
+
+      <!-- Raw Materials Pouch (Inventory to click/tap) -->
+      <div>
+        <div style="font-family: var(--font-title); font-size: 11px; letter-spacing: 1px; color: var(--text-muted); margin-bottom: 6px;">
+          RAW ENEMY DROPS (TAP TO INSERT)
+        </div>
+        <div class="materials-bag-grid">
+          <!-- Pyrite -->
+          <div class="mat-card" id="card-pyrite" data-type="pyrite">
+            <span class="mat-badge-count" id="bag-pyrite-count">0</span>
+            <span class="mat-card-icon">🔥</span>
+            <span class="mat-card-name" style="color: var(--neon-orange);">Flame Pyrite</span>
+            <span class="mat-card-type">Weapon / Burn</span>
+          </div>
+          <!-- Aether -->
+          <div class="mat-card" id="card-aether" data-type="aether">
+            <span class="mat-badge-count" id="bag-aether-count">0</span>
+            <span class="mat-card-icon">🔷</span>
+            <span class="mat-card-name" style="color: var(--neon-cyan);">Aether Shard</span>
+            <span class="mat-card-type">Speed / Shield</span>
+          </div>
+          <!-- Titanium -->
+          <div class="mat-card" id="card-titanium" data-type="titanium">
+            <span class="mat-badge-count" id="bag-titanium-count">0</span>
+            <span class="mat-card-icon">🟢</span>
+            <span class="mat-card-name" style="color: var(--neon-green);">Titanium Ingot</span>
+            <span class="mat-card-type">Armor / Health</span>
+          </div>
+          <!-- Catalyst -->
+          <div class="mat-card" id="card-catalyst" data-type="catalyst">
+            <span class="mat-badge-count" id="bag-catalyst-count">0</span>
+            <span class="mat-card-icon">🟣</span>
+            <span class="mat-card-name" style="color: var(--neon-purple);">Void Catalyst</span>
+            <span class="mat-card-type">Crit / Nova</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Current Equipped Gear Loadout -->
+      <div>
+        <div style="font-family: var(--font-title); font-size: 11px; letter-spacing: 1px; color: var(--text-muted); margin-bottom: 6px;">
+          HERO EQUIPMENT LOADOUT
+        </div>
+        <div class="gear-loadout-grid">
+          <!-- Weapon -->
+          <div class="gear-card tier-1" id="gear-card-weapon">
+            <span class="gear-icon">⚔️</span>
+            <span class="gear-title" id="gear-name-weapon">Broad Blade</span>
+            <span class="gear-tier" id="gear-tier-weapon">T1 Common</span>
+            <span class="gear-stat" id="gear-stat-weapon">+15 ATK</span>
+          </div>
+          <!-- Armor -->
+          <div class="gear-card tier-1" id="gear-card-armor">
+            <span class="gear-icon">🛡️</span>
+            <span class="gear-title" id="gear-name-armor">Iron Cuirass</span>
+            <span class="gear-tier" id="gear-tier-armor">T1 Common</span>
+            <span class="gear-stat" id="gear-stat-armor">+100 HP</span>
+          </div>
+          <!-- Greaves -->
+          <div class="gear-card tier-1" id="gear-card-boots">
+            <span class="gear-icon">🥾</span>
+            <span class="gear-title" id="gear-name-boots">Runic Striders</span>
+            <span class="gear-tier" id="gear-tier-boots">T1 Common</span>
+            <span class="gear-stat" id="gear-stat-boots">+0% SPD</span>
+          </div>
+          <!-- Relic -->
+          <div class="gear-card tier-1" id="gear-card-relic">
+            <span class="gear-icon">💍</span>
+            <span class="gear-title" id="gear-name-relic">Void Ring</span>
+            <span class="gear-tier" id="gear-tier-relic">T1 Common</span>
+            <span class="gear-stat" id="gear-stat-relic">+5% CRIT</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Enter Next Wave Button -->
+      <button class="btn-next-wave" id="btn-next-wave">
+        ⚔️ BATTLE READY: DEPLOY TO ARENA
+      </button>
+    </div>
+  </div>
+
+  <!-- START GAME SCREEN -->
+  <div class="modal-overlay" id="start-modal">
+    <div class="start-card">
+      <h1 class="game-logo">BROADROADS</h1>
+      <div class="game-subtitle">ISOMETRIC GEAR REFINERY ARENA</div>
+
+      <div class="feature-pills">
+        <span class="feature-pill">⚡ 3-Minute Combat Loops</span>
+        <span class="feature-pill">🔨 Tap & Drag Refinery</span>
+        <span class="feature-pill">📱 Mobile Touch Optimized</span>
+        <span class="feature-pill">👾 5 Progressive Waves</span>
+      </div>
+
+      <p class="game-lore">
+        Trapped on the astral floating forge, harvest raw minerals dropped by void horrors. Between waves, rapidly strike the crucible anvil to synthesize legendary armor, blades, and greaves before the Overlord awakens!
+      </p>
+
+      <div class="controls-hint-box">
+        <div><strong>Mobile:</strong> Left thumb joystick to move • Right buttons to Strike, Dash & Nova</div>
+        <div><strong>Desktop:</strong> WASD / Arrows to move • Space / Click to Strike • Shift to Dash • E for Nova</div>
+      </div>
+
+      <button class="btn-start" id="btn-start-game">
+        ENTER ARENA
+      </button>
+    </div>
+  </div>
+
+  <!-- GAME OVER / VICTORY MODAL -->
+  <div class="modal-overlay" id="gameover-modal">
+    <div class="gameover-card" id="end-card-box">
+      <div class="end-title" id="end-title">ARENA SLAIN</div>
+      <p id="end-subtitle" style="font-size: 13px; color: var(--text-muted);">The void horrors overwhelmed your defenses.</p>
+
+      <div class="stats-table">
+        <div class="stat-row">
+          <span>Waves Survived</span>
+          <span id="stat-waves-cleared">0 / 5</span>
+        </div>
+        <div class="stat-row">
+          <span>Horrors Slain</span>
+          <span id="stat-kills">0</span>
+        </div>
+        <div class="stat-row">
+          <span>Gear Refined</span>
+          <span id="stat-refined">0</span>
+        </div>
+        <div class="stat-row">
+          <span>Total Damage</span>
+          <span id="stat-damage">0</span>
+        </div>
+        <div class="stat-row">
+          <span>Run Time</span>
+          <span id="stat-time">02:45</span>
+        </div>
+      </div>
+
+      <button class="btn-start" id="btn-restart-game">
+        PLAY AGAIN
+      </button>
+    </div>
+  </div>
+
+  <!-- GAME ENGINE LOGIC SCRIPT -->
+  <script>
+  (function() {
+    'use strict';
+
+    /* ==========================================================================
+       1. SYNTHESIZED WEB AUDIO ENGINE (ZERO EXTERNAL DEPENDENCY)
+       ========================================================================== */
+    class SoundEngine {
+      constructor() {
+        this.ctx = null;
+        this.muted = false;
+      }
+
+      init() {
+        if (!this.ctx) {
+          const AudioContext = window.AudioContext || window.webkitAudioContext;
+          if (AudioContext) {
+            this.ctx = new AudioContext();
+          }
+        }
+        if (this.ctx && this.ctx.state === 'suspended') {
+          this.ctx.resume();
+        }
+      }
+
+      playSlash() {
+        if (this.muted || !this.ctx) return;
+        try {
+          const now = this.ctx.currentTime;
+          const osc = this.ctx.createOscillator();
+          const gain = this.ctx.createGain();
+          const filter = this.ctx.createBiquadFilter();
+
+          osc.type = 'sawtooth';
+          osc.frequency.setValueAtTime(450, now);
+          osc.frequency.exponentialRampToValueAtTime(80, now + 0.12);
+
+          filter.type = 'lowpass';
+          filter.frequency.setValueAtTime(2800, now);
+          filter.frequency.exponentialRampToValueAtTime(300, now + 0.12);
+
+          gain.gain.setValueAtTime(0.25, now);
+          gain.gain.exponentialRampToValueAtTime(0.01, now + 0.12);
+
+          osc.connect(filter);
+          filter.connect(gain);
+          gain.connect(this.ctx.destination);
+
+          osc.start(now);
+          osc.stop(now + 0.13);
+        } catch(e) {}
+      }
+
+      playHit() {
+        if (this.muted || !this.ctx) return;
+        try {
+          const now = this.ctx.currentTime;
+          const osc = this.ctx.createOscillator();
+          const gain = this.ctx.createGain();
+
+          osc.type = 'triangle';
+          osc.frequency.setValueAtTime(160, now);
+          osc.frequency.exponentialRampToValueAtTime(40, now + 0.14);
+
+          gain.gain.setValueAtTime(0.4, now);
+          gain.gain.exponentialRampToValueAtTime(0.01, now + 0.14);
+
+          osc.connect(gain);
+          gain.connect(this.ctx.destination);
+
+          osc.start(now);
+          osc.stop(now + 0.15);
+        } catch(e) {}
+      }
+
+      playPickup() {
+        if (this.muted || !this.ctx) return;
+        try {
+          const now = this.ctx.currentTime;
+          const notes = [659.25, 880, 1046.5]; // E5, A5, C6
+          notes.forEach((freq, idx) => {
+            const osc = this.ctx.createOscillator();
+            const gain = this.ctx.createGain();
+            osc.type = 'sine';
+            osc.frequency.setValueAtTime(freq, now + idx * 0.04);
+            gain.gain.setValueAtTime(0.18, now + idx * 0.04);
+            gain.gain.exponentialRampToValueAtTime(0.01, now + idx * 0.04 + 0.12);
+
+            osc.connect(gain);
+            gain.connect(this.ctx.destination);
+
+            osc.start(now + idx * 0.04);
+            osc.stop(now + idx * 0.04 + 0.13);
+          });
+        } catch(e) {}
+      }
+
+      playAnvilStrike() {
+        if (this.muted || !this.ctx) return;
+        try {
+          const now = this.ctx.currentTime;
+          // Metallic harmonic ping
+          [880, 1760, 2640].forEach((freq) => {
+            const osc = this.ctx.createOscillator();
+            const gain = this.ctx.createGain();
+            osc.type = 'square';
+            osc.frequency.setValueAtTime(freq, now);
+            gain.gain.setValueAtTime(0.15, now);
+            gain.gain.exponentialRampToValueAtTime(0.001, now + 0.4);
+            osc.connect(gain);
+            gain.connect(this.ctx.destination);
+            osc.start(now);
+            osc.stop(now + 0.45);
+          });
+
+          // Deep bass thud
+          const sub = this.ctx.createOscillator();
+          const subGain = this.ctx.createGain();
+          sub.type = 'sine';
+          sub.frequency.setValueAtTime(130, now);
+          sub.frequency.exponentialRampToValueAtTime(30, now + 0.35);
+          subGain.gain.setValueAtTime(0.5, now);
+          subGain.gain.exponentialRampToValueAtTime(0.01, now + 0.35);
+          sub.connect(subGain);
+          subGain.connect(this.ctx.destination);
+          sub.start(now);
+          sub.stop(now + 0.36);
+        } catch(e) {}
+      }
+
+      playDash() {
+        if (this.muted || !this.ctx) return;
+        try {
+          const now = this.ctx.currentTime;
+          const osc = this.ctx.createOscillator();
+          const gain = this.ctx.createGain();
+          osc.type = 'sine';
+          osc.frequency.setValueAtTime(300, now);
+          osc.frequency.linearRampToValueAtTime(600, now + 0.1);
+          osc.frequency.linearRampToValueAtTime(100, now + 0.2);
+          gain.gain.setValueAtTime(0.2, now);
+          gain.gain.exponentialRampToValueAtTime(0.01, now + 0.2);
+          osc.connect(gain);
+          gain.connect(this.ctx.destination);
+          osc.start(now);
+          osc.stop(now + 0.22);
+        } catch(e) {}
+      }
+
+      playNova() {
+        if (this.muted || !this.ctx) return;
+        try {
+          const now = this.ctx.currentTime;
+          const osc = this.ctx.createOscillator();
+          const gain = this.ctx.createGain();
+          osc.type = 'sawtooth';
+          osc.frequency.setValueAtTime(150, now);
+          osc.frequency.exponentialRampToValueAtTime(900, now + 0.25);
+          osc.frequency.exponentialRampToValueAtTime(60, now + 0.6);
+          gain.gain.setValueAtTime(0.4, now);
+          gain.gain.exponentialRampToValueAtTime(0.01, now + 0.65);
+          osc.connect(gain);
+          gain.connect(this.ctx.destination);
+          osc.start(now);
+          osc.stop(now + 0.66);
+        } catch(e) {}
+      }
+
+      playFanfare() {
+        if (this.muted || !this.ctx) return;
+        try {
+          const now = this.ctx.currentTime;
+          const chord = [523.25, 659.25, 783.99, 1046.5]; // C major
+          chord.forEach((freq, idx) => {
+            const osc = this.ctx.createOscillator();
+            const gain = this.ctx.createGain();
+            osc.type = 'triangle';
+            osc.frequency.setValueAtTime(freq, now + idx * 0.08);
+            gain.gain.setValueAtTime(0.22, now + idx * 0.08);
+            gain.gain.exponentialRampToValueAtTime(0.001, now + idx * 0.08 + 0.45);
+            osc.connect(gain);
+            gain.connect(this.ctx.destination);
+            osc.start(now + idx * 0.08);
+            osc.stop(now + idx * 0.08 + 0.5);
+          });
+        } catch(e) {}
+      }
+    }
+
+    const sound = new SoundEngine();
+
+    /* ==========================================================================
+       2. GAME CONFIG & CRAFTING FORMULAS
+       ========================================================================== */
+    const GAME_CONFIG = {
+      TOTAL_WAVES: 5,
+      WAVE_DURATION: 30, // seconds
+      REFINERY_DURATION: 25, // seconds between waves
+      ARENA_RADIUS: 14,
+      MAX_MATERIALS_PER_DROP: 3,
+    };
+
+    // Crafting Recipes Matrix
+    // Pair of [mat1, mat2] sorted alphabetically -> Gear Upgrade
+    const RECIPES = {
+      'pyrite+pyrite': {
+        slot: 'weapon',
+        name: 'Infernal Greataxe',
+        tierBonus: 1,
+        statText: '+28 ATK & Flaming Slash',
+        icon: '🪓',
+        type: 'damage'
+      },
+      'aether+pyrite': {
+        slot: 'boots',
+        name: 'Zephyr Flame Greaves',
+        tierBonus: 1,
+        statText: '+25% SPD & Fire Trail',
+        icon: '🥾',
+        type: 'speed'
+      },
+      'pyrite+titanium': {
+        slot: 'weapon',
+        name: 'Titanium Cleaver',
+        tierBonus: 1,
+        statText: '+22 ATK & Heavy Impact',
+        icon: '⚔️',
+        type: 'damage'
+      },
+      'catalyst+pyrite': {
+        slot: 'weapon',
+        name: 'Astral Sunblade',
+        tierBonus: 2,
+        statText: '+35 ATK & +15% CRIT',
+        icon: '🗡️',
+        type: 'crit'
+      },
+      'aether+aether': {
+        slot: 'boots',
+        name: 'Quicksilver Boots',
+        tierBonus: 1,
+        statText: '+35% SPD & Fast Dash',
+        icon: '🥾',
+        type: 'speed'
+      },
+      'aether+titanium': {
+        slot: 'armor',
+        name: 'Kinetic Bulwark',
+        tierBonus: 1,
+        statText: '+150 HP & Shield Deflection',
+        icon: '🛡️',
+        type: 'defense'
+      },
+      'aether+catalyst': {
+        slot: 'relic',
+        name: 'Nova Chronometer',
+        tierBonus: 2,
+        statText: '+40% Nova Charge Rate',
+        icon: '⌛',
+        type: 'special'
+      },
+      'titanium+titanium': {
+        slot: 'armor',
+        name: 'Juggernaut Carapace',
+        tierBonus: 1,
+        statText: '+220 MAX HP & 25% Armor',
+        icon: '🛡️',
+        type: 'defense'
+      },
+      'catalyst+titanium': {
+        slot: 'armor',
+        name: 'Voidforged Aegis',
+        tierBonus: 2,
+        statText: '+180 HP & Thorn Damage',
+        icon: '🔰',
+        type: 'defense'
+      },
+      'catalyst+catalyst': {
+        slot: 'relic',
+        name: 'Eye of the Broadroads',
+        tierBonus: 2,
+        statText: '+25% CRIT & Nova Shockwave',
+        icon: '💍',
+        type: 'crit'
+      }
+    };
+
+    /* ==========================================================================
+       3. GAME STATE MANAGEMENT
+       ========================================================================== */
+    const state = {
+      phase: 'title', // 'title', 'playing', 'refinery', 'gameover', 'victory'
+      currentWave: 1,
+      waveTimeRemaining: GAME_CONFIG.WAVE_DURATION,
+      refineryTimeRemaining: GAME_CONFIG.REFINERY_DURATION,
+      runTimer: 0,
+      kills: 0,
+      totalDamageDealt: 0,
+      gearRefinedCount: 0,
+
+      // Inventory
+      materials: {
+        pyrite: 0,
+        aether: 0,
+        titanium: 0,
+        catalyst: 0
+      },
+
+      // Equipment & Player Stats
+      hero: {
+        hp: 120,
+        maxHp: 120,
+        shield: 60,
+        maxShield: 60,
+        shieldRegenTimer: 0,
+        attackDamage: 25,
+        attackSpeed: 1.0,
+        moveSpeed: 8.5,
+        critChance: 0.10,
+        critMult: 1.8,
+        dashCooldown: 1.2,
+        dashTimer: 0,
+        specialReady: false,
+        specialCharge: 0,
+        specialMaxCharge: 100,
+        autoAttack: false,
+        isAttacking: false,
+        attackCombo: 0,
+        attackCooldown: 0,
+        invincibleTimer: 0
+      },
+
+      gear: {
+        weapon: { name: 'Broad Blade', tier: 1, icon: '⚔️', stat: '+25 ATK' },
+        armor: { name: 'Iron Cuirass', tier: 1, icon: '🛡️', stat: '+120 HP' },
+        boots: { name: 'Runic Striders', tier: 1, icon: '🥾', stat: '+0% SPD' },
+        relic: { name: 'Void Ring', tier: 1, icon: '💍', stat: '+10% CRIT' }
+      },
+
+      // Crucible State
+      crucible: {
+        slot1: null,
+        slot2: null,
+        predictedRecipe: null
+      }
+    };
+
+    /* ==========================================================================
+       4. THREE.JS 3D SCENE & RENDERER SETUP
+       ========================================================================== */
+    const container = document.getElementById('canvas-container');
+    const scene = new THREE.Scene();
+    scene.background = new THREE.Color(0x060814);
+    scene.fog = new THREE.FogExp2(0x060814, 0.022);
+
+    const camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 1000);
+    // Elevated Isometric view looking towards arena center
+    camera.position.set(0, 26, 24);
+    camera.lookAt(0, 0, 0);
+
+    const renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: 'high-performance' });
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    renderer.shadowMap.enabled = true;
+    renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+    renderer.toneMapping = THREE.ACESFilmicToneMapping;
+    renderer.toneMappingExposure = 1.15;
+    container.appendChild(renderer.domElement);
+
+    // Dynamic Lighting
+    const ambientLight = new THREE.AmbientLight(0x2a3654, 1.2);
+    scene.add(ambientLight);
+
+    const sunLight = new THREE.DirectionalLight(0xe0f2fe, 1.8);
+    sunLight.position.set(15, 30, 20);
+    sunLight.castShadow = true;
+    sunLight.shadow.mapSize.width = 1024;
+    sunLight.shadow.mapSize.height = 1024;
+    sunLight.shadow.camera.near = 10;
+    sunLight.shadow.camera.far = 70;
+    sunLight.shadow.camera.left = -18;
+    sunLight.shadow.camera.right = 18;
+    sunLight.shadow.camera.top = 18;
+    sunLight.shadow.camera.bottom = -18;
+    sunLight.shadow.bias = -0.001;
+    scene.add(sunLight);
+
+    // Glowing Forge Center Point Light
+    const forgePointLight = new THREE.PointLight(0x00f5d4, 2.5, 25);
+    forgePointLight.position.set(0, 3, 0);
+    scene.add(forgePointLight);
+
+    /* ==========================================================================
+       5. 3D ARENA PLATFORM & VISUAL ENVIRONMENT
+       ========================================================================== */
+    const arenaGroup = new THREE.Group();
+    scene.add(arenaGroup);
+
+    // Main Floating Arena Octagonal Slab
+    const arenaGeo = new THREE.CylinderGeometry(15, 16, 2, 8);
+    const arenaMat = new THREE.MeshStandardMaterial({
+      color: 0x0f1528,
+      roughness: 0.5,
+      metalness: 0.6,
+      flatShading: true
+    });
+    const arenaMesh = new THREE.Mesh(arenaGeo, arenaMat);
+    arenaMesh.position.y = -1;
+    arenaMesh.receiveShadow = true;
+    arenaGroup.add(arenaMesh);
+
+    // Runic Floor Inscription Circle
+    const runeRingGeo = new THREE.RingGeometry(8, 8.4, 48);
+    const runeRingMat = new THREE.MeshBasicMaterial({
+      color: 0x00f5d4,
+      side: THREE.DoubleSide,
+      transparent: true,
+      opacity: 0.7
+    });
+    const runeRing = new THREE.Mesh(runeRingGeo, runeRingMat);
+    runeRing.rotation.x = -Math.PI / 2;
+    runeRing.position.y = 0.02;
+    arenaGroup.add(runeRing);
+
+    // Outer Edge Runic Energy Line
+    const outerRingGeo = new THREE.RingGeometry(14.6, 14.9, 8);
+    const outerRingMat = new THREE.MeshBasicMaterial({
+      color: 0xffb703,
+      side: THREE.DoubleSide,
+      transparent: true,
+      opacity: 0.85
+    });
+    const outerRing = new THREE.Mesh(outerRingGeo, outerRingMat);
+    outerRing.rotation.x = -Math.PI / 2;
+    outerRing.position.y = 0.02;
+    arenaGroup.add(outerRing);
+
+    // 4 Corner Celestial Pylons
+    const pylonGeo = new THREE.BoxGeometry(1.2, 4.5, 1.2);
+    const pylonMat = new THREE.MeshStandardMaterial({
+      color: 0x16203d,
+      metalness: 0.8,
+      roughness: 0.3
+    });
+    const pylonCrystalGeo = new THREE.OctahedronGeometry(0.7);
+    const pylonCrystalMat = new THREE.MeshStandardMaterial({
+      color: 0x00bbf9,
+      emissive: 0x00bbf9,
+      emissiveIntensity: 0.8,
+      roughness: 0.1
+    });
+
+    const pylonAngles = [Math.PI/4, 3*Math.PI/4, 5*Math.PI/4, 7*Math.PI/4];
+    const pylonMeshes = [];
+    pylonAngles.forEach((angle) => {
+      const pylon = new THREE.Mesh(pylonGeo, pylonMat);
+      const px = Math.cos(angle) * 13.5;
+      const pz = Math.sin(angle) * 13.5;
+      pylon.position.set(px, 1.5, pz);
+      pylon.castShadow = true;
+      pylon.receiveShadow = true;
+      arenaGroup.add(pylon);
+
+      const crystal = new THREE.Mesh(pylonCrystalGeo, pylonCrystalMat);
+      crystal.position.set(px, 4.4, pz);
+      arenaGroup.add(crystal);
+      pylonMeshes.push(crystal);
+    });
+
+    // Cosmic Dust Background Particles
+    const dustCount = 350;
+    const dustGeo = new THREE.BufferGeometry();
+    const dustPositions = new Float32Array(dustCount * 3);
+    for (let i = 0; i < dustCount * 3; i += 3) {
+      dustPositions[i] = (Math.random() - 0.5) * 80;
+      dustPositions[i + 1] = Math.random() * 40 - 10;
+      dustPositions[i + 2] = (Math.random() - 0.5) * 80;
+    }
+    dustGeo.setAttribute('position', new THREE.BufferAttribute(dustPositions, 3));
+    const dustMat = new THREE.PointsMaterial({
+      size: 0.3,
+      color: 0x88c0d0,
+      transparent: true,
+      opacity: 0.5,
+      blending: THREE.AdditiveBlending
+    });
+    const dustParticles = new THREE.Points(dustGeo, dustMat);
+    scene.add(dustParticles);
+
+    /* ==========================================================================
+       6. 3D HERO CHARACTER ENTITY
+       ========================================================================== */
+    class HeroEntity {
+      constructor() {
+        this.group = new THREE.Group();
+        this.position = this.group.position;
+        this.position.set(0, 0, 0);
+
+        // Body Construction
+        // Torso
+        const torsoGeo = new THREE.CylinderGeometry(0.5, 0.4, 1.2, 8);
+        const armorMat = new THREE.MeshStandardMaterial({
+          color: 0x1e293b,
+          metalness: 0.85,
+          roughness: 0.25
+        });
+        this.torso = new THREE.Mesh(torsoGeo, armorMat);
+        this.torso.position.y = 1.1;
+        this.torso.castShadow = true;
+        this.group.add(this.torso);
+
+        // Runic Chest Core Crystal
+        const coreGeo = new THREE.SphereGeometry(0.2, 8, 8);
+        this.coreMat = new THREE.MeshStandardMaterial({
+          color: 0x00f5d4,
+          emissive: 0x00f5d4,
+          emissiveIntensity: 1.0
+        });
+        const core = new THREE.Mesh(coreGeo, this.coreMat);
+        core.position.set(0, 1.2, 0.4);
+        this.group.add(core);
+
+        // Knight Helm
+        const helmGeo = new THREE.SphereGeometry(0.4, 8, 8);
+        const helm = new THREE.Mesh(helmGeo, armorMat);
+        helm.position.y = 1.95;
+        helm.castShadow = true;
+        this.group.add(helm);
+
+        // Glowing Visor
+        const visorGeo = new THREE.BoxGeometry(0.45, 0.12, 0.25);
+        this.visorMat = new THREE.MeshBasicMaterial({ color: 0x00f5d4 });
+        const visor = new THREE.Mesh(visorGeo, this.visorMat);
+        visor.position.set(0, 1.95, 0.3);
+        this.group.add(visor);
+
+        // Shoulders / Pauldrons
+        const pauldronGeo = new THREE.BoxGeometry(0.35, 0.35, 0.45);
+        const leftP = new THREE.Mesh(pauldronGeo, armorMat);
+        leftP.position.set(-0.65, 1.5, 0);
+        this.group.add(leftP);
+        const rightP = new THREE.Mesh(pauldronGeo, armorMat);
+        rightP.position.set(0.65, 1.5, 0);
+        this.group.add(rightP);
+
+        // Weapon Arm Group (Pivot for swing animation)
+        this.weaponArm = new THREE.Group();
+        this.weaponArm.position.set(0.7, 1.3, 0);
+        this.group.add(this.weaponArm);
+
+        // 3D Runic Weapon Blade
+        const bladeGeo = new THREE.BoxGeometry(0.18, 1.6, 0.08);
+        this.bladeMat = new THREE.MeshStandardMaterial({
+          color: 0xffffff,
+          emissive: 0x00f5d4,
+          emissiveIntensity: 0.5,
+          metalness: 0.9,
+          roughness: 0.1
+        });
+        this.blade = new THREE.Mesh(bladeGeo, this.bladeMat);
+        this.blade.position.set(0, 0.8, 0.4);
+        this.blade.rotation.x = Math.PI / 4;
+        this.blade.castShadow = true;
+        this.weaponArm.add(this.blade);
+
+        // Left Arm Energy Shield
+        const shieldGeo = new THREE.CircleGeometry(0.65, 6);
+        this.shieldMat = new THREE.MeshStandardMaterial({
+          color: 0x00bbf9,
+          emissive: 0x00bbf9,
+          emissiveIntensity: 0.6,
+          transparent: true,
+          opacity: 0.8,
+          side: THREE.DoubleSide
+        });
+        this.shieldMesh = new THREE.Mesh(shieldGeo, this.shieldMat);
+        this.shieldMesh.position.set(-0.75, 1.2, 0.3);
+        this.shieldMesh.rotation.y = -Math.PI / 6;
+        this.group.add(this.shieldMesh);
+
+        // Player Shadow Decal Ring
+        const shadowDecalGeo = new THREE.CircleGeometry(0.8, 16);
+        const shadowDecalMat = new THREE.MeshBasicMaterial({
+          color: 0x000000,
+          transparent: true,
+          opacity: 0.4
+        });
+        const shadowDecal = new THREE.Mesh(shadowDecalGeo, shadowDecalMat);
+        shadowDecal.rotation.x = -Math.PI / 2;
+        shadowDecal.position.y = 0.03;
+        this.group.add(shadowDecal);
+
+        // Weapon Light
+        this.weaponLight = new THREE.PointLight(0x00f5d4, 1.2, 6);
+        this.weaponLight.position.set(0.7, 1.5, 0.5);
+        this.group.add(this.weaponLight);
+
+        // Slash Arc Mesh
+        const slashGeo = new THREE.RingGeometry(1.6, 2.5, 16, 1, 0, Math.PI * 0.85);
+        this.slashMat = new THREE.MeshBasicMaterial({
+          color: 0x00f5d4,
+          side: THREE.DoubleSide,
+          transparent: true,
+          opacity: 0,
+          blending: THREE.AdditiveBlending
+        });
+        this.slashMesh = new THREE.Mesh(slashGeo, this.slashMat);
+        this.slashMesh.rotation.x = Math.PI / 2;
+        this.slashMesh.position.y = 1.1;
+        this.group.add(this.slashMesh);
+
+        scene.add(this.group);
+
+        this.velocity = new THREE.Vector2(0, 0);
+        this.targetRotation = 0;
+        this.swingProgress = 0;
+        this.slashActive = false;
+        this.walkCycle = 0;
+      }
+
+      updateVisualTier(weaponTier) {
+        if (weaponTier >= 4) {
+          this.bladeMat.emissive.setHex(0xffb703); // Golden mythic
+          this.blade.scale.set(1.4, 1.3, 1.4);
+          this.weaponLight.color.setHex(0xffb703);
+          this.slashMat.color.setHex(0xffb703);
+        } else if (weaponTier === 3) {
+          this.bladeMat.emissive.setHex(0x9d4edd); // Void purple
+          this.blade.scale.set(1.25, 1.2, 1.25);
+          this.weaponLight.color.setHex(0x9d4edd);
+          this.slashMat.color.setHex(0x9d4edd);
+        } else if (weaponTier === 2) {
+          this.bladeMat.emissive.setHex(0xfb8500); // Flaming orange
+          this.blade.scale.set(1.15, 1.1, 1.15);
+          this.weaponLight.color.setHex(0xfb8500);
+          this.slashMat.color.setHex(0xfb8500);
+        } else {
+          this.bladeMat.emissive.setHex(0x00f5d4); // Cyan
+          this.blade.scale.set(1, 1, 1);
+          this.weaponLight.color.setHex(0x00f5d4);
+          this.slashMat.color.setHex(0x00f5d4);
+        }
+      }
+
+      triggerSlash(combo) {
+        sound.playSlash();
+        this.swingProgress = 0;
+        this.slashActive = true;
+        this.slashMat.opacity = 0.9;
+
+        // Combo animation variation
+        if (combo === 0) {
+          this.weaponArm.rotation.set(-0.4, -0.9, 0);
+          this.slashMesh.rotation.z = -Math.PI / 4;
+        } else if (combo === 1) {
+          this.weaponArm.rotation.set(0.6, 0.9, 0);
+          this.slashMesh.rotation.z = Math.PI / 4;
+        } else {
+          // Whirlwind full circle
+          this.weaponArm.rotation.set(0, 0, 0);
+          this.slashMesh.rotation.z = 0;
+        }
+      }
+
+      update(dt) {
+        // Move position
+        const speed = state.hero.moveSpeed;
+        this.position.x += this.velocity.x * speed * dt;
+        this.position.z += this.velocity.y * speed * dt;
+
+        // Constrain to arena radius
+        const dist = Math.sqrt(this.position.x * this.position.x + this.position.z * this.position.z);
+        if (dist > GAME_CONFIG.ARENA_RADIUS) {
+          const angle = Math.atan2(this.position.z, this.position.x);
+          this.position.x = Math.cos(angle) * GAME_CONFIG.ARENA_RADIUS;
+          this.position.z = Math.sin(angle) * GAME_CONFIG.ARENA_RADIUS;
+        }
+
+        // Smooth rotation toward movement or target
+        if (this.velocity.lengthSq() > 0.01) {
+          this.targetRotation = Math.atan2(this.velocity.x, this.velocity.y);
+          this.walkCycle += dt * 14;
+          this.torso.position.y = 1.1 + Math.sin(this.walkCycle) * 0.08;
+        } else {
+          this.torso.position.y = 1.1;
+        }
+
+        // Interpolate rotation
+        let diff = this.targetRotation - this.group.rotation.y;
+        while (diff < -Math.PI) diff += Math.PI * 2;
+        while (diff > Math.PI) diff -= Math.PI * 2;
+        this.group.rotation.y += diff * Math.min(dt * 15, 1);
+
+        // Weapon Slash Animation
+        if (this.slashActive) {
+          this.swingProgress += dt * 7.5;
+          this.weaponArm.rotation.y = THREE.MathUtils.lerp(-1.2, 1.4, this.swingProgress);
+          this.slashMat.opacity = Math.max(0, 0.9 - this.swingProgress);
+
+          if (this.swingProgress >= 1) {
+            this.slashActive = false;
+            this.slashMat.opacity = 0;
+            this.weaponArm.rotation.set(0, 0, 0);
+          }
+        }
+
+        // Shield opacity based on shield health
+        if (state.hero.shield > 0) {
+          this.shieldMesh.visible = true;
+          this.shieldMat.opacity = 0.4 + (state.hero.shield / state.hero.maxShield) * 0.45;
+        } else {
+          this.shieldMesh.visible = false;
+        }
+      }
+    }
+
+    const hero = new HeroEntity();
+
+    /* ==========================================================================
+       7. ENEMY MANAGEMENT SYSTEM
+       ========================================================================== */
+    class EnemyEntity {
+      constructor(type, spawnPos) {
+        this.type = type; // 'crawler', 'brute', 'caster', 'boss'
+        this.group = new THREE.Group();
+        this.position = this.group.position;
+        this.position.copy(spawnPos);
+
+        this.dead = false;
+        this.flashTimer = 0;
+
+        if (type === 'crawler') {
+          this.maxHp = 40 + (state.currentWave * 12);
+          this.hp = this.maxHp;
+          this.speed = 5.2;
+          this.damage = 10;
+          this.attackRadius = 1.4;
+          this.score = 50;
+
+          // Stylized Arachnid / Void Drone
+          const bodyGeo = new THREE.OctahedronGeometry(0.65);
+          this.mat = new THREE.MeshStandardMaterial({
+            color: 0x1f0b2e,
+            emissive: 0x9d4edd,
+            emissiveIntensity: 0.35,
+            metalness: 0.8,
+            roughness: 0.2
+          });
+          this.mesh = new THREE.Mesh(bodyGeo, this.mat);
+          this.mesh.position.y = 0.7;
+          this.mesh.castShadow = true;
+          this.group.add(this.mesh);
+
+          // Glowing eye
+          const eyeGeo = new THREE.SphereGeometry(0.18, 6, 6);
+          const eyeMat = new THREE.MeshBasicMaterial({ color: 0xff0054 });
+          const eye = new THREE.Mesh(eyeGeo, eyeMat);
+          eye.position.set(0, 0.75, 0.45);
+          this.group.add(eye);
+
+        } else if (type === 'brute') {
+          this.maxHp = 130 + (state.currentWave * 30);
+          this.hp = this.maxHp;
+          this.speed = 3.2;
+          this.damage = 24;
+          this.attackRadius = 2.0;
+          this.score = 120;
+          this.slamTimer = 0;
+
+          // Heavy Golem Mesh
+          const bodyGeo = new THREE.BoxGeometry(1.4, 1.8, 1.2);
+          this.mat = new THREE.MeshStandardMaterial({
+            color: 0x22333b,
+            emissive: 0x38b000,
+            emissiveIntensity: 0.3,
+            metalness: 0.9,
+            roughness: 0.4
+          });
+          this.mesh = new THREE.Mesh(bodyGeo, this.mat);
+          this.mesh.position.y = 1.2;
+          this.mesh.castShadow = true;
+          this.group.add(this.mesh);
+
+          // Fist spikes
+          const spikeGeo = new THREE.ConeGeometry(0.3, 0.8, 4);
+          const spikeMat = new THREE.MeshStandardMaterial({ color: 0xffb703 });
+          const spk1 = new THREE.Mesh(spikeGeo, spikeMat);
+          spk1.position.set(0.9, 1.2, 0.6);
+          spk1.rotation.x = Math.PI / 2;
+          this.group.add(spk1);
+          const spk2 = new THREE.Mesh(spikeGeo, spikeMat);
+          spk2.position.set(-0.9, 1.2, 0.6);
+          spk2.rotation.x = Math.PI / 2;
+          this.group.add(spk2);
+
+        } else if (type === 'caster') {
+          this.maxHp = 60 + (state.currentWave * 15);
+          this.hp = this.maxHp;
+          this.speed = 3.6;
+          this.damage = 16;
+          this.attackRadius = 7.0;
+          this.shootCooldown = 2.4;
+          this.shootTimer = Math.random() * 1.5;
+          this.score = 100;
+
+          // Floating Astral Obelisk
+          const obeliskGeo = new THREE.ConeGeometry(0.6, 2.0, 4);
+          this.mat = new THREE.MeshStandardMaterial({
+            color: 0x052942,
+            emissive: 0x00bbf9,
+            emissiveIntensity: 0.6,
+            metalness: 0.9,
+            roughness: 0.1
+          });
+          this.mesh = new THREE.Mesh(obeliskGeo, this.mat);
+          this.mesh.position.y = 1.6;
+          this.mesh.rotation.x = Math.PI;
+          this.mesh.castShadow = true;
+          this.group.add(this.mesh);
+
+        } else if (type === 'boss') {
+          // IGNIS REX - ANVIL OVERLORD
+          this.maxHp = 1200;
+          this.hp = this.maxHp;
+          this.speed = 3.8;
+          this.damage = 38;
+          this.attackRadius = 3.2;
+          this.score = 2500;
+          this.slamTimer = 3.0;
+          this.meteorTimer = 6.0;
+
+          // Massive Molten Golem
+          const bossTorsoGeo = new THREE.BoxGeometry(2.6, 3.2, 2.2);
+          this.mat = new THREE.MeshStandardMaterial({
+            color: 0x3d0b16,
+            emissive: 0xff0054,
+            emissiveIntensity: 0.5,
+            metalness: 0.85,
+            roughness: 0.3
+          });
+          this.mesh = new THREE.Mesh(bossTorsoGeo, this.mat);
+          this.mesh.position.y = 2.4;
+          this.mesh.castShadow = true;
+          this.group.add(this.mesh);
+
+          // Flaming Crown
+          const crownGeo = new THREE.ConeGeometry(1.2, 1.2, 5);
+          const crownMat = new THREE.MeshStandardMaterial({
+            color: 0xffb703,
+            emissive: 0xffb703,
+            emissiveIntensity: 0.9
+          });
+          const crown = new THREE.Mesh(crownGeo, crownMat);
+          crown.position.set(0, 4.3, 0);
+          this.group.add(crown);
+
+          // Giant Anvil Hammer
+          const hammerHeadGeo = new THREE.BoxGeometry(1.4, 1.2, 2.2);
+          const hammerMat = new THREE.MeshStandardMaterial({ color: 0x111625, metalness: 0.9 });
+          this.hammer = new THREE.Mesh(hammerHeadGeo, hammerMat);
+          this.hammer.position.set(2.0, 2.2, 1.2);
+          this.group.add(this.hammer);
+
+          // Boss Glow Light
+          this.bossLight = new THREE.PointLight(0xff0054, 2.0, 15);
+          this.bossLight.position.set(0, 3.0, 0);
+          this.group.add(this.bossLight);
+        }
+
+        scene.add(this.group);
+      }
+
+      takeDamage(amount, isCrit) {
+        this.hp -= amount;
+        this.flashTimer = 0.12;
+        this.mat.emissive.setHex(0xffffff);
+        this.mat.emissiveIntensity = 1.0;
+
+        spawnFloatingCombatText(this.position.clone().add(new THREE.Vector3(0, 1.5, 0)), Math.round(amount), isCrit);
+        state.totalDamageDealt += amount;
+
+        if (this.hp <= 0 && !this.dead) {
+          this.die();
+        }
+      }
+
+      die() {
+        this.dead = true;
+        state.kills++;
+
+        // Drop materials based on enemy tier
+        spawnMaterialDrops(this.position, this.type);
+
+        // Spawn death spark explosion
+        spawnExplosion(this.position, this.type === 'boss' ? 0xffb703 : 0x00f5d4);
+
+        if (this.type === 'boss') {
+          document.getElementById('boss-hud').style.display = 'none';
+        }
+      }
+
+      update(dt, heroPos) {
+        if (this.dead) return;
+
+        // Damage flash restoration
+        if (this.flashTimer > 0) {
+          this.flashTimer -= dt;
+          if (this.flashTimer <= 0) {
+            const baseColors = { crawler: 0x9d4edd, brute: 0x38b000, caster: 0x00bbf9, boss: 0xff0054 };
+            this.mat.emissive.setHex(baseColors[this.type] || 0x000000);
+            this.mat.emissiveIntensity = 0.4;
+          }
+        }
+
+        // Vector to hero
+        const toHero = new THREE.Vector3().subVectors(heroPos, this.position);
+        toHero.y = 0;
+        const dist = toHero.length();
+
+        // Direction towards hero
+        if (dist > 0.01) {
+          toHero.normalize();
+          this.group.rotation.y = Math.atan2(toHero.x, toHero.z);
+        }
+
+        if (this.type === 'crawler') {
+          // Chase player aggressively
+          this.position.x += toHero.x * this.speed * dt;
+          this.position.z += toHero.z * this.speed * dt;
+
+          if (dist < this.attackRadius) {
+            damageHero(this.damage * dt);
+          }
+        } else if (this.type === 'brute') {
+          // Charge player
+          this.position.x += toHero.x * this.speed * dt;
+          this.position.z += toHero.z * this.speed * dt;
+
+          if (dist < this.attackRadius) {
+            damageHero(this.damage * dt * 1.5);
+          }
+        } else if (this.type === 'caster') {
+          // Keep distance & shoot
+          if (dist < 6.0) {
+            // Back away
+            this.position.x -= toHero.x * this.speed * dt * 0.7;
+            this.position.z -= toHero.z * this.speed * dt * 0.7;
+          } else if (dist > 9.0) {
+            this.position.x += toHero.x * this.speed * dt;
+            this.position.z += toHero.z * this.speed * dt;
+          }
+
+          this.shootTimer -= dt;
+          if (this.shootTimer <= 0) {
+            this.shootTimer = this.shootCooldown;
+            spawnEnemyProjectile(this.position, toHero);
+          }
+        } else if (this.type === 'boss') {
+          // Boss AI
+          this.position.x += toHero.x * this.speed * dt;
+          this.position.z += toHero.z * this.speed * dt;
+
+          // Update Boss HP HUD
+          const pct = Math.max(0, Math.min(100, (this.hp / this.maxHp) * 100));
+          document.getElementById('boss-hp-fill').style.width = pct + '%';
+          document.getElementById('boss-hp-text').textContent = Math.round(pct) + '%';
+
+          if (dist < this.attackRadius) {
+            damageHero(this.damage * dt * 2.0);
+          }
+
+          // Periodic Ground Slam Shockwave
+          this.slamTimer -= dt;
+          if (this.slamTimer <= 0) {
+            this.slamTimer = 4.5;
+            spawnGroundShockwave(this.position);
+          }
+        }
+
+        // Constrain enemy to arena
+        const dFromCenter = Math.sqrt(this.position.x * this.position.x + this.position.z * this.position.z);
+        if (dFromCenter > GAME_CONFIG.ARENA_RADIUS + 1) {
+          const a = Math.atan2(this.position.z, this.position.x);
+          this.position.x = Math.cos(a) * (GAME_CONFIG.ARENA_RADIUS + 0.5);
+          this.position.z = Math.sin(a) * (GAME_CONFIG.ARENA_RADIUS + 0.5);
+        }
+      }
+
+      destroy() {
+        scene.remove(this.group);
+      }
+    }
+
+    const enemies = [];
+
+    function spawnEnemy(type) {
+      const angle = Math.random() * Math.PI * 2;
+      const radius = GAME_CONFIG.ARENA_RADIUS - 0.5;
+      const spawnPos = new THREE.Vector3(Math.cos(angle) * radius, 0, Math.sin(angle) * radius);
+      const enemy = new EnemyEntity(type, spawnPos);
+      enemies.push(enemy);
+    }
+
+    /* ==========================================================================
+       8. PROJECTILES, SHOCKWAVES & PARTICLES
+       ========================================================================== */
+    const projectiles = [];
+    const shockwaves = [];
+    const explosions = [];
+
+    function spawnEnemyProjectile(origin, dir) {
+      const projGeo = new THREE.SphereGeometry(0.35, 8, 8);
+      const projMat = new THREE.MeshBasicMaterial({ color: 0x00bbf9 });
+      const mesh = new THREE.Mesh(projGeo, projMat);
+      mesh.position.copy(origin).add(new THREE.Vector3(0, 1.5, 0));
+      scene.add(mesh);
+
+      projectiles.push({
+        mesh: mesh,
+        dir: dir.clone().normalize(),
+        speed: 8.5,
+        damage: 18,
+        lifetime: 3.5
+      });
+    }
+
+    function spawnGroundShockwave(center) {
+      sound.playHit();
+      triggerScreenShake();
+      const waveGeo = new THREE.RingGeometry(0.5, 1.2, 32);
+      const waveMat = new THREE.MeshBasicMaterial({
+        color: 0xff0054,
+        side: THREE.DoubleSide,
+        transparent: true,
+        opacity: 0.9
+      });
+      const mesh = new THREE.Mesh(waveGeo, waveMat);
+      mesh.rotation.x = -Math.PI / 2;
+      mesh.position.copy(center);
+      mesh.position.y = 0.05;
+      scene.add(mesh);
+
+      shockwaves.push({
+        mesh: mesh,
+        radius: 1.0,
+        maxRadius: 8.5,
+        speed: 9.0,
+        damage: 28,
+        center: center.clone()
+      });
+    }
+
+    function spawnExplosion(pos, colorHex) {
+      const pCount = 20;
+      const geo = new THREE.BufferGeometry();
+      const positions = new Float32Array(pCount * 3);
+      const velocities = [];
+
+      for (let i = 0; i < pCount; i++) {
+        positions[i * 3] = pos.x;
+        positions[i * 3 + 1] = pos.y + 0.8;
+        positions[i * 3 + 2] = pos.z;
+
+        velocities.push(new THREE.Vector3(
+          (Math.random() - 0.5) * 8,
+          Math.random() * 6 + 2,
+          (Math.random() - 0.5) * 8
+        ));
+      }
+
+      geo.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+      const mat = new THREE.PointsMaterial({
+        color: colorHex || 0x00f5d4,
+        size: 0.45,
+        transparent: true,
+        opacity: 1,
+        blending: THREE.AdditiveBlending
+      });
+      const pSystem = new THREE.Points(geo, mat);
+      scene.add(pSystem);
+
+      explosions.push({
+        pSystem: pSystem,
+        velocities: velocities,
+        positions: positions,
+        lifetime: 0.6
+      });
+    }
+
+    /* ==========================================================================
+       9. LOOT & MATERIAL DROPS ENGINE
+       ========================================================================== */
+    const droppedMaterials = [];
+
+    const MAT_TYPES = [
+      { id: 'pyrite', color: 0xfb8500, icon: '🔥' },
+      { id: 'aether', color: 0x00f5d4, icon: '🔷' },
+      { id: 'titanium', color: 0x38b000, icon: '🟢' },
+      { id: 'catalyst', color: 0x9d4edd, icon: '🟣' }
+    ];
+
+    function spawnMaterialDrops(pos, enemyType) {
+      let count = 1;
+      if (enemyType === 'brute') count = 2;
+      if (enemyType === 'caster') count = 2;
+      if (enemyType === 'boss') count = 8;
+
+      for (let i = 0; i < count; i++) {
+        // Pick material based on enemy type or random
+        let matMeta = MAT_TYPES[0];
+        if (enemyType === 'crawler') {
+          matMeta = Math.random() > 0.4 ? MAT_TYPES[0] : MAT_TYPES[2]; // Pyrite or Titanium
+        } else if (enemyType === 'brute') {
+          matMeta = Math.random() > 0.5 ? MAT_TYPES[2] : MAT_TYPES[1]; // Titanium or Aether
+        } else if (enemyType === 'caster') {
+          matMeta = Math.random() > 0.5 ? MAT_TYPES[1] : MAT_TYPES[3]; // Aether or Catalyst
+        } else if (enemyType === 'boss') {
+          matMeta = MAT_TYPES[i % 4];
+        }
+
+        // 3D Gem Mesh
+        const gemGeo = new THREE.OctahedronGeometry(0.38);
+        const gemMat = new THREE.MeshStandardMaterial({
+          color: matMeta.color,
+          emissive: matMeta.color,
+          emissiveIntensity: 0.8,
+          roughness: 0.1,
+          metalness: 0.8
+        });
+        const mesh = new THREE.Mesh(gemGeo, gemMat);
+        mesh.position.copy(pos);
+        mesh.position.y = 0.5;
+        scene.add(mesh);
+
+        droppedMaterials.push({
+          id: matMeta.id,
+          mesh: mesh,
+          velocity: new THREE.Vector3(
+            (Math.random() - 0.5) * 4,
+            Math.random() * 3 + 2,
+            (Math.random() - 0.5) * 4
+          ),
+          bobOffset: Math.random() * Math.PI * 2
+        });
+      }
+    }
+
+    function updateMaterialDrops(dt, heroPos) {
+      for (let i = droppedMaterials.length - 1; i >= 0; i--) {
+        const drop = droppedMaterials[i];
+
+        // Apply bounce physics to floor
+        if (drop.velocity.y > 0 || drop.mesh.position.y > 0.4) {
+          drop.mesh.position.x += drop.velocity.x * dt;
+          drop.mesh.position.y += drop.velocity.y * dt;
+          drop.mesh.position.z += drop.velocity.z * dt;
+          drop.velocity.y -= 14 * dt; // gravity
+        } else {
+          drop.mesh.position.y = 0.4 + Math.sin(Date.now() * 0.005 + drop.bobOffset) * 0.12;
+        }
+
+        drop.mesh.rotation.y += dt * 3;
+        drop.mesh.rotation.x += dt * 2;
+
+        // Magnetic Attraction to Hero
+        const dist = drop.mesh.position.distanceTo(heroPos);
+        if (dist < 4.5 || state.phase === 'refinery') {
+          const pullDir = new THREE.Vector3().subVectors(heroPos, drop.mesh.position).normalize();
+          const pullSpeed = Math.max(12, 28 - dist * 3);
+          drop.mesh.position.addScaledVector(pullDir, pullSpeed * dt);
+
+          if (dist < 1.0) {
+            // Collected!
+            sound.playPickup();
+            state.materials[drop.id]++;
+            updateInventoryHUD();
+
+            // Floating icon
+            const matMeta = MAT_TYPES.find(m => m.id === drop.id);
+            spawnFloatingCombatText(heroPos.clone().add(new THREE.Vector3(0, 1.8, 0)), `+1 ${drop.id.toUpperCase()}`, false, matMeta ? matMeta.color : 0xffffff);
+
+            scene.remove(drop.mesh);
+            droppedMaterials.splice(i, 1);
+          }
+        }
+      }
+    }
+
+    /* ==========================================================================
+       10. COMBAT CALCULATIONS & COMBAT TEXT
+       ========================================================================== */
+    function performHeroAttack() {
+      if (state.hero.attackCooldown > 0) return;
+
+      state.hero.attackCooldown = 0.32 / state.hero.attackSpeed;
+      state.hero.triggerSlash(state.hero.attackCombo);
+      state.hero.attackCombo = (state.hero.attackCombo + 1) % 3;
+
+      // Check hit radius in front of hero
+      const heroPos = hero.position;
+      const attackRange = 2.8;
+      const arcAngle = Math.PI * 0.75;
+
+      const heroFacing = new THREE.Vector3(
+        Math.sin(hero.group.rotation.y),
+        0,
+        Math.cos(hero.group.rotation.y)
+      );
+
+      let hitAny = false;
+
+      enemies.forEach(enemy => {
+        if (enemy.dead) return;
+        const toEnemy = new THREE.Vector3().subVectors(enemy.position, heroPos);
+        toEnemy.y = 0;
+        const dist = toEnemy.length();
+
+        if (dist <= attackRange) {
+          toEnemy.normalize();
+          const dot = heroFacing.dot(toEnemy);
+          if (dot > Math.cos(arcAngle / 2)) {
+            // Target inside slash arc!
+            hitAny = true;
+            const isCrit = Math.random() < state.hero.critChance;
+            let damage = state.hero.attackDamage;
+            if (isCrit) damage *= state.hero.critMult;
+
+            // Extra variance
+            damage *= (0.9 + Math.random() * 0.2);
+
+            enemy.takeDamage(damage, isCrit);
+
+            // Knockback
+            enemy.position.addScaledVector(toEnemy, 0.8);
+
+            // Charge special meter
+            state.hero.specialCharge = Math.min(state.hero.specialMaxCharge, state.hero.specialCharge + 8);
+            updateSpecialButton();
+          }
+        }
+      });
+
+      if (hitAny) {
+        sound.playHit();
+      }
+    }
+
+    function performDash() {
+      if (state.hero.dashTimer > 0) return;
+      state.hero.dashTimer = state.hero.dashCooldown;
+      sound.playDash();
+
+      // Dash burst
+      const dashDir = hero.velocity.lengthSq() > 0.01
+        ? hero.velocity.clone().normalize()
+        : new THREE.Vector3(Math.sin(hero.group.rotation.y), Math.cos(hero.group.rotation.y)).normalize();
+
+      hero.position.x += dashDir.x * 4.8;
+      hero.position.z += dashDir.y * 4.8;
+
+      // i-frames
+      state.hero.invincibleTimer = 0.35;
+
+      // Spawn Dash Ghost Streak
+      spawnExplosion(hero.position, 0x00f5d4);
+    }
+
+    function performSpecialNova() {
+      if (state.hero.specialCharge < state.hero.specialMaxCharge) return;
+      state.hero.specialCharge = 0;
+      updateSpecialButton();
+
+      sound.playNova();
+      triggerScreenShake();
+
+      // Exploding Nova VFX
+      spawnExplosion(hero.position, 0x9d4edd);
+      spawnGroundShockwave(hero.position);
+
+      // Hit all enemies in arena
+      enemies.forEach(enemy => {
+        if (enemy.dead) return;
+        const dist = enemy.position.distanceTo(hero.position);
+        if (dist < 10) {
+          const dmg = state.hero.attackDamage * 3.5;
+          enemy.takeDamage(dmg, true);
+        }
+      });
+    }
+
+    function damageHero(amount) {
+      if (state.hero.invincibleTimer > 0 || state.phase !== 'playing') return;
+
+      // Shield absorbs first
+      if (state.hero.shield > 0) {
+        if (state.hero.shield >= amount) {
+          state.hero.shield -= amount;
+          amount = 0;
+        } else {
+          amount -= state.hero.shield;
+          state.hero.shield = 0;
+        }
+      }
+
+      if (amount > 0) {
+        state.hero.hp -= amount;
+        triggerScreenShake();
+      }
+
+      state.hero.shieldRegenTimer = 3.5; // reset shield delay
+      updateVitalsHUD();
+
+      if (state.hero.hp <= 0) {
+        handleGameOver(false);
+      }
+    }
+
+    function spawnFloatingCombatText(worldPos, text, isCrit, colorHex) {
+      const container = document.getElementById('fct-layer');
+      const item = document.createElement('div');
+      item.className = 'fct-item';
+      item.textContent = isCrit ? `CRIT! ${text}` : text;
+
+      if (isCrit) {
+        item.style.color = '#ffb703';
+        item.style.fontSize = '22px';
+        item.style.textShadow = '0 0 10px rgba(255, 183, 3, 0.8)';
+      } else if (colorHex) {
+        item.style.color = '#' + colorHex.toString(16).padStart(6, '0');
+      } else {
+        item.style.color = '#ffffff';
+      }
+
+      // Project 3D to Screen
+      const projected = worldPos.clone().project(camera);
+      const x = (projected.x * 0.5 + 0.5) * window.innerWidth;
+      const y = (-(projected.y * 0.5) + 0.5) * window.innerHeight;
+      item.style.left = `${x}px`;
+      item.style.top = `${y}px`;
+
+      container.appendChild(item);
+      setTimeout(() => {
+        if (item.parentNode) item.parentNode.removeChild(item);
+      }, 850);
+    }
+
+    function triggerScreenShake() {
+      const el = document.body;
+      el.classList.remove('shake');
+      void el.offsetWidth;
+      el.classList.add('shake');
+      setTimeout(() => el.classList.remove('shake'), 260);
+    }
+
+    function triggerAnvilFlash() {
+      const el = document.getElementById('anvil-flash');
+      el.style.opacity = '0.7';
+      setTimeout(() => el.style.opacity = '0', 100);
+    }
+
+    /* ==========================================================================
+       11. WAVE MANAGER & SPAWNER
+       ========================================================================== */
+    let waveSpawnTimer = 0;
+
+    function startWave(waveNumber) {
+      state.phase = 'playing';
+      state.currentWave = waveNumber;
+      state.waveTimeRemaining = GAME_CONFIG.WAVE_DURATION;
+      waveSpawnTimer = 0;
+
+      // Close modal
+      document.getElementById('refinery-modal').style.display = 'none';
+
+      // Update Title HUD
+      document.getElementById('wave-display-title').textContent = `WAVE ${waveNumber} / ${GAME_CONFIG.TOTAL_WAVES}`;
+
+      // If Wave 5 -> Boss Overlord!
+      if (waveNumber === 5) {
+        document.getElementById('boss-hud').style.display = 'block';
+        document.getElementById('boss-display-name').textContent = 'IGNIS REX - ANVIL OVERLORD';
+        spawnEnemy('boss');
+      }
+
+      sound.playFanfare();
+    }
+
+    function updateWaveSpawning(dt) {
+      if (state.phase !== 'playing') return;
+
+      state.waveTimeRemaining -= dt;
+      state.runTimer += dt;
+
+      // Update HUD timer
+      const mins = Math.floor(Math.max(0, state.waveTimeRemaining) / 60);
+      const secs = Math.floor(Math.max(0, state.waveTimeRemaining) % 60);
+      document.getElementById('wave-timer').textContent = `${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
+
+      // Update threat count
+      const aliveCount = enemies.filter(e => !e.dead).length;
+      document.getElementById('enemies-alive-text').textContent = `THREATS: ${aliveCount}`;
+
+      // Spawning cadence
+      waveSpawnTimer -= dt;
+      if (waveSpawnTimer <= 0 && state.waveTimeRemaining > 2) {
+        const interval = Math.max(0.8, 2.8 - state.currentWave * 0.35);
+        waveSpawnTimer = interval;
+
+        // Wave composition
+        if (state.currentWave === 1) {
+          spawnEnemy('crawler');
+        } else if (state.currentWave === 2) {
+          spawnEnemy(Math.random() > 0.4 ? 'crawler' : 'brute');
+        } else if (state.currentWave === 3) {
+          spawnEnemy(Math.random() > 0.5 ? 'caster' : 'crawler');
+        } else if (state.currentWave === 4) {
+          const r = Math.random();
+          if (r < 0.45) spawnEnemy('crawler');
+          else if (r < 0.75) spawnEnemy('brute');
+          else spawnEnemy('caster');
+        } else if (state.currentWave === 5) {
+          // Boss wave adds minions
+          if (aliveCount < 6) {
+            spawnEnemy(Math.random() > 0.5 ? 'crawler' : 'caster');
+          }
+        }
+      }
+
+      // Check wave completion
+      if (state.waveTimeRemaining <= 0 || (state.currentWave === 5 && enemies.some(e => e.type === 'boss' && e.dead))) {
+        completeWave();
+      }
+    }
+
+    function completeWave() {
+      // Clear remaining regular enemies
+      enemies.forEach(e => {
+        if (!e.dead && e.type !== 'boss') e.die();
+      });
+
+      if (state.currentWave >= GAME_CONFIG.TOTAL_WAVES) {
+        // Victory!
+        handleGameOver(true);
+      } else {
+        // Open Refinery Modal
+        openRefinery();
+      }
+    }
+
+    /* ==========================================================================
+       12. THE GEAR REFINERY (TAP & DRAG INTERACTION)
+       ========================================================================== */
+    function openRefinery() {
+      state.phase = 'refinery';
+      state.refineryTimeRemaining = GAME_CONFIG.REFINERY_DURATION;
+      sound.playFanfare();
+
+      // Reset crucible slots
+      state.crucible.slot1 = null;
+      state.crucible.slot2 = null;
+      updateCrucibleUI();
+
+      // Show modal
+      document.getElementById('refinery-modal').style.display = 'flex';
+      updateInventoryHUD();
+      updateGearLoadoutUI();
+    }
+
+    function updateRefineryTimer(dt) {
+      if (state.phase !== 'refinery') return;
+
+      state.refineryTimeRemaining -= dt;
+      const secs = Math.ceil(Math.max(0, state.refineryTimeRemaining));
+      document.getElementById('refinery-countdown').textContent = `NEXT WAVE: ${secs}s`;
+
+      if (state.refineryTimeRemaining <= 0) {
+        // Automatically start next wave
+        startWave(state.currentWave + 1);
+      }
+    }
+
+    // Insert material into crucible
+    function insertMaterialToCrucible(matType) {
+      if (state.materials[matType] <= 0) return;
+
+      if (!state.crucible.slot1) {
+        state.crucible.slot1 = matType;
+        state.materials[matType]--;
+      } else if (!state.crucible.slot2) {
+        state.crucible.slot2 = matType;
+        state.materials[matType]--;
+      } else {
+        // Replace slot 2 and refund previous
+        state.materials[state.crucible.slot2]++;
+        state.crucible.slot2 = matType;
+        state.materials[matType]--;
+      }
+
+      sound.playPickup();
+      updateInventoryHUD();
+      updateCrucibleUI();
+    }
+
+    // Clear crucible slots
+    function clearCrucibleSlot(slotNum) {
+      if (slotNum === 1 && state.crucible.slot1) {
+        state.materials[state.crucible.slot1]++;
+        state.crucible.slot1 = null;
+      } else if (slotNum === 2 && state.crucible.slot2) {
+        state.materials[state.crucible.slot2]++;
+        state.crucible.slot2 = null;
+      }
+      updateInventoryHUD();
+      updateCrucibleUI();
+    }
+
+    function updateCrucibleUI() {
+      const s1 = state.crucible.slot1;
+      const s2 = state.crucible.slot2;
+
+      // Slot 1 UI
+      const slot1El = document.getElementById('forge-slot-1');
+      if (s1) {
+        slot1El.classList.add('filled');
+        const meta = MAT_TYPES.find(m => m.id === s1);
+        document.getElementById('slot-1-icon').textContent = meta ? meta.icon : '💎';
+        document.getElementById('slot-1-name').textContent = s1.toUpperCase();
+      } else {
+        slot1El.classList.remove('filled');
+        document.getElementById('slot-1-icon').textContent = '➕';
+        document.getElementById('slot-1-name').textContent = 'SLOT A';
+      }
+
+      // Slot 2 UI
+      const slot2El = document.getElementById('forge-slot-2');
+      if (s2) {
+        slot2El.classList.add('filled');
+        const meta = MAT_TYPES.find(m => m.id === s2);
+        document.getElementById('slot-2-icon').textContent = meta ? meta.icon : '💎';
+        document.getElementById('slot-2-name').textContent = s2.toUpperCase();
+      } else {
+        slot2El.classList.remove('filled');
+        document.getElementById('slot-2-icon').textContent = '➕';
+        document.getElementById('slot-2-name').textContent = 'SLOT B';
+      }
+
+      // Check Recipe
+      const btnForge = document.getElementById('btn-do-forge');
+      if (s1 && s2) {
+        const key = [s1, s2].sort().join('+');
+        const recipe = RECIPES[key];
+        state.crucible.predictedRecipe = recipe;
+
+        if (recipe) {
+          document.getElementById('preview-icon').textContent = recipe.icon;
+          document.getElementById('preview-name').textContent = recipe.name;
+          document.getElementById('preview-stats').textContent = recipe.statText;
+          btnForge.disabled = false;
+        } else {
+          document.getElementById('preview-icon').textContent = '⚡';
+          document.getElementById('preview-name').textContent = 'Runic Compound';
+          document.getElementById('preview-stats').textContent = '+15 All Stats';
+          btnForge.disabled = false;
+        }
+      } else {
+        state.crucible.predictedRecipe = null;
+        document.getElementById('preview-icon').textContent = '💎';
+        document.getElementById('preview-name').textContent = 'Select Materials';
+        document.getElementById('preview-stats').textContent = 'Insert 2 materials into the crucible';
+        btnForge.disabled = true;
+      }
+    }
+
+    // Forge the recipe
+    function executeForge() {
+      if (!state.crucible.slot1 || !state.crucible.slot2) return;
+
+      const recipe = state.crucible.predictedRecipe;
+      sound.playAnvilStrike();
+      triggerAnvilFlash();
+      triggerScreenShake();
+      state.gearRefinedCount++;
+
+      if (recipe) {
+        const currentTier = state.gear[recipe.slot].tier;
+        const newTier = Math.min(5, currentTier + recipe.tierBonus);
+
+        state.gear[recipe.slot] = {
+          name: recipe.name,
+          tier: newTier,
+          icon: recipe.icon,
+          stat: recipe.statText
+        };
+
+        // Apply Stat Upgrades
+        if (recipe.slot === 'weapon') {
+          state.hero.attackDamage += 18;
+          state.hero.attackSpeed += 0.15;
+          hero.updateVisualTier(newTier);
+        } else if (recipe.slot === 'armor') {
+          state.hero.maxHp += 80;
+          state.hero.hp = Math.min(state.hero.maxHp, state.hero.hp + 80);
+          state.hero.maxShield += 40;
+          state.hero.shield = state.hero.maxShield;
+        } else if (recipe.slot === 'boots') {
+          state.hero.moveSpeed += 1.4;
+          state.hero.dashCooldown = Math.max(0.6, state.hero.dashCooldown - 0.15);
+        } else if (recipe.slot === 'relic') {
+          state.hero.critChance = Math.min(0.65, state.hero.critChance + 0.12);
+          state.hero.critMult += 0.3;
+        }
+      } else {
+        // Fallback compound upgrade
+        state.hero.attackDamage += 10;
+        state.hero.maxHp += 40;
+        state.hero.hp += 40;
+      }
+
+      // Reset crucible
+      state.crucible.slot1 = null;
+      state.crucible.slot2 = null;
+
+      updateCrucibleUI();
+      updateGearLoadoutUI();
+      updateVitalsHUD();
+    }
+
+    // Auto-Refine One-Tap Smart Action
+    function executeAutoForge() {
+      // Find two materials available in inventory
+      const available = [];
+      ['pyrite', 'aether', 'titanium', 'catalyst'].forEach(k => {
+        for (let i = 0; i < state.materials[k]; i++) {
+          available.push(k);
+        }
+      });
+
+      if (available.length < 2) {
+        // Not enough materials
+        sound.playHit();
+        return;
+      }
+
+      // Prioritize powerful combinations
+      const m1 = available[0];
+      const m2 = available[1];
+
+      insertMaterialToCrucible(m1);
+      insertMaterialToCrucible(m2);
+
+      setTimeout(() => {
+        executeForge();
+      }, 250);
+    }
+
+    function updateInventoryHUD() {
+      document.getElementById('hud-pyrite').textContent = state.materials.pyrite;
+      document.getElementById('hud-aether').textContent = state.materials.aether;
+      document.getElementById('hud-titanium').textContent = state.materials.titanium;
+      document.getElementById('hud-catalyst').textContent = state.materials.catalyst;
+
+      document.getElementById('bag-pyrite-count').textContent = state.materials.pyrite;
+      document.getElementById('bag-aether-count').textContent = state.materials.aether;
+      document.getElementById('bag-titanium-count').textContent = state.materials.titanium;
+      document.getElementById('bag-catalyst-count').textContent = state.materials.catalyst;
+    }
+
+    function updateGearLoadoutUI() {
+      const tierNames = ['', 'T1 Common', 'T2 Rare', 'T3 Epic', 'T4 Legendary', 'T5 Mythic'];
+
+      ['weapon', 'armor', 'boots', 'relic'].forEach(slot => {
+        const item = state.gear[slot];
+        const cardEl = document.getElementById(`gear-card-${slot}`);
+        cardEl.className = `gear-card tier-${item.tier}`;
+        document.getElementById(`gear-name-${slot}`).textContent = item.name;
+        document.getElementById(`gear-tier-${slot}`).textContent = tierNames[item.tier] || 'T1 Common';
+        document.getElementById(`gear-stat-${slot}`).textContent = item.stat;
+      });
+
+      // Update Player Tier Tag in Main HUD
+      const avgTier = Math.round((state.gear.weapon.tier + state.gear.armor.tier + state.gear.boots.tier + state.gear.relic.tier) / 4);
+      document.getElementById('hero-tier-tag').textContent = tierNames[avgTier] || 'TIER I';
+    }
+
+    function updateVitalsHUD() {
+      const hpPct = Math.max(0, Math.min(100, (state.hero.hp / state.hero.maxHp) * 100));
+      document.getElementById('hp-bar').style.width = `${hpPct}%`;
+      document.getElementById('hp-text').textContent = `${Math.ceil(state.hero.hp)}/${state.hero.maxHp}`;
+
+      const shieldPct = Math.max(0, Math.min(100, (state.hero.shield / state.hero.maxShield) * 100));
+      document.getElementById('shield-bar').style.width = `${shieldPct}%`;
+      document.getElementById('shield-text').textContent = `${Math.ceil(state.hero.shield)}/${state.hero.maxShield}`;
+    }
+
+    function updateSpecialButton() {
+      const btn = document.getElementById('btn-special');
+      const pct = (state.hero.specialCharge / state.hero.specialMaxCharge) * 100;
+      if (state.hero.specialCharge >= state.hero.specialMaxCharge) {
+        btn.style.boxShadow = '0 0 25px rgba(157, 78, 221, 0.9)';
+        btn.style.borderColor = '#9d4edd';
+      } else {
+        btn.style.boxShadow = 'none';
+        btn.style.borderColor = 'rgba(255, 255, 255, 0.2)';
+      }
+    }
+
+    /* ==========================================================================
+       13. GAME OVER & VICTORY FLOW
+       ========================================================================== */
+    function handleGameOver(isVictory) {
+      state.phase = isVictory ? 'victory' : 'gameover';
+
+      if (isVictory) sound.playFanfare();
+      else sound.playHit();
+
+      const modal = document.getElementById('gameover-modal');
+      const box = document.getElementById('end-card-box');
+      const title = document.getElementById('end-title');
+      const subtitle = document.getElementById('end-subtitle');
+
+      if (isVictory) {
+        box.classList.add('victory-card');
+        title.className = 'end-title victory';
+        title.textContent = 'ARENA CONQUERED!';
+        subtitle.textContent = 'You forged mythic gear and vanquished the Astral Overlord!';
+      } else {
+        box.classList.remove('victory-card');
+        title.className = 'end-title defeat';
+        title.textContent = 'ARENA FALLEN';
+        subtitle.textContent = 'The void horrors shattered your defenses.';
+      }
+
+      document.getElementById('stat-waves-cleared').textContent = `${isVictory ? 5 : state.currentWave - 1} / 5`;
+      document.getElementById('stat-kills').textContent = state.kills;
+      document.getElementById('stat-refined').textContent = state.gearRefinedCount;
+      document.getElementById('stat-damage').textContent = Math.round(state.totalDamageDealt);
+
+      const mins = Math.floor(state.runTimer / 60);
+      const secs = Math.floor(state.runTimer % 60);
+      document.getElementById('stat-time').textContent = `${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
+
+      modal.style.display = 'flex';
+    }
+
+    function resetGame() {
+      document.getElementById('gameover-modal').style.display = 'none';
+      document.getElementById('start-modal').style.display = 'none';
+      document.getElementById('boss-hud').style.display = 'none';
+
+      // Reset entities
+      enemies.forEach(e => e.destroy());
+      enemies.length = 0;
+      droppedMaterials.forEach(d => scene.remove(d.mesh));
+      droppedMaterials.length = 0;
+      projectiles.forEach(p => scene.remove(p.mesh));
+      projectiles.length = 0;
+      shockwaves.forEach(s => scene.remove(s.mesh));
+      shockwaves.length = 0;
+
+      // Reset state
+      state.currentWave = 1;
+      state.runTimer = 0;
+      state.kills = 0;
+      state.totalDamageDealt = 0;
+      state.gearRefinedCount = 0;
+
+      state.materials = { pyrite: 2, aether: 2, titanium: 2, catalyst: 1 };
+      state.hero.hp = 120;
+      state.hero.maxHp = 120;
+      state.hero.shield = 60;
+      state.hero.maxShield = 60;
+      state.hero.attackDamage = 25;
+      state.hero.moveSpeed = 8.5;
+      state.hero.critChance = 0.10;
+      state.hero.dashCooldown = 1.2;
+      state.hero.specialCharge = 0;
+
+      state.gear = {
+        weapon: { name: 'Broad Blade', tier: 1, icon: '⚔️', stat: '+25 ATK' },
+        armor: { name: 'Iron Cuirass', tier: 1, icon: '🛡️', stat: '+120 HP' },
+        boots: { name: 'Runic Striders', tier: 1, icon: '🥾', stat: '+0% SPD' },
+        relic: { name: 'Void Ring', tier: 1, icon: '💍', stat: '+10% CRIT' }
+      };
+
+      hero.position.set(0, 0, 0);
+      hero.updateVisualTier(1);
+
+      updateInventoryHUD();
+      updateGearLoadoutUI();
+      updateVitalsHUD();
+
+      startWave(1);
+    }
+
+    /* ==========================================================================
+       14. TOUCH & KEYBOARD CONTROLS BINDINGS
+       ========================================================================== */
+    // Virtual Joystick
+    const joystickZone = document.getElementById('joystick-zone');
+    const joystickBase = document.getElementById('joystick-base');
+    const joystickKnob = document.getElementById('joystick-knob');
+    let joystickActive = false;
+    let joystickTouchId = null;
+    let joystickOrigin = { x: 0, y: 0 };
+
+    joystickZone.addEventListener('pointerdown', (e) => {
+      sound.init();
+      joystickActive = true;
+      joystickTouchId = e.pointerId;
+      const rect = joystickBase.getBoundingClientRect();
+      joystickOrigin = { x: rect.left + rect.width / 2, y: rect.top + rect.height / 2 };
+      handleJoystickMove(e.clientX, e.clientY);
+    });
+
+    window.addEventListener('pointermove', (e) => {
+      if (joystickActive && e.pointerId === joystickTouchId) {
+        handleJoystickMove(e.clientX, e.clientY);
+      }
+    });
+
+    const endJoystick = (e) => {
+      if (joystickActive && (!e || e.pointerId === joystickTouchId)) {
+        joystickActive = false;
+        joystickTouchId = null;
+        joystickKnob.style.transform = `translate(0px, 0px)`;
+        hero.velocity.set(0, 0);
+      }
+    };
+    window.addEventListener('pointerup', endJoystick);
+    window.addEventListener('pointercancel', endJoystick);
+
+    function handleJoystickMove(clientX, clientY) {
+      const dx = clientX - joystickOrigin.x;
+      const dy = clientY - joystickOrigin.y;
+      const maxRadius = 45;
+      const dist = Math.sqrt(dx * dx + dy * dy);
+
+      const normX = dist > 0 ? dx / dist : 0;
+      const normY = dist > 0 ? dy / dist : 0;
+      const clampedDist = Math.min(dist, maxRadius);
+
+      joystickKnob.style.transform = `translate(${normX * clampedDist}px, ${normY * clampedDist}px)`;
+
+      // Map to Isometric 3D Space (Screen X/Y -> Arena X/Z)
+      // Camera is looking along +Z slightly tilted
+      hero.velocity.set(normX * (clampedDist / maxRadius), normY * (clampedDist / maxRadius));
+    }
+
+    // Action Buttons
+    document.getElementById('btn-attack').addEventListener('pointerdown', (e) => {
+      e.preventDefault();
+      sound.init();
+      performHeroAttack();
+    });
+
+    document.getElementById('btn-dash').addEventListener('pointerdown', (e) => {
+      e.preventDefault();
+      sound.init();
+      performDash();
+    });
+
+    document.getElementById('btn-special').addEventListener('pointerdown', (e) => {
+      e.preventDefault();
+      sound.init();
+      performSpecialNova();
+    });
+
+    const btnAuto = document.getElementById('btn-auto');
+    btnAuto.addEventListener('pointerdown', (e) => {
+      e.preventDefault();
+      sound.init();
+      state.hero.autoAttack = !state.hero.autoAttack;
+      btnAuto.classList.toggle('active', state.hero.autoAttack);
+    });
+
+    // Keyboard Controls (Desktop)
+    const keys = {};
+    window.addEventListener('keydown', (e) => {
+      sound.init();
+      keys[e.key.toLowerCase()] = true;
+
+      if (e.key === ' ' || e.key === 'f') {
+        performHeroAttack();
+      } else if (e.key === 'Shift') {
+        performDash();
+      } else if (e.key.toLowerCase() === 'e') {
+        performSpecialNova();
+      }
+    });
+
+    window.addEventListener('keyup', (e) => {
+      keys[e.key.toLowerCase()] = false;
+    });
+
+    function updateKeyboardMovement() {
+      if (joystickActive) return;
+
+      let moveX = 0;
+      let moveZ = 0;
+
+      if (keys['w'] || keys['arrowup']) moveZ -= 1;
+      if (keys['s'] || keys['arrowdown']) moveZ += 1;
+      if (keys['a'] || keys['arrowleft']) moveX -= 1;
+      if (keys['d'] || keys['arrowright']) moveX += 1;
+
+      if (moveX !== 0 || moveZ !== 0) {
+        const len = Math.sqrt(moveX * moveX + moveZ * moveZ);
+        hero.velocity.set(moveX / len, moveZ / len);
+      } else {
+        hero.velocity.set(0, 0);
+      }
+    }
+
+    // Refinery Interactions
+    document.getElementById('card-pyrite').addEventListener('click', () => insertMaterialToCrucible('pyrite'));
+    document.getElementById('card-aether').addEventListener('click', () => insertMaterialToCrucible('aether'));
+    document.getElementById('card-titanium').addEventListener('click', () => insertMaterialToCrucible('titanium'));
+    document.getElementById('card-catalyst').addEventListener('click', () => insertMaterialToCrucible('catalyst'));
+
+    document.getElementById('forge-slot-1').addEventListener('click', () => clearCrucibleSlot(1));
+    document.getElementById('forge-slot-2').addEventListener('click', () => clearCrucibleSlot(2));
+
+    document.getElementById('btn-do-forge').addEventListener('click', executeForge);
+    document.getElementById('btn-quick-forge').addEventListener('click', executeAutoForge);
+
+    document.getElementById('btn-next-wave').addEventListener('click', () => {
+      startWave(state.currentWave + 1);
+    });
+
+    // Start / Restart Buttons
+    document.getElementById('btn-start-game').addEventListener('click', () => {
+      sound.init();
+      resetGame();
+    });
+
+    document.getElementById('btn-restart-game').addEventListener('click', () => {
+      sound.init();
+      resetGame();
+    });
+
+    // Window Resize Handler
+    window.addEventListener('resize', () => {
+      camera.aspect = window.innerWidth / window.innerHeight;
+      camera.updateProjectionMatrix();
+      renderer.setSize(window.innerWidth, window.innerHeight);
+    });
+
+    /* ==========================================================================
+       15. MAIN GAME LOOP
+       ========================================================================== */
+    let lastTime = performance.now();
+
+    function animate(currentTime) {
+      requestAnimationFrame(animate);
+
+      const dt = Math.min((currentTime - lastTime) / 1000, 0.1);
+      lastTime = currentTime;
+
+      // Update Movement & Hero
+      updateKeyboardMovement();
+      hero.update(dt);
+
+      // Camera Smooth Follow with Soft Constraints
+      camera.position.x = THREE.MathUtils.lerp(camera.position.x, hero.position.x * 0.45, dt * 3.5);
+      camera.position.z = THREE.MathUtils.lerp(camera.position.z, 24 + hero.position.z * 0.45, dt * 3.5);
+      camera.lookAt(hero.position.x * 0.35, 0, hero.position.z * 0.35);
+
+      // Rotate Background Dust & Celestial Crystals
+      dustParticles.rotation.y += dt * 0.03;
+      pylonMeshes.forEach((mesh, idx) => {
+        mesh.rotation.y += dt * (1 + idx * 0.3);
+        mesh.rotation.x = Math.sin(currentTime * 0.002 + idx) * 0.2;
+      });
+
+      // Cooldowns
+      if (state.hero.attackCooldown > 0) state.hero.attackCooldown -= dt;
+      if (state.hero.dashTimer > 0) state.hero.dashTimer -= dt;
+      if (state.hero.invincibleTimer > 0) state.hero.invincibleTimer -= dt;
+
+      // Shield Regeneration
+      if (state.hero.shieldRegenTimer > 0) {
+        state.hero.shieldRegenTimer -= dt;
+      } else if (state.hero.shield < state.hero.maxShield) {
+        state.hero.shield = Math.min(state.hero.maxShield, state.hero.shield + 18 * dt);
+        updateVitalsHUD();
+      }
+
+      // Auto-Attack Logic
+      if (state.hero.autoAttack && state.hero.attackCooldown <= 0 && state.phase === 'playing') {
+        // Find closest enemy
+        let closest = null;
+        let minDist = 3.2;
+        enemies.forEach(e => {
+          if (e.dead) return;
+          const d = e.position.distanceTo(hero.position);
+          if (d < minDist) {
+            minDist = d;
+            closest = e;
+          }
+        });
+        if (closest) {
+          hero.targetRotation = Math.atan2(closest.position.x - hero.position.x, closest.position.z - hero.position.z);
+          performHeroAttack();
+        }
+      }
+
+      // Update Waves & Enemies
+      if (state.phase === 'playing') {
+        updateWaveSpawning(dt);
+
+        for (let i = enemies.length - 1; i >= 0; i--) {
+          const enemy = enemies[i];
+          enemy.update(dt, hero.position);
+          if (enemy.dead) {
+            enemy.destroy();
+            enemies.splice(i, 1);
+          }
+        }
+      } else if (state.phase === 'refinery') {
+        updateRefineryTimer(dt);
+      }
+
+      // Update Drops
+      updateMaterialDrops(dt, hero.position);
+
+      // Update Projectiles
+      for (let i = projectiles.length - 1; i >= 0; i--) {
+        const proj = projectiles[i];
+        proj.mesh.position.addScaledVector(proj.dir, proj.speed * dt);
+        proj.lifetime -= dt;
+
+        // Check hit player
+        if (proj.mesh.position.distanceTo(hero.position) < 1.2) {
+          damageHero(proj.damage);
+          spawnExplosion(proj.mesh.position, 0x00bbf9);
+          scene.remove(proj.mesh);
+          projectiles.splice(i, 1);
+          continue;
+        }
+
+        if (proj.lifetime <= 0) {
+          scene.remove(proj.mesh);
+          projectiles.splice(i, 1);
+        }
+      }
+
+      // Update Shockwaves
+      for (let i = shockwaves.length - 1; i >= 0; i--) {
+        const wave = shockwaves[i];
+        wave.radius += wave.speed * dt;
+        wave.mesh.scale.set(wave.radius, wave.radius, 1);
+        wave.mesh.material.opacity = Math.max(0, 1 - (wave.radius / wave.maxRadius));
+
+        // Damage hero if caught
+        const d = wave.center.distanceTo(hero.position);
+        if (Math.abs(d - wave.radius) < 0.6) {
+          damageHero(wave.damage * dt * 4);
+        }
+
+        if (wave.radius >= wave.maxRadius) {
+          scene.remove(wave.mesh);
+          shockwaves.splice(i, 1);
+        }
+      }
+
+      // Update Particle Explosions
+      for (let i = explosions.length - 1; i >= 0; i--) {
+        const exp = explosions[i];
+        exp.lifetime -= dt;
+        const posAttr = exp.pSystem.geometry.attributes.position;
+        for (let j = 0; j < exp.velocities.length; j++) {
+          posAttr.array[j * 3] += exp.velocities[j].x * dt;
+          posAttr.array[j * 3 + 1] += exp.velocities[j].y * dt;
+          posAttr.array[j * 3 + 2] += exp.velocities[j].z * dt;
+          exp.velocities[j].y -= 9.8 * dt;
+        }
+        posAttr.needsUpdate = true;
+        exp.pSystem.material.opacity = Math.max(0, exp.lifetime / 0.6);
+
+        if (exp.lifetime <= 0) {
+          scene.remove(exp.pSystem);
+          explosions.splice(i, 1);
+        }
+      }
+
+      // Render 3D Scene
+      renderer.render(scene, camera);
+    }
+
+    requestAnimationFrame(animate);
+
+  })();
+  </script>
+</body>
+</html>
