@@ -822,6 +822,147 @@
       gap: 6px;
     }
 
+    /* Commander Profile & Season Dropdown */
+    .commander-profile-bar {
+      display: grid;
+      grid-template-columns: 1.1fr 1.3fr;
+      gap: 10px;
+      margin-bottom: 2px;
+    }
+
+    .profile-input-wrap, .theme-selector-wrap {
+      display: flex;
+      align-items: center;
+      background: rgba(0, 0, 0, 0.55);
+      border: 1px solid var(--border-cyan);
+      border-radius: 12px;
+      padding: 8px 10px;
+      gap: 8px;
+      box-shadow: inset 0 2px 8px rgba(0, 0, 0, 0.4);
+    }
+
+    .profile-icon, .theme-icon {
+      font-size: 16px;
+    }
+
+    .username-input, .theme-dropdown {
+      flex: 1;
+      background: transparent;
+      border: none;
+      outline: none;
+      color: #fff;
+      font-family: var(--font-title);
+      font-size: 13px;
+      font-weight: 700;
+      letter-spacing: 0.5px;
+    }
+
+    .username-input::placeholder {
+      color: rgba(255, 255, 255, 0.35);
+      font-size: 12px;
+    }
+
+    .theme-dropdown {
+      cursor: pointer;
+      background: #090e1f;
+      color: var(--neon-cyan);
+    }
+
+    .theme-dropdown option {
+      background: #090e1f;
+      color: #fff;
+    }
+
+    .username-error-alert {
+      background: rgba(255, 0, 84, 0.2);
+      border: 1px solid var(--neon-red);
+      color: #ff3366;
+      font-family: var(--font-mono);
+      font-size: 11px;
+      font-weight: 700;
+      padding: 8px 12px;
+      border-radius: 8px;
+      text-align: center;
+      animation: alertPulse 1.5s infinite;
+      box-shadow: 0 0 15px rgba(255, 0, 84, 0.3);
+    }
+
+    @keyframes alertPulse {
+      0%, 100% { opacity: 0.95; transform: scale(1); }
+      50% { opacity: 0.7; transform: scale(0.99); }
+    }
+
+    /* 4-Player Lobby Roster */
+    .lobby-roster {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      margin-top: 8px;
+    }
+
+    .roster-slot {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      border-radius: 10px;
+      padding: 8px 12px;
+      font-size: 12px;
+      font-family: var(--font-mono);
+      transition: all 0.2s;
+    }
+
+    .roster-slot.active {
+      border-color: var(--neon-cyan);
+      background: rgba(0, 245, 212, 0.09);
+      box-shadow: 0 0 10px rgba(0, 245, 212, 0.15);
+    }
+
+    .roster-slot.empty {
+      opacity: 0.45;
+      border-style: dashed;
+    }
+
+    .slot-player-info {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-weight: 700;
+      color: #fff;
+    }
+
+    .slot-badge {
+      font-size: 10px;
+      padding: 2px 8px;
+      border-radius: 4px;
+      background: rgba(255, 183, 3, 0.15);
+      border: 1px solid rgba(255, 183, 3, 0.4);
+      color: var(--neon-gold);
+    }
+
+    .slot-ready-tag {
+      font-size: 11px;
+      color: var(--neon-green);
+      font-weight: bold;
+      letter-spacing: 1px;
+    }
+
+    /* Teammates HUD Container */
+    .teammates-hud-container {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      min-width: 175px;
+    }
+
+    .teammate-vitals-card {
+      border-color: var(--neon-purple);
+      box-shadow: 0 4px 16px rgba(0,0,0,0.5), inset 0 0 10px rgba(157, 78, 221, 0.15);
+      padding: 6px 10px;
+      min-width: 165px;
+    }
+
     .btn-start {
       background: linear-gradient(135deg, #00f5d4, #00bbf9);
       border: none;
@@ -1196,22 +1337,8 @@
           </div>
         </div>
 
-        <!-- Teammate Vitals (Multiplayer Co-op) -->
-        <div class="hero-vitals teammate-vitals" id="teammate-vitals">
-          <div class="vitals-header">
-            <span class="hero-name" style="color: var(--neon-purple);" id="teammate-hero-name">TEAMMATE (P2)</span>
-            <span class="hero-level" id="teammate-tier-tag">TIER I</span>
-          </div>
-          <div class="bar-wrap">
-            <div class="bar-label">
-              <span>HP</span>
-              <span id="teammate-hp-text">100%</span>
-            </div>
-            <div class="bar-bg">
-              <div class="bar-fill hp-fill" id="teammate-hp-bar" style="width: 100%;"></div>
-            </div>
-          </div>
-        </div>
+        <!-- Teammates Vitals (Multiplayer Co-op Up to 4 Players) -->
+        <div id="teammates-hud-container" class="teammates-hud-container"></div>
       </div>
 
       <!-- Wave Status -->
@@ -1403,12 +1530,25 @@
   <div class="modal-overlay" id="start-modal" style="display: flex;">
     <div class="menu-card">
       <h1 class="game-logo">BROADROADS</h1>
-      <div class="game-subtitle">ISOMETRIC GEAR REFINERY ARENA</div>
+      <div class="game-subtitle" id="theme-season-subtitle">ISOMETRIC GEAR REFINERY ARENA</div>
+
+      <!-- Commander Profile & Monthly Season Selector -->
+      <div class="commander-profile-bar">
+        <div class="profile-input-wrap">
+          <span class="profile-icon">👤</span>
+          <input type="text" id="input-username" class="username-input" placeholder="Commander Username (required)" maxlength="15" autocomplete="off" spellcheck="false">
+        </div>
+        <div class="theme-selector-wrap">
+          <span class="theme-icon">📅</span>
+          <select id="select-monthly-theme" class="theme-dropdown" title="Change Monthly Arena Season Theme"></select>
+        </div>
+      </div>
+      <div id="username-error-alert" class="username-error-alert" style="display: none;">⚠️ Commander username is required (min 2 characters)</div>
 
       <!-- Mode Selector Tabs -->
       <div class="mode-tabs">
         <button class="tab-btn active" id="tab-solo">⚔️ SINGLE PLAYER</button>
-        <button class="tab-btn" id="tab-mp">🌐 ONLINE CO-OP (P2P)</button>
+        <button class="tab-btn" id="tab-mp">🌐 ONLINE CO-OP (UP TO 4 PLAYERS)</button>
       </div>
 
       <!-- Single Player Sub-Modes -->
@@ -1425,7 +1565,7 @@
         </div>
       </div>
 
-      <!-- Multiplayer WebRTC Panel -->
+      <!-- Multiplayer WebRTC Panel (Up to 4 Players) -->
       <div class="tab-content" id="mp-panel" style="display: none;">
         <div class="mp-panel">
           <div class="mp-actions-row">
@@ -1435,53 +1575,35 @@
 
           <!-- Host View -->
           <div id="host-view">
-            <div style="font-size: 11px; color: var(--text-muted); margin-bottom: 4px;">SHARE 4-LETTER ROOM CODE WITH A FRIEND:</div>
+            <div style="font-size: 11px; color: var(--text-muted); margin-bottom: 4px;">SHARE ROOM NUMBER (UP TO 4 PLAYERS):</div>
             <div class="room-code-box" id="display-room-code">
-              <span id="room-code-text">....</span>
+              <span id="room-code-text">#......</span>
               <button id="btn-copy-code" style="background: none; border: 1px solid var(--neon-cyan); color: var(--neon-cyan); border-radius: 6px; padding: 2px 8px; font-size: 11px; cursor: pointer;">COPY</button>
             </div>
-            <div class="lobby-status-pill" id="host-status-pill">⏳ Generating 4-letter code...</div>
+            <!-- 4-Player Roster Slots -->
+            <div class="lobby-roster" id="host-lobby-roster"></div>
+            <div class="lobby-status-pill" id="host-status-pill" style="margin-top: 8px;">🟢 Room Live (1/4 Players). Ready to deploy!</div>
           </div>
 
           <!-- Join View -->
           <div id="join-view" style="display: none;">
-            <div style="font-size: 11px; color: var(--text-muted); margin-bottom: 4px;">ENTER 4-LETTER ROOM CODE:</div>
+            <div style="font-size: 11px; color: var(--text-muted); margin-bottom: 4px;">ENTER ROOM NUMBER:</div>
             <div class="join-input-group">
-              <input type="text" class="join-input" id="input-room-code" placeholder="XXXX" maxlength="4" style="letter-spacing: 6px; font-weight: 900;">
+              <input type="tel" inputmode="numeric" class="join-input" id="input-room-code" placeholder="e.g. 748201" pattern="[0-9]*" style="letter-spacing: 4px; font-weight: 900;">
               <button class="btn-mp-sub" id="btn-connect-peer" style="flex: 0 0 100px;">CONNECT</button>
             </div>
-            <div class="lobby-status-pill" id="guest-status-pill">Enter 4-letter code above</div>
+            <!-- Guest Roster Slots once connected -->
+            <div class="lobby-roster" id="guest-lobby-roster" style="display: none; margin-top: 8px;"></div>
+            <div class="lobby-status-pill" id="guest-status-pill" style="margin-top: 8px;">Enter room number above</div>
           </div>
         </div>
       </div>
 
       <!-- Hero Class Selection -->
       <div>
-        <div class="class-selection-title">CHOOSE HERO CLASS & PLAYSTYLE</div>
-        <div class="class-grid">
-          <!-- Paladin -->
-          <div class="class-card selected" id="class-paladin" data-class="paladin">
-            <div class="class-card-icon">🛡️</div>
-            <div class="class-card-name">Paladin</div>
-            <div class="class-card-desc">Heavy blade & aegis shield. Sweeping slashes + whirlwind.</div>
-            <div class="class-card-special">Special: Cataclysm Nova</div>
-          </div>
-
-          <!-- Gunner -->
-          <div class="class-card" id="class-gunner" data-class="gunner">
-            <div class="class-card-icon">🏹</div>
-            <div class="class-card-name">Gunner</div>
-            <div class="class-card-desc">Dual plasma blasters. Rapid long-range piercing bolts.</div>
-            <div class="class-card-special">Special: Orbital Barrage</div>
-          </div>
-
-          <!-- Arcanist -->
-          <div class="class-card" id="class-arcanist" data-class="arcanist">
-            <div class="class-card-icon">🔮</div>
-            <div class="class-card-name">Arcanist</div>
-            <div class="class-card-desc">Cosmic runic orb. Chain lightning + void singularity.</div>
-            <div class="class-card-special">Special: Black Hole Vortex</div>
-          </div>
+        <div class="class-selection-title" id="class-selection-title">CHOOSE HERO CLASS & PLAYSTYLE</div>
+        <div class="class-grid" id="class-selection-grid">
+          <!-- Populated dynamically based on Season Theme -->
         </div>
       </div>
 
@@ -1779,6 +1901,168 @@
     };
 
     /* ==========================================================================
+       2.5. 12 MONTHLY THEMES & 36 UNIQUE HERO CLASSES
+       ========================================================================== */
+    const MONTHLY_THEMES = [
+      {
+        id: 'january', month: 0, monthName: 'January', name: 'Frostforge Citadel', icon: '❄️',
+        desc: 'Glacial Ice, Frozen Obsidian & Blizzard Rime',
+        primary: '#00f0ff', secondary: '#38bdf8', accent: '#f0f9ff',
+        bgDark: '#040a14', bgCard: 'rgba(6, 18, 36, 0.92)', borderColor: 'rgba(0, 240, 255, 0.45)',
+        primaryHex: 0x00f0ff, secondaryHex: 0x38bdf8, accentHex: 0xf0f9ff,
+        fogColor: 0x040a14, ambientColor: 0x1e3a5f, sunColor: 0xd0f0fd, arenaColor: 0x0a192f, dustHex: 0xa5f3fc,
+        classes: [
+          { id: 'paladin', type: 'melee', name: 'Frost Paladin', icon: '🛡️', desc: 'Glacial Greatblade & Permafrost Shield. Slowing ice sweeps.', special: 'Glacial Cataclysm', specialDesc: 'Radial ground freeze shockwave shattering nearby foes.' },
+          { id: 'gunner', type: 'ranged', name: 'Cryo Gunslinger', icon: '🏹', desc: 'Dual Frostfire Blasters. Piercing sub-zero lances.', special: 'Blizzard Barrage', specialDesc: 'Calls down homing frost rockets raining from orbit.' },
+          { id: 'arcanist', type: 'magic', name: 'Blizzard Archon', icon: '🔮', desc: 'Orb of Absolute Zero. Chaining frost sparks and freezing nova.', special: 'Zero-Point Singularity', specialDesc: 'Summons a sub-zero vortex that pulls and chills all horrors.' }
+        ]
+      },
+      {
+        id: 'february', month: 1, monthName: 'February', name: 'Obsidian Netherforge', icon: '🌋',
+        desc: 'Molten Magma, Ruby Lava & Scorched Earth',
+        primary: '#ff334b', secondary: '#ff7700', accent: '#ffd166',
+        bgDark: '#120508', bgCard: 'rgba(32, 10, 16, 0.92)', borderColor: 'rgba(255, 51, 75, 0.45)',
+        primaryHex: 0xff334b, secondaryHex: 0xff7700, accentHex: 0xffd166,
+        fogColor: 0x120508, ambientColor: 0x4a121a, sunColor: 0xffedd5, arenaColor: 0x220c11, dustHex: 0xfca5a5,
+        classes: [
+          { id: 'paladin', type: 'melee', name: 'Magma Juggernaut', icon: '🛡️', desc: 'Molten Cleaver & Pyre Shield. Flaming sweeping swings.', special: 'Eruption Slam', specialDesc: 'Ground eruption blasting magma shockwaves in all directions.' },
+          { id: 'gunner', type: 'ranged', name: 'Pyre Commando', icon: '🏹', desc: 'Dual Flamethrower Cannons. Incendiary plasma rounds.', special: 'Meteor Rain', specialDesc: 'Orbital artillery rain of molten meteorites.' },
+          { id: 'arcanist', type: 'magic', name: 'Infernal Warlock', icon: '🔮', desc: 'Nether Crystal Core. Hellfire arcs and burn embers.', special: 'Hellfire Chasm', specialDesc: 'Summons a fiery demonic chasm pulling in horrors.' }
+        ]
+      },
+      {
+        id: 'march', month: 2, monthName: 'March', name: 'Verdant Overgrowth', icon: '🌿',
+        desc: 'Bioluminescent Flora, Toxic Spores & Emerald Jungle',
+        primary: '#10b981', secondary: '#84cc16', accent: '#ecfccb',
+        bgDark: '#03140e', bgCard: 'rgba(6, 32, 22, 0.92)', borderColor: 'rgba(16, 185, 129, 0.45)',
+        primaryHex: 0x10b981, secondaryHex: 0x84cc16, accentHex: 0xecfccb,
+        fogColor: 0x03140e, ambientColor: 0x064e3b, sunColor: 0xdcfce7, arenaColor: 0x06281c, dustHex: 0x6ee7b7,
+        classes: [
+          { id: 'paladin', type: 'melee', name: 'Thorn Vanguard', icon: '🛡️', desc: 'Briar Greatblade & Living Bark Aegis. Piercing flora slashes.', special: 'Tanglewood Burst', specialDesc: 'Erupts thorny vines that cleave surrounding threats.' },
+          { id: 'gunner', type: 'ranged', name: 'Spore Ranger', icon: '🏹', desc: 'Dual Toxic Dart Blasters. Rapid poison flechettes.', special: 'Cluster Pod Barrage', specialDesc: 'Fires explosive bio-spore pods covering the arena.' },
+          { id: 'arcanist', type: 'magic', name: 'Verdant Druid', icon: '🔮', desc: 'Seed of Gaia. Bouncing floral sparks and bio-shocks.', special: 'Grave Root Singularity', specialDesc: 'Roots all foes toward a dense vegetative gravitational well.' }
+        ]
+      },
+      {
+        id: 'april', month: 3, monthName: 'April', name: 'Tempest Sky Bastion', icon: '⚡',
+        desc: 'Lightning Thunderstorms, Electric Violet & High Voltage',
+        primary: '#818cf8', secondary: '#38bdf8', accent: '#facc15',
+        bgDark: '#080b18', bgCard: 'rgba(16, 20, 48, 0.92)', borderColor: 'rgba(129, 140, 248, 0.45)',
+        primaryHex: 0x818cf8, secondaryHex: 0x38bdf8, accentHex: 0xfacc15,
+        fogColor: 0x080b18, ambientColor: 0x1e1b4b, sunColor: 0xe0e7ff, arenaColor: 0x11162e, dustHex: 0xa5b4fc,
+        classes: [
+          { id: 'paladin', type: 'melee', name: 'Thunder Vanguard', icon: '🛡️', desc: 'Storm Hammer & Volt Buckler. Electrified sweeps and shockwaves.', special: 'Thunderclap Nova', specialDesc: 'Calls down a colossal lightning strike discharging across arena.' },
+          { id: 'gunner', type: 'ranged', name: 'Railgun Striker', icon: '🏹', desc: 'Dual High-Voltage Rifles. Piercing lightning beams.', special: 'Ion Cannon Strike', specialDesc: 'Rains charged orbital ion missiles that detonate on impact.' },
+          { id: 'arcanist', type: 'magic', name: 'Tempest Invoker', icon: '🔮', desc: 'Tesla Core. Chaining arc lightning and ball shocks.', special: 'Plasma Storm Vortex', specialDesc: 'Forms an electrified cyclone dragging enemies into high voltage.' }
+        ]
+      },
+      {
+        id: 'may', month: 4, monthName: 'May', name: 'Gilded Solstice', icon: '☀️',
+        desc: 'Radiant Sun, Golden Dunes & Ancient Sand Temple',
+        primary: '#f59e0b', secondary: '#fbbf24', accent: '#fffbeb',
+        bgDark: '#140d04', bgCard: 'rgba(36, 24, 8, 0.92)', borderColor: 'rgba(245, 158, 11, 0.45)',
+        primaryHex: 0xf59e0b, secondaryHex: 0xfbbf24, accentHex: 0xfffbeb,
+        fogColor: 0x140d04, ambientColor: 0x451a03, sunColor: 0xfef3c7, arenaColor: 0x291a07, dustHex: 0xfcd34d,
+        classes: [
+          { id: 'paladin', type: 'melee', name: 'Sun Templar', icon: '🛡️', desc: 'Solar Greatsword & Dawn Guard. Searing golden sweeps.', special: 'Supernova Flare', specialDesc: 'Radial burst of blinding radiant sunlight burning hordes.' },
+          { id: 'gunner', type: 'ranged', name: 'Desert Gunslinger', icon: '🏹', desc: 'Dual Golden Revolvers. Ricocheting solar rounds.', special: 'Solar Flare Cascade', specialDesc: 'Unleashes a barrage of homing solar rays from heavens.' },
+          { id: 'arcanist', type: 'magic', name: 'Dawn Oracle', icon: '🔮', desc: 'Sun Prism. Radiant light sparks that illuminate and pierce.', special: 'Corona Singularity', specialDesc: 'Creates a miniature golden star pulling in all enemies.' }
+        ]
+      },
+      {
+        id: 'june', month: 5, monthName: 'June', name: 'Abyssal Trench', icon: '🌊',
+        desc: 'Deep Bioluminescent Ocean, Mariana Trench & Coral',
+        primary: '#06b6d4', secondary: '#14b8a6', accent: '#cffafe',
+        bgDark: '#031018', bgCard: 'rgba(4, 28, 40, 0.92)', borderColor: 'rgba(6, 182, 212, 0.45)',
+        primaryHex: 0x06b6d4, secondaryHex: 0x14b8a6, accentHex: 0xcffafe,
+        fogColor: 0x031018, ambientColor: 0x083344, sunColor: 0xccfbf1, arenaColor: 0x062230, dustHex: 0x67e8f9,
+        classes: [
+          { id: 'paladin', type: 'melee', name: 'Trench Berserker', icon: '🛡️', desc: 'Coral Glaive & Leviathan Carapace. Sweeping tidal crescents.', special: 'Tidal Shockwave', specialDesc: 'Erupts a high-pressure geyser shockwave across the arena.' },
+          { id: 'gunner', type: 'ranged', name: 'Harpoon Commando', icon: '🏹', desc: 'Twin Pneumatic Harpoon Launchers. Hydro darts.', special: 'Torpedo Salvo', specialDesc: 'Launches a cluster of homing acoustic torpedoes.' },
+          { id: 'arcanist', type: 'magic', name: 'Siren Weaver', icon: '🔮', desc: 'Pearl of the Abyss. Bouncing whirlpool orbs and water arcs.', special: 'Abyssal Maelstrom', specialDesc: 'Creates an inescapable whirlpool drowning nearby horrors.' }
+        ]
+      },
+      {
+        id: 'july', month: 6, monthName: 'July', name: 'Astral Starlight', icon: '✨',
+        desc: 'Deep Cosmic Void, Nebula Magenta & Stardust',
+        primary: '#a855f7', secondary: '#ec4899', accent: '#fdf4ff',
+        bgDark: '#0a0414', bgCard: 'rgba(24, 10, 40, 0.92)', borderColor: 'rgba(168, 85, 247, 0.45)',
+        primaryHex: 0xa855f7, secondaryHex: 0xec4899, accentHex: 0xfdf4ff,
+        fogColor: 0x0a0414, ambientColor: 0x3b0764, sunColor: 0xfae8ff, arenaColor: 0x1a092c, dustHex: 0xd8b4fe,
+        classes: [
+          { id: 'paladin', type: 'melee', name: 'Nebula Knight', icon: '🛡️', desc: 'Starforged Blade & Astral Aegis. Sweeping cosmic stardust.', special: 'Galactic Supernova', specialDesc: 'Detonates a starcore shockwave obliterating nearby horrors.' },
+          { id: 'gunner', type: 'ranged', name: 'Pulsar Gunner', icon: '🏹', desc: 'Twin Astral Blasters. High-frequency pulsar laser rays.', special: 'Comet Barrage', specialDesc: 'Calls down a constellation of flaming comets.' },
+          { id: 'arcanist', type: 'magic', name: 'Void Seer', icon: '🔮', desc: 'Cosmic Singularity Stone. Star flurries and nebula sparks.', special: 'Event Horizon', specialDesc: 'Rips open a gravitational void pulling all matter into darkness.' }
+        ]
+      },
+      {
+        id: 'august', month: 7, monthName: 'August', name: 'Ironclad Wasteland', icon: '⚙️',
+        desc: 'Heavy Industrial, Rust, Brass, Steam & Smog',
+        primary: '#f97316', secondary: '#d97706', accent: '#fde047',
+        bgDark: '#120e0a', bgCard: 'rgba(32, 22, 14, 0.92)', borderColor: 'rgba(249, 115, 22, 0.45)',
+        primaryHex: 0xf97316, secondaryHex: 0xd97706, accentHex: 0xfde047,
+        fogColor: 0x120e0a, ambientColor: 0x431407, sunColor: 0xffedd5, arenaColor: 0x241810, dustHex: 0xfdba74,
+        classes: [
+          { id: 'paladin', type: 'melee', name: 'Steel Bruiser', icon: '🛡️', desc: 'Steam Cleaver & Riveted Plating. Brutal heavy industrial slashes.', special: 'Overdrive Slam', specialDesc: 'Releases high-pressure steam boiler shockwaves.' },
+          { id: 'gunner', type: 'ranged', name: 'Gatling Tech', icon: '🏹', desc: 'Dual Rotary Miniguns. Rapid-fire heavy brass rounds.', special: 'Artillery Strike', specialDesc: 'Calls an orbital barrage of explosive heavy mortar shells.' },
+          { id: 'arcanist', type: 'magic', name: 'Spark Alchemist', icon: '🔮', desc: 'Voltaic Battery. Acid bolts and chemical galvanic sparks.', special: 'Chemical Rupture', specialDesc: 'Ignites a dense chemical vortex dissolving monster armor.' }
+        ]
+      },
+      {
+        id: 'september', month: 8, monthName: 'September', name: 'Spirit Twilight', icon: '🍂',
+        desc: 'Autumn Foliage, Golden Leaves & Spirit Realm',
+        primary: '#ea580c', secondary: '#ca8a04', accent: '#fed7aa',
+        bgDark: '#12080a', bgCard: 'rgba(32, 16, 20, 0.92)', borderColor: 'rgba(234, 88, 12, 0.45)',
+        primaryHex: 0xea580c, secondaryHex: 0xca8a04, accentHex: 0xfed7aa,
+        fogColor: 0x12080a, ambientColor: 0x450a0a, sunColor: 0xfef08a, arenaColor: 0x241014, dustHex: 0xfba05e,
+        classes: [
+          { id: 'paladin', type: 'melee', name: 'Spirit Samurai', icon: '🛡️', desc: 'Autumn Katana & Spirit Barrier. Graceful spectral slashes.', special: 'Ghost Blade Whirl', specialDesc: 'Whirlwind of ghostly blades slicing through surrounding foes.' },
+          { id: 'gunner', type: 'ranged', name: 'Wind Ranger', icon: '🏹', desc: 'Twin Gale Bows. Piercing razor wind feathers.', special: 'Typhoon Barrage', specialDesc: 'Summons a rain of gale arrows descending from autumn skies.' },
+          { id: 'arcanist', type: 'magic', name: 'Ethereal Shaman', icon: '🔮', desc: 'Spirit Bell. Chaining spirit wisps and spectral sparks.', special: 'Ancestral Well', specialDesc: 'Opens an ancestral spirit well pulling and draining enemy life.' }
+        ]
+      },
+      {
+        id: 'october', month: 9, monthName: 'October', name: 'Hallowed Dusk', icon: '🎃',
+        desc: 'Haunted Crypt, Gothic Violet & Eerie Ectoplasm',
+        primary: '#8b5cf6', secondary: '#22c55e', accent: '#f97316',
+        bgDark: '#080410', bgCard: 'rgba(20, 10, 34, 0.92)', borderColor: 'rgba(139, 92, 246, 0.45)',
+        primaryHex: 0x8b5cf6, secondaryHex: 0x22c55e, accentHex: 0xf97316,
+        fogColor: 0x080410, ambientColor: 0x2e1065, sunColor: 0xf3e8ff, arenaColor: 0x160c24, dustHex: 0xc4b5fd,
+        classes: [
+          { id: 'paladin', type: 'melee', name: 'Crypt Reaper', icon: '🛡️', desc: 'Heavy Bone Scythe & Tombstone Shield. Cursed sweeping harvests.', special: 'Reaper Cataclysm', specialDesc: 'Radial soul rupture tearing the lifeforce of surrounding horrors.' },
+          { id: 'gunner', type: 'ranged', name: 'Grave Marksman', icon: '🏹', desc: 'Twin Bone Pistols. Ectoplasm rounds and ghost shots.', special: 'Spectral Volley', specialDesc: 'Unleashes ghost missiles screaming down upon the battlefield.' },
+          { id: 'arcanist', type: 'magic', name: 'Necro Caster', icon: '🔮', desc: 'Skull Relic. Cursed soul flames and phantom sparks.', special: 'Nether Chasm Vortex', specialDesc: 'Summons a crypt maw pulling horrors into eternal darkness.' }
+        ]
+      },
+      {
+        id: 'november', month: 10, monthName: 'November', name: 'Chrono Clockwork', icon: '🕰️',
+        desc: 'Antique Brass, Precision Gears & Steam Pipes',
+        primary: '#d97706', secondary: '#06b6d4', accent: '#fef3c7',
+        bgDark: '#100d08', bgCard: 'rgba(30, 22, 14, 0.92)', borderColor: 'rgba(217, 119, 6, 0.45)',
+        primaryHex: 0xd97706, secondaryHex: 0x06b6d4, accentHex: 0xfef3c7,
+        fogColor: 0x100d08, ambientColor: 0x3d2008, sunColor: 0xffedd5, arenaColor: 0x22170f, dustHex: 0xfcd34d,
+        classes: [
+          { id: 'paladin', type: 'melee', name: 'Clockwork Automaton', icon: '🛡️', desc: 'Gear Greatsword & Brass Buckler. High-torque gear sweeps.', special: 'Temporal Shockwave', specialDesc: 'Releases a temporal shockwave distorting space around enemies.' },
+          { id: 'gunner', type: 'ranged', name: 'Steam Bombardier', icon: '🏹', desc: 'Dual Flintlock Canisters. High-velocity clockwork pellets.', special: 'Clockwork Salvo', specialDesc: 'Calls an orbital barrage of ticking time-bombs.' },
+          { id: 'arcanist', type: 'magic', name: 'Chronomancer', icon: '🔮', desc: 'Hourglass Core. Temporal energy sparks and chronal rifts.', special: 'Time Warp Vortex', specialDesc: 'Creates a singularity that slows and crushes time around foes.' }
+        ]
+      },
+      {
+        id: 'december', month: 11, monthName: 'December', name: 'Aurora Solstice', icon: '🌌',
+        desc: 'Aurora Borealis, Cosmic Emerald & Starlight',
+        primary: '#10b981', secondary: '#06b6d4', accent: '#fbbf24',
+        bgDark: '#031018', bgCard: 'rgba(6, 26, 36, 0.92)', borderColor: 'rgba(16, 185, 129, 0.45)',
+        primaryHex: 0x10b981, secondaryHex: 0x06b6d4, accentHex: 0xfbbf24,
+        fogColor: 0x031018, ambientColor: 0x064e3b, sunColor: 0xe0f2fe, arenaColor: 0x06202c, dustHex: 0x6ee7b7,
+        classes: [
+          { id: 'paladin', type: 'melee', name: 'Aurora Paladin', icon: '🛡️', desc: 'Radiant Northern Lights Blade & Solar Aegis. Prismatic sweeps.', special: 'Northern Lights Nova', specialDesc: 'Erupts an emerald aurora shockwave enveloping the arena.' },
+          { id: 'gunner', type: 'ranged', name: 'Solstice Sniper', icon: '🏹', desc: 'Twin Crystal Blasters. Radiant star fragments.', special: 'Comet Salvo', specialDesc: 'Calls down sparkling comets raining cosmic starlight.' },
+          { id: 'arcanist', type: 'magic', name: 'Starlight Weaver', icon: '🔮', desc: 'Prism of Heaven. Rainbow light rays and aurora sparks.', special: 'Borealis Singularity', specialDesc: 'Creates a shimmering celestial vortex pulling all creatures in.' }
+        ]
+      }
+    ];
+
+    /* ==========================================================================
        3. GAME STATE MANAGEMENT
        ========================================================================== */
     const state = {
@@ -1786,6 +2070,14 @@
       gameMode: 'solo', // 'solo', 'multiplayer'
       soloSubMode: 'classic', // 'classic', 'endless'
       heroClass: 'paladin', // 'paladin', 'gunner', 'arcanist'
+
+      // Profile & Theming
+      username: localStorage.getItem('broadroads_username') || ('Commander_' + Math.floor(100 + Math.random() * 900)),
+      currentMonth: (parseInt(localStorage.getItem('broadroads_theme_month'), 10) >= 0 && parseInt(localStorage.getItem('broadroads_theme_month'), 10) < 12)
+        ? parseInt(localStorage.getItem('broadroads_theme_month'), 10)
+        : new Date().getMonth(),
+      selectedClassIndex: 0,
+      activeClassData: null,
 
       currentWave: 1,
       waveTimeRemaining: GAME_CONFIG.WAVE_DURATION,
@@ -1797,12 +2089,12 @@
 
       // Local Player Stats
       hero: {
-        hp: 120,
-        maxHp: 120,
+        hp: 140,
+        maxHp: 140,
         shield: 60,
         maxShield: 60,
         shieldRegenTimer: 0,
-        attackDamage: 30,
+        attackDamage: 32,
         attackSpeed: 1.0,
         moveSpeed: 8.5,
         critChance: 0.15,
@@ -1822,18 +2114,8 @@
         reviveProgress: 0
       },
 
-      // Teammate (Remote Peer) State
-      teammate: {
-        connected: false,
-        name: 'Player 2',
-        class: 'gunner',
-        hp: 120,
-        maxHp: 120,
-        shield: 60,
-        maxShield: 60,
-        tier: 1,
-        isDowned: false
-      },
+      revivingTarget: null,
+      reviveProgress: 0,
 
       materials: {
         pyrite: 2,
@@ -1857,176 +2139,7 @@
     };
 
     /* ==========================================================================
-       4. PEER-TO-PEER WEBRTC MULTIPLAYER MANAGER (PEERJS)
-       ========================================================================== */
-    class NetworkManager {
-      constructor() {
-        this.peer = null;
-        this.conn = null;
-        this.isHost = false;
-        this.roomCode = '';
-        this.syncInterval = null;
-      }
-
-      initHost() {
-        this.isHost = true;
-        // Generate strictly a 4-LETTER code (pure letters A-Z, no digits, excluding ambiguous I/O)
-        const letters = 'ABCDEFGHJKLMNPQRSTUVWXYZ';
-        let code = '';
-        for (let i = 0; i < 4; i++) code += letters.charAt(Math.floor(Math.random() * letters.length));
-        this.roomCode = code;
-
-        const peerId = 'broadroads-' + code.toLowerCase();
-        document.getElementById('room-code-text').textContent = this.roomCode;
-        document.getElementById('host-status-pill').textContent = '⏳ Registering room code...';
-
-        try {
-          this.peer = new Peer(peerId, { debug: 1 });
-          this.peer.on('open', (id) => {
-            document.getElementById('host-status-pill').textContent = '🟢 Room Live! Waiting for partner to join...';
-          });
-
-          this.peer.on('connection', (conn) => {
-            this.handleConnection(conn);
-          });
-
-          this.peer.on('error', (err) => {
-            console.warn('Host peer error, falling back:', err);
-            document.getElementById('host-status-pill').textContent = '⚠️ Re-generating code...';
-            setTimeout(() => this.initHost(), 1000);
-          });
-        } catch (e) {
-          console.error('Peer init error:', e);
-        }
-      }
-
-      joinRoom(code) {
-        this.isHost = false;
-        // Clean out any symbols/prefixes and take the 4 letters
-        const cleaned = code.replace(/[^A-Za-z]/g, '').toLowerCase().slice(-4);
-        const hostPeerId = 'broadroads-' + cleaned;
-        document.getElementById('guest-status-pill').textContent = '🔄 Connecting to host...';
-
-        try {
-          this.peer = new Peer({ debug: 1 });
-          this.peer.on('open', (myId) => {
-            const conn = this.peer.connect(hostPeerId, { reliable: true });
-            this.handleConnection(conn);
-          });
-
-          this.peer.on('error', (err) => {
-            document.getElementById('guest-status-pill').textContent = '❌ Failed to connect. Check code.';
-          });
-        } catch(e) {
-          console.error('Join error:', e);
-        }
-      }
-
-      handleConnection(conn) {
-        this.conn = conn;
-
-        this.conn.on('open', () => {
-          state.teammate.connected = true;
-          document.getElementById('teammate-vitals').style.display = 'block';
-
-          if (this.isHost) {
-            document.getElementById('host-status-pill').textContent = '✅ Teammate Connected! Ready to deploy.';
-            this.send({ type: 'LOBBY_SYNC', class: state.heroClass, isHost: true });
-          } else {
-            document.getElementById('guest-status-pill').textContent = '✅ Connected to Host! Waiting for launch...';
-            this.send({ type: 'LOBBY_SYNC', class: state.heroClass, isHost: false });
-          }
-
-          // Start continuous 25Hz positional sync
-          if (this.syncInterval) clearInterval(this.syncInterval);
-          this.syncInterval = setInterval(() => this.syncLocalPlayer(), 40);
-        });
-
-        this.conn.on('data', (data) => {
-          this.handlePacket(data);
-        });
-
-        this.conn.on('close', () => {
-          state.teammate.connected = false;
-          document.getElementById('teammate-vitals').style.display = 'none';
-          if (remoteHero) remoteHero.group.visible = false;
-        });
-      }
-
-      send(data) {
-        if (this.conn && this.conn.open) {
-          this.conn.send(data);
-        }
-      }
-
-      syncLocalPlayer() {
-        if (!this.conn || !this.conn.open || state.phase !== 'playing') return;
-
-        this.send({
-          type: 'PLAYER_SYNC',
-          x: hero.position.x,
-          z: hero.position.z,
-          rot: hero.group.rotation.y,
-          vx: hero.velocity.x,
-          vy: hero.velocity.y,
-          hp: state.hero.hp,
-          maxHp: state.hero.maxHp,
-          shield: state.hero.shield,
-          class: state.heroClass,
-          isDowned: state.hero.isDowned
-        });
-      }
-
-      handlePacket(packet) {
-        if (!packet) return;
-
-        if (packet.type === 'LOBBY_SYNC') {
-          state.teammate.class = packet.class;
-          if (remoteHero) remoteHero.setClass(packet.class);
-        } else if (packet.type === 'START_GAME') {
-          // Guest receives start trigger from Host
-          state.heroClass = document.querySelector('.class-card.selected').dataset.class || 'paladin';
-          resetGame();
-        } else if (packet.type === 'PLAYER_SYNC') {
-          if (remoteHero) {
-            remoteHero.group.visible = true;
-            remoteHero.targetPos.set(packet.x, 0, packet.z);
-            remoteHero.targetRot = packet.rot;
-            remoteHero.isDowned = packet.isDowned;
-          }
-
-          state.teammate.hp = packet.hp;
-          state.teammate.maxHp = packet.maxHp;
-          state.teammate.isDowned = packet.isDowned;
-
-          // Update teammate HUD
-          const pct = Math.max(0, Math.min(100, (packet.hp / packet.maxHp) * 100));
-          document.getElementById('teammate-hp-bar').style.width = pct + '%';
-          document.getElementById('teammate-hp-text').textContent = packet.isDowned ? 'DOWNED!' : `${Math.round(pct)}%`;
-
-          checkCoopReviveState();
-        } else if (packet.type === 'ATTACK') {
-          if (remoteHero) remoteHero.triggerAttack(packet.facing, packet.combo);
-        } else if (packet.type === 'SPECIAL') {
-          if (remoteHero) remoteHero.triggerSpecial(packet.pos);
-        } else if (packet.type === 'REVIVE_EVENT') {
-          state.hero.isDowned = false;
-          state.hero.hp = state.hero.maxHp * 0.5;
-          state.hero.shield = state.hero.maxShield;
-          sound.playReviveChime();
-          updateVitalsHUD();
-          document.getElementById('revive-banner').style.display = 'none';
-        } else if (packet.type === 'ENEMY_SYNC' && !this.isHost) {
-          // Guest syncs enemy states from Host
-          syncEnemiesFromHost(packet.enemies);
-        }
-      }
-    }
-
-    const net = new NetworkManager();
-
-    /* ==========================================================================
-       5. THREE.JS 3D SCENE & ENVIRONMENT
+       4. THREE.JS 3D SCENE & ENVIRONMENT
        ========================================================================== */
     const container = document.getElementById('canvas-container');
     const scene = new THREE.Scene();
@@ -2123,11 +2236,168 @@
     scene.add(dustParticles);
 
     /* ==========================================================================
+       5. THEME ENGINE & FLOATING NAMEPLATES
+       ========================================================================== */
+    function applyTheme(monthIndex) {
+      if (monthIndex < 0 || monthIndex >= MONTHLY_THEMES.length) monthIndex = 0;
+      state.currentMonth = monthIndex;
+      localStorage.setItem('broadroads_theme_month', monthIndex);
+      const theme = MONTHLY_THEMES[monthIndex];
+
+      // 1. Update CSS Variables for Entire Web Application
+      const root = document.documentElement;
+      root.style.setProperty('--theme-primary', theme.primary);
+      root.style.setProperty('--theme-secondary', theme.secondary);
+      root.style.setProperty('--theme-accent', theme.accent);
+      root.style.setProperty('--neon-cyan', theme.primary);
+      root.style.setProperty('--neon-blue', theme.secondary);
+      root.style.setProperty('--neon-gold', theme.accent);
+      root.style.setProperty('--bg-dark', theme.bgDark);
+      root.style.setProperty('--bg-card', theme.bgCard);
+      root.style.setProperty('--border-cyan', theme.borderColor);
+
+      // 2. Update Three.js 3D Environment
+      if (typeof scene !== 'undefined' && scene) {
+        scene.background.setHex(theme.fogColor);
+        scene.fog.color.setHex(theme.fogColor);
+      }
+      if (typeof ambientLight !== 'undefined' && ambientLight) ambientLight.color.setHex(theme.ambientColor);
+      if (typeof sunLight !== 'undefined' && sunLight) sunLight.color.setHex(theme.sunColor);
+      if (typeof forgePointLight !== 'undefined' && forgePointLight) forgePointLight.color.setHex(theme.primaryHex);
+      if (typeof arenaMat !== 'undefined' && arenaMat) arenaMat.color.setHex(theme.arenaColor);
+      if (typeof runeRingMat !== 'undefined' && runeRingMat) runeRingMat.color.setHex(theme.primaryHex);
+      if (typeof outerRingMat !== 'undefined' && outerRingMat) outerRingMat.color.setHex(theme.accentHex);
+      if (typeof pylonCrystalMat !== 'undefined' && pylonCrystalMat) {
+        pylonCrystalMat.color.setHex(theme.secondaryHex);
+        pylonCrystalMat.emissive.setHex(theme.secondaryHex);
+      }
+      if (typeof dustParticles !== 'undefined' && dustParticles) dustParticles.material.color.setHex(theme.dustHex);
+
+      // 3. Update Subtitle
+      const sub = document.getElementById('theme-season-subtitle');
+      if (sub) sub.textContent = `SEASON ${theme.month + 1}: ${theme.name.toUpperCase()} (${theme.monthName.toUpperCase()})`;
+
+      // 4. Re-render Class Cards
+      renderClassSelectionCards(monthIndex);
+
+      // 5. Update local hero visual if already initialized
+      if (typeof hero !== 'undefined' && hero) {
+        hero.setClass(state.heroClass, theme.classes[state.selectedClassIndex]);
+        if (hero.nameplate) hero.nameplate.update(state.username, 1.0, false, typeof net !== 'undefined' && net.isHost);
+      }
+    }
+
+    function renderClassSelectionCards(monthIndex) {
+      const theme = MONTHLY_THEMES[monthIndex] || MONTHLY_THEMES[0];
+      const grid = document.getElementById('class-selection-grid');
+      const title = document.getElementById('class-selection-title');
+      if (title) title.textContent = `${theme.name.toUpperCase()} • HERO CLASSES`;
+      if (!grid) return;
+
+      grid.innerHTML = '';
+      theme.classes.forEach((cls, idx) => {
+        const card = document.createElement('div');
+        const isSelected = (idx === state.selectedClassIndex);
+        card.className = `class-card ${isSelected ? 'selected' : ''}`;
+        card.dataset.classIndex = idx;
+        card.dataset.classType = cls.type;
+        card.dataset.classId = cls.id;
+
+        card.innerHTML = `
+          <div class="class-card-icon">${cls.icon}</div>
+          <div class="class-card-name">${cls.name}</div>
+          <div class="class-card-desc">${cls.desc}</div>
+          <div class="class-card-special">Special: ${cls.special}</div>
+        `;
+
+        card.addEventListener('click', () => {
+          sound.playPickup();
+          document.querySelectorAll('.class-card').forEach(c => c.classList.remove('selected'));
+          card.classList.add('selected');
+          state.selectedClassIndex = idx;
+          state.heroClass = cls.id;
+          state.activeClassData = cls;
+          if (typeof hero !== 'undefined' && hero) {
+            hero.setClass(cls.id, cls);
+          }
+        });
+
+        grid.appendChild(card);
+      });
+
+      // Default active class data
+      state.activeClassData = theme.classes[state.selectedClassIndex] || theme.classes[0];
+      state.heroClass = state.activeClassData.id;
+    }
+
+    function createNameplateSprite(username = 'Commander', isHost = false, colorHex = '#00f5d4') {
+      const canvas = document.createElement('canvas');
+      canvas.width = 256;
+      canvas.height = 70;
+      const ctx = canvas.getContext('2d');
+
+      function draw(name, hpPct = 1.0, isDowned = false, isHostFlag = isHost) {
+        ctx.clearRect(0, 0, 256, 70);
+
+        // Background pill
+        ctx.fillStyle = isDowned ? 'rgba(255, 0, 84, 0.75)' : 'rgba(8, 14, 28, 0.75)';
+        ctx.beginPath();
+        if (ctx.roundRect) ctx.roundRect(12, 6, 232, 58, 12);
+        else ctx.rect(12, 6, 232, 58);
+        ctx.fill();
+
+        ctx.strokeStyle = isDowned ? '#ff0054' : colorHex;
+        ctx.lineWidth = 2.5;
+        ctx.stroke();
+
+        // Text
+        ctx.font = 'bold 18px "Chakra Petch", sans-serif';
+        ctx.fillStyle = '#ffffff';
+        ctx.textAlign = 'center';
+        const label = (isHostFlag ? '👑 ' : '') + name + (isDowned ? ' [DOWN]' : '');
+        ctx.fillText(label, 128, 30);
+
+        // HP Bar
+        const barW = 190;
+        const barH = 7;
+        const barX = (256 - barW) / 2;
+        const barY = 42;
+
+        ctx.fillStyle = 'rgba(255, 255, 255, 0.2)';
+        ctx.fillRect(barX, barY, barW, barH);
+
+        const clampedPct = Math.max(0, Math.min(1, hpPct));
+        ctx.fillStyle = isDowned ? '#ff0054' : (clampedPct > 0.45 ? '#00f5d4' : (clampedPct > 0.2 ? '#ffb703' : '#ff0054'));
+        ctx.fillRect(barX, barY, barW * clampedPct, barH);
+      }
+
+      draw(username, 1.0, false, isHost);
+
+      const texture = new THREE.CanvasTexture(canvas);
+      texture.minFilter = THREE.LinearFilter;
+      const spriteMat = new THREE.SpriteMaterial({ map: texture, depthTest: false, transparent: true });
+      const sprite = new THREE.Sprite(spriteMat);
+      sprite.scale.set(3.4, 0.9, 1);
+      sprite.position.set(0, 3.2, 0);
+
+      return {
+        sprite,
+        update: (name, hpPct, isDowned, isHostFlag) => {
+          draw(name, hpPct, isDowned, isHostFlag);
+          texture.needsUpdate = true;
+        }
+      };
+    }
+
+    /* ==========================================================================
        6. HERO ENTITY (CLASS-CUSTOMIZED) & REMOTE HERO (CO-OP)
        ========================================================================== */
     class HeroEntity {
-      constructor(isRemote = false) {
+      constructor(isRemote = false, peerId = '', username = 'Commander', heroClass = 'paladin', classData = null) {
         this.isRemote = isRemote;
+        this.peerId = peerId;
+        this.username = username;
+        this.isHost = (!isRemote && typeof net !== 'undefined' && net && net.isHost);
         this.group = new THREE.Group();
         this.position = this.group.position;
         this.position.set(isRemote ? 3 : 0, 0, 0);
@@ -2178,7 +2448,7 @@
         this.bladeMat = new THREE.MeshStandardMaterial({
           color: 0xffffff,
           emissive: isRemote ? 0x9d4edd : 0x00f5d4,
-          emissiveIntensity: 0.6,
+          emissiveIntensity: 0.7,
           metalness: 0.9,
           roughness: 0.1
         });
@@ -2203,12 +2473,12 @@
 
         // Gunner Dual Blasters
         const blasterGeo = new THREE.BoxGeometry(0.18, 0.3, 0.8);
-        const blasterMat = new THREE.MeshStandardMaterial({ color: 0x334155, metalness: 0.9 });
-        this.blasterR = new THREE.Mesh(blasterGeo, blasterMat);
+        this.blasterMat = new THREE.MeshStandardMaterial({ color: 0x334155, metalness: 0.9, emissive: 0x00f5d4, emissiveIntensity: 0.3 });
+        this.blasterR = new THREE.Mesh(blasterGeo, this.blasterMat);
         this.blasterR.position.set(0, 0, 0.3);
         this.weaponArmRight.add(this.blasterR);
 
-        this.blasterL = new THREE.Mesh(blasterGeo, blasterMat);
+        this.blasterL = new THREE.Mesh(blasterGeo, this.blasterMat);
         this.blasterL.position.set(0, 0, 0.3);
         this.weaponArmLeft.add(this.blasterL);
 
@@ -2231,6 +2501,11 @@
         this.reviveRing.position.y = 0.05;
         this.group.add(this.reviveRing);
 
+        // Floating 3D Nameplate Sprite
+        const currentTheme = MONTHLY_THEMES[state.currentMonth] || MONTHLY_THEMES[0];
+        this.nameplate = createNameplateSprite(this.username, this.isHost, currentTheme.primary);
+        this.group.add(this.nameplate.sprite);
+
         scene.add(this.group);
 
         this.velocity = new THREE.Vector2(0, 0);
@@ -2244,11 +2519,25 @@
         this.targetRot = 0;
         this.isDowned = false;
 
-        this.setClass(isRemote ? 'gunner' : 'paladin');
+        this.setClass(heroClass, classData);
       }
 
-      setClass(classId) {
+      setClass(classId, classData = null) {
         this.classId = classId;
+        const theme = MONTHLY_THEMES[state.currentMonth] || MONTHLY_THEMES[0];
+        const hex = (classData && classData.color) ? classData.color : theme.primaryHex;
+        const subHex = (classData && classData.subColor) ? classData.subColor : theme.secondaryHex;
+
+        // Apply theme color to crystals and weapons
+        this.coreMat.color.setHex(hex);
+        this.coreMat.emissive.setHex(hex);
+        this.visorMat.color.setHex(hex);
+        this.bladeMat.emissive.setHex(hex);
+        this.shieldMat.color.setHex(subHex);
+        this.shieldMat.emissive.setHex(subHex);
+        this.blasterMat.emissive.setHex(hex);
+        this.orbMat.color.setHex(hex);
+        this.orbMat.emissive.setHex(hex);
 
         // Hide all weapons
         this.blade.visible = false;
@@ -2257,20 +2546,21 @@
         this.blasterL.visible = false;
         this.magicOrb.visible = false;
 
-        if (classId === 'paladin') {
+        if (classId === 'paladin' || classId === 'melee') {
           this.blade.visible = true;
           this.shieldMesh.visible = true;
-        } else if (classId === 'gunner') {
+        } else if (classId === 'gunner' || classId === 'ranged') {
           this.blasterR.visible = true;
           this.blasterL.visible = true;
-        } else if (classId === 'arcanist') {
+        } else if (classId === 'arcanist' || classId === 'magic') {
           this.magicOrb.visible = true;
         }
       }
 
       updateVisualTier(weaponTier) {
-        const colors = [0x00f5d4, 0xfb8500, 0x9d4edd, 0xffb703];
-        const hex = colors[Math.min(3, weaponTier - 1)] || 0x00f5d4;
+        const theme = MONTHLY_THEMES[state.currentMonth] || MONTHLY_THEMES[0];
+        const colors = [theme.primaryHex, theme.secondaryHex, theme.accentHex, 0xffffff];
+        const hex = colors[Math.min(3, weaponTier - 1)] || theme.primaryHex;
         this.bladeMat.emissive.setHex(hex);
         this.orbMat.emissive.setHex(hex);
       }
@@ -2283,18 +2573,29 @@
         else this.weaponArmRight.rotation.set(0, -Math.PI, 0);
       }
 
-      triggerRemoteAttack(facing, combo) {
+      triggerRemoteAttack(facing, combo, classType) {
         this.group.rotation.y = Math.atan2(facing.x, facing.z);
         this.triggerSlashAnimation(combo);
-        if (this.classId === 'gunner') sound.playLaserShot();
-        else if (this.classId === 'arcanist') sound.playMagicSpark();
+        const cls = classType || this.classId;
+        if (cls === 'gunner' || cls === 'ranged') sound.playLaserShot();
+        else if (cls === 'arcanist' || cls === 'magic') sound.playMagicSpark();
         else sound.playSlash();
       }
 
+      triggerAttack(facing, combo, classType) {
+        this.triggerRemoteAttack(facing, combo, classType);
+      }
+
       triggerRemoteSpecial(pos) {
-        spawnExplosion(new THREE.Vector3(pos.x, 1, pos.z), 0x9d4edd);
-        spawnGroundShockwave(new THREE.Vector3(pos.x, 0, pos.z), 12.0, 0x9d4edd);
+        const theme = MONTHLY_THEMES[state.currentMonth] || MONTHLY_THEMES[0];
+        spawnExplosion(new THREE.Vector3(pos.x, 1, pos.z), theme.secondaryHex);
+        spawnGroundShockwave(new THREE.Vector3(pos.x, 0, pos.z), 12.0, theme.primaryHex);
         sound.playNova();
+        triggerScreenShake();
+      }
+
+      triggerSpecial(pos) {
+        this.triggerRemoteSpecial(pos);
       }
 
       update(dt) {
@@ -2315,6 +2616,15 @@
             this.torso.position.y = 1.1;
             this.torso.rotation.x = 0;
             this.reviveRing.material.opacity = 0;
+          }
+
+          if (this.slashActive) {
+            this.swingProgress += dt * 6.5;
+            this.weaponArmRight.rotation.y = THREE.MathUtils.lerp(-1.4, 1.4, Math.min(1, this.swingProgress));
+            if (this.swingProgress >= 1) {
+              this.slashActive = false;
+              this.weaponArmRight.rotation.set(0, 0, 0);
+            }
           }
           return;
         }
@@ -2375,16 +2685,15 @@
         }
 
         // Float Arcanist Orb
-        if (this.classId === 'arcanist') {
+        if (this.classId === 'arcanist' || this.classId === 'magic') {
           this.magicOrb.position.y = 0.4 + Math.sin(Date.now() * 0.005) * 0.15;
           this.magicOrb.rotation.y += dt * 3;
         }
       }
     }
 
-    const hero = new HeroEntity(false);
-    const remoteHero = new HeroEntity(true);
-    remoteHero.group.visible = false;
+    const hero = new HeroEntity(false, 'local', state.username, state.heroClass);
+    const remoteHeroes = new Map();
 
     /* ==========================================================================
        7. ENEMY SYSTEM
@@ -2469,17 +2778,35 @@
         scene.add(this.group);
       }
 
-      takeDamage(amount, isCrit) {
+      takeDamage(amount, isCrit, attacker = state.username) {
         this.hp -= amount;
         this.flashTimer = 0.12;
         this.mesh.material.emissive.setHex(0xffffff);
         this.mesh.material.emissiveIntensity = 1.0;
 
-        spawnFloatingCombatText(this.position.clone().add(new THREE.Vector3(0, 1.6, 0)), Math.round(amount), isCrit);
+        spawnFloatingCombatText(this.position.clone().add(new THREE.Vector3(0, 1.6, 0)), Math.round(amount), isCrit, null, attacker);
         state.totalDamageDealt += amount;
 
         state.hero.specialCharge = Math.min(state.hero.specialMaxCharge, state.hero.specialCharge + 10);
         updateSpecialButton();
+
+        if (this.hp <= 0 && !this.dead) this.die();
+      }
+
+      applyRemoteHit(amount, isCrit, attacker = 'Teammate', knockback = null) {
+        this.hp -= amount;
+        this.flashTimer = 0.12;
+        this.mesh.material.emissive.setHex(0xffffff);
+        this.mesh.material.emissiveIntensity = 1.0;
+
+        spawnFloatingCombatText(this.position.clone().add(new THREE.Vector3(0, 1.6, 0)), Math.round(amount), isCrit, null, attacker);
+        spawnExplosion(this.position.clone().add(new THREE.Vector3(0, 1.0, 0)), 0xffffff);
+        sound.playHit();
+
+        if (knockback) {
+          this.position.x += knockback.x * 0.8;
+          this.position.z += knockback.z * 0.8;
+        }
 
         if (this.hp <= 0 && !this.dead) this.die();
       }
@@ -2508,13 +2835,20 @@
           }
         }
 
-        // Target nearest living player (local or remote)
+        // Target nearest living player (local or any connected teammate)
         let target = heroPos;
-        if (state.teammate.connected && remoteHero.group.visible && !remoteHero.isDowned) {
-          const dLocal = this.position.distanceTo(heroPos);
-          const dRemote = this.position.distanceTo(remoteHero.position);
-          if (dRemote < dLocal) target = remoteHero.position;
-        }
+        let dLocal = this.position.distanceTo(heroPos);
+        if (state.hero.isDowned) dLocal = 99999;
+
+        remoteHeroes.forEach((rh) => {
+          if (rh.group.visible && !rh.isDowned) {
+            const dRemote = this.position.distanceTo(rh.position);
+            if (dRemote < dLocal) {
+              target = rh.position;
+              dLocal = dRemote;
+            }
+          }
+        });
 
         const toTarget = new THREE.Vector3().subVectors(target, this.position);
         toTarget.y = 0;
@@ -2609,9 +2943,10 @@
     const shockwaves = [];
     const explosions = [];
 
-    function spawnSlashWave(origin, dir, combo) {
+    function spawnSlashWave(origin, dir, combo, isRemote = false) {
+      const theme = MONTHLY_THEMES[state.currentMonth] || MONTHLY_THEMES[0];
       const waveGeo = new THREE.RingGeometry(1.2, 2.4, 16, 1, 0, Math.PI * 0.9);
-      const waveColor = (combo === 2) ? 0xffb703 : (combo === 1 ? 0x9d4edd : 0x00f5d4);
+      const waveColor = (combo === 2) ? theme.accentHex : (combo === 1 ? theme.secondaryHex : theme.primaryHex);
       const mesh = new THREE.Mesh(waveGeo, new THREE.MeshBasicMaterial({
         color: waveColor, side: THREE.DoubleSide, transparent: true, opacity: 0.85, blending: THREE.AdditiveBlending
       }));
@@ -2621,31 +2956,33 @@
       scene.add(mesh);
 
       slashWaves.push({
-        mesh: mesh, dir: dir.clone().normalize(), speed: 17.0, lifetime: 0.3, damage: state.hero.attackDamage
+        mesh: mesh, dir: dir.clone().normalize(), speed: 17.0, lifetime: 0.3, damage: state.hero.attackDamage, isRemote: isRemote
       });
     }
 
-    function spawnGunnerBolts(origin, dir) {
+    function spawnGunnerBolts(origin, dir, isRemote = false) {
+      const theme = MONTHLY_THEMES[state.currentMonth] || MONTHLY_THEMES[0];
       for (let i = -1; i <= 1; i += 2) {
-        const bolt = new THREE.Mesh(new THREE.CylinderGeometry(0.08, 0.08, 1.2, 6), new THREE.MeshBasicMaterial({ color: 0x00f5d4 }));
+        const bolt = new THREE.Mesh(new THREE.CylinderGeometry(0.08, 0.08, 1.2, 6), new THREE.MeshBasicMaterial({ color: theme.primaryHex }));
         bolt.rotation.x = Math.PI / 2;
         bolt.rotation.z = Math.atan2(dir.x, dir.z);
         bolt.position.copy(origin).add(new THREE.Vector3(i * 0.4, 1.2, 0));
         scene.add(bolt);
 
         projectiles.push({
-          mesh: bolt, dir: dir.clone().normalize(), speed: 28.0, damage: state.hero.attackDamage * 0.65, lifetime: 0.6, isPlayer: true
+          mesh: bolt, dir: dir.clone().normalize(), speed: 28.0, damage: state.hero.attackDamage * 0.65, lifetime: 0.6, isPlayer: true, isRemote: isRemote
         });
       }
     }
 
-    function spawnArcanistSpark(origin, dir) {
-      const spark = new THREE.Mesh(new THREE.SphereGeometry(0.3, 8, 8), new THREE.MeshBasicMaterial({ color: 0x9d4edd }));
+    function spawnArcanistSpark(origin, dir, isRemote = false) {
+      const theme = MONTHLY_THEMES[state.currentMonth] || MONTHLY_THEMES[0];
+      const spark = new THREE.Mesh(new THREE.SphereGeometry(0.3, 8, 8), new THREE.MeshBasicMaterial({ color: theme.secondaryHex }));
       spark.position.copy(origin).add(new THREE.Vector3(0, 1.3, 0));
       scene.add(spark);
 
       projectiles.push({
-        mesh: spark, dir: dir.clone().normalize(), speed: 18.0, damage: state.hero.attackDamage * 0.9, lifetime: 0.8, isPlayer: true, isArcanist: true
+        mesh: spark, dir: dir.clone().normalize(), speed: 18.0, damage: state.hero.attackDamage * 0.9, lifetime: 0.8, isPlayer: true, isArcanist: true, isRemote: isRemote
       });
     }
 
@@ -2795,8 +3132,539 @@
     }
 
     /* ==========================================================================
+       9.5. PEER-TO-PEER 4-PLAYER MULTIPLAYER MANAGER (STAR TOPOLOGY HOST RELAY)
+       ========================================================================== */
+    function updateTeammatesHUD() {
+      const container = document.getElementById('teammates-hud-container');
+      if (!container) return;
+
+      if (state.gameMode !== 'multiplayer' || remoteHeroes.size === 0) {
+        container.innerHTML = '';
+        return;
+      }
+
+      remoteHeroes.forEach((rh, peerId) => {
+        let card = document.getElementById(`teammate-card-${peerId}`);
+        if (!card) {
+          card = document.createElement('div');
+          card.id = `teammate-card-${peerId}`;
+          card.className = 'hero-vitals teammate-vitals teammate-vitals-card';
+          card.style.display = 'block';
+          container.appendChild(card);
+        }
+
+        const pct = Math.max(0, Math.min(100, (rh.hp / rh.maxHp) * 100));
+        card.innerHTML = `
+          <div class="vitals-header">
+            <span class="hero-name" style="color: var(--neon-cyan); font-size: 11px;">${rh.isHost ? '👑 ' : ''}${rh.username}</span>
+            <span class="hero-level" style="font-size: 9px;">${rh.classId ? rh.classId.toUpperCase() : 'HERO'}</span>
+          </div>
+          <div class="bar-wrap">
+            <div class="bar-label">
+              <span>HP</span>
+              <span>${rh.isDowned ? 'DOWNED!' : `${Math.round(pct)}%`}</span>
+            </div>
+            <div class="bar-bg">
+              <div class="bar-fill hp-fill" style="width: ${pct}%; background: ${rh.isDowned ? '#ff0054' : ''};"></div>
+            </div>
+          </div>
+        `;
+      });
+    }
+
+    class NetworkManager {
+      constructor() {
+        this.peer = null;
+        this.myId = '';
+        this.isHost = false;
+        this.roomNumber = '';
+        this.connections = new Map(); // peerId -> { conn, username, heroClass, classData, hp, maxHp, isDowned }
+        this.syncInterval = null;
+        this.enemySyncInterval = null;
+      }
+
+      initHost() {
+        this.isHost = true;
+        this.connections.clear();
+        this.removeAllRemoteHeroes();
+
+        // Generate clean random numeric room number (no limit to 4 digits, e.g. 6-digit default)
+        const roomNum = Math.floor(100000 + Math.random() * 900000).toString();
+        this.roomNumber = roomNum;
+        const peerId = 'broadroads-room-' + roomNum;
+
+        document.getElementById('room-code-text').textContent = '#' + roomNum;
+        document.getElementById('host-status-pill').textContent = '⏳ Registering room number...';
+        this.updateLobbyUI();
+
+        try {
+          if (this.peer) this.peer.destroy();
+          this.peer = new Peer(peerId, { debug: 1 });
+
+          this.peer.on('open', (id) => {
+            this.myId = id;
+            document.getElementById('host-status-pill').textContent = `🟢 Room #${roomNum} Live (1/4 Players). Ready to deploy!`;
+            this.updateLobbyUI();
+          });
+
+          this.peer.on('connection', (conn) => {
+            if (this.connections.size >= 3) {
+              conn.on('open', () => {
+                conn.send({ type: 'LOBBY_FULL', message: 'Room is full (maximum 4 players).' });
+                setTimeout(() => conn.close(), 600);
+              });
+              return;
+            }
+            this.setupConnection(conn);
+          });
+
+          this.peer.on('error', (err) => {
+            console.warn('Host Peer error:', err);
+            document.getElementById('host-status-pill').textContent = '⚠️ Re-generating room number...';
+            setTimeout(() => this.initHost(), 1200);
+          });
+        } catch (e) {
+          console.error(e);
+        }
+      }
+
+      joinRoom(roomNum) {
+        this.isHost = false;
+        this.connections.clear();
+        this.removeAllRemoteHeroes();
+
+        const cleanNum = roomNum.toString().replace(/[^0-9]/g, '');
+        if (!cleanNum) {
+          document.getElementById('guest-status-pill').textContent = '⚠️ Please enter a room number';
+          return;
+        }
+
+        this.roomNumber = cleanNum;
+        const hostPeerId = 'broadroads-room-' + cleanNum;
+        document.getElementById('guest-status-pill').textContent = `🔄 Connecting to room #${cleanNum}...`;
+
+        try {
+          if (this.peer) this.peer.destroy();
+          this.peer = new Peer({ debug: 1 });
+
+          this.peer.on('open', (myId) => {
+            this.myId = myId;
+            const conn = this.peer.connect(hostPeerId, { reliable: true });
+            this.setupConnection(conn);
+          });
+
+          this.peer.on('error', (err) => {
+            console.warn('Guest Peer error:', err);
+            document.getElementById('guest-status-pill').textContent = '❌ Failed to connect. Check room number.';
+          });
+        } catch (e) {
+          console.error('Join error:', e);
+        }
+      }
+
+      setupConnection(conn) {
+        conn.on('open', () => {
+          if (this.isHost) {
+            // Register guest connection
+            this.connections.set(conn.peer, {
+              conn: conn,
+              username: 'Squadmate',
+              heroClass: 'paladin',
+              classData: null,
+              hp: 140,
+              maxHp: 140,
+              isDowned: false
+            });
+
+            // Send host info and season theme to guest
+            conn.send({
+              type: 'REQUEST_GUEST_INFO',
+              month: state.currentMonth,
+              hostUsername: state.username,
+              hostClass: state.heroClass,
+              hostClassData: state.activeClassData
+            });
+
+            this.updateLobbyUI();
+            this.startSync();
+          } else {
+            // Guest sends credentials to host
+            conn.send({
+              type: 'GUEST_HANDSHAKE',
+              username: state.username,
+              heroClass: state.heroClass,
+              classData: state.activeClassData
+            });
+
+            document.getElementById('guest-status-pill').textContent = '✅ Connected to squad! Waiting for host...';
+            this.startSync();
+          }
+        });
+
+        conn.on('data', (packet) => {
+          this.handlePacket(packet, conn);
+        });
+
+        conn.on('close', () => {
+          if (this.isHost) {
+            this.connections.delete(conn.peer);
+            this.removeRemoteHero(conn.peer);
+            this.broadcast({ type: 'PLAYER_LEFT', peerId: conn.peer });
+            this.updateLobbyUI();
+            updateTeammatesHUD();
+          } else {
+            document.getElementById('guest-status-pill').textContent = '⚠️ Disconnected from host.';
+            this.removeAllRemoteHeroes();
+            updateTeammatesHUD();
+          }
+        });
+      }
+
+      broadcast(packet, excludePeerId = null) {
+        if (this.isHost) {
+          this.connections.forEach((c, peerId) => {
+            if (peerId !== excludePeerId && c.conn && c.conn.open) {
+              c.conn.send(packet);
+            }
+          });
+        } else {
+          // Send to host
+          if (this.peer && this.peer.connections) {
+            for (let key in this.peer.connections) {
+              this.peer.connections[key].forEach(c => {
+                if (c.open) c.send(packet);
+              });
+            }
+          }
+        }
+      }
+
+      send(packet) {
+        this.broadcast(packet);
+      }
+
+      startSync() {
+        if (this.syncInterval) clearInterval(this.syncInterval);
+        this.syncInterval = setInterval(() => this.syncLocalPlayer(), 40);
+
+        if (this.isHost) {
+          if (this.enemySyncInterval) clearInterval(this.enemySyncInterval);
+          this.enemySyncInterval = setInterval(() => this.syncEnemiesAuthoritative(), 100);
+        }
+      }
+
+      syncLocalPlayer() {
+        if (state.phase !== 'playing') return;
+
+        this.broadcast({
+          type: 'PLAYER_SYNC',
+          peerId: this.myId || 'host',
+          username: state.username,
+          x: hero.position.x,
+          z: hero.position.z,
+          rot: hero.group.rotation.y,
+          vx: hero.velocity.x,
+          vy: hero.velocity.y,
+          hp: state.hero.hp,
+          maxHp: state.hero.maxHp,
+          shield: state.hero.shield,
+          class: state.heroClass,
+          classData: state.activeClassData,
+          isDowned: state.hero.isDowned
+        });
+      }
+
+      syncEnemiesAuthoritative() {
+        if (!this.isHost || state.phase !== 'playing' || this.connections.size === 0) return;
+
+        const enemyList = enemies.filter(e => !e.dead).map(e => ({
+          id: e.id,
+          type: e.type,
+          x: e.position.x,
+          z: e.position.z,
+          hp: e.hp,
+          maxHp: e.maxHp
+        }));
+
+        this.broadcast({
+          type: 'ENEMY_SYNC',
+          enemies: enemyList
+        });
+      }
+
+      handlePacket(packet, senderConn) {
+        if (!packet) return;
+
+        if (packet.type === 'LOBBY_FULL') {
+          document.getElementById('guest-status-pill').textContent = '❌ Room is full (maximum 4 players).';
+          return;
+        }
+
+        if (packet.type === 'REQUEST_GUEST_INFO') {
+          // Guest syncs active month theme with host
+          if (packet.month !== undefined && packet.month !== state.currentMonth) {
+            applyTheme(packet.month);
+            const selectEl = document.getElementById('select-monthly-theme');
+            if (selectEl) selectEl.value = packet.month;
+          }
+          senderConn.send({
+            type: 'GUEST_HANDSHAKE',
+            username: state.username,
+            heroClass: state.heroClass,
+            classData: state.activeClassData
+          });
+          return;
+        }
+
+        if (packet.type === 'GUEST_HANDSHAKE') {
+          if (this.isHost) {
+            const guest = this.connections.get(senderConn.peer);
+            if (guest) {
+              guest.username = packet.username || 'Commander';
+              guest.heroClass = packet.heroClass || 'paladin';
+              guest.classData = packet.classData;
+            }
+            this.updateLobbyUI();
+
+            // Broadcast complete roster to all guests
+            this.broadcast({
+              type: 'LOBBY_STATE_SYNC',
+              players: this.getPlayerRoster(),
+              month: state.currentMonth
+            });
+          }
+          return;
+        }
+
+        if (packet.type === 'LOBBY_STATE_SYNC') {
+          if (!this.isHost) {
+            if (packet.month !== undefined && packet.month !== state.currentMonth) {
+              applyTheme(packet.month);
+              const selectEl = document.getElementById('select-monthly-theme');
+              if (selectEl) selectEl.value = packet.month;
+            }
+            this.renderRosterInElement('guest-lobby-roster', packet.players);
+            document.getElementById('guest-lobby-roster').style.display = 'flex';
+            document.getElementById('guest-status-pill').textContent = `🟢 Connected to squad (${packet.players.length}/4 Players). Waiting for host...`;
+          }
+          return;
+        }
+
+        if (packet.type === 'START_GAME') {
+          resetGame();
+          return;
+        }
+
+        if (packet.type === 'PLAYER_SYNC') {
+          const pId = packet.peerId || senderConn.peer;
+          if (this.isHost) {
+            packet.peerId = pId;
+            this.broadcast(packet, senderConn.peer);
+          }
+
+          let rh = remoteHeroes.get(pId);
+          if (!rh) {
+            rh = new HeroEntity(true, pId, packet.username || 'Teammate', packet.class, packet.classData);
+            rh.isHost = (pId === 'host' || pId.includes('room-'));
+            rh.hp = packet.hp || 140;
+            rh.maxHp = packet.maxHp || 140;
+            rh.position.set(packet.x || 3, 0, packet.z || 0);
+            remoteHeroes.set(pId, rh);
+          }
+
+          rh.targetPos.set(packet.x, 0, packet.z);
+          rh.targetRot = packet.rot;
+          rh.hp = packet.hp;
+          rh.maxHp = packet.maxHp;
+          rh.isDowned = packet.isDowned;
+          if (rh.nameplate) {
+            rh.nameplate.update(packet.username || rh.username, packet.hp / packet.maxHp, packet.isDowned, rh.isHost);
+          }
+
+          updateTeammatesHUD();
+          checkCoopReviveState();
+          return;
+        }
+
+        if (packet.type === 'ATTACK') {
+          const pId = packet.peerId || senderConn.peer;
+          if (this.isHost) {
+            packet.peerId = pId;
+            this.broadcast(packet, senderConn.peer);
+          }
+
+          const rh = remoteHeroes.get(pId);
+          if (rh) {
+            rh.triggerRemoteAttack(packet.facing, packet.combo, packet.class);
+            const facingDir = new THREE.Vector3(packet.facing.x, 0, packet.facing.z).normalize();
+            if (packet.class === 'paladin' || packet.class === 'melee') {
+              spawnSlashWave(rh.position, facingDir, packet.combo, true);
+            } else if (packet.class === 'gunner' || packet.class === 'ranged') {
+              spawnGunnerBolts(rh.position, facingDir, true);
+            } else if (packet.class === 'arcanist' || packet.class === 'magic') {
+              spawnArcanistSpark(rh.position, facingDir, true);
+            }
+          }
+          return;
+        }
+
+        if (packet.type === 'ENEMY_HIT') {
+          if (this.isHost) {
+            this.broadcast(packet, senderConn.peer);
+          }
+
+          let targetEnemy = enemies.find(e => e.id === packet.enemyId);
+          if (!targetEnemy && packet.hitPos) {
+            targetEnemy = enemies.find(e => !e.dead && e.position.distanceTo(packet.hitPos) < 2.5);
+          }
+          if (targetEnemy) {
+            targetEnemy.applyRemoteHit(packet.damage, packet.isCrit, packet.attacker, packet.knockback);
+          }
+          return;
+        }
+
+        if (packet.type === 'SPECIAL') {
+          const pId = packet.peerId || senderConn.peer;
+          if (this.isHost) {
+            packet.peerId = pId;
+            this.broadcast(packet, senderConn.peer);
+          }
+
+          const rh = remoteHeroes.get(pId);
+          if (rh) {
+            rh.triggerRemoteSpecial(packet.pos);
+          }
+          return;
+        }
+
+        if (packet.type === 'REVIVE_EVENT') {
+          if (this.isHost) {
+            this.broadcast(packet, senderConn.peer);
+          }
+
+          if (packet.targetPeerId === this.myId || (!this.isHost && packet.targetPeerId === 'host')) {
+            state.hero.isDowned = false;
+            state.hero.hp = state.hero.maxHp * 0.5;
+            state.hero.shield = state.hero.maxShield;
+            sound.playReviveChime();
+            updateVitalsHUD();
+            document.getElementById('revive-banner').style.display = 'none';
+          } else {
+            const rh = remoteHeroes.get(packet.targetPeerId);
+            if (rh) rh.isDowned = false;
+          }
+          updateTeammatesHUD();
+          return;
+        }
+
+        if (packet.type === 'ENEMY_SYNC' && !this.isHost) {
+          syncEnemiesFromHost(packet.enemies);
+          return;
+        }
+
+        if (packet.type === 'PLAYER_LEFT') {
+          this.removeRemoteHero(packet.peerId);
+          updateTeammatesHUD();
+          return;
+        }
+      }
+
+      getPlayerRoster() {
+        const roster = [{
+          id: 'host',
+          username: state.username,
+          heroClass: state.heroClass,
+          isHost: true
+        }];
+
+        this.connections.forEach((c, peerId) => {
+          roster.push({
+            id: peerId,
+            username: c.username || 'Commander',
+            heroClass: c.heroClass || 'paladin',
+            isHost: false
+          });
+        });
+
+        return roster;
+      }
+
+      updateLobbyUI() {
+        const roster = this.getPlayerRoster();
+        this.renderRosterInElement('host-lobby-roster', roster);
+        const pill = document.getElementById('host-status-pill');
+        if (pill) {
+          pill.textContent = `🟢 Room #${this.roomNumber} Live (${roster.length}/4 Players). Ready to deploy!`;
+        }
+      }
+
+      renderRosterInElement(elementId, players) {
+        const el = document.getElementById(elementId);
+        if (!el) return;
+
+        el.innerHTML = '';
+        for (let i = 0; i < 4; i++) {
+          const slot = document.createElement('div');
+          const p = players[i];
+          if (p) {
+            slot.className = 'roster-slot active';
+            slot.innerHTML = `
+              <div class="slot-player-info">
+                <span>${p.isHost ? '👑' : '👤'}</span>
+                <span>${p.username} ${p.isHost ? '(Host)' : ''}</span>
+              </div>
+              <div style="display: flex; align-items: center; gap: 8px;">
+                <span class="slot-badge">${p.heroClass ? p.heroClass.toUpperCase() : 'WARRIOR'}</span>
+                <span class="slot-ready-tag">READY</span>
+              </div>
+            `;
+          } else {
+            slot.className = 'roster-slot empty';
+            slot.innerHTML = `
+              <div class="slot-player-info">
+                <span>⏳</span>
+                <span>Slot ${i + 1} - Waiting for player...</span>
+              </div>
+              <span style="font-size: 10px; color: var(--text-muted);">OPEN</span>
+            `;
+          }
+          el.appendChild(slot);
+        }
+      }
+
+      removeRemoteHero(peerId) {
+        const rh = remoteHeroes.get(peerId);
+        if (rh) {
+          scene.remove(rh.group);
+          remoteHeroes.delete(peerId);
+        }
+      }
+
+      removeAllRemoteHeroes() {
+        remoteHeroes.forEach(rh => scene.remove(rh.group));
+        remoteHeroes.clear();
+      }
+    }
+
+    const net = new NetworkManager();
+
+    /* ==========================================================================
        10. COMBAT ACTIONS (BY HERO CLASS)
        ========================================================================== */
+    function broadcastLocalEnemyHit(enemy, dmg, isCrit, knockbackVec) {
+      if (state.gameMode === 'multiplayer') {
+        net.send({
+          type: 'ENEMY_HIT',
+          enemyId: enemy.id,
+          damage: Math.round(dmg),
+          isCrit: isCrit,
+          attacker: state.username,
+          hitPos: { x: enemy.position.x, y: enemy.position.y, z: enemy.position.z },
+          knockback: knockbackVec ? { x: knockbackVec.x, z: knockbackVec.z } : null
+        });
+      }
+    }
+
     function performHeroAttack() {
       if (state.hero.attackCooldown > 0 || state.hero.isDowned) return;
 
@@ -2809,11 +3677,20 @@
         Math.sin(hero.group.rotation.y), 0, Math.cos(hero.group.rotation.y)
       ).normalize();
 
-      // Broadcast Attack to Peer in Multiplayer
-      net.send({ type: 'ATTACK', facing: { x: facingDir.x, z: facingDir.z }, combo: combo });
+      const classType = (state.activeClassData && state.activeClassData.type) ||
+        (state.heroClass === 'gunner' ? 'ranged' : (state.heroClass === 'arcanist' ? 'magic' : 'melee'));
 
-      // Action based on class
-      if (state.heroClass === 'paladin') {
+      // Broadcast Attack to all peers in Multiplayer
+      net.send({
+        type: 'ATTACK',
+        facing: { x: facingDir.x, z: facingDir.z },
+        combo: combo,
+        class: state.heroClass,
+        classType: classType
+      });
+
+      // Action based on class type
+      if (classType === 'melee') {
         sound.playSlash();
         spawnSlashWave(hero.position, facingDir, combo);
 
@@ -2834,18 +3711,22 @@
               const isCrit = Math.random() < state.hero.critChance;
               let dmg = state.hero.attackDamage * (combo === 2 ? 1.6 : 1.0);
               if (isCrit) dmg *= state.hero.critMult;
-              enemy.takeDamage(dmg, isCrit);
+
+              enemy.takeDamage(dmg, isCrit, state.username);
               enemy.position.addScaledVector(toEnemy, 1.0);
+
+              // Broadcast hit to squadmates
+              broadcastLocalEnemyHit(enemy, dmg, isCrit, { x: toEnemy.x, z: toEnemy.z });
             }
           }
         });
         if (hitAny) sound.playHit();
 
-      } else if (state.heroClass === 'gunner') {
+      } else if (classType === 'ranged') {
         sound.playLaserShot();
         spawnGunnerBolts(hero.position, facingDir);
 
-      } else if (state.heroClass === 'arcanist') {
+      } else if (classType === 'magic') {
         sound.playMagicSpark();
         spawnArcanistSpark(hero.position, facingDir);
       }
@@ -2869,7 +3750,8 @@
       state.hero.dashDuration = 0.18;
       state.hero.invincibleTimer = 0.35;
 
-      spawnExplosion(hero.position, 0x00f5d4);
+      const theme = MONTHLY_THEMES[state.currentMonth] || MONTHLY_THEMES[0];
+      spawnExplosion(hero.position, theme.primaryHex);
       triggerScreenShake();
     }
 
@@ -2879,26 +3761,38 @@
       state.hero.specialCharge = 0;
       updateSpecialButton();
 
-      net.send({ type: 'SPECIAL', pos: { x: hero.position.x, z: hero.position.z } });
+      const classType = (state.activeClassData && state.activeClassData.type) ||
+        (state.heroClass === 'gunner' ? 'ranged' : (state.heroClass === 'arcanist' ? 'magic' : 'melee'));
 
-      if (state.heroClass === 'paladin') {
+      net.send({
+        type: 'SPECIAL',
+        pos: { x: hero.position.x, z: hero.position.z },
+        class: state.heroClass,
+        classType: classType
+      });
+
+      const theme = MONTHLY_THEMES[state.currentMonth] || MONTHLY_THEMES[0];
+
+      if (classType === 'melee') {
         sound.playNova();
         triggerScreenShake();
-        spawnExplosion(hero.position, 0x9d4edd);
-        spawnGroundShockwave(hero.position, 13.0, 0x9d4edd);
+        spawnExplosion(hero.position, theme.secondaryHex);
+        spawnGroundShockwave(hero.position, 13.0, theme.primaryHex);
 
         enemies.forEach(enemy => {
           if (!enemy.dead && enemy.position.distanceTo(hero.position) < 13.5) {
-            enemy.takeDamage(state.hero.attackDamage * 3.8, true);
+            const dmg = state.hero.attackDamage * 3.8;
+            enemy.takeDamage(dmg, true, state.username);
+            broadcastLocalEnemyHit(enemy, dmg, true, null);
           }
         });
 
-      } else if (state.heroClass === 'gunner') {
+      } else if (classType === 'ranged') {
         sound.playNova();
         triggerScreenShake();
         spawnOrbitalRocketBarrage(hero.position);
 
-      } else if (state.heroClass === 'arcanist') {
+      } else if (classType === 'magic') {
         sound.playNova();
         triggerScreenShake();
         spawnSingularityVortex(hero.position);
@@ -2942,12 +3836,18 @@
         updateVitalsHUD();
 
         if (state.hero.hp <= 0) {
-          if (state.gameMode === 'multiplayer' && state.teammate.connected && !state.teammate.isDowned) {
+          let hasAliveTeammate = false;
+          remoteHeroes.forEach(rh => {
+            if (!rh.isDowned) hasAliveTeammate = true;
+          });
+
+          if (state.gameMode === 'multiplayer' && hasAliveTeammate) {
             // Enter Downed Co-op state
             state.hero.isDowned = true;
             state.hero.hp = 0;
-            document.getElementById('revive-banner').style.display = 'block';
-            document.getElementById('revive-banner').textContent = 'YOU ARE DOWNED! TEAMMATE CAN REVIVE YOU!';
+            const banner = document.getElementById('revive-banner');
+            banner.style.display = 'block';
+            banner.textContent = '⚠️ YOU ARE DOWNED! SQUADMATES CAN REVIVE YOU!';
           } else {
             handleGameOver(false);
           }
@@ -2956,47 +3856,68 @@
     }
 
     function checkCoopReviveState() {
-      if (state.gameMode !== 'multiplayer' || !state.teammate.connected) return;
+      if (state.gameMode !== 'multiplayer') return;
 
-      const dist = hero.position.distanceTo(remoteHero.position);
+      const banner = document.getElementById('revive-banner');
+      let anyTeammateDowned = false;
+      let allDowned = state.hero.isDowned;
 
-      // If teammate is downed, local hero revives them by standing close
-      if (remoteHero.isDowned && !state.hero.isDowned) {
-        document.getElementById('revive-banner').style.display = 'block';
-        document.getElementById('revive-banner').textContent = 'STAND NEAR TEAMMATE TO REVIVE!';
-
-        if (dist < 3.2) {
-          state.hero.reviveProgress += 0.033;
-          document.getElementById('revive-banner').textContent = `REVIVING TEAMMATE... ${Math.round((state.hero.reviveProgress / 3) * 100)}%`;
-
-          if (state.hero.reviveProgress >= 3.0) {
-            state.hero.reviveProgress = 0;
-            net.send({ type: 'REVIVE_EVENT' });
-            remoteHero.isDowned = false;
-            sound.playReviveChime();
-            document.getElementById('revive-banner').style.display = 'none';
-          }
+      remoteHeroes.forEach((rh, peerId) => {
+        if (!rh.isDowned) {
+          allDowned = false;
         } else {
-          state.hero.reviveProgress = 0;
+          anyTeammateDowned = true;
+
+          // Local hero is alive and close to downed teammate -> revive them
+          if (!state.hero.isDowned) {
+            const dist = hero.position.distanceTo(rh.position);
+            if (dist < 3.5) {
+              state.hero.reviveProgress += 0.033;
+              banner.style.display = 'block';
+              const pct = Math.min(100, Math.round((state.hero.reviveProgress / 2.5) * 100));
+              banner.textContent = `💚 REVIVING ${rh.username.toUpperCase()}... ${pct}%`;
+
+              if (state.hero.reviveProgress >= 2.5) {
+                state.hero.reviveProgress = 0;
+                net.send({ type: 'REVIVE_EVENT', targetPeerId: peerId });
+                rh.isDowned = false;
+                sound.playReviveChime();
+                banner.style.display = 'none';
+              }
+            }
+          }
         }
+      });
+
+      // If local hero is downed and teammates are still alive
+      if (state.hero.isDowned && !allDowned) {
+        banner.style.display = 'block';
+        banner.textContent = '⚠️ YOU ARE DOWNED! SQUADMATES CAN REVIVE YOU!';
+      } else if (!anyTeammateDowned && !state.hero.isDowned) {
+        state.hero.reviveProgress = 0;
+        banner.style.display = 'none';
       }
 
-      // Both downed -> Game Over
-      if (state.hero.isDowned && remoteHero.isDowned) {
+      // If everyone is downed -> Game Over
+      if (allDowned && remoteHeroes.size > 0) {
         handleGameOver(false);
       }
     }
 
-    function spawnFloatingCombatText(worldPos, text, isCrit, colorHex) {
+    function spawnFloatingCombatText(worldPos, text, isCrit, colorHex, attacker = '') {
       const container = document.getElementById('fct-layer');
+      if (!container) return;
+
       const item = document.createElement('div');
       item.className = 'fct-item';
-      item.textContent = isCrit ? `CRIT! ${text}` : text;
+
+      const attackerTag = attacker ? `<span style="display:block; font-size:10px; font-weight:700; opacity:0.85; letter-spacing:0.5px; color:var(--theme-primary, #00f0ff);">${attacker}</span>` : '';
+      item.innerHTML = `${attackerTag}${isCrit ? '💥 CRIT! ' : ''}${text}`;
 
       if (isCrit) {
         item.style.color = '#ffb703';
-        item.style.fontSize = '22px';
-        item.style.textShadow = '0 0 10px rgba(255, 183, 3, 0.8)';
+        item.style.fontSize = '20px';
+        item.style.textShadow = '0 0 10px rgba(255, 183, 3, 0.9)';
       } else if (colorHex) {
         item.style.color = '#' + colorHex.toString(16).padStart(6, '0');
       } else {
@@ -3423,20 +4344,23 @@
 
       state.materials = { pyrite: 2, aether: 2, titanium: 2, catalyst: 1 };
 
-      // Base class stat modifiers
-      if (state.heroClass === 'paladin') {
+      // Base class stat modifiers based on classType (melee, ranged, magic)
+      const classType = (state.activeClassData && state.activeClassData.type) ||
+        (state.heroClass === 'gunner' ? 'ranged' : (state.heroClass === 'arcanist' ? 'magic' : 'melee'));
+
+      if (classType === 'melee') {
         state.hero.maxHp = 140;
         state.hero.maxShield = 70;
         state.hero.moveSpeed = 8.5;
         state.hero.attackDamage = 32;
         state.hero.critChance = 0.15;
-      } else if (state.heroClass === 'gunner') {
+      } else if (classType === 'ranged') {
         state.hero.maxHp = 100;
         state.hero.maxShield = 50;
         state.hero.moveSpeed = 10.0;
         state.hero.attackDamage = 26;
         state.hero.critChance = 0.20;
-      } else if (state.heroClass === 'arcanist') {
+      } else if (classType === 'magic') {
         state.hero.maxHp = 110;
         state.hero.maxShield = 80;
         state.hero.moveSpeed = 8.2;
@@ -3450,15 +4374,19 @@
       state.hero.specialCharge = 100;
       state.hero.isDowned = false;
 
-      hero.setClass(state.heroClass);
-      hero.position.set(state.gameMode === 'multiplayer' && !net.isHost ? 3 : -3, 0, 0);
+      hero.setClass(state.heroClass, state.activeClassData);
+      if (hero.nameplate) {
+        hero.nameplate.update(state.username, 1.0, false, net.isHost);
+      }
+
+      hero.position.set(state.gameMode === 'multiplayer' && !net.isHost ? (Math.random() > 0.5 ? 4 : -4) : 0, 0, 0);
       hero.updateVisualTier(1);
 
-      // Update Action Icons based on class
-      const attackIcon = { paladin: '⚔️', gunner: '🔫', arcanist: '🔮' };
-      const specialIcon = { paladin: '⚡', gunner: '🚀', arcanist: '🌌' };
-      document.getElementById('attack-btn-icon').textContent = attackIcon[state.heroClass] || '⚔️';
-      document.getElementById('special-btn-icon').textContent = specialIcon[state.heroClass] || '⚡';
+      // Update Action Icons based on class type
+      const attackIcon = { melee: '⚔️', ranged: '🏹', magic: '🔮' };
+      const specialIcon = { melee: '⚡', ranged: '🚀', magic: '🌌' };
+      document.getElementById('attack-btn-icon').textContent = attackIcon[classType] || '⚔️';
+      document.getElementById('special-btn-icon').textContent = specialIcon[classType] || '⚡';
 
       updateInventoryHUD();
       updateGearLoadoutUI();
@@ -3608,6 +4536,71 @@
       }
     }
 
+    // Monthly Theme Selector Initialization
+    const themeSelect = document.getElementById('select-monthly-theme');
+    if (themeSelect) {
+      themeSelect.innerHTML = '';
+      MONTHLY_THEMES.forEach((thm, idx) => {
+        const opt = document.createElement('option');
+        opt.value = idx;
+        opt.textContent = `${thm.icon} ${thm.monthName} — ${thm.name}`;
+        if (idx === state.currentMonth) opt.selected = true;
+        themeSelect.appendChild(opt);
+      });
+
+      themeSelect.addEventListener('change', (e) => {
+        const monthIdx = parseInt(e.target.value, 10);
+        sound.playPickup();
+        applyTheme(monthIdx);
+        if (state.gameMode === 'multiplayer' && net.isHost) {
+          net.broadcast({
+            type: 'LOBBY_STATE_SYNC',
+            players: net.getPlayerRoster(),
+            month: monthIdx
+          });
+        }
+      });
+    }
+
+    // Username Requirement & Real-time Validation
+    const usernameInput = document.getElementById('input-username');
+    const usernameAlert = document.getElementById('username-error-alert');
+
+    function validateUsername() {
+      const val = (usernameInput ? usernameInput.value : '').trim();
+      if (val.length < 2) {
+        if (usernameAlert) {
+          usernameAlert.style.display = 'block';
+          usernameAlert.textContent = '⚠️ Commander username is required (min 2 characters)!';
+        }
+        if (usernameInput) usernameInput.focus();
+        return false;
+      }
+      if (usernameAlert) usernameAlert.style.display = 'none';
+      state.username = val;
+      localStorage.setItem('broadroads_username', val);
+      if (hero && hero.nameplate) {
+        hero.nameplate.update(val, state.hero.hp / state.hero.maxHp, state.hero.isDowned, net.isHost);
+      }
+      return true;
+    }
+
+    if (usernameInput) {
+      usernameInput.value = state.username;
+      usernameInput.addEventListener('input', (e) => {
+        const val = e.target.value.trim().slice(0, 16);
+        state.username = val || 'Commander';
+        localStorage.setItem('broadroads_username', state.username);
+        if (val.length >= 2 && usernameAlert) {
+          usernameAlert.style.display = 'none';
+        }
+        if (hero && hero.nameplate) {
+          hero.nameplate.update(state.username, 1.0, false, net.isHost);
+        }
+        if (net.isHost) net.updateLobbyUI();
+      });
+    }
+
     // Menu Mode & Class Selector Tabs
     document.getElementById('tab-solo').addEventListener('click', () => {
       sound.playPickup();
@@ -3619,13 +4612,14 @@
     });
 
     document.getElementById('tab-mp').addEventListener('click', () => {
+      if (!validateUsername()) return;
       sound.playPickup();
       state.gameMode = 'multiplayer';
       document.getElementById('tab-mp').classList.add('active');
       document.getElementById('tab-solo').classList.remove('active');
       document.getElementById('solo-panel').style.display = 'none';
       document.getElementById('mp-panel').style.display = 'flex';
-      if (!net.roomCode) net.initHost();
+      if (!net.roomNumber) net.initHost();
     });
 
     // Sub-mode toggle
@@ -3638,25 +4632,15 @@
       });
     });
 
-    // Class selection cards
-    document.querySelectorAll('.class-card').forEach(card => {
-      card.addEventListener('click', () => {
-        sound.playPickup();
-        document.querySelectorAll('.class-card').forEach(c => c.classList.remove('selected'));
-        card.classList.add('selected');
-        state.heroClass = card.dataset.class;
-        hero.setClass(state.heroClass);
-      });
-    });
-
     // Multiplayer Host / Join sub-tabs
     document.getElementById('btn-host-room').addEventListener('click', () => {
+      if (!validateUsername()) return;
       sound.playPickup();
       document.getElementById('btn-host-room').classList.add('active');
       document.getElementById('btn-join-room-tab').classList.remove('active');
       document.getElementById('host-view').style.display = 'block';
       document.getElementById('join-view').style.display = 'none';
-      if (!net.roomCode) net.initHost();
+      if (!net.roomNumber) net.initHost();
     });
 
     document.getElementById('btn-join-room-tab').addEventListener('click', () => {
@@ -3668,7 +4652,7 @@
     });
 
     document.getElementById('btn-copy-code').addEventListener('click', () => {
-      const code = net.roomCode;
+      const code = net.roomNumber;
       if (code) {
         if (navigator.clipboard && navigator.clipboard.writeText) {
           navigator.clipboard.writeText(code).catch(() => {});
@@ -3678,37 +4662,43 @@
       }
     });
 
+    // Numeric Room Code Input (No 4-digit limit)
     const roomInputEl = document.getElementById('input-room-code');
-    roomInputEl.addEventListener('input', () => {
-      roomInputEl.value = roomInputEl.value.replace(/[^A-Za-z]/g, '').toUpperCase().slice(0, 4);
-    });
+    if (roomInputEl) {
+      roomInputEl.addEventListener('input', () => {
+        roomInputEl.value = roomInputEl.value.replace(/[^0-9]/g, '');
+      });
 
-    roomInputEl.addEventListener('keydown', (e) => {
-      if (e.key === 'Enter') {
-        document.getElementById('btn-connect-peer').click();
-      }
-    });
+      roomInputEl.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') {
+          document.getElementById('btn-connect-peer').click();
+        }
+      });
+    }
 
     document.getElementById('btn-connect-peer').addEventListener('click', () => {
-      const code = roomInputEl.value.trim().toUpperCase();
-      if (code.length === 4) {
+      if (!validateUsername()) return;
+      const code = roomInputEl ? roomInputEl.value.trim() : '';
+      if (code.length >= 1) {
         sound.init();
         net.joinRoom(code);
       } else {
-        document.getElementById('guest-status-pill').textContent = '⚠️ Please enter exactly 4 letters';
+        document.getElementById('guest-status-pill').textContent = '⚠️ Please enter a room number (e.g. 748201)';
       }
     });
 
-    // Auto-fill from URL param ?room=XXXX
+    // Auto-fill from URL param ?room=123456
     const urlParams = new URLSearchParams(window.location.search);
     const roomParam = urlParams.get('room');
     if (roomParam) {
-      const cleanParam = roomParam.replace(/[^A-Za-z]/g, '').toUpperCase().slice(0, 4);
-      document.getElementById('tab-mp').click();
-      document.getElementById('btn-join-room-tab').click();
-      roomInputEl.value = cleanParam;
-      if (cleanParam.length === 4) {
-        setTimeout(() => net.joinRoom(cleanParam), 500);
+      const cleanParam = roomParam.replace(/[^0-9]/g, '');
+      if (cleanParam.length >= 1) {
+        document.getElementById('tab-mp').click();
+        document.getElementById('btn-join-room-tab').click();
+        if (roomInputEl) roomInputEl.value = cleanParam;
+        setTimeout(() => {
+          if (validateUsername()) net.joinRoom(cleanParam);
+        }, 500);
       }
     }
 
@@ -3725,13 +4715,20 @@
 
     // Start Game Button
     bindAction(document.getElementById('btn-start-game'), () => {
-      if (state.gameMode === 'multiplayer' && net.conn && net.isHost) {
-        net.send({ type: 'START_GAME' });
+      if (!validateUsername()) return;
+      if (state.gameMode === 'multiplayer' && net.isHost) {
+        net.broadcast({ type: 'START_GAME' });
       }
       resetGame();
     });
 
-    bindAction(document.getElementById('btn-restart-game'), resetGame);
+    bindAction(document.getElementById('btn-restart-game'), () => {
+      if (!validateUsername()) return;
+      resetGame();
+    });
+
+    // Initialize Theme & Class Selection for active month
+    applyTheme(state.currentMonth);
 
     window.addEventListener('resize', () => {
       camera.aspect = window.innerWidth / window.innerHeight;
@@ -3752,14 +4749,22 @@
 
       updateKeyboardMovement();
       hero.update(dt);
-      if (remoteHero) remoteHero.update(dt);
+      remoteHeroes.forEach(rh => rh.update(dt));
 
-      // Camera Tracking (Follow midpoint if multiplayer)
+      // Camera Tracking (Follow squad center in multiplayer)
       let camTargetX = hero.position.x;
       let camTargetZ = hero.position.z;
-      if (state.gameMode === 'multiplayer' && remoteHero.group.visible) {
-        camTargetX = (hero.position.x + remoteHero.position.x) * 0.5;
-        camTargetZ = (hero.position.z + remoteHero.position.z) * 0.5;
+      if (state.gameMode === 'multiplayer' && remoteHeroes.size > 0) {
+        let count = 1;
+        remoteHeroes.forEach(rh => {
+          if (rh.group && rh.group.visible) {
+            camTargetX += rh.position.x;
+            camTargetZ += rh.position.z;
+            count++;
+          }
+        });
+        camTargetX /= count;
+        camTargetZ /= count;
       }
 
       camera.position.x = THREE.MathUtils.lerp(camera.position.x, camTargetX * 0.45, dt * 4.0);
@@ -3818,6 +4823,8 @@
 
       updateMaterialDrops(dt, hero.position);
 
+      const activeTheme = MONTHLY_THEMES[state.currentMonth] || MONTHLY_THEMES[0];
+
       // Slash Waves
       for (let i = slashWaves.length - 1; i >= 0; i--) {
         const wave = slashWaves[i];
@@ -3825,12 +4832,16 @@
         wave.lifetime -= dt;
         wave.mesh.material.opacity = Math.max(0, wave.lifetime / 0.3);
 
-        enemies.forEach(enemy => {
-          if (!enemy.dead && enemy.position.distanceTo(wave.mesh.position) < 2.0) {
-            enemy.takeDamage(wave.damage * 0.7, false);
-            enemy.position.addScaledVector(wave.dir, 0.4);
-          }
-        });
+        if (!wave.isRemote) {
+          enemies.forEach(enemy => {
+            if (!enemy.dead && enemy.position.distanceTo(wave.mesh.position) < 2.0) {
+              const dmg = wave.damage * 0.7;
+              enemy.takeDamage(dmg, false, state.username);
+              enemy.position.addScaledVector(wave.dir, 0.4);
+              broadcastLocalEnemyHit(enemy, dmg, false, { x: wave.dir.x * 0.4, z: wave.dir.z * 0.4 });
+            }
+          });
+        }
 
         if (wave.lifetime <= 0) {
           scene.remove(wave.mesh);
@@ -3845,19 +4856,25 @@
         proj.lifetime -= dt;
 
         if (proj.isPlayer) {
-          // Hits enemies
-          enemies.forEach(enemy => {
-            if (!enemy.dead && enemy.position.distanceTo(proj.mesh.position) < 1.4) {
-              enemy.takeDamage(proj.damage, false);
-              spawnExplosion(proj.mesh.position, 0x00f5d4);
-              proj.lifetime = 0;
-            }
-          });
+          if (!proj.isRemote) {
+            // Hits enemies
+            enemies.forEach(enemy => {
+              if (!enemy.dead && enemy.position.distanceTo(proj.mesh.position) < 1.4) {
+                const isCrit = Math.random() < state.hero.critChance;
+                let dmg = proj.damage;
+                if (isCrit) dmg *= state.hero.critMult;
+                enemy.takeDamage(dmg, isCrit, state.username);
+                spawnExplosion(proj.mesh.position, activeTheme.primaryHex);
+                broadcastLocalEnemyHit(enemy, dmg, isCrit, { x: proj.dir.x * 0.5, z: proj.dir.z * 0.5 });
+                proj.lifetime = 0;
+              }
+            });
+          }
         } else {
           // Hits local hero
           if (proj.mesh.position.distanceTo(hero.position) < 1.2) {
             damagePlayer(proj.damage, true);
-            spawnExplosion(proj.mesh.position, 0x00bbf9);
+            spawnExplosion(proj.mesh.position, activeTheme.secondaryHex);
             proj.lifetime = 0;
           }
         }
@@ -3875,8 +4892,9 @@
           const toTarget = new THREE.Vector3().subVectors(rocket.target.position, rocket.mesh.position).normalize();
           rocket.mesh.position.addScaledVector(toTarget, rocket.speed * dt);
           if (rocket.mesh.position.distanceTo(rocket.target.position) < 1.2) {
-            rocket.target.takeDamage(rocket.damage, true);
+            rocket.target.takeDamage(rocket.damage, true, state.username);
             spawnExplosion(rocket.mesh.position, 0xffb703);
+            broadcastLocalEnemyHit(rocket.target, rocket.damage, true, null);
             scene.remove(rocket.mesh);
             gunnerRockets.splice(i, 1);
             continue;
