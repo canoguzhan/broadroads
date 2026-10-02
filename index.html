@@ -1526,27 +1526,61 @@
       margin-top: 10px;
     }
     .btn-ready-toggle {
-      background: rgba(255, 183, 3, 0.15);
-      border: 2px solid #ffb703;
-      color: #ffb703;
+      background: rgba(255, 0, 84, 0.22);
+      border: 2px solid #ff0054;
+      color: #ff3366;
+      box-shadow: 0 0 15px rgba(255, 0, 84, 0.35);
+      display: block;
+      width: 100%;
+      border-radius: 12px;
+      padding: 14px;
+      font-family: var(--font-title);
+      font-size: 14px;
+      font-weight: 900;
+      letter-spacing: 1.5px;
+      cursor: pointer;
+      transition: all 0.2s;
     }
-    .btn-ready-toggle.is-ready {
-      background: rgba(0, 245, 212, 0.25);
-      border: 2px solid #00f5d4;
-      color: #00f5d4;
-      box-shadow: 0 0 20px rgba(0, 245, 212, 0.4);
+    .btn-ready-toggle.ready, .btn-ready-toggle.is-ready {
+      background: rgba(0, 245, 212, 0.28) !important;
+      border: 2px solid #00f5d4 !important;
+      color: #00f5d4 !important;
+      box-shadow: 0 0 25px rgba(0, 245, 212, 0.5) !important;
     }
     .btn-host-launch {
       background: linear-gradient(135deg, #00f5d4, #00bbf9);
       border: none;
       color: #030814;
       box-shadow: 0 0 25px rgba(0, 245, 212, 0.5);
+      display: block;
+      width: 100%;
     }
     .btn-host-launch:disabled {
       opacity: 0.45;
       filter: grayscale(0.7);
       cursor: not-allowed;
       box-shadow: none;
+    }
+    .btn-start.ready-not-ready {
+      background: rgba(255, 0, 84, 0.25) !important;
+      border: 2px solid #ff0054 !important;
+      color: #ff3366 !important;
+      box-shadow: 0 0 20px rgba(255, 0, 84, 0.4) !important;
+    }
+    .btn-start.ready-confirmed {
+      background: rgba(0, 245, 212, 0.3) !important;
+      border: 2px solid #00f5d4 !important;
+      color: #00f5d4 !important;
+      box-shadow: 0 0 25px rgba(0, 245, 212, 0.5) !important;
+    }
+    .btn-start.launch-disabled {
+      opacity: 0.45 !important;
+      filter: grayscale(0.7) !important;
+      cursor: not-allowed !important;
+      box-shadow: none !important;
+    }
+    body.platform-mobile #btn-open-shortcuts {
+      display: none !important;
     }
 
     /* Squad Poll Vote Modal (Player Departure & AI Bot Compensation) */
@@ -1628,6 +1662,58 @@
       font-family: var(--font-mono);
       font-size: 11px;
       color: var(--text-muted);
+    }
+
+    /* Mobile Responsive Optimizations */
+    @media (max-width: 768px) {
+      .menu-card {
+        padding: 16px 12px;
+        gap: 10px;
+        max-height: 94vh;
+        width: 96%;
+      }
+      .game-logo {
+        font-size: 26px;
+        letter-spacing: 3px;
+      }
+      .commander-profile-bar {
+        flex-direction: column;
+        gap: 6px;
+      }
+      .profile-input-wrap, .theme-month-display {
+        width: 100%;
+      }
+      .mode-tabs {
+        gap: 4px;
+      }
+      .tab-btn {
+        font-size: 11px;
+        padding: 8px 6px;
+      }
+      .class-grid {
+        grid-template-columns: 1fr;
+        max-height: 150px;
+        overflow-y: auto;
+        gap: 6px;
+      }
+      .class-card {
+        padding: 6px 10px;
+        flex-direction: row;
+        align-items: center;
+        text-align: left;
+        gap: 10px;
+      }
+      .class-card-icon {
+        font-size: 20px;
+        margin-bottom: 0;
+      }
+      .class-card-desc, .class-card-special {
+        display: none;
+      }
+      .btn-start, .btn-lobby-action {
+        padding: 14px;
+        font-size: 15px;
+      }
     }
   </style>
 </head>
@@ -1938,10 +2024,10 @@
               <input type="tel" inputmode="numeric" class="join-input" id="input-room-code" placeholder="e.g. 748201" pattern="[0-9]*" style="letter-spacing: 4px; font-weight: 900;">
               <button class="btn-mp-sub" id="btn-connect-peer" style="flex: 0 0 100px;">CONNECT</button>
             </div>
-            <!-- Guest Roster Slots once connected -->
-            <div class="lobby-roster" id="guest-lobby-roster" style="display: none; margin-top: 8px;"></div>
-            <div class="lobby-status-pill" id="guest-status-pill" style="margin-top: 8px;">Enter room number above</div>
-            <button class="btn-lobby-action btn-ready-toggle" id="btn-guest-ready" style="display: none;">🔴 CLICK TO READY UP</button>
+            <!-- Guest Roster Slots -->
+            <div class="lobby-roster" id="guest-lobby-roster" style="margin-top: 8px;"></div>
+            <div class="lobby-status-pill" id="guest-status-pill" style="margin-top: 8px;">Enter room number above and click Ready</div>
+            <button class="btn-lobby-action btn-ready-toggle" id="btn-guest-ready">🔴 CLICK TO READY UP</button>
           </div>
         </div>
       </div>
@@ -1970,23 +2056,23 @@
       <div class="shortcuts-grid">
         <div class="shortcut-row">
           <span class="shortcut-action">🏃 Move Hero</span>
-          <span class="shortcut-key">W A S D / Arrows</span>
+          <span class="shortcut-key">W A S D</span>
         </div>
         <div class="shortcut-row">
           <span class="shortcut-action">⚔️ Aim & Strike</span>
-          <span class="shortcut-key">Space / Left Click / F / J</span>
+          <span class="shortcut-key">Space / Left Click</span>
         </div>
         <div class="shortcut-row">
           <span class="shortcut-action">💨 Dash / Dodge</span>
-          <span class="shortcut-key">Shift / Right Click / K</span>
+          <span class="shortcut-key">Shift / Right Click</span>
         </div>
         <div class="shortcut-row">
           <span class="shortcut-action">⚡ Special Skill</span>
-          <span class="shortcut-key">E / Q / L</span>
+          <span class="shortcut-key">E</span>
         </div>
         <div class="shortcut-row">
           <span class="shortcut-action">🎯 Auto-Attack</span>
-          <span class="shortcut-key">C / R</span>
+          <span class="shortcut-key">C</span>
         </div>
         <div class="shortcut-row">
           <span class="shortcut-action">🚪 Abandon Match</span>
@@ -3812,14 +3898,30 @@
               classData: state.activeClassData
             });
 
-            document.getElementById('guest-status-pill').textContent = '✅ Connected to squad! Waiting for host...';
+            document.getElementById('guest-status-pill').textContent = state.guestIsReady 
+              ? '✅ Connected & Ready! Waiting for host to launch...' 
+              : '✅ Connected to squad! Click Ready below.';
+            document.getElementById('guest-lobby-roster').style.display = 'flex';
             const guestReadyBtn = document.getElementById('btn-guest-ready');
             if (guestReadyBtn) {
               guestReadyBtn.style.display = 'block';
-              guestReadyBtn.classList.remove('ready');
-              guestReadyBtn.textContent = '🔴 CLICK TO READY UP';
+              if (state.guestIsReady) {
+                guestReadyBtn.classList.add('ready');
+                guestReadyBtn.textContent = '🟢 SQUAD READY! (WAITING FOR HOST)';
+              } else {
+                guestReadyBtn.classList.remove('ready');
+                guestReadyBtn.textContent = '🔴 CLICK TO READY UP';
+              }
             }
-            state.guestIsReady = false;
+            if (state.guestIsReady) {
+              conn.send({
+                type: 'GUEST_READY_TOGGLE',
+                ready: true,
+                peerId: this.myId,
+                username: state.username
+              });
+            }
+            if (typeof updateStartModalButtons === 'function') updateStartModalButtons();
             this.startSync();
           }
         });
@@ -4007,6 +4109,7 @@
             const guestReadyBtn = document.getElementById('btn-guest-ready');
             if (guestReadyBtn) guestReadyBtn.style.display = 'block';
             document.getElementById('guest-status-pill').textContent = `🟢 Connected to squad (${packet.players.length}/4 Players). Waiting for host...`;
+            if (typeof updateStartModalButtons === 'function') updateStartModalButtons();
           }
           return;
         }
@@ -4557,12 +4660,18 @@
         if (net.isHost) {
           net.initHost();
         } else {
-          document.getElementById('guest-status-pill').textContent = 'Enter room number above';
-          document.getElementById('guest-lobby-roster').style.display = 'none';
+          document.getElementById('guest-status-pill').textContent = 'Enter room number above and click Ready';
+          document.getElementById('guest-lobby-roster').style.display = 'flex';
           const guestReadyBtn = document.getElementById('btn-guest-ready');
-          if (guestReadyBtn) guestReadyBtn.style.display = 'none';
+          if (guestReadyBtn) {
+            guestReadyBtn.style.display = 'block';
+            guestReadyBtn.classList.remove('ready');
+            guestReadyBtn.textContent = '🔴 CLICK TO READY UP';
+          }
+          state.guestIsReady = false;
         }
       }
+      if (typeof updateStartModalButtons === 'function') updateStartModalButtons();
     }
 
     function openShortcutsModal() {
@@ -5430,15 +5539,27 @@
     /* ==========================================================================
        14B. PLATFORM DETECTION & KEYBOARD / TOUCH CONTROLS
        ========================================================================== */
-    function detectPlatform() {
-      const isMobileUA = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
-      const hasCoarsePointer = window.matchMedia && window.matchMedia('(pointer: coarse)').matches;
-      const hasHover = window.matchMedia && window.matchMedia('(hover: hover)').matches;
-      const isTouch = ('ontouchstart' in window) || (navigator.maxTouchPoints > 0);
+    function isMobileDevice() {
+      const ua = (navigator.userAgent || navigator.vendor || window.opera || '').toLowerCase();
+      const mobileRegex = /android|webos|iphone|ipad|ipod|blackberry|iemobile|opera mini|mobile|silk|kindle|fennec|maemo|touch/i;
+      if (mobileRegex.test(ua)) return true;
 
-      if (isMobileUA || (isTouch && hasCoarsePointer && !hasHover)) {
-        return 'mobile';
-      }
+      // iPadOS detection (iPadOS reports MacIntel with maxTouchPoints > 1)
+      if (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1) return true;
+
+      // Touch capabilities & Coarse pointer
+      const hasTouch = ('ontouchstart' in window) || (navigator.maxTouchPoints > 0) || (navigator.msMaxTouchPoints > 0);
+      const hasCoarse = window.matchMedia && window.matchMedia('(pointer: coarse)').matches;
+      if (hasTouch && hasCoarse) return true;
+
+      // Screen size check for mobile/tablet devices
+      if (hasTouch && (window.innerWidth <= 1024 || window.innerHeight <= 1024)) return true;
+
+      return false;
+    }
+
+    function detectPlatform() {
+      if (isMobileDevice()) return 'mobile';
       return 'desktop';
     }
 
@@ -5446,18 +5567,36 @@
     document.body.classList.remove('platform-desktop', 'platform-mobile');
     document.body.classList.add(state.platform === 'desktop' ? 'platform-desktop' : 'platform-mobile');
 
-    // Keyboard Controls (STRICTLY GATED TO DESKTOP PLAYERS)
+    // Keyboard Controls (STRICTLY GATED TO DESKTOP PLAYERS - MOBILE USERS 100% BLOCKED)
     const keys = {};
     window.addEventListener('keydown', (e) => {
-      if (state.platform !== 'desktop') return;
-      if (e.target && (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA')) {
+      // 1. ABSOLUTE BLOCK: Never let mobile users use keyboard shortcuts under any circumstance!
+      if (state.platform === 'mobile' || isMobileDevice()) {
         return;
       }
+
+      // 2. NEVER trigger shortcuts if typing inside ANY input, textarea, or contentEditable element
+      const activeEl = document.activeElement;
+      const isInputFocused = activeEl && (
+        activeEl.tagName === 'INPUT' ||
+        activeEl.tagName === 'TEXTAREA' ||
+        activeEl.isContentEditable ||
+        activeEl.getAttribute('contenteditable') === 'true'
+      );
+      if (isInputFocused || (e.target && (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA'))) {
+        return;
+      }
+
       sound.init();
       const k = e.key.toLowerCase();
       keys[k] = true;
 
-      // Escape key triggers exit confirmation
+      // Prevent holding-key repeat spam for discrete actions
+      if (e.repeat && (e.key === ' ' || e.key === 'Shift' || k === 'e' || k === 'c' || e.key === 'Escape')) {
+        return;
+      }
+
+      // Escape key triggers exit confirmation (Single key: Escape)
       if (e.key === 'Escape') {
         e.preventDefault();
         if (state.phase === 'playing' || state.phase === 'refinery') {
@@ -5468,28 +5607,33 @@
 
       if (state.phase !== 'playing') return;
 
-      if (e.key === ' ' || k === 'f' || k === 'j') {
+      // STRICTLY ONE CANONICAL SHORTCUT PER SKILL (NO DUPLICATES/ALIASES)
+      if (e.code === 'Space' || e.key === ' ') {
+        // SKILL: Normal Attack -> ONLY Space
         e.preventDefault();
         performHeroAttack();
-      } else if (e.key === 'Shift' || k === 'k') {
+      } else if (e.key === 'Shift' || e.code === 'ShiftLeft' || e.code === 'ShiftRight') {
+        // SKILL: Dash / Dodge -> ONLY Shift
         e.preventDefault();
         performDash();
-      } else if (k === 'e' || k === 'q' || k === 'l') {
+      } else if (k === 'e') {
+        // SKILL: Special Nova Skill -> ONLY E
         e.preventDefault();
         performSpecialNova();
-      } else if (k === 'c' || k === 'r') {
+      } else if (k === 'c') {
+        // SKILL: Auto-Attack Toggle -> ONLY C
         e.preventDefault();
         toggleAutoAttack();
       }
     });
 
     window.addEventListener('keyup', (e) => {
-      if (state.platform !== 'desktop') return;
+      if (state.platform === 'mobile' || isMobileDevice()) return;
       keys[e.key.toLowerCase()] = false;
     });
 
     function updateKeyboardMovement() {
-      if (state.platform !== 'desktop' || joystickActive || state.phase !== 'playing') return;
+      if (state.platform !== 'desktop' || isMobileDevice() || joystickActive || state.phase !== 'playing') return;
       let moveX = 0, moveZ = 0;
       if (keys['w'] || keys['arrowup']) moveZ -= 1;
       if (keys['s'] || keys['arrowdown']) moveZ += 1;
@@ -5502,6 +5646,104 @@
       } else {
         hero.velocity.set(0, 0);
       }
+    }
+
+    // Modal Action Buttons Manager & Mobile Synchronization
+    function updateStartModalButtons() {
+      const btnStart = document.getElementById('btn-start-game');
+      const btnLaunch = document.getElementById('btn-host-launch');
+      const btnReady = document.getElementById('btn-guest-ready');
+      if (!btnStart) return;
+
+      btnStart.style.display = 'block'; // ALWAYS visible on both mobile and desktop!
+      btnStart.classList.remove('ready-not-ready', 'ready-confirmed', 'launch-disabled');
+
+      if (state.gameMode === 'solo') {
+        btnStart.textContent = 'ENTER ARENA';
+        btnStart.disabled = false;
+      } else {
+        const isGuestTab = document.getElementById('btn-join-room-tab') && document.getElementById('btn-join-room-tab').classList.contains('active');
+        if (isGuestTab) {
+          const readyText = state.guestIsReady ? '🟢 SQUAD READY! (WAITING FOR HOST)' : '🔴 CLICK TO READY UP';
+          if (btnReady) {
+            btnReady.textContent = readyText;
+            btnReady.style.display = 'block';
+            if (state.guestIsReady) btnReady.classList.add('ready');
+            else btnReady.classList.remove('ready');
+          }
+          btnStart.textContent = readyText;
+          btnStart.disabled = false;
+          if (state.guestIsReady) btnStart.classList.add('ready-confirmed');
+          else btnStart.classList.add('ready-not-ready');
+        } else {
+          // Host view
+          let allGuestsReady = true;
+          let guestCount = 0;
+          net.connections.forEach(g => {
+            guestCount++;
+            if (!g.isReady) allGuestsReady = false;
+          });
+          const canLaunch = !(guestCount > 0 && !allGuestsReady);
+          const launchText = guestCount > 0 
+            ? (canLaunch ? '🚀 LAUNCH SQUAD BATTLE (ALL READY)' : '⏳ WAITING FOR SQUAD TO READY UP...')
+            : '🚀 LAUNCH SQUAD BATTLE';
+
+          if (btnLaunch) {
+            btnLaunch.disabled = !canLaunch;
+            btnLaunch.textContent = launchText;
+            if (canLaunch) btnLaunch.classList.add('all-ready');
+            else btnLaunch.classList.remove('all-ready');
+          }
+
+          btnStart.textContent = launchText;
+          btnStart.disabled = !canLaunch;
+          if (!canLaunch) btnStart.classList.add('launch-disabled');
+        }
+      }
+    }
+    window.updateStartModalButtons = updateStartModalButtons;
+
+    function handleGuestReadyClick() {
+      if (!validateUsername()) return;
+      sound.playPickup();
+
+      const code = roomInputEl ? roomInputEl.value.trim() : '';
+      if (!net.conn || !net.conn.open) {
+        if (code.length >= 1) {
+          document.getElementById('guest-status-pill').textContent = '⏳ Connecting to squad...';
+          state.guestIsReady = true;
+          net.joinRoom(code);
+        } else {
+          document.getElementById('guest-status-pill').textContent = '⚠️ Enter room number above first!';
+          if (roomInputEl) roomInputEl.focus();
+          return;
+        }
+      } else {
+        state.guestIsReady = !state.guestIsReady;
+        net.send({
+          type: 'GUEST_READY_TOGGLE',
+          ready: state.guestIsReady,
+          peerId: net.myId,
+          username: state.username
+        });
+      }
+      updateStartModalButtons();
+    }
+
+    function handleHostLaunchClick() {
+      const btnHostLaunch = document.getElementById('btn-host-launch');
+      if (btnHostLaunch && btnHostLaunch.disabled) return;
+      if (!validateUsername()) return;
+
+      if (state.platform === 'desktop' && !sessionStorage.getItem('broadroads_shortcuts_shown')) {
+        sessionStorage.setItem('broadroads_shortcuts_shown', '1');
+        pendingStartGame = true;
+        openShortcutsModal();
+        return;
+      }
+
+      net.broadcast({ type: 'START_GAME' });
+      resetGame();
     }
 
     // Username Requirement & Real-time Validation
@@ -5558,7 +5800,7 @@
       document.getElementById('tab-mp').classList.remove('active');
       document.getElementById('solo-panel').style.display = 'flex';
       document.getElementById('mp-panel').style.display = 'none';
-      document.getElementById('btn-start-game').style.display = 'block';
+      updateStartModalButtons();
     });
 
     document.getElementById('tab-mp').addEventListener('click', () => {
@@ -5569,8 +5811,8 @@
       document.getElementById('tab-solo').classList.remove('active');
       document.getElementById('solo-panel').style.display = 'none';
       document.getElementById('mp-panel').style.display = 'flex';
-      document.getElementById('btn-start-game').style.display = 'none';
       if (!net.roomNumber) net.initHost();
+      updateStartModalButtons();
     });
 
     // Sub-mode toggle
@@ -5592,6 +5834,7 @@
       document.getElementById('host-view').style.display = 'block';
       document.getElementById('join-view').style.display = 'none';
       if (!net.roomNumber) net.initHost();
+      updateStartModalButtons();
     });
 
     document.getElementById('btn-join-room-tab').addEventListener('click', () => {
@@ -5600,6 +5843,7 @@
       document.getElementById('btn-host-room').classList.remove('active');
       document.getElementById('host-view').style.display = 'none';
       document.getElementById('join-view').style.display = 'block';
+      updateStartModalButtons();
     });
 
     document.getElementById('btn-copy-code').addEventListener('click', () => {
@@ -5636,47 +5880,19 @@
       } else {
         document.getElementById('guest-status-pill').textContent = '⚠️ Please enter a room number (e.g. 748201)';
       }
+      updateStartModalButtons();
     });
 
     // Guest Ready Toggle Button
     const btnGuestReady = document.getElementById('btn-guest-ready');
     if (btnGuestReady) {
-      btnGuestReady.addEventListener('click', () => {
-        sound.playPickup();
-        state.guestIsReady = !state.guestIsReady;
-        if (state.guestIsReady) {
-          btnGuestReady.classList.add('ready');
-          btnGuestReady.textContent = '🟢 SQUAD READY! (WAITING FOR HOST)';
-        } else {
-          btnGuestReady.classList.remove('ready');
-          btnGuestReady.textContent = '🔴 CLICK TO READY UP';
-        }
-        net.send({
-          type: 'GUEST_READY_TOGGLE',
-          ready: state.guestIsReady,
-          peerId: net.myId,
-          username: state.username
-        });
-      });
+      btnGuestReady.addEventListener('click', handleGuestReadyClick);
     }
 
     // Host Launch Squad Battle Button
     const btnHostLaunch = document.getElementById('btn-host-launch');
     if (btnHostLaunch) {
-      btnHostLaunch.addEventListener('click', () => {
-        if (btnHostLaunch.disabled) return;
-        if (!validateUsername()) return;
-
-        if (state.platform === 'desktop' && !sessionStorage.getItem('broadroads_shortcuts_shown')) {
-          sessionStorage.setItem('broadroads_shortcuts_shown', '1');
-          pendingStartGame = true;
-          openShortcutsModal();
-          return;
-        }
-
-        net.broadcast({ type: 'START_GAME' });
-        resetGame();
-      });
+      btnHostLaunch.addEventListener('click', handleHostLaunchClick);
     }
 
     // Auto-fill from URL param ?room=123456
@@ -5773,18 +5989,26 @@
     bindAction(document.getElementById('btn-quick-forge'), executeAutoForge);
     bindAction(document.getElementById('btn-next-wave'), () => startWave(state.currentWave + 1));
 
-    // Start Game Button (Solo Mode)
+    // Start Game Button (Solo Mode & Multiplayer Squad Launch/Ready)
     bindAction(document.getElementById('btn-start-game'), () => {
       if (!validateUsername()) return;
 
-      if (state.platform === 'desktop' && !sessionStorage.getItem('broadroads_shortcuts_shown')) {
-        sessionStorage.setItem('broadroads_shortcuts_shown', '1');
-        pendingStartGame = true;
-        openShortcutsModal();
-        return;
+      if (state.gameMode === 'solo') {
+        if (state.platform === 'desktop' && !sessionStorage.getItem('broadroads_shortcuts_shown')) {
+          sessionStorage.setItem('broadroads_shortcuts_shown', '1');
+          pendingStartGame = true;
+          openShortcutsModal();
+          return;
+        }
+        resetGame();
+      } else if (state.gameMode === 'multiplayer') {
+        const isGuestTab = document.getElementById('btn-join-room-tab') && document.getElementById('btn-join-room-tab').classList.contains('active');
+        if (isGuestTab) {
+          handleGuestReadyClick();
+        } else {
+          handleHostLaunchClick();
+        }
       }
-
-      resetGame();
     });
 
     bindAction(document.getElementById('btn-restart-game'), () => {
@@ -5794,11 +6018,29 @@
 
     // Initialize Theme & Class Selection for active month
     applyTheme(state.currentMonth);
+    updateStartModalButtons();
 
     window.addEventListener('resize', () => {
       camera.aspect = window.innerWidth / window.innerHeight;
       camera.updateProjectionMatrix();
       renderer.setSize(window.innerWidth, window.innerHeight);
+
+      const newPlat = detectPlatform();
+      if (newPlat !== state.platform) {
+        state.platform = newPlat;
+        document.body.classList.remove('platform-desktop', 'platform-mobile');
+        document.body.classList.add(state.platform === 'desktop' ? 'platform-desktop' : 'platform-mobile');
+        updateStartModalButtons();
+      }
+    });
+
+    window.addEventListener('orientationchange', () => {
+      setTimeout(() => {
+        state.platform = detectPlatform();
+        document.body.classList.remove('platform-desktop', 'platform-mobile');
+        document.body.classList.add(state.platform === 'desktop' ? 'platform-desktop' : 'platform-mobile');
+        updateStartModalButtons();
+      }, 200);
     });
 
     /* ==========================================================================
