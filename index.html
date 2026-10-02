@@ -13,10 +13,10 @@
   <style>
     :root {
       --bg-dark: #060814;
-      --bg-card: rgba(13, 19, 38, 0.82);
-      --bg-glass: rgba(18, 26, 52, 0.65);
-      --border-cyan: rgba(0, 245, 212, 0.45);
-      --border-gold: rgba(255, 183, 3, 0.5);
+      --bg-card: rgba(13, 19, 38, 0.85);
+      --bg-glass: rgba(18, 26, 52, 0.7);
+      --border-cyan: rgba(0, 245, 212, 0.5);
+      --border-gold: rgba(255, 183, 3, 0.55);
       --neon-cyan: #00f5d4;
       --neon-blue: #00bbf9;
       --neon-gold: #ffb703;
@@ -38,7 +38,6 @@
       user-select: none;
       -webkit-user-select: none;
       -webkit-touch-callout: none;
-      touch-action: none;
     }
 
     html, body {
@@ -59,6 +58,7 @@
       height: 100%;
       z-index: 1;
       display: block;
+      cursor: crosshair;
     }
 
     /* Floating UI Container */
@@ -92,7 +92,7 @@
       border: 1px solid var(--border-cyan);
       border-radius: 12px;
       padding: 10px 14px;
-      min-width: 190px;
+      min-width: 180px;
       box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5), inset 0 0 15px rgba(0, 245, 212, 0.1);
     }
 
@@ -208,7 +208,7 @@
       background: var(--bg-card);
       backdrop-filter: blur(12px);
       -webkit-backdrop-filter: blur(12px);
-      border: 1px solid rgba(255, 255, 255, 0.12);
+      border: 1px solid rgba(255, 255, 255, 0.15);
       border-radius: 12px;
       padding: 8px 12px;
       box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
@@ -309,7 +309,7 @@
       100% { opacity: 0; transform: translate(-50%, -50px) scale(0.9); }
     }
 
-    /* Mobile Virtual Joystick & Touch Controls */
+    /* Mobile Virtual Controls & Action Cluster */
     .mobile-controls {
       position: absolute;
       bottom: 0;
@@ -317,13 +317,13 @@
       width: 100%;
       height: 100%;
       pointer-events: none;
-      z-index: 20;
+      z-index: 25;
     }
 
     /* Joystick Area (Left) */
     #joystick-zone {
       position: absolute;
-      bottom: 20px;
+      bottom: 24px;
       left: 20px;
       width: 140px;
       height: 140px;
@@ -335,10 +335,10 @@
       width: 120px;
       height: 120px;
       border-radius: 50%;
-      background: rgba(18, 26, 52, 0.45);
-      border: 2px solid rgba(0, 245, 212, 0.35);
+      background: rgba(18, 26, 52, 0.55);
+      border: 2px solid rgba(0, 245, 212, 0.4);
       backdrop-filter: blur(8px);
-      box-shadow: 0 0 20px rgba(0, 245, 212, 0.15), inset 0 0 15px rgba(0, 245, 212, 0.1);
+      box-shadow: 0 0 20px rgba(0, 245, 212, 0.2), inset 0 0 15px rgba(0, 245, 212, 0.15);
       position: absolute;
       top: 10px;
       left: 10px;
@@ -352,7 +352,7 @@
       height: 50px;
       border-radius: 50%;
       background: radial-gradient(circle, #00f5d4 0%, #00bbf9 100%);
-      box-shadow: 0 0 15px rgba(0, 245, 212, 0.8);
+      box-shadow: 0 0 15px rgba(0, 245, 212, 0.9);
       position: absolute;
       transform: translate(0, 0);
       pointer-events: none;
@@ -364,18 +364,18 @@
       bottom: 24px;
       right: 20px;
       display: grid;
-      grid-template-columns: repeat(2, 68px);
-      grid-template-rows: repeat(2, 68px);
+      grid-template-columns: repeat(2, 70px);
+      grid-template-rows: repeat(2, 70px);
       gap: 14px;
       pointer-events: auto;
     }
 
     .btn-action {
-      width: 68px;
-      height: 68px;
+      width: 70px;
+      height: 70px;
       border-radius: 50%;
       background: var(--bg-card);
-      border: 2px solid rgba(255, 255, 255, 0.2);
+      border: 2px solid rgba(255, 255, 255, 0.25);
       backdrop-filter: blur(10px);
       -webkit-backdrop-filter: blur(10px);
       color: #fff;
@@ -384,64 +384,90 @@
       align-items: center;
       justify-content: center;
       cursor: pointer;
-      box-shadow: 0 6px 16px rgba(0, 0, 0, 0.5);
-      transition: transform 0.08s ease, border-color 0.15s, box-shadow 0.15s;
+      box-shadow: 0 6px 18px rgba(0, 0, 0, 0.6);
+      transition: transform 0.08s ease, border-color 0.15s, box-shadow 0.15s, background-color 0.15s;
       position: relative;
-      touch-action: none;
       outline: none;
+      touch-action: manipulation;
+    }
+
+    .btn-action * {
+      pointer-events: none;
     }
 
     .btn-action:active {
-      transform: scale(0.92);
+      transform: scale(0.90) !important;
     }
 
+    /* Big Strike Button */
     .btn-attack {
       grid-column: 2;
       grid-row: 2;
-      width: 76px;
-      height: 76px;
-      margin-left: -8px;
-      margin-top: -8px;
-      background: radial-gradient(circle, rgba(255, 0, 84, 0.3) 0%, rgba(13, 19, 38, 0.9) 100%);
+      width: 80px;
+      height: 80px;
+      margin-left: -10px;
+      margin-top: -10px;
+      background: radial-gradient(circle, rgba(255, 0, 84, 0.35) 0%, rgba(13, 19, 38, 0.95) 100%);
       border-color: var(--neon-red);
-      box-shadow: 0 0 20px rgba(255, 0, 84, 0.4);
+      box-shadow: 0 0 25px rgba(255, 0, 84, 0.5);
     }
 
-    .btn-attack:active {
-      background: rgba(255, 0, 84, 0.5);
-      box-shadow: 0 0 30px rgba(255, 0, 84, 0.8);
+    .btn-attack:hover {
+      box-shadow: 0 0 35px rgba(255, 0, 84, 0.8);
+      border-color: #ff3377;
     }
 
+    /* Dash Button */
     .btn-dash {
       grid-column: 1;
       grid-row: 2;
       border-color: var(--neon-cyan);
-      box-shadow: 0 0 15px rgba(0, 245, 212, 0.3);
+      box-shadow: 0 0 15px rgba(0, 245, 212, 0.35);
     }
 
+    .btn-dash:hover {
+      box-shadow: 0 0 25px rgba(0, 245, 212, 0.7);
+    }
+
+    /* Nova Special Skill */
     .btn-special {
       grid-column: 2;
       grid-row: 1;
       border-color: var(--neon-purple);
-      box-shadow: 0 0 15px rgba(157, 78, 221, 0.3);
+      box-shadow: 0 0 15px rgba(157, 78, 221, 0.35);
     }
 
+    .btn-special.ready {
+      animation: pulsePurple 1.2s infinite alternate;
+      border-color: #d8b4fe !important;
+    }
+
+    @keyframes pulsePurple {
+      0% { box-shadow: 0 0 15px rgba(157, 78, 221, 0.6); transform: scale(1); }
+      100% { box-shadow: 0 0 30px rgba(157, 78, 221, 1), 0 0 45px rgba(0, 245, 212, 0.4); transform: scale(1.05); }
+    }
+
+    /* Auto Toggle Button */
     .btn-auto {
       grid-column: 1;
       grid-row: 1;
       border-color: var(--neon-gold);
       box-shadow: 0 0 12px rgba(255, 183, 3, 0.3);
-      font-size: 10px;
     }
 
     .btn-auto.active {
-      background: rgba(255, 183, 3, 0.25);
-      border-color: var(--neon-gold);
-      box-shadow: 0 0 20px rgba(255, 183, 3, 0.7);
+      background: rgba(255, 183, 3, 0.3) !important;
+      border-color: var(--neon-gold) !important;
+      box-shadow: 0 0 25px rgba(255, 183, 3, 0.9) !important;
+    }
+
+    .btn-auto.active .btn-lbl {
+      color: var(--neon-gold);
+      font-weight: 900;
     }
 
     .btn-icon {
-      font-size: 22px;
+      font-size: 24px;
       line-height: 1;
       margin-bottom: 2px;
     }
@@ -461,10 +487,15 @@
       width: 100%;
       height: 100%;
       border-radius: 50%;
-      background: rgba(0, 0, 0, 0.65);
-      clip-path: polygon(50% 50%, 50% 0%, 100% 0%, 100% 100%, 0% 100%, 0% 0%, 50% 0%);
+      background: rgba(0, 0, 0, 0.7);
       pointer-events: none;
       display: none;
+      align-items: center;
+      justify-content: center;
+      font-family: var(--font-mono);
+      font-size: 13px;
+      font-weight: 700;
+      color: #fff;
     }
 
     /* Modals & Overlays */
@@ -557,17 +588,6 @@
       overflow: hidden;
     }
 
-    .crucible-section::before {
-      content: '';
-      position: absolute;
-      top: -50%;
-      left: -50%;
-      width: 200%;
-      height: 200%;
-      background: radial-gradient(circle, rgba(0, 245, 212, 0.05) 0%, transparent 60%);
-      pointer-events: none;
-    }
-
     .crucible-slots {
       display: flex;
       align-items: center;
@@ -595,12 +615,6 @@
       border-style: solid;
       border-color: var(--neon-cyan);
       box-shadow: 0 0 15px rgba(0, 245, 212, 0.4);
-    }
-
-    .forge-slot.highlight {
-      border-color: var(--neon-gold);
-      background: rgba(255, 183, 3, 0.15);
-      transform: scale(1.05);
     }
 
     .slot-icon {
@@ -757,11 +771,6 @@
       background: rgba(18, 26, 52, 0.9);
     }
 
-    .mat-card.disabled {
-      opacity: 0.4;
-      pointer-events: none;
-    }
-
     .mat-badge-count {
       position: absolute;
       top: 4px;
@@ -864,10 +873,6 @@
       width: 100%;
     }
 
-    .btn-next-wave:active {
-      transform: scale(0.98);
-    }
-
     /* Title / Start Screen */
     #start-modal {
       display: flex;
@@ -884,7 +889,7 @@
       display: flex;
       flex-direction: column;
       align-items: center;
-      gap: 18px;
+      gap: 16px;
     }
 
     .game-logo {
@@ -927,24 +932,19 @@
       color: #cbd5e1;
     }
 
-    .game-lore {
-      font-size: 13px;
-      line-height: 1.5;
-      color: #94a3b8;
-      max-width: 440px;
-    }
-
     .controls-hint-box {
-      background: rgba(0, 0, 0, 0.4);
+      background: rgba(0, 0, 0, 0.45);
+      border: 1px solid rgba(0, 245, 212, 0.2);
       border-radius: 12px;
-      padding: 10px 16px;
+      padding: 12px 16px;
       font-family: var(--font-mono);
       font-size: 11px;
       color: var(--neon-cyan);
       display: flex;
       flex-direction: column;
-      gap: 4px;
+      gap: 6px;
       width: 100%;
+      text-align: left;
     }
 
     .btn-start {
@@ -964,8 +964,9 @@
       width: 100%;
     }
 
-    .btn-start:active {
-      transform: scale(0.97);
+    .btn-start:hover {
+      box-shadow: 0 10px 40px rgba(0, 245, 212, 0.9);
+      transform: translateY(-2px);
     }
 
     /* Game Over / Victory Modal */
@@ -984,8 +985,8 @@
     }
 
     .victory-card {
-      border-color: var(--neon-gold);
-      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.8), 0 0 50px rgba(255, 183, 3, 0.4);
+      border-color: var(--neon-gold) !important;
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.8), 0 0 50px rgba(255, 183, 3, 0.4) !important;
     }
 
     .end-title {
@@ -1035,10 +1036,10 @@
     }
 
     @keyframes screenShake {
-      10%, 90% { transform: translate3d(-2px, 2px, 0); }
-      20%, 80% { transform: translate3d(3px, -2px, 0); }
-      30%, 50%, 70% { transform: translate3d(-4px, 3px, 0); }
-      40%, 60% { transform: translate3d(4px, -3px, 0); }
+      10%, 90% { transform: translate3d(-3px, 2px, 0); }
+      20%, 80% { transform: translate3d(4px, -3px, 0); }
+      30%, 50%, 70% { transform: translate3d(-5px, 4px, 0); }
+      40%, 60% { transform: translate3d(5px, -4px, 0); }
     }
 
     /* Anvil Strike Flash Animation */
@@ -1077,7 +1078,7 @@
         <div class="bar-wrap">
           <div class="bar-label">
             <span>HEALTH</span>
-            <span id="hp-text">100/100</span>
+            <span id="hp-text">120/120</span>
           </div>
           <div class="bar-bg">
             <div class="bar-fill hp-fill" id="hp-bar" style="width: 100%;"></div>
@@ -1086,7 +1087,7 @@
         <div class="bar-wrap">
           <div class="bar-label">
             <span>SHIELD</span>
-            <span id="shield-text">50/50</span>
+            <span id="shield-text">60/60</span>
           </div>
           <div class="bar-bg">
             <div class="bar-fill shield-fill" id="shield-bar" style="width: 100%;"></div>
@@ -1148,27 +1149,27 @@
       <!-- Action Cluster (Right) -->
       <div class="action-cluster">
         <!-- Auto Attack Toggle -->
-        <button class="btn-action btn-auto" id="btn-auto" title="Toggle Auto-Attack">
+        <button class="btn-action btn-auto" id="btn-auto" title="Toggle Auto-Attack (C)">
           <span class="btn-icon">🎯</span>
-          <span class="btn-lbl">AUTO</span>
+          <span class="btn-lbl" id="auto-lbl">AUTO: OFF</span>
         </button>
 
         <!-- Special Skill -->
-        <button class="btn-action btn-special" id="btn-special" title="Runic Nova (E)">
+        <button class="btn-action btn-special ready" id="btn-special" title="Runic Nova (E / Q)">
           <span class="btn-icon">⚡</span>
-          <span class="btn-lbl">NOVA</span>
-          <div class="cooldown-overlay" id="special-cooldown"></div>
+          <span class="btn-lbl" id="special-lbl">NOVA</span>
+          <div class="cooldown-overlay" id="special-cooldown">READY</div>
         </button>
 
         <!-- Dash / Dodge -->
-        <button class="btn-action btn-dash" id="btn-dash" title="Dash (Space/Shift)">
+        <button class="btn-action btn-dash" id="btn-dash" title="Dash (Shift / Right Click)">
           <span class="btn-icon">💨</span>
           <span class="btn-lbl">DASH</span>
           <div class="cooldown-overlay" id="dash-cooldown"></div>
         </button>
 
         <!-- Attack Button -->
-        <button class="btn-action btn-attack" id="btn-attack" title="Melee Strike">
+        <button class="btn-action btn-attack" id="btn-attack" title="Melee Strike (Space / Left Click)">
           <span class="btn-icon">⚔️</span>
           <span class="btn-lbl">STRIKE</span>
         </button>
@@ -1182,7 +1183,7 @@
       <div class="refinery-header">
         <div class="refinery-title-group">
           <h2><span>⚡</span> RUNIC GEAR REFINERY</h2>
-          <div class="refinery-sub">Survive & Forge: Tap materials to feed the crucible</div>
+          <div class="refinery-sub">Tap raw minerals to forge upgraded gear</div>
         </div>
         <div class="forge-timer-badge" id="refinery-countdown">NEXT WAVE: 25s</div>
       </div>
@@ -1218,7 +1219,7 @@
           <div class="result-icon" id="preview-icon">💎</div>
           <div class="result-info">
             <div class="result-name" id="preview-name">Select Materials</div>
-            <div class="result-stats" id="preview-stats">Combine 2 raw minerals to forge new gear</div>
+            <div class="result-stats" id="preview-stats">Insert 2 minerals to synthesize upgraded gear</div>
           </div>
         </div>
 
@@ -1236,7 +1237,7 @@
       <!-- Raw Materials Pouch (Inventory to click/tap) -->
       <div>
         <div style="font-family: var(--font-title); font-size: 11px; letter-spacing: 1px; color: var(--text-muted); margin-bottom: 6px;">
-          RAW ENEMY DROPS (TAP TO INSERT)
+          RAW ENEMY DROPS (TAP TO INSERT INTO CRUCIBLE)
         </div>
         <div class="materials-bag-grid">
           <!-- Pyrite -->
@@ -1281,14 +1282,14 @@
             <span class="gear-icon">⚔️</span>
             <span class="gear-title" id="gear-name-weapon">Broad Blade</span>
             <span class="gear-tier" id="gear-tier-weapon">T1 Common</span>
-            <span class="gear-stat" id="gear-stat-weapon">+15 ATK</span>
+            <span class="gear-stat" id="gear-stat-weapon">+25 ATK</span>
           </div>
           <!-- Armor -->
           <div class="gear-card tier-1" id="gear-card-armor">
             <span class="gear-icon">🛡️</span>
             <span class="gear-title" id="gear-name-armor">Iron Cuirass</span>
             <span class="gear-tier" id="gear-tier-armor">T1 Common</span>
-            <span class="gear-stat" id="gear-stat-armor">+100 HP</span>
+            <span class="gear-stat" id="gear-stat-armor">+120 HP</span>
           </div>
           <!-- Greaves -->
           <div class="gear-card tier-1" id="gear-card-boots">
@@ -1302,7 +1303,7 @@
             <span class="gear-icon">💍</span>
             <span class="gear-title" id="gear-name-relic">Void Ring</span>
             <span class="gear-tier" id="gear-tier-relic">T1 Common</span>
-            <span class="gear-stat" id="gear-stat-relic">+5% CRIT</span>
+            <span class="gear-stat" id="gear-stat-relic">+10% CRIT</span>
           </div>
         </div>
       </div>
@@ -1323,17 +1324,16 @@
       <div class="feature-pills">
         <span class="feature-pill">⚡ 3-Minute Combat Loops</span>
         <span class="feature-pill">🔨 Tap & Drag Refinery</span>
-        <span class="feature-pill">📱 Mobile Touch Optimized</span>
+        <span class="feature-pill">📱 Mobile Touch + Desktop</span>
         <span class="feature-pill">👾 5 Progressive Waves</span>
       </div>
 
-      <p class="game-lore">
-        Trapped on the astral floating forge, harvest raw minerals dropped by void horrors. Between waves, rapidly strike the crucible anvil to synthesize legendary armor, blades, and greaves before the Overlord awakens!
-      </p>
-
       <div class="controls-hint-box">
-        <div><strong>Mobile:</strong> Left thumb joystick to move • Right buttons to Strike, Dash & Nova</div>
-        <div><strong>Desktop:</strong> WASD / Arrows to move • Space / Click to Strike • Shift to Dash • E for Nova</div>
+        <div><strong>⚔️ STRIKE:</strong> Tap button, click on arena, or press <code>Space</code> / <code>F</code></div>
+        <div><strong>💨 DASH:</strong> Tap button, right click, or press <code>Shift</code></div>
+        <div><strong>⚡ NOVA:</strong> Tap button or press <code>E</code> / <code>Q</code> (Starts fully charged!)</div>
+        <div><strong>🎯 AUTO:</strong> Tap button or press <code>C</code> for auto-aim & attack</div>
+        <div><strong>🕹️ MOVE:</strong> Left thumb joystick, WASD, or Arrow Keys</div>
       </div>
 
       <button class="btn-start" id="btn-start-game">
@@ -1377,13 +1377,13 @@
     </div>
   </div>
 
-  <!-- GAME ENGINE LOGIC SCRIPT -->
+  <!-- GAME ENGINE SCRIPT -->
   <script>
   (function() {
     'use strict';
 
     /* ==========================================================================
-       1. SYNTHESIZED WEB AUDIO ENGINE (ZERO EXTERNAL DEPENDENCY)
+       1. SYNTHESIZED WEB AUDIO ENGINE
        ========================================================================== */
     class SoundEngine {
       constructor() {
@@ -1412,22 +1412,22 @@
           const filter = this.ctx.createBiquadFilter();
 
           osc.type = 'sawtooth';
-          osc.frequency.setValueAtTime(450, now);
-          osc.frequency.exponentialRampToValueAtTime(80, now + 0.12);
+          osc.frequency.setValueAtTime(550, now);
+          osc.frequency.exponentialRampToValueAtTime(90, now + 0.16);
 
           filter.type = 'lowpass';
-          filter.frequency.setValueAtTime(2800, now);
-          filter.frequency.exponentialRampToValueAtTime(300, now + 0.12);
+          filter.frequency.setValueAtTime(3200, now);
+          filter.frequency.exponentialRampToValueAtTime(350, now + 0.16);
 
-          gain.gain.setValueAtTime(0.25, now);
-          gain.gain.exponentialRampToValueAtTime(0.01, now + 0.12);
+          gain.gain.setValueAtTime(0.3, now);
+          gain.gain.exponentialRampToValueAtTime(0.01, now + 0.16);
 
           osc.connect(filter);
           filter.connect(gain);
           gain.connect(this.ctx.destination);
 
           osc.start(now);
-          osc.stop(now + 0.13);
+          osc.stop(now + 0.17);
         } catch(e) {}
       }
 
@@ -1439,10 +1439,10 @@
           const gain = this.ctx.createGain();
 
           osc.type = 'triangle';
-          osc.frequency.setValueAtTime(160, now);
-          osc.frequency.exponentialRampToValueAtTime(40, now + 0.14);
+          osc.frequency.setValueAtTime(180, now);
+          osc.frequency.exponentialRampToValueAtTime(45, now + 0.14);
 
-          gain.gain.setValueAtTime(0.4, now);
+          gain.gain.setValueAtTime(0.45, now);
           gain.gain.exponentialRampToValueAtTime(0.01, now + 0.14);
 
           osc.connect(gain);
@@ -1457,13 +1457,12 @@
         if (this.muted || !this.ctx) return;
         try {
           const now = this.ctx.currentTime;
-          const notes = [659.25, 880, 1046.5]; // E5, A5, C6
-          notes.forEach((freq, idx) => {
+          [659.25, 880, 1046.5].forEach((freq, idx) => {
             const osc = this.ctx.createOscillator();
             const gain = this.ctx.createGain();
             osc.type = 'sine';
             osc.frequency.setValueAtTime(freq, now + idx * 0.04);
-            gain.gain.setValueAtTime(0.18, now + idx * 0.04);
+            gain.gain.setValueAtTime(0.2, now + idx * 0.04);
             gain.gain.exponentialRampToValueAtTime(0.01, now + idx * 0.04 + 0.12);
 
             osc.connect(gain);
@@ -1479,13 +1478,12 @@
         if (this.muted || !this.ctx) return;
         try {
           const now = this.ctx.currentTime;
-          // Metallic harmonic ping
-          [880, 1760, 2640].forEach((freq) => {
+          [900, 1800, 2700].forEach((freq) => {
             const osc = this.ctx.createOscillator();
             const gain = this.ctx.createGain();
             osc.type = 'square';
             osc.frequency.setValueAtTime(freq, now);
-            gain.gain.setValueAtTime(0.15, now);
+            gain.gain.setValueAtTime(0.18, now);
             gain.gain.exponentialRampToValueAtTime(0.001, now + 0.4);
             osc.connect(gain);
             gain.connect(this.ctx.destination);
@@ -1493,13 +1491,12 @@
             osc.stop(now + 0.45);
           });
 
-          // Deep bass thud
           const sub = this.ctx.createOscillator();
           const subGain = this.ctx.createGain();
           sub.type = 'sine';
-          sub.frequency.setValueAtTime(130, now);
+          sub.frequency.setValueAtTime(140, now);
           sub.frequency.exponentialRampToValueAtTime(30, now + 0.35);
-          subGain.gain.setValueAtTime(0.5, now);
+          subGain.gain.setValueAtTime(0.6, now);
           subGain.gain.exponentialRampToValueAtTime(0.01, now + 0.35);
           sub.connect(subGain);
           subGain.connect(this.ctx.destination);
@@ -1515,10 +1512,10 @@
           const osc = this.ctx.createOscillator();
           const gain = this.ctx.createGain();
           osc.type = 'sine';
-          osc.frequency.setValueAtTime(300, now);
-          osc.frequency.linearRampToValueAtTime(600, now + 0.1);
-          osc.frequency.linearRampToValueAtTime(100, now + 0.2);
-          gain.gain.setValueAtTime(0.2, now);
+          osc.frequency.setValueAtTime(350, now);
+          osc.frequency.linearRampToValueAtTime(750, now + 0.09);
+          osc.frequency.linearRampToValueAtTime(120, now + 0.2);
+          gain.gain.setValueAtTime(0.3, now);
           gain.gain.exponentialRampToValueAtTime(0.01, now + 0.2);
           osc.connect(gain);
           gain.connect(this.ctx.destination);
@@ -1534,10 +1531,10 @@
           const osc = this.ctx.createOscillator();
           const gain = this.ctx.createGain();
           osc.type = 'sawtooth';
-          osc.frequency.setValueAtTime(150, now);
-          osc.frequency.exponentialRampToValueAtTime(900, now + 0.25);
-          osc.frequency.exponentialRampToValueAtTime(60, now + 0.6);
-          gain.gain.setValueAtTime(0.4, now);
+          osc.frequency.setValueAtTime(120, now);
+          osc.frequency.exponentialRampToValueAtTime(1100, now + 0.25);
+          osc.frequency.exponentialRampToValueAtTime(50, now + 0.6);
+          gain.gain.setValueAtTime(0.5, now);
           gain.gain.exponentialRampToValueAtTime(0.01, now + 0.65);
           osc.connect(gain);
           gain.connect(this.ctx.destination);
@@ -1550,13 +1547,12 @@
         if (this.muted || !this.ctx) return;
         try {
           const now = this.ctx.currentTime;
-          const chord = [523.25, 659.25, 783.99, 1046.5]; // C major
-          chord.forEach((freq, idx) => {
+          [523.25, 659.25, 783.99, 1046.5].forEach((freq, idx) => {
             const osc = this.ctx.createOscillator();
             const gain = this.ctx.createGain();
             osc.type = 'triangle';
             osc.frequency.setValueAtTime(freq, now + idx * 0.08);
-            gain.gain.setValueAtTime(0.22, now + idx * 0.08);
+            gain.gain.setValueAtTime(0.25, now + idx * 0.08);
             gain.gain.exponentialRampToValueAtTime(0.001, now + idx * 0.08 + 0.45);
             osc.connect(gain);
             gain.connect(this.ctx.destination);
@@ -1575,94 +1571,21 @@
     const GAME_CONFIG = {
       TOTAL_WAVES: 5,
       WAVE_DURATION: 30, // seconds
-      REFINERY_DURATION: 25, // seconds between waves
+      REFINERY_DURATION: 25,
       ARENA_RADIUS: 14,
-      MAX_MATERIALS_PER_DROP: 3,
     };
 
-    // Crafting Recipes Matrix
-    // Pair of [mat1, mat2] sorted alphabetically -> Gear Upgrade
     const RECIPES = {
-      'pyrite+pyrite': {
-        slot: 'weapon',
-        name: 'Infernal Greataxe',
-        tierBonus: 1,
-        statText: '+28 ATK & Flaming Slash',
-        icon: '🪓',
-        type: 'damage'
-      },
-      'aether+pyrite': {
-        slot: 'boots',
-        name: 'Zephyr Flame Greaves',
-        tierBonus: 1,
-        statText: '+25% SPD & Fire Trail',
-        icon: '🥾',
-        type: 'speed'
-      },
-      'pyrite+titanium': {
-        slot: 'weapon',
-        name: 'Titanium Cleaver',
-        tierBonus: 1,
-        statText: '+22 ATK & Heavy Impact',
-        icon: '⚔️',
-        type: 'damage'
-      },
-      'catalyst+pyrite': {
-        slot: 'weapon',
-        name: 'Astral Sunblade',
-        tierBonus: 2,
-        statText: '+35 ATK & +15% CRIT',
-        icon: '🗡️',
-        type: 'crit'
-      },
-      'aether+aether': {
-        slot: 'boots',
-        name: 'Quicksilver Boots',
-        tierBonus: 1,
-        statText: '+35% SPD & Fast Dash',
-        icon: '🥾',
-        type: 'speed'
-      },
-      'aether+titanium': {
-        slot: 'armor',
-        name: 'Kinetic Bulwark',
-        tierBonus: 1,
-        statText: '+150 HP & Shield Deflection',
-        icon: '🛡️',
-        type: 'defense'
-      },
-      'aether+catalyst': {
-        slot: 'relic',
-        name: 'Nova Chronometer',
-        tierBonus: 2,
-        statText: '+40% Nova Charge Rate',
-        icon: '⌛',
-        type: 'special'
-      },
-      'titanium+titanium': {
-        slot: 'armor',
-        name: 'Juggernaut Carapace',
-        tierBonus: 1,
-        statText: '+220 MAX HP & 25% Armor',
-        icon: '🛡️',
-        type: 'defense'
-      },
-      'catalyst+titanium': {
-        slot: 'armor',
-        name: 'Voidforged Aegis',
-        tierBonus: 2,
-        statText: '+180 HP & Thorn Damage',
-        icon: '🔰',
-        type: 'defense'
-      },
-      'catalyst+catalyst': {
-        slot: 'relic',
-        name: 'Eye of the Broadroads',
-        tierBonus: 2,
-        statText: '+25% CRIT & Nova Shockwave',
-        icon: '💍',
-        type: 'crit'
-      }
+      'pyrite+pyrite': { slot: 'weapon', name: 'Infernal Greataxe', tierBonus: 1, statText: '+28 ATK & Flaming Slash', icon: '🪓' },
+      'aether+pyrite': { slot: 'boots', name: 'Zephyr Flame Greaves', tierBonus: 1, statText: '+25% SPD & Fire Trail', icon: '🥾' },
+      'pyrite+titanium': { slot: 'weapon', name: 'Titanium Cleaver', tierBonus: 1, statText: '+22 ATK & Heavy Impact', icon: '⚔️' },
+      'catalyst+pyrite': { slot: 'weapon', name: 'Astral Sunblade', tierBonus: 2, statText: '+35 ATK & +15% CRIT', icon: '🗡️' },
+      'aether+aether': { slot: 'boots', name: 'Quicksilver Boots', tierBonus: 1, statText: '+35% SPD & Fast Dash', icon: '🥾' },
+      'aether+titanium': { slot: 'armor', name: 'Kinetic Bulwark', tierBonus: 1, statText: '+150 HP & Shield Deflection', icon: '🛡️' },
+      'aether+catalyst': { slot: 'relic', name: 'Nova Chronometer', tierBonus: 2, statText: '+40% Nova Charge Rate', icon: '⌛' },
+      'titanium+titanium': { slot: 'armor', name: 'Juggernaut Carapace', tierBonus: 1, statText: '+220 MAX HP & 25% Armor', icon: '🛡️' },
+      'catalyst+titanium': { slot: 'armor', name: 'Voidforged Aegis', tierBonus: 2, statText: '+180 HP & Thorn Damage', icon: '🔰' },
+      'catalyst+catalyst': { slot: 'relic', name: 'Eye of the Broadroads', tierBonus: 2, statText: '+25% CRIT & Nova Shockwave', icon: '💍' }
     };
 
     /* ==========================================================================
@@ -1678,33 +1601,32 @@
       totalDamageDealt: 0,
       gearRefinedCount: 0,
 
-      // Inventory
       materials: {
-        pyrite: 0,
-        aether: 0,
-        titanium: 0,
-        catalyst: 0
+        pyrite: 2,
+        aether: 2,
+        titanium: 2,
+        catalyst: 1
       },
 
-      // Equipment & Player Stats
       hero: {
         hp: 120,
         maxHp: 120,
         shield: 60,
         maxShield: 60,
         shieldRegenTimer: 0,
-        attackDamage: 25,
+        attackDamage: 30,
         attackSpeed: 1.0,
         moveSpeed: 8.5,
-        critChance: 0.10,
+        critChance: 0.15,
         critMult: 1.8,
-        dashCooldown: 1.2,
+        dashCooldown: 1.1,
         dashTimer: 0,
-        specialReady: false,
-        specialCharge: 0,
+        isDashing: false,
+        dashDuration: 0,
+        dashDirection: new THREE.Vector3(0, 0, 1),
+        specialCharge: 100, // Starts 100% READY!
         specialMaxCharge: 100,
         autoAttack: false,
-        isAttacking: false,
         attackCombo: 0,
         attackCooldown: 0,
         invincibleTimer: 0
@@ -1717,7 +1639,6 @@
         relic: { name: 'Void Ring', tier: 1, icon: '💍', stat: '+10% CRIT' }
       },
 
-      // Crucible State
       crucible: {
         slot1: null,
         slot2: null,
@@ -1734,8 +1655,7 @@
     scene.fog = new THREE.FogExp2(0x060814, 0.022);
 
     const camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 1000);
-    // Elevated Isometric view looking towards arena center
-    camera.position.set(0, 26, 24);
+    camera.position.set(0, 24, 22);
     camera.lookAt(0, 0, 0);
 
     const renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: 'high-performance' });
@@ -1744,14 +1664,14 @@
     renderer.shadowMap.enabled = true;
     renderer.shadowMap.type = THREE.PCFSoftShadowMap;
     renderer.toneMapping = THREE.ACESFilmicToneMapping;
-    renderer.toneMappingExposure = 1.15;
+    renderer.toneMappingExposure = 1.2;
     container.appendChild(renderer.domElement);
 
     // Dynamic Lighting
-    const ambientLight = new THREE.AmbientLight(0x2a3654, 1.2);
+    const ambientLight = new THREE.AmbientLight(0x2a3654, 1.4);
     scene.add(ambientLight);
 
-    const sunLight = new THREE.DirectionalLight(0xe0f2fe, 1.8);
+    const sunLight = new THREE.DirectionalLight(0xe0f2fe, 1.9);
     sunLight.position.set(15, 30, 20);
     sunLight.castShadow = true;
     sunLight.shadow.mapSize.width = 1024;
@@ -1765,8 +1685,7 @@
     sunLight.shadow.bias = -0.001;
     scene.add(sunLight);
 
-    // Glowing Forge Center Point Light
-    const forgePointLight = new THREE.PointLight(0x00f5d4, 2.5, 25);
+    const forgePointLight = new THREE.PointLight(0x00f5d4, 2.8, 28);
     forgePointLight.position.set(0, 3, 0);
     scene.add(forgePointLight);
 
@@ -1776,7 +1695,6 @@
     const arenaGroup = new THREE.Group();
     scene.add(arenaGroup);
 
-    // Main Floating Arena Octagonal Slab
     const arenaGeo = new THREE.CylinderGeometry(15, 16, 2, 8);
     const arenaMat = new THREE.MeshStandardMaterial({
       color: 0x0f1528,
@@ -1789,7 +1707,6 @@
     arenaMesh.receiveShadow = true;
     arenaGroup.add(arenaMesh);
 
-    // Runic Floor Inscription Circle
     const runeRingGeo = new THREE.RingGeometry(8, 8.4, 48);
     const runeRingMat = new THREE.MeshBasicMaterial({
       color: 0x00f5d4,
@@ -1802,7 +1719,6 @@
     runeRing.position.y = 0.02;
     arenaGroup.add(runeRing);
 
-    // Outer Edge Runic Energy Line
     const outerRingGeo = new THREE.RingGeometry(14.6, 14.9, 8);
     const outerRingMat = new THREE.MeshBasicMaterial({
       color: 0xffb703,
@@ -1815,20 +1731,10 @@
     outerRing.position.y = 0.02;
     arenaGroup.add(outerRing);
 
-    // 4 Corner Celestial Pylons
     const pylonGeo = new THREE.BoxGeometry(1.2, 4.5, 1.2);
-    const pylonMat = new THREE.MeshStandardMaterial({
-      color: 0x16203d,
-      metalness: 0.8,
-      roughness: 0.3
-    });
+    const pylonMat = new THREE.MeshStandardMaterial({ color: 0x16203d, metalness: 0.8, roughness: 0.3 });
     const pylonCrystalGeo = new THREE.OctahedronGeometry(0.7);
-    const pylonCrystalMat = new THREE.MeshStandardMaterial({
-      color: 0x00bbf9,
-      emissive: 0x00bbf9,
-      emissiveIntensity: 0.8,
-      roughness: 0.1
-    });
+    const pylonCrystalMat = new THREE.MeshStandardMaterial({ color: 0x00bbf9, emissive: 0x00bbf9, emissiveIntensity: 0.8 });
 
     const pylonAngles = [Math.PI/4, 3*Math.PI/4, 5*Math.PI/4, 7*Math.PI/4];
     const pylonMeshes = [];
@@ -1847,7 +1753,6 @@
       pylonMeshes.push(crystal);
     });
 
-    // Cosmic Dust Background Particles
     const dustCount = 350;
     const dustGeo = new THREE.BufferGeometry();
     const dustPositions = new Float32Array(dustCount * 3);
@@ -1858,7 +1763,7 @@
     }
     dustGeo.setAttribute('position', new THREE.BufferAttribute(dustPositions, 3));
     const dustMat = new THREE.PointsMaterial({
-      size: 0.3,
+      size: 0.35,
       color: 0x88c0d0,
       transparent: true,
       opacity: 0.5,
@@ -1876,118 +1781,100 @@
         this.position = this.group.position;
         this.position.set(0, 0, 0);
 
-        // Body Construction
-        // Torso
-        const torsoGeo = new THREE.CylinderGeometry(0.5, 0.4, 1.2, 8);
         const armorMat = new THREE.MeshStandardMaterial({
           color: 0x1e293b,
           metalness: 0.85,
           roughness: 0.25
         });
+
+        // Torso
+        const torsoGeo = new THREE.CylinderGeometry(0.55, 0.42, 1.25, 8);
         this.torso = new THREE.Mesh(torsoGeo, armorMat);
         this.torso.position.y = 1.1;
         this.torso.castShadow = true;
         this.group.add(this.torso);
 
-        // Runic Chest Core Crystal
-        const coreGeo = new THREE.SphereGeometry(0.2, 8, 8);
+        // Core Crystal
+        const coreGeo = new THREE.SphereGeometry(0.22, 8, 8);
         this.coreMat = new THREE.MeshStandardMaterial({
           color: 0x00f5d4,
           emissive: 0x00f5d4,
           emissiveIntensity: 1.0
         });
-        const core = new THREE.Mesh(coreGeo, this.coreMat);
-        core.position.set(0, 1.2, 0.4);
-        this.group.add(core);
+        this.core = new THREE.Mesh(coreGeo, this.coreMat);
+        this.core.position.set(0, 1.2, 0.45);
+        this.group.add(this.core);
 
-        // Knight Helm
-        const helmGeo = new THREE.SphereGeometry(0.4, 8, 8);
-        const helm = new THREE.Mesh(helmGeo, armorMat);
-        helm.position.y = 1.95;
-        helm.castShadow = true;
-        this.group.add(helm);
+        // Helm
+        const helmGeo = new THREE.SphereGeometry(0.42, 8, 8);
+        this.helm = new THREE.Mesh(helmGeo, armorMat);
+        this.helm.position.y = 2.0;
+        this.helm.castShadow = true;
+        this.group.add(this.helm);
 
-        // Glowing Visor
-        const visorGeo = new THREE.BoxGeometry(0.45, 0.12, 0.25);
+        // Visor
+        const visorGeo = new THREE.BoxGeometry(0.48, 0.14, 0.25);
         this.visorMat = new THREE.MeshBasicMaterial({ color: 0x00f5d4 });
-        const visor = new THREE.Mesh(visorGeo, this.visorMat);
-        visor.position.set(0, 1.95, 0.3);
-        this.group.add(visor);
+        this.visor = new THREE.Mesh(visorGeo, this.visorMat);
+        this.visor.position.set(0, 2.0, 0.35);
+        this.group.add(this.visor);
 
-        // Shoulders / Pauldrons
-        const pauldronGeo = new THREE.BoxGeometry(0.35, 0.35, 0.45);
+        // Pauldrons
+        const pauldronGeo = new THREE.BoxGeometry(0.4, 0.4, 0.48);
         const leftP = new THREE.Mesh(pauldronGeo, armorMat);
-        leftP.position.set(-0.65, 1.5, 0);
+        leftP.position.set(-0.7, 1.5, 0);
         this.group.add(leftP);
         const rightP = new THREE.Mesh(pauldronGeo, armorMat);
-        rightP.position.set(0.65, 1.5, 0);
+        rightP.position.set(0.7, 1.5, 0);
         this.group.add(rightP);
 
-        // Weapon Arm Group (Pivot for swing animation)
+        // Weapon Arm Group
         this.weaponArm = new THREE.Group();
-        this.weaponArm.position.set(0.7, 1.3, 0);
+        this.weaponArm.position.set(0.75, 1.3, 0);
         this.group.add(this.weaponArm);
 
-        // 3D Runic Weapon Blade
-        const bladeGeo = new THREE.BoxGeometry(0.18, 1.6, 0.08);
+        // 3D Blade
+        const bladeGeo = new THREE.BoxGeometry(0.22, 1.8, 0.1);
         this.bladeMat = new THREE.MeshStandardMaterial({
           color: 0xffffff,
           emissive: 0x00f5d4,
-          emissiveIntensity: 0.5,
+          emissiveIntensity: 0.6,
           metalness: 0.9,
           roughness: 0.1
         });
         this.blade = new THREE.Mesh(bladeGeo, this.bladeMat);
-        this.blade.position.set(0, 0.8, 0.4);
+        this.blade.position.set(0, 0.9, 0.4);
         this.blade.rotation.x = Math.PI / 4;
         this.blade.castShadow = true;
         this.weaponArm.add(this.blade);
 
-        // Left Arm Energy Shield
-        const shieldGeo = new THREE.CircleGeometry(0.65, 6);
+        // Shield
+        const shieldGeo = new THREE.CircleGeometry(0.7, 6);
         this.shieldMat = new THREE.MeshStandardMaterial({
           color: 0x00bbf9,
           emissive: 0x00bbf9,
           emissiveIntensity: 0.6,
           transparent: true,
-          opacity: 0.8,
+          opacity: 0.85,
           side: THREE.DoubleSide
         });
         this.shieldMesh = new THREE.Mesh(shieldGeo, this.shieldMat);
-        this.shieldMesh.position.set(-0.75, 1.2, 0.3);
+        this.shieldMesh.position.set(-0.75, 1.2, 0.35);
         this.shieldMesh.rotation.y = -Math.PI / 6;
         this.group.add(this.shieldMesh);
 
-        // Player Shadow Decal Ring
-        const shadowDecalGeo = new THREE.CircleGeometry(0.8, 16);
-        const shadowDecalMat = new THREE.MeshBasicMaterial({
-          color: 0x000000,
-          transparent: true,
-          opacity: 0.4
-        });
+        // Weapon Light
+        this.weaponLight = new THREE.PointLight(0x00f5d4, 1.5, 7);
+        this.weaponLight.position.set(0.7, 1.5, 0.5);
+        this.group.add(this.weaponLight);
+
+        // Shadow Decal
+        const shadowDecalGeo = new THREE.CircleGeometry(0.85, 16);
+        const shadowDecalMat = new THREE.MeshBasicMaterial({ color: 0x000000, transparent: true, opacity: 0.4 });
         const shadowDecal = new THREE.Mesh(shadowDecalGeo, shadowDecalMat);
         shadowDecal.rotation.x = -Math.PI / 2;
         shadowDecal.position.y = 0.03;
         this.group.add(shadowDecal);
-
-        // Weapon Light
-        this.weaponLight = new THREE.PointLight(0x00f5d4, 1.2, 6);
-        this.weaponLight.position.set(0.7, 1.5, 0.5);
-        this.group.add(this.weaponLight);
-
-        // Slash Arc Mesh
-        const slashGeo = new THREE.RingGeometry(1.6, 2.5, 16, 1, 0, Math.PI * 0.85);
-        this.slashMat = new THREE.MeshBasicMaterial({
-          color: 0x00f5d4,
-          side: THREE.DoubleSide,
-          transparent: true,
-          opacity: 0,
-          blending: THREE.AdditiveBlending
-        });
-        this.slashMesh = new THREE.Mesh(slashGeo, this.slashMat);
-        this.slashMesh.rotation.x = Math.PI / 2;
-        this.slashMesh.position.y = 1.1;
-        this.group.add(this.slashMesh);
 
         scene.add(this.group);
 
@@ -2000,53 +1887,53 @@
 
       updateVisualTier(weaponTier) {
         if (weaponTier >= 4) {
-          this.bladeMat.emissive.setHex(0xffb703); // Golden mythic
+          this.bladeMat.emissive.setHex(0xffb703);
           this.blade.scale.set(1.4, 1.3, 1.4);
           this.weaponLight.color.setHex(0xffb703);
-          this.slashMat.color.setHex(0xffb703);
         } else if (weaponTier === 3) {
-          this.bladeMat.emissive.setHex(0x9d4edd); // Void purple
+          this.bladeMat.emissive.setHex(0x9d4edd);
           this.blade.scale.set(1.25, 1.2, 1.25);
           this.weaponLight.color.setHex(0x9d4edd);
-          this.slashMat.color.setHex(0x9d4edd);
         } else if (weaponTier === 2) {
-          this.bladeMat.emissive.setHex(0xfb8500); // Flaming orange
+          this.bladeMat.emissive.setHex(0xfb8500);
           this.blade.scale.set(1.15, 1.1, 1.15);
           this.weaponLight.color.setHex(0xfb8500);
-          this.slashMat.color.setHex(0xfb8500);
         } else {
-          this.bladeMat.emissive.setHex(0x00f5d4); // Cyan
+          this.bladeMat.emissive.setHex(0x00f5d4);
           this.blade.scale.set(1, 1, 1);
           this.weaponLight.color.setHex(0x00f5d4);
-          this.slashMat.color.setHex(0x00f5d4);
         }
       }
 
-      triggerSlash(combo) {
-        sound.playSlash();
+      triggerSlashAnimation(combo) {
         this.swingProgress = 0;
         this.slashActive = true;
-        this.slashMat.opacity = 0.9;
 
-        // Combo animation variation
         if (combo === 0) {
-          this.weaponArm.rotation.set(-0.4, -0.9, 0);
-          this.slashMesh.rotation.z = -Math.PI / 4;
+          this.weaponArm.rotation.set(-0.3, -1.2, 0);
         } else if (combo === 1) {
-          this.weaponArm.rotation.set(0.6, 0.9, 0);
-          this.slashMesh.rotation.z = Math.PI / 4;
+          this.weaponArm.rotation.set(0.6, 1.2, 0);
         } else {
-          // Whirlwind full circle
-          this.weaponArm.rotation.set(0, 0, 0);
-          this.slashMesh.rotation.z = 0;
+          this.weaponArm.rotation.set(0, -Math.PI, 0);
         }
       }
 
       update(dt) {
-        // Move position
-        const speed = state.hero.moveSpeed;
-        this.position.x += this.velocity.x * speed * dt;
-        this.position.z += this.velocity.y * speed * dt;
+        // Handle Dash Burst Motion
+        if (state.hero.isDashing) {
+          state.hero.dashDuration -= dt;
+          this.position.x += state.hero.dashDirection.x * 22 * dt;
+          this.position.z += state.hero.dashDirection.z * 22 * dt;
+
+          if (state.hero.dashDuration <= 0) {
+            state.hero.isDashing = false;
+          }
+        } else {
+          // Regular Movement
+          const speed = state.hero.moveSpeed;
+          this.position.x += this.velocity.x * speed * dt;
+          this.position.z += this.velocity.y * speed * dt;
+        }
 
         // Constrain to arena radius
         const dist = Math.sqrt(this.position.x * this.position.x + this.position.z * this.position.z);
@@ -2056,7 +1943,7 @@
           this.position.z = Math.sin(angle) * GAME_CONFIG.ARENA_RADIUS;
         }
 
-        // Smooth rotation toward movement or target
+        // Update Rotation
         if (this.velocity.lengthSq() > 0.01) {
           this.targetRotation = Math.atan2(this.velocity.x, this.velocity.y);
           this.walkCycle += dt * 14;
@@ -2065,29 +1952,27 @@
           this.torso.position.y = 1.1;
         }
 
-        // Interpolate rotation
         let diff = this.targetRotation - this.group.rotation.y;
         while (diff < -Math.PI) diff += Math.PI * 2;
         while (diff > Math.PI) diff -= Math.PI * 2;
-        this.group.rotation.y += diff * Math.min(dt * 15, 1);
+        this.group.rotation.y += diff * Math.min(dt * 18, 1);
 
-        // Weapon Slash Animation
+        // Weapon Arm Swing Animation
         if (this.slashActive) {
-          this.swingProgress += dt * 7.5;
-          this.weaponArm.rotation.y = THREE.MathUtils.lerp(-1.2, 1.4, this.swingProgress);
-          this.slashMat.opacity = Math.max(0, 0.9 - this.swingProgress);
+          this.swingProgress += dt * 6.5;
+          const swingAngle = THREE.MathUtils.lerp(-1.4, 1.4, Math.min(1, this.swingProgress));
+          this.weaponArm.rotation.y = swingAngle;
 
           if (this.swingProgress >= 1) {
             this.slashActive = false;
-            this.slashMat.opacity = 0;
             this.weaponArm.rotation.set(0, 0, 0);
           }
         }
 
-        // Shield opacity based on shield health
+        // Shield visibility
         if (state.hero.shield > 0) {
           this.shieldMesh.visible = true;
-          this.shieldMat.opacity = 0.4 + (state.hero.shield / state.hero.maxShield) * 0.45;
+          this.shieldMat.opacity = 0.4 + (state.hero.shield / state.hero.maxShield) * 0.5;
         } else {
           this.shieldMesh.visible = false;
         }
@@ -2097,11 +1982,11 @@
     const hero = new HeroEntity();
 
     /* ==========================================================================
-       7. ENEMY MANAGEMENT SYSTEM
+       7. ENEMY SYSTEM
        ========================================================================== */
     class EnemyEntity {
       constructor(type, spawnPos) {
-        this.type = type; // 'crawler', 'brute', 'caster', 'boss'
+        this.type = type;
         this.group = new THREE.Group();
         this.position = this.group.position;
         this.position.copy(spawnPos);
@@ -2110,141 +1995,91 @@
         this.flashTimer = 0;
 
         if (type === 'crawler') {
-          this.maxHp = 40 + (state.currentWave * 12);
+          this.maxHp = 45 + (state.currentWave * 15);
           this.hp = this.maxHp;
           this.speed = 5.2;
           this.damage = 10;
           this.attackRadius = 1.4;
-          this.score = 50;
 
-          // Stylized Arachnid / Void Drone
-          const bodyGeo = new THREE.OctahedronGeometry(0.65);
+          const bodyGeo = new THREE.OctahedronGeometry(0.7);
           this.mat = new THREE.MeshStandardMaterial({
             color: 0x1f0b2e,
             emissive: 0x9d4edd,
-            emissiveIntensity: 0.35,
-            metalness: 0.8,
-            roughness: 0.2
+            emissiveIntensity: 0.4,
+            metalness: 0.8
           });
           this.mesh = new THREE.Mesh(bodyGeo, this.mat);
           this.mesh.position.y = 0.7;
           this.mesh.castShadow = true;
           this.group.add(this.mesh);
 
-          // Glowing eye
           const eyeGeo = new THREE.SphereGeometry(0.18, 6, 6);
-          const eyeMat = new THREE.MeshBasicMaterial({ color: 0xff0054 });
-          const eye = new THREE.Mesh(eyeGeo, eyeMat);
+          const eye = new THREE.Mesh(eyeGeo, new THREE.MeshBasicMaterial({ color: 0xff0054 }));
           eye.position.set(0, 0.75, 0.45);
           this.group.add(eye);
 
         } else if (type === 'brute') {
-          this.maxHp = 130 + (state.currentWave * 30);
+          this.maxHp = 140 + (state.currentWave * 35);
           this.hp = this.maxHp;
           this.speed = 3.2;
-          this.damage = 24;
+          this.damage = 22;
           this.attackRadius = 2.0;
-          this.score = 120;
-          this.slamTimer = 0;
 
-          // Heavy Golem Mesh
-          const bodyGeo = new THREE.BoxGeometry(1.4, 1.8, 1.2);
+          const bodyGeo = new THREE.BoxGeometry(1.5, 1.8, 1.3);
           this.mat = new THREE.MeshStandardMaterial({
             color: 0x22333b,
             emissive: 0x38b000,
-            emissiveIntensity: 0.3,
-            metalness: 0.9,
-            roughness: 0.4
+            emissiveIntensity: 0.35,
+            metalness: 0.85
           });
           this.mesh = new THREE.Mesh(bodyGeo, this.mat);
           this.mesh.position.y = 1.2;
           this.mesh.castShadow = true;
           this.group.add(this.mesh);
 
-          // Fist spikes
-          const spikeGeo = new THREE.ConeGeometry(0.3, 0.8, 4);
-          const spikeMat = new THREE.MeshStandardMaterial({ color: 0xffb703 });
-          const spk1 = new THREE.Mesh(spikeGeo, spikeMat);
-          spk1.position.set(0.9, 1.2, 0.6);
-          spk1.rotation.x = Math.PI / 2;
-          this.group.add(spk1);
-          const spk2 = new THREE.Mesh(spikeGeo, spikeMat);
-          spk2.position.set(-0.9, 1.2, 0.6);
-          spk2.rotation.x = Math.PI / 2;
-          this.group.add(spk2);
-
         } else if (type === 'caster') {
-          this.maxHp = 60 + (state.currentWave * 15);
+          this.maxHp = 65 + (state.currentWave * 18);
           this.hp = this.maxHp;
           this.speed = 3.6;
-          this.damage = 16;
+          this.damage = 15;
           this.attackRadius = 7.0;
-          this.shootCooldown = 2.4;
-          this.shootTimer = Math.random() * 1.5;
-          this.score = 100;
+          this.shootTimer = 1.0;
 
-          // Floating Astral Obelisk
-          const obeliskGeo = new THREE.ConeGeometry(0.6, 2.0, 4);
+          const obeliskGeo = new THREE.ConeGeometry(0.65, 2.2, 4);
           this.mat = new THREE.MeshStandardMaterial({
             color: 0x052942,
             emissive: 0x00bbf9,
-            emissiveIntensity: 0.6,
-            metalness: 0.9,
-            roughness: 0.1
+            emissiveIntensity: 0.65
           });
           this.mesh = new THREE.Mesh(obeliskGeo, this.mat);
-          this.mesh.position.y = 1.6;
+          this.mesh.position.y = 1.7;
           this.mesh.rotation.x = Math.PI;
           this.mesh.castShadow = true;
           this.group.add(this.mesh);
 
         } else if (type === 'boss') {
-          // IGNIS REX - ANVIL OVERLORD
-          this.maxHp = 1200;
+          this.maxHp = 1400;
           this.hp = this.maxHp;
           this.speed = 3.8;
           this.damage = 38;
           this.attackRadius = 3.2;
-          this.score = 2500;
-          this.slamTimer = 3.0;
-          this.meteorTimer = 6.0;
+          this.slamTimer = 3.5;
 
-          // Massive Molten Golem
-          const bossTorsoGeo = new THREE.BoxGeometry(2.6, 3.2, 2.2);
+          const bossTorsoGeo = new THREE.BoxGeometry(2.8, 3.4, 2.4);
           this.mat = new THREE.MeshStandardMaterial({
             color: 0x3d0b16,
             emissive: 0xff0054,
-            emissiveIntensity: 0.5,
-            metalness: 0.85,
-            roughness: 0.3
+            emissiveIntensity: 0.55
           });
           this.mesh = new THREE.Mesh(bossTorsoGeo, this.mat);
           this.mesh.position.y = 2.4;
           this.mesh.castShadow = true;
           this.group.add(this.mesh);
 
-          // Flaming Crown
-          const crownGeo = new THREE.ConeGeometry(1.2, 1.2, 5);
-          const crownMat = new THREE.MeshStandardMaterial({
-            color: 0xffb703,
-            emissive: 0xffb703,
-            emissiveIntensity: 0.9
-          });
-          const crown = new THREE.Mesh(crownGeo, crownMat);
-          crown.position.set(0, 4.3, 0);
+          const crownGeo = new THREE.ConeGeometry(1.2, 1.4, 5);
+          const crown = new THREE.Mesh(crownGeo, new THREE.MeshStandardMaterial({ color: 0xffb703, emissive: 0xffb703 }));
+          crown.position.set(0, 4.4, 0);
           this.group.add(crown);
-
-          // Giant Anvil Hammer
-          const hammerHeadGeo = new THREE.BoxGeometry(1.4, 1.2, 2.2);
-          const hammerMat = new THREE.MeshStandardMaterial({ color: 0x111625, metalness: 0.9 });
-          this.hammer = new THREE.Mesh(hammerHeadGeo, hammerMat);
-          this.hammer.position.set(2.0, 2.2, 1.2);
-          this.group.add(this.hammer);
-
-          // Boss Glow Light
-          this.bossLight = new THREE.PointLight(0xff0054, 2.0, 15);
-          this.bossLight.position.set(0, 3.0, 0);
-          this.group.add(this.bossLight);
         }
 
         scene.add(this.group);
@@ -2256,8 +2091,12 @@
         this.mat.emissive.setHex(0xffffff);
         this.mat.emissiveIntensity = 1.0;
 
-        spawnFloatingCombatText(this.position.clone().add(new THREE.Vector3(0, 1.5, 0)), Math.round(amount), isCrit);
+        spawnFloatingCombatText(this.position.clone().add(new THREE.Vector3(0, 1.6, 0)), Math.round(amount), isCrit);
         state.totalDamageDealt += amount;
+
+        // Charge special ability with hits
+        state.hero.specialCharge = Math.min(state.hero.specialMaxCharge, state.hero.specialCharge + 10);
+        updateSpecialButton();
 
         if (this.hp <= 0 && !this.dead) {
           this.die();
@@ -2268,10 +2107,10 @@
         this.dead = true;
         state.kills++;
 
-        // Drop materials based on enemy tier
-        spawnMaterialDrops(this.position, this.type);
+        state.hero.specialCharge = Math.min(state.hero.specialMaxCharge, state.hero.specialCharge + 15);
+        updateSpecialButton();
 
-        // Spawn death spark explosion
+        spawnMaterialDrops(this.position, this.type);
         spawnExplosion(this.position, this.type === 'boss' ? 0xffb703 : 0x00f5d4);
 
         if (this.type === 'boss') {
@@ -2282,7 +2121,6 @@
       update(dt, heroPos) {
         if (this.dead) return;
 
-        // Damage flash restoration
         if (this.flashTimer > 0) {
           this.flashTimer -= dt;
           if (this.flashTimer <= 0) {
@@ -2292,37 +2130,27 @@
           }
         }
 
-        // Vector to hero
         const toHero = new THREE.Vector3().subVectors(heroPos, this.position);
         toHero.y = 0;
         const dist = toHero.length();
 
-        // Direction towards hero
         if (dist > 0.01) {
           toHero.normalize();
           this.group.rotation.y = Math.atan2(toHero.x, toHero.z);
         }
 
         if (this.type === 'crawler') {
-          // Chase player aggressively
           this.position.x += toHero.x * this.speed * dt;
           this.position.z += toHero.z * this.speed * dt;
+          if (dist < this.attackRadius) damageHero(this.damage * dt);
 
-          if (dist < this.attackRadius) {
-            damageHero(this.damage * dt);
-          }
         } else if (this.type === 'brute') {
-          // Charge player
           this.position.x += toHero.x * this.speed * dt;
           this.position.z += toHero.z * this.speed * dt;
+          if (dist < this.attackRadius) damageHero(this.damage * dt * 1.5);
 
-          if (dist < this.attackRadius) {
-            damageHero(this.damage * dt * 1.5);
-          }
         } else if (this.type === 'caster') {
-          // Keep distance & shoot
           if (dist < 6.0) {
-            // Back away
             this.position.x -= toHero.x * this.speed * dt * 0.7;
             this.position.z -= toHero.z * this.speed * dt * 0.7;
           } else if (dist > 9.0) {
@@ -2332,37 +2160,25 @@
 
           this.shootTimer -= dt;
           if (this.shootTimer <= 0) {
-            this.shootTimer = this.shootCooldown;
+            this.shootTimer = 2.4;
             spawnEnemyProjectile(this.position, toHero);
           }
+
         } else if (this.type === 'boss') {
-          // Boss AI
           this.position.x += toHero.x * this.speed * dt;
           this.position.z += toHero.z * this.speed * dt;
 
-          // Update Boss HP HUD
           const pct = Math.max(0, Math.min(100, (this.hp / this.maxHp) * 100));
           document.getElementById('boss-hp-fill').style.width = pct + '%';
           document.getElementById('boss-hp-text').textContent = Math.round(pct) + '%';
 
-          if (dist < this.attackRadius) {
-            damageHero(this.damage * dt * 2.0);
-          }
+          if (dist < this.attackRadius) damageHero(this.damage * dt * 2.0);
 
-          // Periodic Ground Slam Shockwave
           this.slamTimer -= dt;
           if (this.slamTimer <= 0) {
             this.slamTimer = 4.5;
             spawnGroundShockwave(this.position);
           }
-        }
-
-        // Constrain enemy to arena
-        const dFromCenter = Math.sqrt(this.position.x * this.position.x + this.position.z * this.position.z);
-        if (dFromCenter > GAME_CONFIG.ARENA_RADIUS + 1) {
-          const a = Math.atan2(this.position.z, this.position.x);
-          this.position.x = Math.cos(a) * (GAME_CONFIG.ARENA_RADIUS + 0.5);
-          this.position.z = Math.sin(a) * (GAME_CONFIG.ARENA_RADIUS + 0.5);
         }
       }
 
@@ -2382,11 +2198,38 @@
     }
 
     /* ==========================================================================
-       8. PROJECTILES, SHOCKWAVES & PARTICLES
+       8. PROJECTILES, SLASH WAVES & VFX
        ========================================================================== */
     const projectiles = [];
+    const slashWaves = [];
     const shockwaves = [];
     const explosions = [];
+
+    function spawnSlashWave(origin, dir, combo) {
+      const waveGeo = new THREE.RingGeometry(1.2, 2.4, 16, 1, 0, Math.PI * 0.9);
+      const waveColor = (combo === 2) ? 0xffb703 : (combo === 1 ? 0x9d4edd : 0x00f5d4);
+      const waveMat = new THREE.MeshBasicMaterial({
+        color: waveColor,
+        side: THREE.DoubleSide,
+        transparent: true,
+        opacity: 0.85,
+        blending: THREE.AdditiveBlending
+      });
+      const mesh = new THREE.Mesh(waveGeo, waveMat);
+      mesh.rotation.x = Math.PI / 2;
+      mesh.rotation.z = Math.atan2(dir.x, dir.z) + Math.PI / 2;
+      mesh.position.copy(origin).add(new THREE.Vector3(0, 1.1, 0));
+      scene.add(mesh);
+
+      slashWaves.push({
+        mesh: mesh,
+        dir: dir.clone().normalize(),
+        speed: 16.0,
+        lifetime: 0.28,
+        damage: state.hero.attackDamage,
+        combo: combo
+      });
+    }
 
     function spawnEnemyProjectile(origin, dir) {
       const projGeo = new THREE.SphereGeometry(0.35, 8, 8);
@@ -2404,12 +2247,12 @@
       });
     }
 
-    function spawnGroundShockwave(center) {
+    function spawnGroundShockwave(center, maxRadius = 8.5, colorHex = 0xff0054) {
       sound.playHit();
       triggerScreenShake();
-      const waveGeo = new THREE.RingGeometry(0.5, 1.2, 32);
+      const waveGeo = new THREE.RingGeometry(0.5, 1.4, 32);
       const waveMat = new THREE.MeshBasicMaterial({
-        color: 0xff0054,
+        color: colorHex,
         side: THREE.DoubleSide,
         transparent: true,
         opacity: 0.9
@@ -2423,9 +2266,9 @@
       shockwaves.push({
         mesh: mesh,
         radius: 1.0,
-        maxRadius: 8.5,
-        speed: 9.0,
-        damage: 28,
+        maxRadius: maxRadius,
+        speed: 12.0,
+        damage: 30,
         center: center.clone()
       });
     }
@@ -2468,10 +2311,9 @@
     }
 
     /* ==========================================================================
-       9. LOOT & MATERIAL DROPS ENGINE
+       9. LOOT & MATERIAL DROPS
        ========================================================================== */
     const droppedMaterials = [];
-
     const MAT_TYPES = [
       { id: 'pyrite', color: 0xfb8500, icon: '🔥' },
       { id: 'aether', color: 0x00f5d4, icon: '🔷' },
@@ -2486,19 +2328,17 @@
       if (enemyType === 'boss') count = 8;
 
       for (let i = 0; i < count; i++) {
-        // Pick material based on enemy type or random
         let matMeta = MAT_TYPES[0];
         if (enemyType === 'crawler') {
-          matMeta = Math.random() > 0.4 ? MAT_TYPES[0] : MAT_TYPES[2]; // Pyrite or Titanium
+          matMeta = Math.random() > 0.4 ? MAT_TYPES[0] : MAT_TYPES[2];
         } else if (enemyType === 'brute') {
-          matMeta = Math.random() > 0.5 ? MAT_TYPES[2] : MAT_TYPES[1]; // Titanium or Aether
+          matMeta = Math.random() > 0.5 ? MAT_TYPES[2] : MAT_TYPES[1];
         } else if (enemyType === 'caster') {
-          matMeta = Math.random() > 0.5 ? MAT_TYPES[1] : MAT_TYPES[3]; // Aether or Catalyst
+          matMeta = Math.random() > 0.5 ? MAT_TYPES[1] : MAT_TYPES[3];
         } else if (enemyType === 'boss') {
           matMeta = MAT_TYPES[i % 4];
         }
 
-        // 3D Gem Mesh
         const gemGeo = new THREE.OctahedronGeometry(0.38);
         const gemMat = new THREE.MeshStandardMaterial({
           color: matMeta.color,
@@ -2529,33 +2369,28 @@
       for (let i = droppedMaterials.length - 1; i >= 0; i--) {
         const drop = droppedMaterials[i];
 
-        // Apply bounce physics to floor
         if (drop.velocity.y > 0 || drop.mesh.position.y > 0.4) {
           drop.mesh.position.x += drop.velocity.x * dt;
           drop.mesh.position.y += drop.velocity.y * dt;
           drop.mesh.position.z += drop.velocity.z * dt;
-          drop.velocity.y -= 14 * dt; // gravity
+          drop.velocity.y -= 14 * dt;
         } else {
           drop.mesh.position.y = 0.4 + Math.sin(Date.now() * 0.005 + drop.bobOffset) * 0.12;
         }
 
         drop.mesh.rotation.y += dt * 3;
-        drop.mesh.rotation.x += dt * 2;
 
-        // Magnetic Attraction to Hero
         const dist = drop.mesh.position.distanceTo(heroPos);
-        if (dist < 4.5 || state.phase === 'refinery') {
+        if (dist < 5.0 || state.phase === 'refinery') {
           const pullDir = new THREE.Vector3().subVectors(heroPos, drop.mesh.position).normalize();
-          const pullSpeed = Math.max(12, 28 - dist * 3);
+          const pullSpeed = Math.max(14, 30 - dist * 3);
           drop.mesh.position.addScaledVector(pullDir, pullSpeed * dt);
 
-          if (dist < 1.0) {
-            // Collected!
+          if (dist < 1.1) {
             sound.playPickup();
             state.materials[drop.id]++;
             updateInventoryHUD();
 
-            // Floating icon
             const matMeta = MAT_TYPES.find(m => m.id === drop.id);
             spawnFloatingCombatText(heroPos.clone().add(new THREE.Vector3(0, 1.8, 0)), `+1 ${drop.id.toUpperCase()}`, false, matMeta ? matMeta.color : 0xffffff);
 
@@ -2567,111 +2402,123 @@
     }
 
     /* ==========================================================================
-       10. COMBAT CALCULATIONS & COMBAT TEXT
+       10. COMBAT ACTIONS & REFINED INPUT
        ========================================================================== */
     function performHeroAttack() {
       if (state.hero.attackCooldown > 0) return;
 
-      state.hero.attackCooldown = 0.32 / state.hero.attackSpeed;
-      state.hero.triggerSlash(state.hero.attackCombo);
+      state.hero.attackCooldown = 0.28 / state.hero.attackSpeed;
+      sound.playSlash();
+
+      const combo = state.hero.attackCombo;
+      hero.triggerSlashAnimation(combo);
       state.hero.attackCombo = (state.hero.attackCombo + 1) % 3;
 
-      // Check hit radius in front of hero
-      const heroPos = hero.position;
-      const attackRange = 2.8;
-      const arcAngle = Math.PI * 0.75;
-
-      const heroFacing = new THREE.Vector3(
+      const facingDir = new THREE.Vector3(
         Math.sin(hero.group.rotation.y),
         0,
         Math.cos(hero.group.rotation.y)
-      );
+      ).normalize();
+
+      // Launch Glowing Slash Wave Projectile
+      spawnSlashWave(hero.position, facingDir, combo);
+
+      // Radial Melee Hit Check
+      const attackRange = 3.8;
+      const arcThreshold = (combo === 2) ? -1.0 : Math.cos((Math.PI * 0.75) / 2); // 360 Whirlwind on combo 2
 
       let hitAny = false;
-
       enemies.forEach(enemy => {
         if (enemy.dead) return;
-        const toEnemy = new THREE.Vector3().subVectors(enemy.position, heroPos);
+        const toEnemy = new THREE.Vector3().subVectors(enemy.position, hero.position);
         toEnemy.y = 0;
         const dist = toEnemy.length();
 
         if (dist <= attackRange) {
           toEnemy.normalize();
-          const dot = heroFacing.dot(toEnemy);
-          if (dot > Math.cos(arcAngle / 2)) {
-            // Target inside slash arc!
+          const dot = facingDir.dot(toEnemy);
+          if (dot >= arcThreshold) {
             hitAny = true;
             const isCrit = Math.random() < state.hero.critChance;
-            let damage = state.hero.attackDamage;
-            if (isCrit) damage *= state.hero.critMult;
+            let dmg = state.hero.attackDamage;
+            if (combo === 2) dmg *= 1.6; // Combo finisher bonus
+            if (isCrit) dmg *= state.hero.critMult;
+            dmg *= (0.9 + Math.random() * 0.2);
 
-            // Extra variance
-            damage *= (0.9 + Math.random() * 0.2);
-
-            enemy.takeDamage(damage, isCrit);
-
-            // Knockback
-            enemy.position.addScaledVector(toEnemy, 0.8);
-
-            // Charge special meter
-            state.hero.specialCharge = Math.min(state.hero.specialMaxCharge, state.hero.specialCharge + 8);
-            updateSpecialButton();
+            enemy.takeDamage(dmg, isCrit);
+            enemy.position.addScaledVector(toEnemy, 1.0); // Knockback
           }
         }
       });
 
-      if (hitAny) {
-        sound.playHit();
-      }
+      if (hitAny) sound.playHit();
     }
 
     function performDash() {
       if (state.hero.dashTimer > 0) return;
+
       state.hero.dashTimer = state.hero.dashCooldown;
       sound.playDash();
 
-      // Dash burst
-      const dashDir = hero.velocity.lengthSq() > 0.01
-        ? hero.velocity.clone().normalize()
-        : new THREE.Vector3(Math.sin(hero.group.rotation.y), Math.cos(hero.group.rotation.y)).normalize();
+      // Determine Dash Direction (Movement or Facing)
+      let dir = new THREE.Vector3();
+      if (hero.velocity.lengthSq() > 0.01) {
+        dir.set(hero.velocity.x, 0, hero.velocity.y).normalize();
+      } else {
+        dir.set(Math.sin(hero.group.rotation.y), 0, Math.cos(hero.group.rotation.y)).normalize();
+      }
 
-      hero.position.x += dashDir.x * 4.8;
-      hero.position.z += dashDir.y * 4.8;
-
-      // i-frames
+      state.hero.dashDirection.copy(dir);
+      state.hero.isDashing = true;
+      state.hero.dashDuration = 0.18;
       state.hero.invincibleTimer = 0.35;
 
       // Spawn Dash Ghost Streak
       spawnExplosion(hero.position, 0x00f5d4);
+      triggerScreenShake();
     }
 
     function performSpecialNova() {
       if (state.hero.specialCharge < state.hero.specialMaxCharge) return;
+
       state.hero.specialCharge = 0;
       updateSpecialButton();
 
       sound.playNova();
       triggerScreenShake();
 
-      // Exploding Nova VFX
+      // Spawn Cosmic Nova Shockwaves & Particles
       spawnExplosion(hero.position, 0x9d4edd);
-      spawnGroundShockwave(hero.position);
+      spawnGroundShockwave(hero.position, 13.0, 0x9d4edd);
 
       // Hit all enemies in arena
       enemies.forEach(enemy => {
         if (enemy.dead) return;
         const dist = enemy.position.distanceTo(hero.position);
-        if (dist < 10) {
-          const dmg = state.hero.attackDamage * 3.5;
+        if (dist < 13.5) {
+          const dmg = state.hero.attackDamage * 3.8;
           enemy.takeDamage(dmg, true);
         }
       });
     }
 
+    function toggleAutoAttack() {
+      state.hero.autoAttack = !state.hero.autoAttack;
+      const btn = document.getElementById('btn-auto');
+      const lbl = document.getElementById('auto-lbl');
+      if (state.hero.autoAttack) {
+        btn.classList.add('active');
+        lbl.textContent = 'AUTO: ON';
+      } else {
+        btn.classList.remove('active');
+        lbl.textContent = 'AUTO: OFF';
+      }
+      sound.playPickup();
+    }
+
     function damageHero(amount) {
       if (state.hero.invincibleTimer > 0 || state.phase !== 'playing') return;
 
-      // Shield absorbs first
       if (state.hero.shield > 0) {
         if (state.hero.shield >= amount) {
           state.hero.shield -= amount;
@@ -2687,7 +2534,7 @@
         triggerScreenShake();
       }
 
-      state.hero.shieldRegenTimer = 3.5; // reset shield delay
+      state.hero.shieldRegenTimer = 3.0;
       updateVitalsHUD();
 
       if (state.hero.hp <= 0) {
@@ -2711,7 +2558,6 @@
         item.style.color = '#ffffff';
       }
 
-      // Project 3D to Screen
       const projected = worldPos.clone().project(camera);
       const x = (projected.x * 0.5 + 0.5) * window.innerWidth;
       const y = (-(projected.y * 0.5) + 0.5) * window.innerHeight;
@@ -2749,16 +2595,12 @@
       state.waveTimeRemaining = GAME_CONFIG.WAVE_DURATION;
       waveSpawnTimer = 0;
 
-      // Close modal
       document.getElementById('refinery-modal').style.display = 'none';
-
-      // Update Title HUD
+      document.getElementById('start-modal').style.display = 'none';
       document.getElementById('wave-display-title').textContent = `WAVE ${waveNumber} / ${GAME_CONFIG.TOTAL_WAVES}`;
 
-      // If Wave 5 -> Boss Overlord!
       if (waveNumber === 5) {
         document.getElementById('boss-hud').style.display = 'block';
-        document.getElementById('boss-display-name').textContent = 'IGNIS REX - ANVIL OVERLORD';
         spawnEnemy('boss');
       }
 
@@ -2771,22 +2613,24 @@
       state.waveTimeRemaining -= dt;
       state.runTimer += dt;
 
-      // Update HUD timer
+      // Charge Special Nova over time (+3% per second)
+      if (state.hero.specialCharge < state.hero.specialMaxCharge) {
+        state.hero.specialCharge = Math.min(state.hero.specialMaxCharge, state.hero.specialCharge + dt * 3.5);
+        updateSpecialButton();
+      }
+
       const mins = Math.floor(Math.max(0, state.waveTimeRemaining) / 60);
       const secs = Math.floor(Math.max(0, state.waveTimeRemaining) % 60);
       document.getElementById('wave-timer').textContent = `${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
 
-      // Update threat count
       const aliveCount = enemies.filter(e => !e.dead).length;
       document.getElementById('enemies-alive-text').textContent = `THREATS: ${aliveCount}`;
 
-      // Spawning cadence
       waveSpawnTimer -= dt;
       if (waveSpawnTimer <= 0 && state.waveTimeRemaining > 2) {
-        const interval = Math.max(0.8, 2.8 - state.currentWave * 0.35);
+        const interval = Math.max(0.7, 2.5 - state.currentWave * 0.35);
         waveSpawnTimer = interval;
 
-        // Wave composition
         if (state.currentWave === 1) {
           spawnEnemy('crawler');
         } else if (state.currentWave === 2) {
@@ -2799,48 +2643,39 @@
           else if (r < 0.75) spawnEnemy('brute');
           else spawnEnemy('caster');
         } else if (state.currentWave === 5) {
-          // Boss wave adds minions
-          if (aliveCount < 6) {
-            spawnEnemy(Math.random() > 0.5 ? 'crawler' : 'caster');
-          }
+          if (aliveCount < 6) spawnEnemy(Math.random() > 0.5 ? 'crawler' : 'caster');
         }
       }
 
-      // Check wave completion
       if (state.waveTimeRemaining <= 0 || (state.currentWave === 5 && enemies.some(e => e.type === 'boss' && e.dead))) {
         completeWave();
       }
     }
 
     function completeWave() {
-      // Clear remaining regular enemies
       enemies.forEach(e => {
         if (!e.dead && e.type !== 'boss') e.die();
       });
 
       if (state.currentWave >= GAME_CONFIG.TOTAL_WAVES) {
-        // Victory!
         handleGameOver(true);
       } else {
-        // Open Refinery Modal
         openRefinery();
       }
     }
 
     /* ==========================================================================
-       12. THE GEAR REFINERY (TAP & DRAG INTERACTION)
+       12. THE GEAR REFINERY
        ========================================================================== */
     function openRefinery() {
       state.phase = 'refinery';
       state.refineryTimeRemaining = GAME_CONFIG.REFINERY_DURATION;
       sound.playFanfare();
 
-      // Reset crucible slots
       state.crucible.slot1 = null;
       state.crucible.slot2 = null;
       updateCrucibleUI();
 
-      // Show modal
       document.getElementById('refinery-modal').style.display = 'flex';
       updateInventoryHUD();
       updateGearLoadoutUI();
@@ -2854,12 +2689,10 @@
       document.getElementById('refinery-countdown').textContent = `NEXT WAVE: ${secs}s`;
 
       if (state.refineryTimeRemaining <= 0) {
-        // Automatically start next wave
         startWave(state.currentWave + 1);
       }
     }
 
-    // Insert material into crucible
     function insertMaterialToCrucible(matType) {
       if (state.materials[matType] <= 0) return;
 
@@ -2870,7 +2703,6 @@
         state.crucible.slot2 = matType;
         state.materials[matType]--;
       } else {
-        // Replace slot 2 and refund previous
         state.materials[state.crucible.slot2]++;
         state.crucible.slot2 = matType;
         state.materials[matType]--;
@@ -2881,7 +2713,6 @@
       updateCrucibleUI();
     }
 
-    // Clear crucible slots
     function clearCrucibleSlot(slotNum) {
       if (slotNum === 1 && state.crucible.slot1) {
         state.materials[state.crucible.slot1]++;
@@ -2898,7 +2729,6 @@
       const s1 = state.crucible.slot1;
       const s2 = state.crucible.slot2;
 
-      // Slot 1 UI
       const slot1El = document.getElementById('forge-slot-1');
       if (s1) {
         slot1El.classList.add('filled');
@@ -2911,7 +2741,6 @@
         document.getElementById('slot-1-name').textContent = 'SLOT A';
       }
 
-      // Slot 2 UI
       const slot2El = document.getElementById('forge-slot-2');
       if (s2) {
         slot2El.classList.add('filled');
@@ -2924,7 +2753,6 @@
         document.getElementById('slot-2-name').textContent = 'SLOT B';
       }
 
-      // Check Recipe
       const btnForge = document.getElementById('btn-do-forge');
       if (s1 && s2) {
         const key = [s1, s2].sort().join('+');
@@ -2951,7 +2779,6 @@
       }
     }
 
-    // Forge the recipe
     function executeForge() {
       if (!state.crucible.slot1 || !state.crucible.slot2) return;
 
@@ -2972,31 +2799,28 @@
           stat: recipe.statText
         };
 
-        // Apply Stat Upgrades
         if (recipe.slot === 'weapon') {
-          state.hero.attackDamage += 18;
+          state.hero.attackDamage += 20;
           state.hero.attackSpeed += 0.15;
           hero.updateVisualTier(newTier);
         } else if (recipe.slot === 'armor') {
-          state.hero.maxHp += 80;
-          state.hero.hp = Math.min(state.hero.maxHp, state.hero.hp + 80);
-          state.hero.maxShield += 40;
+          state.hero.maxHp += 90;
+          state.hero.hp = Math.min(state.hero.maxHp, state.hero.hp + 90);
+          state.hero.maxShield += 45;
           state.hero.shield = state.hero.maxShield;
         } else if (recipe.slot === 'boots') {
-          state.hero.moveSpeed += 1.4;
+          state.hero.moveSpeed += 1.5;
           state.hero.dashCooldown = Math.max(0.6, state.hero.dashCooldown - 0.15);
         } else if (recipe.slot === 'relic') {
-          state.hero.critChance = Math.min(0.65, state.hero.critChance + 0.12);
-          state.hero.critMult += 0.3;
+          state.hero.critChance = Math.min(0.7, state.hero.critChance + 0.12);
+          state.hero.critMult += 0.35;
         }
       } else {
-        // Fallback compound upgrade
-        state.hero.attackDamage += 10;
-        state.hero.maxHp += 40;
-        state.hero.hp += 40;
+        state.hero.attackDamage += 12;
+        state.hero.maxHp += 50;
+        state.hero.hp += 50;
       }
 
-      // Reset crucible
       state.crucible.slot1 = null;
       state.crucible.slot2 = null;
 
@@ -3005,32 +2829,23 @@
       updateVitalsHUD();
     }
 
-    // Auto-Refine One-Tap Smart Action
     function executeAutoForge() {
-      // Find two materials available in inventory
       const available = [];
       ['pyrite', 'aether', 'titanium', 'catalyst'].forEach(k => {
-        for (let i = 0; i < state.materials[k]; i++) {
-          available.push(k);
-        }
+        for (let i = 0; i < state.materials[k]; i++) available.push(k);
       });
 
       if (available.length < 2) {
-        // Not enough materials
         sound.playHit();
         return;
       }
 
-      // Prioritize powerful combinations
-      const m1 = available[0];
-      const m2 = available[1];
-
-      insertMaterialToCrucible(m1);
-      insertMaterialToCrucible(m2);
+      insertMaterialToCrucible(available[0]);
+      insertMaterialToCrucible(available[1]);
 
       setTimeout(() => {
         executeForge();
-      }, 250);
+      }, 200);
     }
 
     function updateInventoryHUD() {
@@ -3057,7 +2872,6 @@
         document.getElementById(`gear-stat-${slot}`).textContent = item.stat;
       });
 
-      // Update Player Tier Tag in Main HUD
       const avgTier = Math.round((state.gear.weapon.tier + state.gear.armor.tier + state.gear.boots.tier + state.gear.relic.tier) / 4);
       document.getElementById('hero-tier-tag').textContent = tierNames[avgTier] || 'TIER I';
     }
@@ -3074,18 +2888,34 @@
 
     function updateSpecialButton() {
       const btn = document.getElementById('btn-special');
+      const lbl = document.getElementById('special-lbl');
+      const overlay = document.getElementById('special-cooldown');
       const pct = (state.hero.specialCharge / state.hero.specialMaxCharge) * 100;
+
       if (state.hero.specialCharge >= state.hero.specialMaxCharge) {
-        btn.style.boxShadow = '0 0 25px rgba(157, 78, 221, 0.9)';
-        btn.style.borderColor = '#9d4edd';
+        btn.classList.add('ready');
+        lbl.textContent = 'NOVA';
+        overlay.style.display = 'none';
       } else {
-        btn.style.boxShadow = 'none';
-        btn.style.borderColor = 'rgba(255, 255, 255, 0.2)';
+        btn.classList.remove('ready');
+        lbl.textContent = `${Math.round(pct)}%`;
+        overlay.style.display = 'flex';
+        overlay.textContent = `${Math.round(pct)}%`;
+      }
+    }
+
+    function updateCooldownOverlays() {
+      const dashOverlay = document.getElementById('dash-cooldown');
+      if (state.hero.dashTimer > 0) {
+        dashOverlay.style.display = 'flex';
+        dashOverlay.textContent = `${state.hero.dashTimer.toFixed(1)}s`;
+      } else {
+        dashOverlay.style.display = 'none';
       }
     }
 
     /* ==========================================================================
-       13. GAME OVER & VICTORY FLOW
+       13. GAME OVER & VICTORY
        ========================================================================== */
     function handleGameOver(isVictory) {
       state.phase = isVictory ? 'victory' : 'gameover';
@@ -3127,17 +2957,17 @@
       document.getElementById('start-modal').style.display = 'none';
       document.getElementById('boss-hud').style.display = 'none';
 
-      // Reset entities
       enemies.forEach(e => e.destroy());
       enemies.length = 0;
       droppedMaterials.forEach(d => scene.remove(d.mesh));
       droppedMaterials.length = 0;
       projectiles.forEach(p => scene.remove(p.mesh));
       projectiles.length = 0;
+      slashWaves.forEach(w => scene.remove(w.mesh));
+      slashWaves.length = 0;
       shockwaves.forEach(s => scene.remove(s.mesh));
       shockwaves.length = 0;
 
-      // Reset state
       state.currentWave = 1;
       state.runTimer = 0;
       state.kills = 0;
@@ -3149,11 +2979,11 @@
       state.hero.maxHp = 120;
       state.hero.shield = 60;
       state.hero.maxShield = 60;
-      state.hero.attackDamage = 25;
+      state.hero.attackDamage = 30;
       state.hero.moveSpeed = 8.5;
-      state.hero.critChance = 0.10;
-      state.hero.dashCooldown = 1.2;
-      state.hero.specialCharge = 0;
+      state.hero.critChance = 0.15;
+      state.hero.dashCooldown = 1.1;
+      state.hero.specialCharge = 100; // Ready!
 
       state.gear = {
         weapon: { name: 'Broad Blade', tier: 1, icon: '⚔️', stat: '+25 ATK' },
@@ -3168,13 +2998,76 @@
       updateInventoryHUD();
       updateGearLoadoutUI();
       updateVitalsHUD();
+      updateSpecialButton();
 
       startWave(1);
     }
 
     /* ==========================================================================
-       14. TOUCH & KEYBOARD CONTROLS BINDINGS
+       14. BULLETPROOF ACTION BUTTONS & CONTROLS BINDING
        ========================================================================== */
+    // Helper to bind touches and clicks reliably across all devices
+    function bindAction(el, callback) {
+      if (!el) return;
+      let lastTrigger = 0;
+
+      const trigger = (e) => {
+        const now = Date.now();
+        if (now - lastTrigger < 100) return; // Debounce
+        lastTrigger = now;
+
+        if (e) {
+          e.stopPropagation();
+        }
+        sound.init();
+        callback();
+      };
+
+      el.addEventListener('pointerdown', trigger, { passive: true });
+      el.addEventListener('click', trigger);
+    }
+
+    // Bind Core Combat Actions
+    bindAction(document.getElementById('btn-attack'), performHeroAttack);
+    bindAction(document.getElementById('btn-dash'), performDash);
+    bindAction(document.getElementById('btn-special'), performSpecialNova);
+    bindAction(document.getElementById('btn-auto'), toggleAutoAttack);
+
+    // Click/Tap anywhere on 3D canvas attacks towards click point
+    container.addEventListener('pointerdown', (e) => {
+      sound.init();
+      if (state.phase !== 'playing') return;
+
+      // Right Click = Dash, Left Click = Attack
+      if (e.button === 2) {
+        performDash();
+        return;
+      }
+
+      // Convert Screen Click to 3D Arena Plane coordinate
+      const rect = container.getBoundingClientRect();
+      const mouseX = ((e.clientX - rect.left) / rect.width) * 2 - 1;
+      const mouseY = -((e.clientY - rect.top) / rect.height) * 2 + 1;
+
+      const raycaster = new THREE.Raycaster();
+      raycaster.setFromCamera(new THREE.Vector2(mouseX, mouseY), camera);
+      const floorPlane = new THREE.Plane(new THREE.Vector3(0, 1, 0), 0);
+      const targetPoint = new THREE.Vector3();
+      raycaster.ray.intersectPlane(floorPlane, targetPoint);
+
+      if (targetPoint) {
+        hero.targetRotation = Math.atan2(targetPoint.x - hero.position.x, targetPoint.z - hero.position.z);
+        hero.group.rotation.y = hero.targetRotation;
+      }
+
+      performHeroAttack();
+    });
+
+    window.addEventListener('contextmenu', (e) => {
+      e.preventDefault();
+      if (state.phase === 'playing') performDash();
+    });
+
     // Virtual Joystick
     const joystickZone = document.getElementById('joystick-zone');
     const joystickBase = document.getElementById('joystick-base');
@@ -3220,51 +3113,34 @@
       const clampedDist = Math.min(dist, maxRadius);
 
       joystickKnob.style.transform = `translate(${normX * clampedDist}px, ${normY * clampedDist}px)`;
-
-      // Map to Isometric 3D Space (Screen X/Y -> Arena X/Z)
-      // Camera is looking along +Z slightly tilted
       hero.velocity.set(normX * (clampedDist / maxRadius), normY * (clampedDist / maxRadius));
     }
 
-    // Action Buttons
-    document.getElementById('btn-attack').addEventListener('pointerdown', (e) => {
-      e.preventDefault();
-      sound.init();
-      performHeroAttack();
-    });
-
-    document.getElementById('btn-dash').addEventListener('pointerdown', (e) => {
-      e.preventDefault();
-      sound.init();
-      performDash();
-    });
-
-    document.getElementById('btn-special').addEventListener('pointerdown', (e) => {
-      e.preventDefault();
-      sound.init();
-      performSpecialNova();
-    });
-
-    const btnAuto = document.getElementById('btn-auto');
-    btnAuto.addEventListener('pointerdown', (e) => {
-      e.preventDefault();
-      sound.init();
-      state.hero.autoAttack = !state.hero.autoAttack;
-      btnAuto.classList.toggle('active', state.hero.autoAttack);
-    });
-
-    // Keyboard Controls (Desktop)
+    // Keyboard Controls
     const keys = {};
     window.addEventListener('keydown', (e) => {
       sound.init();
-      keys[e.key.toLowerCase()] = true;
+      const k = e.key.toLowerCase();
+      keys[k] = true;
 
-      if (e.key === ' ' || e.key === 'f') {
+      // Start game immediately if on start screen
+      if (state.phase === 'title') {
+        resetGame();
+        return;
+      }
+
+      if (e.key === ' ' || k === 'f' || k === 'j') {
+        e.preventDefault();
         performHeroAttack();
-      } else if (e.key === 'Shift') {
+      } else if (e.key === 'Shift' || k === 'k') {
+        e.preventDefault();
         performDash();
-      } else if (e.key.toLowerCase() === 'e') {
+      } else if (k === 'e' || k === 'q' || k === 'l') {
+        e.preventDefault();
         performSpecialNova();
+      } else if (k === 'c' || k === 'r') {
+        e.preventDefault();
+        toggleAutoAttack();
       }
     });
 
@@ -3291,34 +3167,23 @@
       }
     }
 
-    // Refinery Interactions
-    document.getElementById('card-pyrite').addEventListener('click', () => insertMaterialToCrucible('pyrite'));
-    document.getElementById('card-aether').addEventListener('click', () => insertMaterialToCrucible('aether'));
-    document.getElementById('card-titanium').addEventListener('click', () => insertMaterialToCrucible('titanium'));
-    document.getElementById('card-catalyst').addEventListener('click', () => insertMaterialToCrucible('catalyst'));
+    // Refinery Button Binds
+    bindAction(document.getElementById('card-pyrite'), () => insertMaterialToCrucible('pyrite'));
+    bindAction(document.getElementById('card-aether'), () => insertMaterialToCrucible('aether'));
+    bindAction(document.getElementById('card-titanium'), () => insertMaterialToCrucible('titanium'));
+    bindAction(document.getElementById('card-catalyst'), () => insertMaterialToCrucible('catalyst'));
 
-    document.getElementById('forge-slot-1').addEventListener('click', () => clearCrucibleSlot(1));
-    document.getElementById('forge-slot-2').addEventListener('click', () => clearCrucibleSlot(2));
+    bindAction(document.getElementById('forge-slot-1'), () => clearCrucibleSlot(1));
+    bindAction(document.getElementById('forge-slot-2'), () => clearCrucibleSlot(2));
 
-    document.getElementById('btn-do-forge').addEventListener('click', executeForge);
-    document.getElementById('btn-quick-forge').addEventListener('click', executeAutoForge);
+    bindAction(document.getElementById('btn-do-forge'), executeForge);
+    bindAction(document.getElementById('btn-quick-forge'), executeAutoForge);
+    bindAction(document.getElementById('btn-next-wave'), () => startWave(state.currentWave + 1));
 
-    document.getElementById('btn-next-wave').addEventListener('click', () => {
-      startWave(state.currentWave + 1);
-    });
+    // Start & Restart Binds
+    bindAction(document.getElementById('btn-start-game'), resetGame);
+    bindAction(document.getElementById('btn-restart-game'), resetGame);
 
-    // Start / Restart Buttons
-    document.getElementById('btn-start-game').addEventListener('click', () => {
-      sound.init();
-      resetGame();
-    });
-
-    document.getElementById('btn-restart-game').addEventListener('click', () => {
-      sound.init();
-      resetGame();
-    });
-
-    // Window Resize Handler
     window.addEventListener('resize', () => {
       camera.aspect = window.innerWidth / window.innerHeight;
       camera.updateProjectionMatrix();
@@ -3340,36 +3205,35 @@
       updateKeyboardMovement();
       hero.update(dt);
 
-      // Camera Smooth Follow with Soft Constraints
-      camera.position.x = THREE.MathUtils.lerp(camera.position.x, hero.position.x * 0.45, dt * 3.5);
-      camera.position.z = THREE.MathUtils.lerp(camera.position.z, 24 + hero.position.z * 0.45, dt * 3.5);
+      // Camera Tracking
+      camera.position.x = THREE.MathUtils.lerp(camera.position.x, hero.position.x * 0.45, dt * 4.0);
+      camera.position.z = THREE.MathUtils.lerp(camera.position.z, 22 + hero.position.z * 0.45, dt * 4.0);
       camera.lookAt(hero.position.x * 0.35, 0, hero.position.z * 0.35);
 
-      // Rotate Background Dust & Celestial Crystals
+      // Background Animations
       dustParticles.rotation.y += dt * 0.03;
       pylonMeshes.forEach((mesh, idx) => {
         mesh.rotation.y += dt * (1 + idx * 0.3);
-        mesh.rotation.x = Math.sin(currentTime * 0.002 + idx) * 0.2;
       });
 
-      // Cooldowns
+      // Timers & Cooldowns
       if (state.hero.attackCooldown > 0) state.hero.attackCooldown -= dt;
       if (state.hero.dashTimer > 0) state.hero.dashTimer -= dt;
       if (state.hero.invincibleTimer > 0) state.hero.invincibleTimer -= dt;
+      updateCooldownOverlays();
 
       // Shield Regeneration
       if (state.hero.shieldRegenTimer > 0) {
         state.hero.shieldRegenTimer -= dt;
       } else if (state.hero.shield < state.hero.maxShield) {
-        state.hero.shield = Math.min(state.hero.maxShield, state.hero.shield + 18 * dt);
+        state.hero.shield = Math.min(state.hero.maxShield, state.hero.shield + 20 * dt);
         updateVitalsHUD();
       }
 
-      // Auto-Attack Logic
-      if (state.hero.autoAttack && state.hero.attackCooldown <= 0 && state.phase === 'playing') {
-        // Find closest enemy
+      // Intelligent Auto-Targeting & Attack
+      if (state.hero.autoAttack && state.phase === 'playing') {
         let closest = null;
-        let minDist = 3.2;
+        let minDist = 14.0;
         enemies.forEach(e => {
           if (e.dead) return;
           const d = e.position.distanceTo(hero.position);
@@ -3378,13 +3242,18 @@
             closest = e;
           }
         });
+
         if (closest) {
           hero.targetRotation = Math.atan2(closest.position.x - hero.position.x, closest.position.z - hero.position.z);
-          performHeroAttack();
+          hero.group.rotation.y = hero.targetRotation;
+
+          if (minDist <= 3.8 && state.hero.attackCooldown <= 0) {
+            performHeroAttack();
+          }
         }
       }
 
-      // Update Waves & Enemies
+      // Waves & Enemy AI
       if (state.phase === 'playing') {
         updateWaveSpawning(dt);
 
@@ -3403,13 +3272,34 @@
       // Update Drops
       updateMaterialDrops(dt, hero.position);
 
-      // Update Projectiles
+      // Update Slash Waves
+      for (let i = slashWaves.length - 1; i >= 0; i--) {
+        const wave = slashWaves[i];
+        wave.mesh.position.addScaledVector(wave.dir, wave.speed * dt);
+        wave.lifetime -= dt;
+        wave.mesh.material.opacity = Math.max(0, wave.lifetime / 0.28);
+
+        // Check Hit Against Enemies
+        enemies.forEach(enemy => {
+          if (enemy.dead) return;
+          if (enemy.position.distanceTo(wave.mesh.position) < 2.0) {
+            enemy.takeDamage(wave.damage * 0.7, false);
+            enemy.position.addScaledVector(wave.dir, 0.4);
+          }
+        });
+
+        if (wave.lifetime <= 0) {
+          scene.remove(wave.mesh);
+          slashWaves.splice(i, 1);
+        }
+      }
+
+      // Update Enemy Projectiles
       for (let i = projectiles.length - 1; i >= 0; i--) {
         const proj = projectiles[i];
         proj.mesh.position.addScaledVector(proj.dir, proj.speed * dt);
         proj.lifetime -= dt;
 
-        // Check hit player
         if (proj.mesh.position.distanceTo(hero.position) < 1.2) {
           damageHero(proj.damage);
           spawnExplosion(proj.mesh.position, 0x00bbf9);
@@ -3431,10 +3321,8 @@
         wave.mesh.scale.set(wave.radius, wave.radius, 1);
         wave.mesh.material.opacity = Math.max(0, 1 - (wave.radius / wave.maxRadius));
 
-        // Damage hero if caught
-        const d = wave.center.distanceTo(hero.position);
-        if (Math.abs(d - wave.radius) < 0.6) {
-          damageHero(wave.damage * dt * 4);
+        if (wave.center.distanceTo(hero.position) < wave.radius && wave.center.distanceTo(hero.position) > wave.radius - 0.8) {
+          damageHero(wave.damage * dt * 3);
         }
 
         if (wave.radius >= wave.maxRadius) {
@@ -3463,7 +3351,7 @@
         }
       }
 
-      // Render 3D Scene
+      // Render Scene
       renderer.render(scene, camera);
     }
 
