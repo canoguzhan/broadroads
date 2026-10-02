@@ -7,7 +7,7 @@
   <meta name="description" content="Fast-paced 3D isometric action arena & gear refinery. Single Player & Online Co-op WebRTC Multiplayer.">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@500;700;900&family=JetBrains+Mono:wght@500;700&family=Outfit:wght@400;600;800;900&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700;900&family=Chakra+Petch:wght@500;700;900&family=JetBrains+Mono:wght@500;700&family=Outfit:wght@400;600;800;900&display=swap" rel="stylesheet">
   <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
   <!-- PeerJS for Zero-Config Serverless WebRTC Multiplayer -->
   <script src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js"></script>
@@ -1715,6 +1715,1081 @@
         font-size: 15px;
       }
     }
+    /* ==========================================================================
+       LEAGUE OF HEXTECH DESIGN SYSTEM (LoL Match Screen & HUD)
+       ========================================================================== */
+    :root {
+      --lol-gold-1: #f0e6d2;
+      --lol-gold-2: #c8aa6e;
+      --lol-gold-3: #c89b3c;
+      --lol-gold-4: #785a28;
+      --lol-gold-5: #3c301c;
+      --lol-blue-dark: #010a13;
+      --lol-blue-card: rgba(9, 20, 40, 0.94);
+      --lol-blue-glow: rgba(0, 245, 212, 0.35);
+      --lol-teal: #0ac8b9;
+      --lol-hp-green: #15a05c;
+      --lol-hp-bright: #26d07c;
+      --lol-mana-blue: #00bbf9;
+      --lol-font-title: 'Cinzel', 'Chakra Petch', serif;
+    }
+
+    /* LoL Hextech Cursor */
+    html, body {
+      cursor: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 32 32"><polygon points="3,3 23,12 14,14 12,23" fill="%23c8aa6e" stroke="%233c301c" stroke-width="1.5"/><circle cx="10" cy="10" r="2.5" fill="%2300f5d4"/><polygon points="4,4 12,12 8,13" fill="%23f0e6d2"/></svg>'), default !important;
+    }
+    button, .interactive, .lol-spell-slot, .lol-item-slot, .btn-action, #lol-minimap-canvas {
+      cursor: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 32 32"><polygon points="3,3 23,12 14,14 12,23" fill="%23ffb703" stroke="%23785a28" stroke-width="1.5"/><circle cx="10" cy="10" r="2.5" fill="%23ff0054"/></svg>'), pointer !important;
+    }
+
+    /* Hide legacy mobile HUD elements on desktop when playing */
+    body.platform-desktop .top-hud {
+      display: none !important;
+    }
+    body.platform-desktop .mobile-controls {
+      display: none !important;
+    }
+
+    /* --------------------------------------------------------------------------
+       1. LoL Match Loading Screen (VS Cards)
+       -------------------------------------------------------------------------- */
+    .lol-loading-screen {
+      position: fixed;
+      top: 0; left: 0; width: 100vw; height: 100vh;
+      z-index: 9999;
+      background: radial-gradient(circle at center, #091428 0%, #010a13 75%, #000408 100%);
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      align-items: center;
+      padding: 30px 40px;
+      color: #f0e6d2;
+      overflow: hidden;
+      animation: lolFadeIn 0.4s ease-out;
+    }
+    @keyframes lolFadeIn {
+      from { opacity: 0; transform: scale(1.02); }
+      to { opacity: 1; transform: scale(1.0); }
+    }
+    .lol-loading-bg {
+      position: absolute;
+      top: 0; left: 0; width: 100%; height: 100%;
+      background: 
+        radial-gradient(ellipse at 50% 50%, rgba(200, 170, 110, 0.08) 0%, transparent 60%),
+        repeating-linear-gradient(45deg, rgba(255,255,255,0.015) 0px, rgba(255,255,255,0.015) 2px, transparent 2px, transparent 8px);
+      pointer-events: none;
+    }
+    .lol-loading-header {
+      z-index: 2;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 4px;
+    }
+    .lol-loading-logo {
+      font-family: var(--lol-font-title);
+      font-size: 26px;
+      font-weight: 900;
+      letter-spacing: 5px;
+      color: #f0e6d2;
+      background: linear-gradient(180deg, #f0e6d2 0%, #c8aa6e 60%, #785a28 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      text-shadow: 0 0 20px rgba(200, 170, 110, 0.5);
+    }
+    .lol-loading-mode {
+      font-family: var(--font-title);
+      font-size: 12px;
+      letter-spacing: 2px;
+      color: #0ac8b9;
+      text-transform: uppercase;
+    }
+    .lol-loading-cards-wrap {
+      z-index: 2;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 40px;
+      width: 100%;
+      max-width: 950px;
+    }
+    .lol-load-card {
+      width: 280px;
+      height: 440px;
+      background: #091428;
+      border: 3px solid #c8aa6e;
+      box-shadow: 0 10px 40px rgba(0, 0, 0, 0.9), 0 0 20px rgba(200, 170, 110, 0.25);
+      position: relative;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      overflow: hidden;
+      border-radius: 4px;
+      transition: transform 0.3s ease;
+    }
+    .lol-load-card.red-side {
+      border-color: #ff0054;
+      box-shadow: 0 10px 40px rgba(0,0,0,0.9), 0 0 20px rgba(255, 0, 84, 0.3);
+    }
+    .lol-card-frame {
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      position: relative;
+    }
+    .lol-card-art {
+      position: absolute;
+      top: 0; left: 0; width: 100%; height: 100%;
+      background: radial-gradient(circle at 50% 35%, rgba(0, 245, 212, 0.25) 0%, #060e1e 75%);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .lol-card-art.enemy-art {
+      background: radial-gradient(circle at 50% 35%, rgba(255, 0, 84, 0.3) 0%, #1a040c 75%);
+    }
+    .lol-card-avatar {
+      font-size: 84px;
+      filter: drop-shadow(0 0 25px rgba(0, 245, 212, 0.6));
+      animation: floatAvatar 3s ease-in-out infinite alternate;
+    }
+    @keyframes floatAvatar {
+      0% { transform: translateY(-5px); }
+      100% { transform: translateY(5px); }
+    }
+    .lol-card-ribbon {
+      position: relative;
+      z-index: 3;
+      align-self: center;
+      margin-top: 14px;
+      background: linear-gradient(90deg, #785a28, #c8aa6e, #785a28);
+      color: #010a13;
+      font-family: var(--lol-font-title);
+      font-size: 11px;
+      font-weight: 900;
+      letter-spacing: 2px;
+      padding: 3px 16px;
+      border-radius: 2px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.6);
+    }
+    .lol-card-ribbon.red-ribbon {
+      background: linear-gradient(90deg, #6b0f24, #ff0054, #6b0f24);
+      color: #fff;
+    }
+    .lol-card-details {
+      position: relative;
+      z-index: 3;
+      padding: 16px;
+      background: linear-gradient(to top, rgba(1, 10, 19, 0.96) 0%, rgba(1, 10, 19, 0.8) 60%, transparent 100%);
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+    .lol-card-champ {
+      font-family: var(--lol-font-title);
+      font-size: 18px;
+      font-weight: 900;
+      letter-spacing: 1px;
+      color: #f0e6d2;
+      text-transform: uppercase;
+    }
+    .lol-card-player {
+      font-family: var(--font-title);
+      font-size: 13px;
+      font-weight: 700;
+      color: #0ac8b9;
+      letter-spacing: 1px;
+    }
+    .lol-card-spells {
+      display: flex;
+      gap: 8px;
+      margin-top: 6px;
+    }
+    .card-spell, .card-rune {
+      width: 26px;
+      height: 26px;
+      background: rgba(9, 20, 40, 0.85);
+      border: 1px solid #c8aa6e;
+      border-radius: 3px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 14px;
+    }
+    .lol-card-loadbar-wrap {
+      position: relative;
+      z-index: 3;
+      width: 100%;
+      height: 22px;
+      background: #010a13;
+      border-top: 1px solid #785a28;
+    }
+    .lol-card-loadbar-fill {
+      height: 100%;
+      background: linear-gradient(90deg, #0ac8b9, #00f5d4);
+      box-shadow: 0 0 10px rgba(0, 245, 212, 0.8);
+      transition: width 0.15s ease-out;
+    }
+    .lol-card-loadbar-fill.red-loadbar {
+      background: linear-gradient(90deg, #ff0054, #ff5400);
+      box-shadow: 0 0 10px rgba(255, 0, 84, 0.8);
+    }
+    .lol-card-pct {
+      position: absolute;
+      top: 0; left: 0; width: 100%; height: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: var(--font-mono);
+      font-size: 11px;
+      font-weight: 900;
+      color: #fff;
+      text-shadow: 0 1px 3px #000;
+    }
+    .lol-vs-crest {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+    }
+    .vs-circle {
+      width: 70px;
+      height: 70px;
+      border-radius: 50%;
+      background: radial-gradient(circle, #c8aa6e 0%, #785a28 70%, #3c301c 100%);
+      border: 2px solid #f0e6d2;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: var(--lol-font-title);
+      font-size: 24px;
+      font-weight: 900;
+      color: #010a13;
+      box-shadow: 0 0 30px rgba(200, 170, 110, 0.7);
+    }
+    .lol-loading-footer {
+      z-index: 2;
+      width: 100%;
+      max-width: 950px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: rgba(9, 20, 40, 0.8);
+      border: 1px solid #785a28;
+      border-radius: 4px;
+      padding: 10px 18px;
+    }
+    .lol-pro-tip {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 13px;
+      color: #c8aa6e;
+    }
+    .lol-loading-actions {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+    .btn-skip-loading {
+      background: linear-gradient(180deg, #c8aa6e, #785a28);
+      border: 1px solid #f0e6d2;
+      color: #010a13;
+      font-family: var(--lol-font-title);
+      font-size: 11px;
+      font-weight: 900;
+      letter-spacing: 1px;
+      padding: 6px 14px;
+      border-radius: 3px;
+      cursor: pointer;
+    }
+
+    /* --------------------------------------------------------------------------
+       2. LoL Top Match Header / Scoreboard Bar
+       -------------------------------------------------------------------------- */
+    .lol-top-hud {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 8px 18px;
+      background: linear-gradient(180deg, rgba(1, 10, 19, 0.95) 0%, rgba(9, 20, 40, 0.8) 75%, transparent 100%);
+      border-bottom: 2px solid #785a28;
+      pointer-events: auto;
+      z-index: 40;
+    }
+    .lol-top-score-group {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .lol-score-badge {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 4px 10px;
+      border-radius: 4px;
+      font-family: var(--font-title);
+      font-weight: 900;
+    }
+    .lol-score-badge.blue-team {
+      background: rgba(10, 200, 185, 0.15);
+      border: 1px solid #0ac8b9;
+      color: #0ac8b9;
+    }
+    .lol-score-badge.red-team {
+      background: rgba(255, 0, 84, 0.15);
+      border: 1px solid #ff0054;
+      color: #ff0054;
+    }
+    .team-score {
+      font-family: var(--font-mono);
+      font-size: 17px;
+      font-weight: 900;
+      color: #fff;
+    }
+    .team-label {
+      font-size: 11px;
+      letter-spacing: 1px;
+    }
+    .lol-score-vs {
+      font-family: var(--lol-font-title);
+      font-size: 12px;
+      font-weight: 900;
+      color: #c8aa6e;
+    }
+    .lol-top-center-group {
+      display: flex;
+      align-items: center;
+      gap: 20px;
+    }
+    .lol-match-timer {
+      font-family: var(--font-mono);
+      font-size: 18px;
+      font-weight: 900;
+      color: #f0e6d2;
+      background: rgba(9, 20, 40, 0.85);
+      border: 1px solid #c8aa6e;
+      border-radius: 4px;
+      padding: 4px 12px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      box-shadow: 0 0 12px rgba(200, 170, 110, 0.25);
+    }
+    .lol-wave-objective {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      background: rgba(9, 20, 40, 0.7);
+      border: 1px solid #785a28;
+      border-radius: 4px;
+      padding: 4px 12px;
+    }
+    .wave-dragon-crest {
+      font-size: 18px;
+    }
+    .wave-info-col {
+      display: flex;
+      flex-direction: column;
+      gap: 3px;
+    }
+    .wave-name {
+      font-family: var(--font-title);
+      font-size: 11px;
+      font-weight: 900;
+      color: #ffb703;
+      letter-spacing: 1px;
+    }
+    .wave-progress-bar {
+      width: 100px;
+      height: 4px;
+      background: rgba(255, 255, 255, 0.1);
+      border-radius: 2px;
+      overflow: hidden;
+    }
+    .wave-progress-fill {
+      height: 100%;
+      background: linear-gradient(90deg, #ffb703, #fb8500);
+      transition: width 0.2s ease-out;
+    }
+    .threats-badge {
+      font-family: var(--font-mono);
+      font-size: 11px;
+      color: #ff0054;
+      background: rgba(255, 0, 84, 0.15);
+      border: 1px solid rgba(255, 0, 84, 0.4);
+      padding: 2px 6px;
+      border-radius: 3px;
+    }
+    .lol-top-right-group {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+    }
+    .lol-cs-badge {
+      font-family: var(--font-mono);
+      font-size: 13px;
+      font-weight: 700;
+      color: #c8aa6e;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+    .lol-perf-badge {
+      font-family: var(--font-mono);
+      font-size: 11px;
+      color: #8896b3;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .btn-lol-icon {
+      background: rgba(9, 20, 40, 0.8);
+      border: 1px solid #785a28;
+      color: #f0e6d2;
+      width: 32px;
+      height: 32px;
+      border-radius: 4px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 14px;
+      cursor: pointer;
+      transition: all 0.15s ease;
+    }
+    .btn-lol-icon:hover {
+      border-color: #c8aa6e;
+      box-shadow: 0 0 10px rgba(200, 170, 110, 0.5);
+    }
+    .btn-lol-exit:hover {
+      border-color: #ff0054;
+      color: #ff0054;
+      box-shadow: 0 0 10px rgba(255, 0, 84, 0.5);
+    }
+
+    /* --------------------------------------------------------------------------
+       3. Left Ally Team Frames (LoL Sidebar)
+       -------------------------------------------------------------------------- */
+    .lol-allies-hud {
+      position: absolute;
+      top: 70px;
+      left: 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      pointer-events: auto;
+      z-index: 35;
+    }
+    .lol-ally-card {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      background: rgba(9, 20, 40, 0.85);
+      border: 1px solid #785a28;
+      border-radius: 4px;
+      padding: 5px 8px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.6);
+      width: 140px;
+      position: relative;
+    }
+    .lol-ally-avatar {
+      width: 30px;
+      height: 30px;
+      border-radius: 50%;
+      border: 1.5px solid #0ac8b9;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 16px;
+      background: #010a13;
+    }
+    .lol-ally-col {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+      flex: 1;
+    }
+    .lol-ally-name {
+      font-family: var(--font-title);
+      font-size: 10px;
+      font-weight: 700;
+      color: #0ac8b9;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      max-width: 75px;
+    }
+    .lol-ally-bar-wrap {
+      width: 100%;
+      height: 4px;
+      background: rgba(255, 255, 255, 0.1);
+      border-radius: 2px;
+      overflow: hidden;
+    }
+    .lol-ally-hp-fill {
+      height: 100%;
+      background: #15a05c;
+      width: 100%;
+      transition: width 0.15s ease-out;
+    }
+    .lol-ally-ult-gem {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      background: #15a05c;
+      box-shadow: 0 0 6px #15a05c;
+      border: 1px solid #f0e6d2;
+    }
+    .lol-ally-ult-gem.charging {
+      background: #475569;
+      box-shadow: none;
+    }
+
+    /* --------------------------------------------------------------------------
+       4. LoL Baron Nashor / Dragon Epic Boss Bar
+       -------------------------------------------------------------------------- */
+    .lol-boss-bar-container {
+      position: absolute;
+      top: 65px;
+      left: 50%;
+      transform: translateX(-50%);
+      display: flex;
+      align-items: center;
+      z-index: 45;
+      pointer-events: none;
+      animation: bossDrop 0.5s cubic-bezier(0.18, 0.89, 0.32, 1.28);
+    }
+    @keyframes bossDrop {
+      from { opacity: 0; transform: translate(-50%, -30px); }
+      to { opacity: 1; transform: translate(-50%, 0); }
+    }
+    .lol-boss-center {
+      background: rgba(9, 20, 40, 0.95);
+      border: 2px solid #ff0054;
+      border-radius: 6px;
+      padding: 6px 16px;
+      box-shadow: 0 0 25px rgba(255, 0, 84, 0.5), inset 0 0 15px rgba(0,0,0,0.8);
+      min-width: 380px;
+    }
+    .lol-boss-title-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 4px;
+    }
+    .lol-boss-name {
+      font-family: var(--lol-font-title);
+      font-size: 13px;
+      font-weight: 900;
+      letter-spacing: 1.5px;
+      color: #ff0054;
+      text-transform: uppercase;
+    }
+    .lol-boss-pct {
+      font-family: var(--font-mono);
+      font-size: 12px;
+      font-weight: 900;
+      color: #ffb703;
+    }
+    .lol-boss-track {
+      width: 100%;
+      height: 10px;
+      background: #010a13;
+      border: 1px solid #785a28;
+      border-radius: 4px;
+      overflow: hidden;
+      position: relative;
+    }
+    .lol-boss-fill {
+      height: 100%;
+      background: linear-gradient(90deg, #ff0054, #ff5400, #ffb703);
+      box-shadow: 0 0 12px rgba(255, 0, 84, 0.9);
+      transition: width 0.15s ease-out;
+    }
+
+    /* --------------------------------------------------------------------------
+       5. Center Announcements Banner (LoL Announcer)
+       -------------------------------------------------------------------------- */
+    .lol-announcement-banner {
+      position: absolute;
+      top: 130px;
+      left: 50%;
+      transform: translateX(-50%) scale(0.9);
+      background: linear-gradient(90deg, transparent 0%, rgba(9, 20, 40, 0.95) 20%, rgba(9, 20, 40, 0.95) 80%, transparent 100%);
+      border-top: 1px solid #c8aa6e;
+      border-bottom: 1px solid #c8aa6e;
+      padding: 10px 60px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      pointer-events: none;
+      opacity: 0;
+      transition: all 0.3s cubic-bezier(0.18, 0.89, 0.32, 1.28);
+      z-index: 50;
+    }
+    .lol-announcement-banner.active {
+      opacity: 1;
+      transform: translateX(-50%) scale(1.0);
+    }
+    .lol-announcement-sub {
+      font-family: var(--font-title);
+      font-size: 11px;
+      letter-spacing: 3px;
+      color: #0ac8b9;
+      text-transform: uppercase;
+    }
+    .lol-announcement-main {
+      font-family: var(--lol-font-title);
+      font-size: 22px;
+      font-weight: 900;
+      letter-spacing: 2px;
+      color: #f0e6d2;
+      text-shadow: 0 0 15px rgba(200, 170, 110, 0.8);
+      text-transform: uppercase;
+    }
+
+    /* --------------------------------------------------------------------------
+       6. Bottom Master Champion Console (The Iconic LoL HUD)
+       -------------------------------------------------------------------------- */
+    .lol-bottom-console {
+      position: absolute;
+      bottom: 0;
+      left: 50%;
+      transform: translateX(-50%);
+      display: flex;
+      align-items: flex-end;
+      background: linear-gradient(to top, #010a13 0%, rgba(9, 20, 40, 0.96) 80%, rgba(9, 20, 40, 0.7) 100%);
+      border-top: 2px solid #785a28;
+      border-left: 2px solid #785a28;
+      border-right: 2px solid #785a28;
+      border-top-left-radius: 8px;
+      border-top-right-radius: 8px;
+      box-shadow: 0 -4px 30px rgba(0, 0, 0, 0.85), inset 0 0 15px rgba(200, 170, 110, 0.15);
+      padding: 6px 14px 8px 14px;
+      gap: 12px;
+      pointer-events: auto;
+      z-index: 40;
+    }
+
+    /* Left Wing: Champion Portrait & Level & Stats */
+    .lol-champ-wing {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      position: relative;
+    }
+    .lol-portrait-container {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .lol-portrait-frame {
+      width: 58px;
+      height: 58px;
+      border-radius: 50%;
+      border: 3px solid #c8aa6e;
+      background: #010a13;
+      box-shadow: 0 0 15px rgba(200, 170, 110, 0.4);
+      position: relative;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .lol-portrait-avatar {
+      font-size: 32px;
+    }
+    .lol-level-seal {
+      position: absolute;
+      bottom: -4px;
+      left: -4px;
+      width: 22px;
+      height: 22px;
+      border-radius: 50%;
+      background: radial-gradient(circle, #c8aa6e, #785a28);
+      border: 1.5px solid #f0e6d2;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: var(--font-mono);
+      font-size: 11px;
+      font-weight: 900;
+      color: #010a13;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.8);
+    }
+    .lol-champ-info {
+      display: flex;
+      flex-direction: column;
+      gap: 1px;
+    }
+    .lol-champ-title {
+      font-family: var(--lol-font-title);
+      font-size: 12px;
+      font-weight: 900;
+      color: #f0e6d2;
+      letter-spacing: 1px;
+    }
+    .lol-summoner-name {
+      font-family: var(--font-title);
+      font-size: 10px;
+      color: #0ac8b9;
+      letter-spacing: 0.5px;
+    }
+    .lol-stats-box {
+      display: grid;
+      grid-template-columns: repeat(2, 54px);
+      gap: 2px 6px;
+      background: rgba(1, 10, 19, 0.6);
+      border: 1px solid #3c301c;
+      border-radius: 4px;
+      padding: 4px 6px;
+    }
+    .lol-stat-item {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      font-family: var(--font-mono);
+      font-size: 10px;
+      color: #c8aa6e;
+    }
+    .lol-stat-item span:last-child {
+      color: #fff;
+      font-weight: 700;
+    }
+
+    /* Center Wing: Health & Shield Bars + Abilities */
+    .lol-center-wing {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      align-items: center;
+    }
+    .lol-bars-container {
+      width: 100%;
+      display: flex;
+      flex-direction: column;
+      gap: 3px;
+    }
+    .lol-bar-track {
+      width: 100%;
+      height: 14px;
+      background: #010a13;
+      border: 1.5px solid #785a28;
+      border-radius: 3px;
+      position: relative;
+      overflow: hidden;
+    }
+    .lol-mana-track {
+      height: 9px;
+      border-color: #3c301c;
+    }
+    .lol-hp-fill {
+      height: 100%;
+      background: linear-gradient(180deg, #26d07c 0%, #15a05c 60%, #0d6e3e 100%);
+      box-shadow: 0 0 10px rgba(38, 208, 124, 0.5);
+      transition: width 0.15s ease-out;
+    }
+    .lol-mana-fill {
+      height: 100%;
+      background: linear-gradient(180deg, #00f5d4 0%, #00bbf9 50%, #0077b6 100%);
+      box-shadow: 0 0 10px rgba(0, 187, 249, 0.5);
+      transition: width 0.15s ease-out;
+    }
+    .lol-bar-text {
+      position: absolute;
+      top: 0; left: 0; width: 100%; height: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: var(--font-mono);
+      font-size: 10px;
+      font-weight: 900;
+      color: #fff;
+      text-shadow: 0 1px 3px #000, 0 0 2px #000;
+      gap: 6px;
+    }
+    .lol-mana-track .lol-bar-text {
+      font-size: 8px;
+    }
+    .lol-regen-text {
+      color: #26d07c;
+      font-size: 9px;
+    }
+    .lol-mana-track .lol-regen-text {
+      color: #00f5d4;
+      font-size: 8px;
+    }
+
+    /* Abilities Row: Passive + Q W E R + D F + B */
+    .lol-abilities-row {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .lol-spell-slot {
+      width: 48px;
+      height: 48px;
+      background: #010a13;
+      border: 2px solid #785a28;
+      border-radius: 4px;
+      position: relative;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.8);
+      transition: all 0.12s ease;
+      touch-action: manipulation;
+    }
+    .lol-spell-slot:hover {
+      border-color: #c8aa6e;
+      transform: translateY(-2px);
+      box-shadow: 0 4px 14px rgba(200, 170, 110, 0.4);
+    }
+    .lol-spell-slot:active {
+      transform: scale(0.95);
+    }
+    .lol-spell-slot.ready {
+      border-color: #c8aa6e;
+    }
+    .lol-passive-slot {
+      width: 38px;
+      height: 38px;
+      border-color: #3c301c;
+      border-radius: 50%;
+    }
+    .lol-passive-slot .lol-key-label {
+      bottom: -6px;
+      font-size: 8px;
+    }
+    .lol-ult-slot {
+      width: 52px;
+      height: 52px;
+      border-color: #ffb703;
+      box-shadow: 0 0 15px rgba(255, 183, 3, 0.4);
+    }
+    .lol-ult-slot.ready {
+      animation: ultPulse 2s infinite alternate;
+    }
+    @keyframes ultPulse {
+      0% { box-shadow: 0 0 10px rgba(255, 183, 3, 0.4); border-color: #ffb703; }
+      100% { box-shadow: 0 0 22px rgba(255, 183, 3, 0.85); border-color: #fff; }
+    }
+    .lol-spell-icon {
+      font-size: 24px;
+      pointer-events: none;
+    }
+    .lol-passive-slot .lol-spell-icon {
+      font-size: 18px;
+    }
+    .lol-ult-slot .lol-spell-icon {
+      font-size: 28px;
+    }
+    .lol-cooldown-overlay {
+      position: absolute;
+      top: 0; left: 0; width: 100%; height: 100%;
+      background: rgba(1, 10, 19, 0.85);
+      color: #fff;
+      font-family: var(--font-mono);
+      font-size: 13px;
+      font-weight: 900;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      border-radius: 2px;
+      pointer-events: none;
+    }
+    .lol-key-label {
+      position: absolute;
+      bottom: -5px;
+      right: -3px;
+      background: #010a13;
+      border: 1px solid #c8aa6e;
+      color: #f0e6d2;
+      font-family: var(--font-mono);
+      font-size: 9px;
+      font-weight: 900;
+      padding: 1px 4px;
+      border-radius: 3px;
+      pointer-events: none;
+    }
+    .lol-spell-pips {
+      position: absolute;
+      top: -5px;
+      display: flex;
+      gap: 2px;
+    }
+    .pip {
+      width: 5px;
+      height: 3px;
+      background: #3c301c;
+      border-radius: 1px;
+    }
+    .pip.active {
+      background: #ffb703;
+      box-shadow: 0 0 4px #ffb703;
+    }
+    .lol-spell-divider {
+      width: 1px;
+      height: 36px;
+      background: #785a28;
+      margin: 0 2px;
+    }
+    .lol-summoner-slot {
+      width: 38px;
+      height: 38px;
+    }
+    .lol-summoner-slot .lol-spell-icon {
+      font-size: 18px;
+    }
+    .lol-recall-slot {
+      width: 38px;
+      height: 38px;
+      border-color: #0ac8b9;
+    }
+    .lol-recall-slot .lol-spell-icon {
+      font-size: 18px;
+    }
+
+    /* Right Wing: Items Inventory & Gold */
+    .lol-items-wing {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+    .lol-items-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 28px);
+      gap: 3px;
+    }
+    .lol-item-slot {
+      width: 28px;
+      height: 28px;
+      background: #010a13;
+      border: 1px solid #785a28;
+      border-radius: 3px;
+      position: relative;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: inset 0 0 6px rgba(0,0,0,0.8);
+    }
+    .lol-trinket-slot {
+      border-color: #ffb703;
+      background: rgba(255, 183, 3, 0.08);
+    }
+    .lol-item-icon {
+      font-size: 14px;
+    }
+    .lol-item-key {
+      position: absolute;
+      top: 1px;
+      right: 2px;
+      font-family: var(--font-mono);
+      font-size: 7px;
+      color: #785a28;
+      pointer-events: none;
+    }
+    .lol-gold-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 6px;
+      background: rgba(1, 10, 19, 0.6);
+      border: 1px solid #3c301c;
+      border-radius: 3px;
+      padding: 2px 6px;
+    }
+    .lol-gold-display {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      font-family: var(--font-mono);
+      font-size: 11px;
+      font-weight: 900;
+      color: #ffb703;
+    }
+    .lol-minerals-mini {
+      display: flex;
+      gap: 4px;
+      font-family: var(--font-mono);
+      font-size: 9px;
+      color: #8896b3;
+    }
+
+    /* --------------------------------------------------------------------------
+       7. LoL Minimap (Bottom-Right Radar)
+       -------------------------------------------------------------------------- */
+    .lol-minimap-container {
+      position: absolute;
+      bottom: 12px;
+      right: 14px;
+      width: 190px;
+      height: 190px;
+      background: #010a13;
+      border: 2px solid #c8aa6e;
+      border-radius: 4px;
+      box-shadow: 0 8px 30px rgba(0, 0, 0, 0.9), inset 0 0 15px rgba(200, 170, 110, 0.2);
+      pointer-events: auto;
+      z-index: 40;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+    .lol-minimap-controls {
+      display: flex;
+      justify-content: flex-end;
+      gap: 4px;
+      position: absolute;
+      top: 4px;
+      right: 4px;
+      z-index: 2;
+    }
+    .btn-minimap-action {
+      background: rgba(9, 20, 40, 0.85);
+      border: 1px solid #785a28;
+      color: #f0e6d2;
+      width: 22px;
+      height: 22px;
+      border-radius: 3px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 11px;
+      cursor: pointer;
+    }
+    .btn-minimap-action:hover {
+      border-color: #c8aa6e;
+    }
+    #lol-minimap-canvas {
+      width: 190px;
+      height: 190px;
+      display: block;
+    }
+
+    /* Mobile Platform Adjustments for League HUD */
+    body.platform-mobile .lol-bottom-console {
+      transform: translateX(-50%) scale(0.82);
+      transform-origin: bottom center;
+      bottom: 4px;
+    }
+    body.platform-mobile .lol-minimap-container {
+      width: 130px;
+      height: 130px;
+      transform-origin: bottom right;
+    }
+    body.platform-mobile #lol-minimap-canvas {
+      width: 130px;
+      height: 130px;
+    }
+    body.platform-mobile .lol-champ-wing .lol-stats-box {
+      display: none;
+    }
   </style>
 </head>
 <body>
@@ -1722,9 +2797,160 @@
   <div id="canvas-container"></div>
   <div id="anvil-flash" class="anvil-flash"></div>
 
+  <!-- LEAGUE OF LEGENDS MATCH LOADING SCREEN (VS Champion Cards) -->
+  <div id="lol-loading-screen" class="lol-loading-screen" style="display: none;">
+    <div class="lol-loading-bg"></div>
+    <div class="lol-loading-header">
+      <div class="lol-loading-logo">BROADROADS</div>
+      <div class="lol-loading-mode" id="lol-loading-mode-text">RUNIC SUMMONERS ARENA · WAVE SURVIVAL</div>
+    </div>
+
+    <div class="lol-loading-cards-wrap">
+      <!-- Blue Team (Player Champion Card) -->
+      <div class="lol-load-card blue-side" id="lol-card-player">
+        <div class="lol-card-frame">
+          <div class="lol-card-art" id="lol-card-art">
+            <div class="lol-card-glow"></div>
+            <div class="lol-card-avatar" id="lol-card-avatar-icon">🛡️</div>
+          </div>
+          <div class="lol-card-ribbon">CHALLENGER</div>
+          <div class="lol-card-details">
+            <div class="lol-card-champ" id="lol-card-champ-name">SPIRIT SAMURAI</div>
+            <div class="lol-card-player" id="lol-card-username">COMMANDER</div>
+            <div class="lol-card-spells">
+              <span class="card-spell" title="Flash">⚡</span>
+              <span class="card-spell" title="Ignite">🔥</span>
+              <span class="card-rune" title="Keystone: Conqueror">🛡️</span>
+            </div>
+          </div>
+        </div>
+        <div class="lol-card-loadbar-wrap">
+          <div class="lol-card-loadbar-fill" id="lol-card-player-fill" style="width: 0%;"></div>
+          <span class="lol-card-pct" id="lol-card-player-pct">0%</span>
+        </div>
+      </div>
+
+      <!-- Center VS Emblem -->
+      <div class="lol-vs-crest">
+        <div class="vs-glow-rays"></div>
+        <div class="vs-circle">VS</div>
+      </div>
+
+      <!-- Red Team (Encounter / Void Horrors Card) -->
+      <div class="lol-load-card red-side" id="lol-card-enemy">
+        <div class="lol-card-frame">
+          <div class="lol-card-art enemy-art">
+            <div class="lol-card-glow red-glow"></div>
+            <div class="lol-card-avatar">👾</div>
+          </div>
+          <div class="lol-card-ribbon red-ribbon">VOID HORDE</div>
+          <div class="lol-card-details">
+            <div class="lol-card-champ" id="lol-card-enemy-name">VOID CORRUPTORS</div>
+            <div class="lol-card-player" id="lol-card-enemy-sub">ANVIL INVASION (WAVE 1)</div>
+            <div class="lol-card-spells">
+              <span class="card-spell" title="Abyssal Burn">☠️</span>
+              <span class="card-spell" title="Overlord Slam">💥</span>
+              <span class="card-rune" title="Void Core">🔮</span>
+            </div>
+          </div>
+        </div>
+        <div class="lol-card-loadbar-wrap">
+          <div class="lol-card-loadbar-fill red-loadbar" id="lol-card-enemy-fill" style="width: 0%;"></div>
+          <span class="lol-card-pct" id="lol-card-enemy-pct">0%</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Bottom Tip & Status Bar -->
+    <div class="lol-loading-footer">
+      <div class="lol-pro-tip">
+        <span class="tip-bulb">💡</span>
+        <span class="tip-text" id="lol-tip-text">Pro Tip: Right-click ground to move like in League of Legends, or use WASD for hybrid mobility!</span>
+      </div>
+      <div class="lol-loading-actions">
+        <div class="lol-ping-indicator">PING: <span id="lol-load-ping">16 ms</span></div>
+        <button class="btn-skip-loading" id="btn-skip-loading">SPACE TO ENTER</button>
+      </div>
+    </div>
+  </div>
+
   <!-- UI Overlay Layer -->
   <div id="ui-layer">
-    <!-- Top HUD -->
+    <!-- LEAGUE OF LEGENDS TOP SCOREBOARD BAR -->
+    <div id="lol-top-hud" class="lol-top-hud">
+      <!-- Team Scores -->
+      <div class="lol-top-score-group">
+        <div class="lol-score-badge blue-team">
+          <span class="team-label">CHAMPIONS</span>
+          <span class="team-score" id="lol-score-kills">0</span>
+        </div>
+        <div class="lol-score-vs">VS</div>
+        <div class="lol-score-badge red-team">
+          <span class="team-score" id="lol-score-enemies">0</span>
+          <span class="team-label">HORRORS</span>
+        </div>
+      </div>
+
+      <!-- Center Timer & Objective Tracker -->
+      <div class="lol-top-center-group">
+        <div class="lol-match-timer">
+          <span class="timer-icon">⏱️</span>
+          <span id="lol-game-timer">00:00</span>
+        </div>
+        <div class="lol-wave-objective">
+          <div class="wave-dragon-crest">🐉</div>
+          <div class="wave-info-col">
+            <span class="wave-name" id="lol-wave-title">WAVE 1 / 5</span>
+            <div class="wave-progress-bar"><div class="wave-progress-fill" id="lol-wave-progress-fill" style="width: 100%;"></div></div>
+          </div>
+          <span class="threats-badge" id="lol-threats-badge">THREATS: 0</span>
+        </div>
+      </div>
+
+      <!-- Right: CS, Ping/FPS, Help & Exit -->
+      <div class="lol-top-right-group">
+        <div class="lol-cs-badge" title="Minions / Minerals Harvested">
+          <span>🌾</span>
+          <span id="lol-cs-count">0 CS</span>
+        </div>
+        <div class="lol-perf-badge">
+          <span id="lol-fps-val">60 FPS</span>
+          <span class="perf-dot">·</span>
+          <span id="lol-ping-val">18 MS</span>
+        </div>
+        <div class="lol-header-actions">
+          <button class="btn-lol-icon" id="btn-lol-help" title="Keyboard Shortcuts & Help (F1 / ?)">⌨️</button>
+          <button class="btn-lol-icon btn-lol-exit" id="btn-lol-exit" title="Abandon Match (ESC)">🚪</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Left Ally Champion Frames (Team Vitals) -->
+    <div id="lol-allies-hud" class="lol-allies-hud"></div>
+
+    <!-- Epic Baron Nashor / Dragon Boss Bar -->
+    <div id="lol-boss-bar-container" class="lol-boss-bar-container" style="display: none;">
+      <div class="lol-boss-center">
+        <div class="lol-boss-title-row">
+          <span class="lol-boss-icon">💀</span>
+          <span class="lol-boss-name" id="lol-boss-name">IGNIS REX - ANVIL OVERLORD</span>
+          <span class="lol-boss-pct" id="lol-boss-pct">100%</span>
+        </div>
+        <div class="lol-boss-track">
+          <div class="lol-boss-fill" id="lol-boss-fill" style="width: 100%;"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Center Announcement Banner (LoL Announcer) -->
+    <div id="lol-announcement-banner" class="lol-announcement-banner">
+      <div class="lol-announcement-content">
+        <div class="lol-announcement-sub" id="lol-announce-sub">RUNIC ARENA</div>
+        <div class="lol-announcement-main" id="lol-announce-main">WELCOME TO BROADROADS ARENA</div>
+      </div>
+    </div>
+
+    <!-- Top HUD (Legacy) -->
     <div class="top-hud">
       <!-- Player & Teammate Vitals -->
       <div class="vitals-container">
@@ -1840,6 +3066,155 @@
           <span class="btn-lbl">STRIKE</span>
         </button>
       </div>
+    </div>
+
+    <!-- LEAGUE OF LEGENDS MASTER CHAMPION DASHBOARD CONSOLE -->
+    <div id="lol-bottom-console" class="lol-bottom-console">
+      <!-- Left Wing: Champion Portrait & Level & Stats Flyout -->
+      <div class="lol-champ-wing">
+        <div class="lol-portrait-container">
+          <div class="lol-portrait-frame">
+            <div class="lol-portrait-avatar" id="lol-champ-avatar">🛡️</div>
+            <div class="lol-level-seal" id="lol-champ-level">1</div>
+          </div>
+          <div class="lol-champ-info">
+            <span class="lol-champ-title" id="lol-champ-title">SPIRIT SAMURAI</span>
+            <span class="lol-summoner-name" id="lol-summoner-name">COMMANDER</span>
+          </div>
+        </div>
+
+        <!-- Stats Box -->
+        <div class="lol-stats-box" id="lol-stats-box">
+          <div class="lol-stat-item" title="Attack Damage (AD)"><span class="stat-icon">⚔️</span><span id="lol-stat-ad">32</span></div>
+          <div class="lol-stat-item" title="Ability Power (AP)"><span class="stat-icon">✨</span><span id="lol-stat-ap">85</span></div>
+          <div class="lol-stat-item" title="Armor / Shield"><span class="stat-icon">🛡️</span><span id="lol-stat-armor">60</span></div>
+          <div class="lol-stat-item" title="Attack Speed"><span class="stat-icon">⚡</span><span id="lol-stat-as">1.0</span></div>
+          <div class="lol-stat-item" title="Move Speed"><span class="stat-icon">👟</span><span id="lol-stat-ms">385</span></div>
+          <div class="lol-stat-item" title="Critical Chance"><span class="stat-icon">🎯</span><span id="lol-stat-crit">15%</span></div>
+        </div>
+      </div>
+
+      <!-- Center Wing: Resource Bars & Ability Slots -->
+      <div class="lol-center-wing">
+        <!-- Resource Bars -->
+        <div class="lol-bars-container">
+          <!-- Health Bar -->
+          <div class="lol-bar-track lol-hp-track">
+            <div class="lol-bar-fill lol-hp-fill" id="lol-hp-bar" style="width: 100%;"></div>
+            <div class="lol-bar-text">
+              <span id="lol-hp-text">140 / 140</span>
+              <span class="lol-regen-text" id="lol-hp-regen">+3.5</span>
+            </div>
+          </div>
+          <!-- Shield / Mana Bar -->
+          <div class="lol-bar-track lol-mana-track">
+            <div class="lol-bar-fill lol-mana-fill" id="lol-shield-bar" style="width: 100%;"></div>
+            <div class="lol-bar-text">
+              <span id="lol-shield-text">60 / 60</span>
+              <span class="lol-regen-text" id="lol-shield-regen">+20</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Abilities Cluster: Passive + Q W E R + D F + B -->
+        <div class="lol-abilities-row">
+          <!-- Passive -->
+          <div class="lol-spell-slot lol-passive-slot" title="Passive: Martial Refining">
+            <div class="lol-spell-icon" id="lol-spell-passive">🔥</div>
+            <span class="lol-key-label">P</span>
+          </div>
+
+          <!-- Q: Strike -->
+          <div class="lol-spell-slot" id="btn-lol-q" title="Primary Strike (Q / Space / Left Click)">
+            <div class="lol-spell-icon" id="lol-spell-q">⚔️</div>
+            <div class="lol-cooldown-overlay" id="lol-cd-q"></div>
+            <div class="lol-spell-pips"><div class="pip active"></div><div class="pip active"></div><div class="pip"></div></div>
+            <span class="lol-key-label">Q</span>
+          </div>
+
+          <!-- W: Dash -->
+          <div class="lol-spell-slot" id="btn-lol-w" title="Agile Dash (W / Shift / D)">
+            <div class="lol-spell-icon" id="lol-spell-w">💨</div>
+            <div class="lol-cooldown-overlay" id="lol-cd-w"></div>
+            <div class="lol-spell-pips"><div class="pip active"></div><div class="pip active"></div><div class="pip"></div></div>
+            <span class="lol-key-label">W</span>
+          </div>
+
+          <!-- E: Nova / Special -->
+          <div class="lol-spell-slot ready" id="btn-lol-e" title="Special Nova Skill (E)">
+            <div class="lol-spell-icon" id="lol-spell-e">⚡</div>
+            <div class="lol-cooldown-overlay" id="lol-cd-e">READY</div>
+            <div class="lol-spell-pips"><div class="pip active"></div><div class="pip active"></div><div class="pip"></div></div>
+            <span class="lol-key-label">E</span>
+          </div>
+
+          <!-- R: Ultimate (Celestial Overcharge) -->
+          <div class="lol-spell-slot lol-ult-slot ready" id="btn-lol-r" title="ULTIMATE: Celestial Overcharge (R)">
+            <div class="lol-spell-icon" id="lol-spell-r">👑</div>
+            <div class="lol-cooldown-overlay" id="lol-cd-r"></div>
+            <div class="lol-spell-pips"><div class="pip active"></div><div class="pip active"></div></div>
+            <span class="lol-key-label">R</span>
+          </div>
+
+          <div class="lol-spell-divider"></div>
+
+          <!-- D: Flash / Sprint -->
+          <div class="lol-spell-slot lol-summoner-slot" id="btn-lol-d" title="Flash / Rapid Evade (D)">
+            <div class="lol-spell-icon">⚡</div>
+            <span class="lol-key-label">D</span>
+          </div>
+
+          <!-- F: Auto-Attack / Ignite -->
+          <div class="lol-spell-slot lol-summoner-slot" id="btn-lol-f" title="Auto-Target Lock (F / C)">
+            <div class="lol-spell-icon" id="lol-spell-f">🎯</div>
+            <span class="lol-key-label">F</span>
+          </div>
+
+          <!-- B: Recall / Refinery Forge -->
+          <div class="lol-spell-slot lol-recall-slot" id="btn-lol-b" title="Recall / Refinery Forge (B)">
+            <div class="lol-spell-icon">🌀</div>
+            <span class="lol-key-label">B</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Right Wing: Items Inventory & Gold / Minerals -->
+      <div class="lol-items-wing">
+        <div class="lol-items-grid">
+          <!-- 6 Inventory Slots -->
+          <div class="lol-item-slot" id="lol-item-1" title="Weapon Slot"><span class="lol-item-icon" id="lol-item-icon-1">⚔️</span><span class="lol-item-key">1</span></div>
+          <div class="lol-item-slot" id="lol-item-2" title="Armor Slot"><span class="lol-item-icon" id="lol-item-icon-2">🛡️</span><span class="lol-item-key">2</span></div>
+          <div class="lol-item-slot" id="lol-item-3" title="Boots Slot"><span class="lol-item-icon" id="lol-item-icon-3">🥾</span><span class="lol-item-key">3</span></div>
+          <div class="lol-item-slot" id="lol-item-4" title="Relic Slot"><span class="lol-item-icon" id="lol-item-icon-4">💍</span><span class="lol-item-key">5</span></div>
+          <div class="lol-item-slot" id="lol-item-5" title="Consumable Slot"><span class="lol-item-icon" id="lol-item-icon-5">🧪</span><span class="lol-item-key">6</span></div>
+          <div class="lol-item-slot" id="lol-item-6" title="Catalyst Slot"><span class="lol-item-icon" id="lol-item-icon-6">💎</span><span class="lol-item-key">7</span></div>
+          <!-- Trinket Slot -->
+          <div class="lol-item-slot lol-trinket-slot" id="lol-item-trinket" title="Trinket / Scanner (4)"><span class="lol-item-icon">👁️</span><span class="lol-item-key">4</span></div>
+        </div>
+
+        <!-- Gold & Minerals Bar -->
+        <div class="lol-gold-row">
+          <div class="lol-gold-display">
+            <span class="lol-gold-coin">🪙</span>
+            <span class="lol-gold-amount" id="lol-gold-count">350</span>
+          </div>
+          <div class="lol-minerals-mini">
+            <span title="Pyrite" class="min-dot dot-pyrite" id="lol-min-pyrite">🔥 0</span>
+            <span title="Aether" class="min-dot dot-aether" id="lol-min-aether">💧 0</span>
+            <span title="Titanium" class="min-dot dot-titanium" id="lol-min-titanium">🛡️ 0</span>
+            <span title="Catalyst" class="min-dot dot-catalyst" id="lol-min-catalyst">✨ 0</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- LEAGUE OF LEGENDS REAL-TIME RADAR MINIMAP -->
+    <div id="lol-minimap-container" class="lol-minimap-container">
+      <div class="lol-minimap-controls">
+        <button class="btn-minimap-action" id="btn-minimap-ping" title="Danger Ping (G / Alt-Click)">⚠️</button>
+        <button class="btn-minimap-action" id="btn-minimap-center" title="Center Camera on Champion (Space)">🎯</button>
+      </div>
+      <canvas id="lol-minimap-canvas" width="190" height="190"></canvas>
     </div>
   </div>
 
@@ -2055,28 +3430,40 @@
       
       <div class="shortcuts-grid">
         <div class="shortcut-row">
-          <span class="shortcut-action">🏃 Move Hero</span>
+          <span class="shortcut-action">🟢 LoL Click to Move</span>
+          <span class="shortcut-key">Right-Click Ground</span>
+        </div>
+        <div class="shortcut-row">
+          <span class="shortcut-action">🏃 WASD Movement</span>
           <span class="shortcut-key">W A S D</span>
         </div>
         <div class="shortcut-row">
-          <span class="shortcut-action">⚔️ Aim & Strike</span>
-          <span class="shortcut-key">Space / Left Click</span>
+          <span class="shortcut-action">⚔️ Primary Strike [Q]</span>
+          <span class="shortcut-key">Q / Space / Left Click</span>
         </div>
         <div class="shortcut-row">
-          <span class="shortcut-action">💨 Dash / Dodge</span>
-          <span class="shortcut-key">Shift / Right Click</span>
+          <span class="shortcut-action">💨 Dash / Flash [W / D]</span>
+          <span class="shortcut-key">Shift / D</span>
         </div>
         <div class="shortcut-row">
-          <span class="shortcut-action">⚡ Special Skill</span>
+          <span class="shortcut-action">⚡ Special Nova [E]</span>
           <span class="shortcut-key">E</span>
         </div>
         <div class="shortcut-row">
-          <span class="shortcut-action">🎯 Auto-Attack</span>
-          <span class="shortcut-key">C</span>
+          <span class="shortcut-action">👑 ULTIMATE [R]</span>
+          <span class="shortcut-key">R (Overcharge)</span>
         </div>
         <div class="shortcut-row">
-          <span class="shortcut-action">🚪 Abandon Match</span>
-          <span class="shortcut-key">Escape</span>
+          <span class="shortcut-action">🎯 Auto-Attack Lock [F]</span>
+          <span class="shortcut-key">F / C</span>
+        </div>
+        <div class="shortcut-row">
+          <span class="shortcut-action">🌀 Recall / Forge [B]</span>
+          <span class="shortcut-key">B</span>
+        </div>
+        <div class="shortcut-row">
+          <span class="shortcut-action">🗺️ Radar Minimap</span>
+          <span class="shortcut-key">Click to Navigate</span>
         </div>
       </div>
 
@@ -2618,6 +4005,7 @@
         attackCombo: 0,
         attackCooldown: 0,
         invincibleTimer: 0,
+        ultimateCooldown: 0,
         isDowned: false,
         reviveProgress: 0
       },
@@ -3243,6 +4631,18 @@
           this.torso.position.y = 1.1;
           this.torso.rotation.x = 0;
           this.reviveRing.material.opacity = 0;
+        }
+
+        if (this.moveTarget && !joystickActive) {
+          const dx = this.moveTarget.x - this.position.x;
+          const dz = this.moveTarget.z - this.position.z;
+          const distToTarget = Math.sqrt(dx * dx + dz * dz);
+          if (distToTarget > 0.4) {
+            this.velocity.set(dx / distToTarget, dz / distToTarget);
+          } else {
+            this.velocity.set(0, 0);
+            this.moveTarget = null;
+          }
         }
 
         if (state.hero.isDashing) {
@@ -4115,7 +5515,7 @@
         }
 
         if (packet.type === 'START_GAME') {
-          resetGame();
+          startMatchWithLoadingScreen(() => resetGame());
           return;
         }
 
@@ -4849,6 +6249,75 @@
       sound.playPickup();
     }
 
+    function performUltimate() {
+      if (state.phase !== 'playing' || state.hero.isDowned) return;
+      if (state.hero.ultimateCooldown && state.hero.ultimateCooldown > 0) {
+        showLolBanner('ULTIMATE ON COOLDOWN', `${Math.ceil(state.hero.ultimateCooldown)}S REMAINING`);
+        return;
+      }
+
+      state.hero.ultimateCooldown = 25.0; // 25s cooldown
+      state.hero.invincibleTimer = 3.0; // 3 seconds divine invincibility
+      const origSpeed = state.hero.moveSpeed;
+      const origDmg = state.hero.attackDamage;
+      state.hero.moveSpeed *= 1.4;
+      state.hero.attackDamage *= 1.6;
+
+      sound.playNova();
+      triggerScreenShake();
+
+      // Golden ultimate light pillars & radial blast
+      spawnExplosion(hero.position, 0xffd700);
+      spawnGroundShockwave(hero.position, 18.0, 0xffb703);
+
+      enemies.forEach(enemy => {
+        if (!enemy.dead && enemy.position.distanceTo(hero.position) < 18.0) {
+          const dmg = state.hero.attackDamage * 4.5;
+          enemy.takeDamage(dmg, true, state.username);
+          broadcastLocalEnemyHit(enemy, dmg, true, null);
+        }
+      });
+
+      showLolBanner('ULTIMATE ACTIVATED!', 'CELESTIAL OVERCHARGE: +60% DMG & +40% SPEED');
+
+      // Visual ultimate aura around hero for 6s
+      if (hero && hero.shieldMesh) {
+        hero.shieldMesh.material.opacity = 0.95;
+        hero.shieldMesh.material.color.setHex(0xffd700);
+      }
+
+      setTimeout(() => {
+        state.hero.moveSpeed = origSpeed;
+        state.hero.attackDamage = origDmg;
+        if (hero && hero.shieldMesh) {
+          hero.shieldMesh.material.opacity = 0.55;
+          hero.shieldMesh.material.color.setHex(0x00f5d4);
+        }
+      }, 6000);
+
+      updateLolHUD();
+    }
+
+    let bannerTimeout = null;
+    function showLolBanner(mainText, subText = '') {
+      const banner = document.getElementById('lol-announcement-banner');
+      const mainEl = document.getElementById('lol-announce-main');
+      const subEl = document.getElementById('lol-announce-sub');
+      if (!banner || !mainEl) return;
+
+      mainEl.textContent = mainText;
+      if (subEl) subEl.textContent = subText;
+
+      banner.classList.remove('active');
+      void banner.offsetWidth; // trigger reflow
+      banner.classList.add('active');
+
+      if (bannerTimeout) clearTimeout(bannerTimeout);
+      bannerTimeout = setTimeout(() => {
+        banner.classList.remove('active');
+      }, 3500);
+    }
+
     function damagePlayer(amount, isLocal) {
       if (isLocal) {
         if (state.hero.invincibleTimer > 0 || state.phase !== 'playing' || state.hero.isDowned) return;
@@ -5336,11 +6805,13 @@
         title.className = 'end-title victory';
         title.textContent = 'ARENA CONQUERED!';
         subtitle.textContent = 'You forged mythic gear and vanquished the Astral Overlord!';
+        showLolBanner('VICTORY', 'ARENA CONQUERED');
       } else {
         box.classList.remove('victory-card');
         title.className = 'end-title defeat';
         title.textContent = 'ARENA FALLEN';
         subtitle.textContent = 'The void horrors shattered your defenses.';
+        showLolBanner('DEFEAT', 'DEFENSES SHATTERED');
       }
 
       document.getElementById('stat-mode').textContent = `${state.gameMode.toUpperCase()} (${state.soloSubMode})`;
@@ -5412,6 +6883,7 @@
       state.hero.shield = state.hero.maxShield;
       state.hero.dashCooldown = 1.1;
       state.hero.specialCharge = 100;
+      state.hero.ultimateCooldown = 0;
       state.hero.isDowned = false;
 
       hero.setClass(state.heroClass, state.activeClassData);
@@ -5427,11 +6899,16 @@
       const specialIcon = { melee: '⚡', ranged: '🚀', magic: '🌌' };
       document.getElementById('attack-btn-icon').textContent = attackIcon[classType] || '⚔️';
       document.getElementById('special-btn-icon').textContent = specialIcon[classType] || '⚡';
+      const lolSpellQ = document.getElementById('lol-spell-q');
+      if (lolSpellQ) lolSpellQ.textContent = attackIcon[classType] || '⚔️';
+      const lolSpellE = document.getElementById('lol-spell-e');
+      if (lolSpellE) lolSpellE.textContent = specialIcon[classType] || '⚡';
 
       updateInventoryHUD();
       updateGearLoadoutUI();
       updateVitalsHUD();
       updateSpecialButton();
+      updateLolHUD();
 
       startWave(1);
     }
@@ -5454,19 +6931,45 @@
       el.addEventListener('click', trigger);
     }
 
+    const clickRipples = [];
+    function spawnClickRipple(x, z) {
+      const geo = new THREE.RingGeometry(0.2, 0.45, 24);
+      const mat = new THREE.MeshBasicMaterial({ color: 0x00ff88, transparent: true, opacity: 0.95, side: THREE.DoubleSide });
+      const mesh = new THREE.Mesh(geo, mat);
+      mesh.rotation.x = -Math.PI / 2;
+      mesh.position.set(x, 0.05, z);
+      scene.add(mesh);
+      clickRipples.push({ mesh, life: 0.35, maxLife: 0.35 });
+    }
+
     bindAction(document.getElementById('btn-attack'), performHeroAttack);
     bindAction(document.getElementById('btn-dash'), performDash);
     bindAction(document.getElementById('btn-special'), performSpecialNova);
     bindAction(document.getElementById('btn-auto'), toggleAutoAttack);
 
+    // League of Legends Action Console Buttons
+    bindAction(document.getElementById('btn-lol-q'), performHeroAttack);
+    bindAction(document.getElementById('btn-lol-w'), performDash);
+    bindAction(document.getElementById('btn-lol-e'), performSpecialNova);
+    bindAction(document.getElementById('btn-lol-r'), performUltimate);
+    bindAction(document.getElementById('btn-lol-d'), performDash);
+    bindAction(document.getElementById('btn-lol-f'), toggleAutoAttack);
+    bindAction(document.getElementById('btn-lol-b'), () => {
+      if (state.phase === 'refinery') {
+        document.getElementById('refinery-modal').style.display = 'flex';
+      } else {
+        showLolBanner('RECALL CHANNELING', 'REFINERY FORGE OPENS AT WAVE END');
+      }
+    });
+
+    const btnLolHelp = document.getElementById('btn-lol-help');
+    if (btnLolHelp) bindAction(btnLolHelp, openShortcutsModal);
+    const btnLolExit = document.getElementById('btn-lol-exit');
+    if (btnLolExit) bindAction(btnLolExit, openExitConfirmModal);
+
     container.addEventListener('pointerdown', (e) => {
       sound.init();
       if (state.phase !== 'playing') return;
-
-      if (e.button === 2) {
-        performDash();
-        return;
-      }
 
       const rect = container.getBoundingClientRect();
       const mouseX = ((e.clientX - rect.left) / rect.width) * 2 - 1;
@@ -5478,6 +6981,33 @@
       const targetPoint = new THREE.Vector3();
       raycaster.ray.intersectPlane(floorPlane, targetPoint);
 
+      if (e.button === 2) {
+        // Classic League of Legends Right-Click: Move or Attack Target
+        if (targetPoint) {
+          let clickedEnemy = null;
+          enemies.forEach(en => {
+            if (!en.dead && en.position.distanceTo(targetPoint) < 2.0) {
+              clickedEnemy = en;
+            }
+          });
+
+          if (clickedEnemy) {
+            hero.targetRotation = Math.atan2(clickedEnemy.position.x - hero.position.x, clickedEnemy.position.z - hero.position.z);
+            hero.group.rotation.y = hero.targetRotation;
+            if (hero.position.distanceTo(clickedEnemy.position) <= 4.0) {
+              performHeroAttack();
+            } else {
+              hero.moveTarget = clickedEnemy.position.clone();
+            }
+          } else {
+            hero.moveTarget = targetPoint.clone();
+            spawnClickRipple(targetPoint.x, targetPoint.z);
+          }
+        }
+        return;
+      }
+
+      // Left-Click: Aim & Attack towards cursor
       if (targetPoint) {
         hero.targetRotation = Math.atan2(targetPoint.x - hero.position.x, targetPoint.z - hero.position.z);
         hero.group.rotation.y = hero.targetRotation;
@@ -5488,7 +7018,6 @@
 
     window.addEventListener('contextmenu', (e) => {
       e.preventDefault();
-      if (state.phase === 'playing') performDash();
     });
 
     // Virtual Joystick
@@ -5607,23 +7136,38 @@
 
       if (state.phase !== 'playing') return;
 
-      // STRICTLY ONE CANONICAL SHORTCUT PER SKILL (NO DUPLICATES/ALIASES)
-      if (e.code === 'Space' || e.key === ' ') {
-        // SKILL: Normal Attack -> ONLY Space
+      // LEAGUE OF LEGENDS & BROADROADS HYBRID ACTION KEYS
+      if (k === 'q' || e.code === 'Space' || e.key === ' ') {
+        // Q or Space: Strike / Basic Attack
         e.preventDefault();
         performHeroAttack();
-      } else if (e.key === 'Shift' || e.code === 'ShiftLeft' || e.code === 'ShiftRight') {
-        // SKILL: Dash / Dodge -> ONLY Shift
+      } else if (k === 'd' || e.key === 'Shift' || e.code === 'ShiftLeft' || e.code === 'ShiftRight') {
+        // D or Shift: Dash / Flash
         e.preventDefault();
         performDash();
       } else if (k === 'e') {
-        // SKILL: Special Nova Skill -> ONLY E
+        // E: Special Nova
         e.preventDefault();
         performSpecialNova();
-      } else if (k === 'c') {
-        // SKILL: Auto-Attack Toggle -> ONLY C
+      } else if (k === 'r') {
+        // R: ULTIMATE (Celestial Overcharge)
+        e.preventDefault();
+        performUltimate();
+      } else if (k === 'f' || k === 'c') {
+        // F or C: Auto-Attack Toggle
         e.preventDefault();
         toggleAutoAttack();
+      } else if (k === 'b') {
+        // B: Recall / Open Refinery
+        e.preventDefault();
+        if (state.phase === 'refinery') {
+          document.getElementById('refinery-modal').style.display = 'flex';
+        } else {
+          showLolBanner('RECALL CHANNELING', 'REFINERY FORGE OPENS AT WAVE END');
+        }
+      } else if (e.key === 'F1') {
+        e.preventDefault();
+        openShortcutsModal();
       }
     });
 
@@ -5641,9 +7185,10 @@
       if (keys['d'] || keys['arrowright']) moveX += 1;
 
       if (moveX !== 0 || moveZ !== 0) {
+        hero.moveTarget = null;
         const len = Math.sqrt(moveX * moveX + moveZ * moveZ);
         hero.velocity.set(moveX / len, moveZ / len);
-      } else {
+      } else if (!hero.moveTarget) {
         hero.velocity.set(0, 0);
       }
     }
@@ -5743,7 +7288,7 @@
       }
 
       net.broadcast({ type: 'START_GAME' });
-      resetGame();
+      startMatchWithLoadingScreen(() => resetGame());
     }
 
     // Username Requirement & Real-time Validation
@@ -5931,7 +7476,7 @@
           if (state.gameMode === 'multiplayer' && net.isHost) {
             net.broadcast({ type: 'START_GAME' });
           }
-          resetGame();
+          startMatchWithLoadingScreen(() => resetGame());
         }
       });
     }
@@ -6000,7 +7545,7 @@
           openShortcutsModal();
           return;
         }
-        resetGame();
+        startMatchWithLoadingScreen(() => resetGame());
       } else if (state.gameMode === 'multiplayer') {
         const isGuestTab = document.getElementById('btn-join-room-tab') && document.getElementById('btn-join-room-tab').classList.contains('active');
         if (isGuestTab) {
@@ -6013,7 +7558,7 @@
 
     bindAction(document.getElementById('btn-restart-game'), () => {
       if (!validateUsername()) return;
-      resetGame();
+      startMatchWithLoadingScreen(() => resetGame());
     });
 
     // Initialize Theme & Class Selection for active month
@@ -6042,6 +7587,438 @@
         updateStartModalButtons();
       }, 200);
     });
+
+    /* ==========================================================================
+       14C. LEAGUE OF LEGENDS HUD & MINIMAP & MATCH SCREEN CONTROLLER
+       ========================================================================== */
+    function initLolMinimap() {
+      const canvas = document.getElementById('lol-minimap-canvas');
+      if (!canvas) return;
+
+      canvas.addEventListener('pointerdown', (e) => {
+        sound.init();
+        if (state.phase !== 'playing') return;
+        e.stopPropagation();
+
+        const rect = canvas.getBoundingClientRect();
+        const cx = e.clientX - rect.left;
+        const cy = e.clientY - rect.top;
+        const width = rect.width;
+        const centerX = width / 2;
+        const centerY = width / 2;
+        const mapRadius = width * 0.42;
+
+        const worldX = ((cx - centerX) / mapRadius) * GAME_CONFIG.ARENA_RADIUS;
+        const worldZ = ((cy - centerY) / mapRadius) * GAME_CONFIG.ARENA_RADIUS;
+
+        const dist = Math.sqrt(worldX * worldX + worldZ * worldZ);
+        const clampedDist = Math.min(dist, GAME_CONFIG.ARENA_RADIUS - 0.5);
+        const angle = Math.atan2(worldZ, worldX);
+        const targetX = Math.cos(angle) * clampedDist;
+        const targetZ = Math.sin(angle) * clampedDist;
+
+        hero.moveTarget = new THREE.Vector3(targetX, 0, targetZ);
+        spawnClickRipple(targetX, targetZ);
+        showLolBanner('COMMAND DISPATCHED', 'CHAMPION MOVING TO SECTOR');
+      });
+
+      const btnPing = document.getElementById('btn-minimap-ping');
+      if (btnPing) {
+        btnPing.addEventListener('click', (e) => {
+          e.stopPropagation();
+          showLolBanner('ALERT PING', 'THREATS ENGAGING IN ARENA');
+          sound.playHit();
+        });
+      }
+
+      const btnCam = document.getElementById('btn-minimap-center');
+      if (btnCam) {
+        btnCam.addEventListener('click', (e) => {
+          e.stopPropagation();
+          camera.position.x = hero.position.x * 0.45;
+          camera.position.z = 22 + hero.position.z * 0.45;
+          showLolBanner('CAMERA LOCKED', 'FOCUSED ON HERO');
+        });
+      }
+    }
+
+    function drawMinimap() {
+      const canvas = document.getElementById('lol-minimap-canvas');
+      if (!canvas) return;
+      const ctx = canvas.getContext('2d');
+      const w = canvas.width;
+      const h = canvas.height;
+      const cx = w / 2;
+      const cy = h / 2;
+      const mapR = w * 0.42;
+      const scale = mapR / GAME_CONFIG.ARENA_RADIUS;
+
+      ctx.clearRect(0, 0, w, h);
+
+      // Radar base
+      ctx.fillStyle = '#060e1e';
+      ctx.beginPath();
+      ctx.arc(cx, cy, mapR, 0, Math.PI * 2);
+      ctx.fill();
+
+      // Outer gold border
+      ctx.strokeStyle = '#c8aa6e';
+      ctx.lineWidth = 2;
+      ctx.stroke();
+
+      // Subtle crosshairs
+      ctx.strokeStyle = 'rgba(200, 170, 110, 0.15)';
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.moveTo(cx, cy - mapR); ctx.lineTo(cx, cy + mapR);
+      ctx.moveTo(cx - mapR, cy); ctx.lineTo(cx + mapR, cy);
+      ctx.stroke();
+
+      // Central Crucible Anvil
+      ctx.fillStyle = '#ffb703';
+      ctx.beginPath();
+      ctx.arc(cx, cy, 3.5, 0, Math.PI * 2);
+      ctx.fill();
+
+      // Dropped Minerals
+      droppedMaterials.forEach(m => {
+        if (!m.mesh) return;
+        const mx = cx + m.mesh.position.x * scale;
+        const my = cy + m.mesh.position.z * scale;
+        ctx.fillStyle = '#00f5d4';
+        ctx.beginPath();
+        ctx.arc(mx, my, 2.5, 0, Math.PI * 2);
+        ctx.fill();
+      });
+
+      // Enemies
+      enemies.forEach(e => {
+        if (e.dead) return;
+        const ex = cx + e.position.x * scale;
+        const ey = cy + e.position.z * scale;
+        if (e.type === 'boss') {
+          ctx.fillStyle = '#ff0054';
+          ctx.beginPath();
+          ctx.arc(ex, ey, 6.5, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.strokeStyle = '#ffb703';
+          ctx.lineWidth = 1.5;
+          ctx.stroke();
+        } else {
+          ctx.fillStyle = '#ff0054';
+          ctx.beginPath();
+          ctx.arc(ex, ey, 3, 0, Math.PI * 2);
+          ctx.fill();
+        }
+      });
+
+      // Teammates
+      remoteHeroes.forEach(rh => {
+        if (!rh.group || !rh.group.visible) return;
+        const tx = cx + rh.position.x * scale;
+        const ty = cy + rh.position.z * scale;
+        ctx.fillStyle = '#00bbf9';
+        ctx.beginPath();
+        ctx.arc(tx, ty, 4.5, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.strokeStyle = '#fff';
+        ctx.lineWidth = 1;
+        ctx.stroke();
+      });
+
+      // Local Player
+      if (hero && hero.position) {
+        const px = cx + hero.position.x * scale;
+        const py = cy + hero.position.z * scale;
+        const rot = hero.targetRotation || hero.group.rotation.y || 0;
+
+        // Vision Cone
+        ctx.fillStyle = 'rgba(46, 204, 113, 0.25)';
+        ctx.beginPath();
+        ctx.moveTo(px, py);
+        ctx.arc(px, py, 20, rot - Math.PI / 4, rot + Math.PI / 4);
+        ctx.closePath();
+        ctx.fill();
+
+        // Player Dot
+        ctx.fillStyle = '#2ecc71';
+        ctx.beginPath();
+        ctx.arc(px, py, 5, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.strokeStyle = '#f0e6d2';
+        ctx.lineWidth = 1.5;
+        ctx.stroke();
+      }
+
+      // Move target ring
+      if (hero && hero.moveTarget) {
+        const tx = cx + hero.moveTarget.x * scale;
+        const ty = cy + hero.moveTarget.z * scale;
+        ctx.strokeStyle = '#00ff88';
+        ctx.lineWidth = 1.5;
+        ctx.beginPath();
+        ctx.arc(tx, ty, 4, 0, Math.PI * 2);
+        ctx.stroke();
+      }
+    }
+
+    function updateLolHUD() {
+      // 1. Champion identity
+      const cls = state.activeClassData || { name: 'Spirit Samurai', icon: '🛡️' };
+      const avatarEl = document.getElementById('lol-champ-avatar');
+      if (avatarEl) avatarEl.textContent = cls.icon || '🛡️';
+      const titleEl = document.getElementById('lol-champ-title');
+      if (titleEl) titleEl.textContent = cls.name.toUpperCase();
+      const summonerEl = document.getElementById('lol-summoner-name');
+      if (summonerEl) summonerEl.textContent = (state.username || 'COMMANDER').toUpperCase();
+      const levelEl = document.getElementById('lol-champ-level');
+      if (levelEl) levelEl.textContent = state.currentWave;
+
+      // 2. Health & Mana/Shield
+      const hpPct = Math.max(0, Math.min(100, (state.hero.hp / state.hero.maxHp) * 100));
+      const hpBar = document.getElementById('lol-hp-bar');
+      if (hpBar) hpBar.style.width = hpPct + '%';
+      const hpText = document.getElementById('lol-hp-text');
+      if (hpText) hpText.textContent = `${Math.ceil(state.hero.hp)} / ${state.hero.maxHp}`;
+
+      const shieldPct = Math.max(0, Math.min(100, (state.hero.shield / state.hero.maxShield) * 100));
+      const shieldBar = document.getElementById('lol-shield-bar');
+      if (shieldBar) shieldBar.style.width = shieldPct + '%';
+      const shieldText = document.getElementById('lol-shield-text');
+      if (shieldText) shieldText.textContent = `${Math.ceil(state.hero.shield)} / ${state.hero.maxShield}`;
+
+      // 3. Stats Box
+      const adEl = document.getElementById('lol-stat-ad');
+      if (adEl) adEl.textContent = Math.round(state.hero.attackDamage);
+      const armorEl = document.getElementById('lol-stat-armor');
+      if (armorEl) armorEl.textContent = Math.round(state.hero.maxShield);
+      const asEl = document.getElementById('lol-stat-as');
+      if (asEl) asEl.textContent = state.hero.attackSpeed.toFixed(1);
+      const msEl = document.getElementById('lol-stat-ms');
+      if (msEl) msEl.textContent = Math.round(state.hero.moveSpeed * 38);
+      const critEl = document.getElementById('lol-stat-crit');
+      if (critEl) critEl.textContent = `${Math.round(state.hero.critChance * 100)}%`;
+
+      // 4. Cooldown Overlays on abilities
+      const cdW = document.getElementById('lol-cd-w');
+      if (cdW) {
+        if (state.hero.dashTimer > 0) {
+          cdW.style.display = 'flex';
+          cdW.textContent = `${state.hero.dashTimer.toFixed(1)}s`;
+        } else {
+          cdW.style.display = 'none';
+        }
+      }
+
+      const cdE = document.getElementById('lol-cd-e');
+      const slotE = document.getElementById('btn-lol-e');
+      if (cdE && slotE) {
+        const pct = (state.hero.specialCharge / state.hero.specialMaxCharge) * 100;
+        if (state.hero.specialCharge >= state.hero.specialMaxCharge) {
+          cdE.style.display = 'none';
+          slotE.classList.add('ready');
+        } else {
+          cdE.style.display = 'flex';
+          cdE.textContent = `${Math.round(pct)}%`;
+          slotE.classList.remove('ready');
+        }
+      }
+
+      const cdR = document.getElementById('lol-cd-r');
+      const slotR = document.getElementById('btn-lol-r');
+      if (cdR && slotR) {
+        if (state.hero.ultimateCooldown && state.hero.ultimateCooldown > 0) {
+          cdR.style.display = 'flex';
+          cdR.textContent = `${Math.ceil(state.hero.ultimateCooldown)}s`;
+          slotR.classList.remove('ready');
+        } else {
+          cdR.style.display = 'none';
+          slotR.classList.add('ready');
+        }
+      }
+
+      // Auto attack toggle highlight
+      const slotF = document.getElementById('btn-lol-f');
+      if (slotF) {
+        if (state.hero.autoAttack) slotF.classList.add('ready');
+        else slotF.classList.remove('ready');
+      }
+
+      // 5. Gear items in slots 1-4
+      if (state.gear) {
+        const item1 = document.getElementById('lol-item-icon-1');
+        if (item1 && state.gear.weapon) item1.textContent = state.gear.weapon.icon;
+        const item2 = document.getElementById('lol-item-icon-2');
+        if (item2 && state.gear.armor) item2.textContent = state.gear.armor.icon;
+        const item3 = document.getElementById('lol-item-icon-3');
+        if (item3 && state.gear.boots) item3.textContent = state.gear.boots.icon;
+        const item4 = document.getElementById('lol-item-icon-4');
+        if (item4 && state.gear.relic) item4.textContent = state.gear.relic.icon;
+      }
+
+      // 6. Gold & Minerals
+      const gold = (state.materials.pyrite * 25) + (state.materials.aether * 35) + (state.materials.titanium * 50) + (state.materials.catalyst * 100);
+      const goldCount = document.getElementById('lol-gold-count');
+      if (goldCount) goldCount.textContent = gold;
+      const minP = document.getElementById('lol-min-pyrite');
+      if (minP) minP.textContent = `🔥 ${state.materials.pyrite}`;
+      const minA = document.getElementById('lol-min-aether');
+      if (minA) minA.textContent = `💧 ${state.materials.aether}`;
+      const minT = document.getElementById('lol-min-titanium');
+      if (minT) minT.textContent = `🛡️ ${state.materials.titanium}`;
+      const minC = document.getElementById('lol-min-catalyst');
+      if (minC) minC.textContent = `✨ ${state.materials.catalyst}`;
+
+      // 7. Top Scoreboard
+      const scoreKills = document.getElementById('lol-score-kills');
+      if (scoreKills) scoreKills.textContent = state.kills;
+      const liveEnemies = enemies.filter(e => !e.dead).length;
+      const scoreEnemies = document.getElementById('lol-score-enemies');
+      if (scoreEnemies) scoreEnemies.textContent = liveEnemies;
+      const threatsBadge = document.getElementById('lol-threats-badge');
+      if (threatsBadge) threatsBadge.textContent = `THREATS: ${liveEnemies}`;
+      const csCount = document.getElementById('lol-cs-count');
+      if (csCount) csCount.textContent = `${state.kills + state.gearRefinedCount * 4} CS`;
+
+      // Timer mm:ss
+      const mins = Math.floor(state.runTimer / 60);
+      const secs = Math.floor(state.runTimer % 60);
+      const timerEl = document.getElementById('lol-game-timer');
+      if (timerEl) timerEl.textContent = `${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
+
+      // Wave title & progress
+      const waveTitle = document.getElementById('lol-wave-title');
+      if (waveTitle) waveTitle.textContent = `WAVE ${state.currentWave} / 5`;
+      const waveProgress = document.getElementById('lol-wave-progress-fill');
+      if (waveProgress) {
+        const pct = Math.max(0, Math.min(100, (state.waveTimeRemaining / GAME_CONFIG.WAVE_DURATION) * 100));
+        waveProgress.style.width = pct + '%';
+      }
+
+      // 8. Epic Boss Bar
+      const boss = enemies.find(e => e.type === 'boss' && !e.dead);
+      const bossContainer = document.getElementById('lol-boss-bar-container');
+      if (boss && bossContainer) {
+        bossContainer.style.display = 'flex';
+        const bossFill = document.getElementById('lol-boss-fill');
+        const bossPct = Math.max(0, Math.min(100, (boss.hp / boss.maxHp) * 100));
+        if (bossFill) bossFill.style.width = bossPct + '%';
+        const bossPctText = document.getElementById('lol-boss-pct');
+        if (bossPctText) bossPctText.textContent = Math.round(bossPct) + '%';
+      } else if (bossContainer) {
+        bossContainer.style.display = 'none';
+      }
+
+      // 9. Allies Sidebar
+      const alliesHud = document.getElementById('lol-allies-hud');
+      if (alliesHud && state.gameMode === 'multiplayer' && remoteHeroes.size > 0) {
+        alliesHud.style.display = 'flex';
+        alliesHud.innerHTML = '';
+        remoteHeroes.forEach((rh, peerId) => {
+          const allyCard = document.createElement('div');
+          allyCard.className = 'lol-ally-card';
+          const aPct = Math.max(0, Math.min(100, (rh.hp / rh.maxHp) * 100));
+          allyCard.innerHTML = `
+            <div class="lol-ally-avatar">${rh.classData ? rh.classData.icon : '🛡️'}</div>
+            <div class="lol-ally-col">
+              <span class="lol-ally-name">${rh.username || 'ALLY'}</span>
+              <div class="lol-ally-bar-wrap">
+                <div class="lol-ally-hp-fill" style="width: ${aPct}%; background: ${rh.isDowned ? '#ff0054' : '#15a05c'};"></div>
+              </div>
+            </div>
+            <div class="lol-ally-ult-gem ${rh.isDowned ? 'charging' : ''}" title="Ultimate Status"></div>
+          `;
+          alliesHud.appendChild(allyCard);
+        });
+      } else if (alliesHud) {
+        alliesHud.style.display = 'none';
+      }
+    }
+
+    function startMatchWithLoadingScreen(onComplete) {
+      sound.init();
+      const loadingScreen = document.getElementById('lol-loading-screen');
+      const startModal = document.getElementById('start-modal');
+      const gameoverModal = document.getElementById('gameover-modal');
+
+      if (startModal) startModal.style.display = 'none';
+      if (gameoverModal) gameoverModal.style.display = 'none';
+
+      // Setup loading card data
+      const cls = state.activeClassData || { name: 'Spirit Samurai', icon: '🛡️' };
+      const champNameEl = document.getElementById('lol-card-champ-name');
+      if (champNameEl) champNameEl.textContent = cls.name.toUpperCase();
+      const userEl = document.getElementById('lol-card-username');
+      if (userEl) userEl.textContent = (state.username || 'COMMANDER').toUpperCase();
+      const avatarIconEl = document.getElementById('lol-card-avatar-icon');
+      if (avatarIconEl) avatarIconEl.textContent = cls.icon || '🛡️';
+
+      // Random tips
+      const tips = [
+        "Right-click ground to move like in League of Legends, or use WASD for hybrid mobility!",
+        "Insert 2 minerals into the Crucible during Refinery phase to synthesize Mythic Tier weapons.",
+        "Press R to unleash your Ultimate: Celestial Overcharge for massive damage and divine shield.",
+        "Watch the real-time radar minimap in the bottom-right corner to spot incoming void threats!",
+        "Stand close to downed teammates in Co-op mode to channel a rapid combat revive."
+      ];
+      const tipEl = document.getElementById('lol-tip-text');
+      if (tipEl) tipEl.textContent = `Pro Tip: ${tips[Math.floor(Math.random() * tips.length)]}`;
+
+      loadingScreen.style.display = 'flex';
+      const playerFill = document.getElementById('lol-card-player-fill');
+      const playerPct = document.getElementById('lol-card-player-pct');
+      const enemyFill = document.getElementById('lol-card-enemy-fill');
+      const enemyPct = document.getElementById('lol-card-enemy-pct');
+
+      playerFill.style.width = '0%';
+      enemyFill.style.width = '0%';
+      playerPct.textContent = '0%';
+      enemyPct.textContent = '0%';
+
+      let progress = 0;
+      let finished = false;
+
+      function finishLoading() {
+        if (finished) return;
+        finished = true;
+        playerFill.style.width = '100%';
+        enemyFill.style.width = '100%';
+        playerPct.textContent = '100%';
+        enemyPct.textContent = '100%';
+
+        sound.playPickup();
+        setTimeout(() => {
+          loadingScreen.style.display = 'none';
+          if (onComplete) onComplete();
+          showLolBanner('WELCOME TO BROADROADS ARENA', 'MINIONS & THREATS HAVE SPAWNED');
+        }, 400);
+      }
+
+      const btnSkip = document.getElementById('btn-skip-loading');
+      if (btnSkip) {
+        btnSkip.onclick = () => finishLoading();
+      }
+
+      const interval = setInterval(() => {
+        if (finished) {
+          clearInterval(interval);
+          return;
+        }
+        progress += Math.floor(Math.random() * 20) + 15;
+        if (progress >= 100) {
+          progress = 100;
+          clearInterval(interval);
+          finishLoading();
+        }
+        playerFill.style.width = progress + '%';
+        playerPct.textContent = progress + '%';
+        const enemyProg = Math.max(0, progress - Math.floor(Math.random() * 8));
+        enemyFill.style.width = enemyProg + '%';
+        enemyPct.textContent = enemyProg + '%';
+      }, 180);
+    }
+
+    initLolMinimap();
 
     /* ==========================================================================
        15. MAIN GAME LOOP
@@ -6084,7 +8061,25 @@
       if (state.hero.attackCooldown > 0) state.hero.attackCooldown -= dt;
       if (state.hero.dashTimer > 0) state.hero.dashTimer -= dt;
       if (state.hero.invincibleTimer > 0) state.hero.invincibleTimer -= dt;
+      if (state.hero.ultimateCooldown && state.hero.ultimateCooldown > 0) state.hero.ultimateCooldown -= dt;
       updateCooldownOverlays();
+      updateLolHUD();
+      drawMinimap();
+
+      // Animate League Click-to-Move Ripples
+      for (let i = clickRipples.length - 1; i >= 0; i--) {
+        const r = clickRipples[i];
+        r.life -= dt;
+        const progress = 1 - (r.life / r.maxLife);
+        r.mesh.scale.setScalar(1 + progress * 1.5);
+        r.mesh.material.opacity = Math.max(0, r.life / r.maxLife);
+        if (r.life <= 0) {
+          scene.remove(r.mesh);
+          r.mesh.geometry.dispose();
+          r.mesh.material.dispose();
+          clickRipples.splice(i, 1);
+        }
+      }
 
       if (state.hero.shieldRegenTimer > 0) {
         state.hero.shieldRegenTimer -= dt;
