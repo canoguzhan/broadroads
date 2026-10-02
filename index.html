@@ -2772,27 +2772,1228 @@
       display: block;
     }
 
-    /* Mobile Platform Adjustments for League HUD */
-    body.platform-mobile .lol-bottom-console {
-      transform: translateX(-50%) scale(0.82);
-      transform-origin: bottom center;
-      bottom: 4px;
-    }
-    body.platform-mobile .lol-minimap-container {
-      width: 130px;
-      height: 130px;
-      transform-origin: bottom right;
-    }
-    body.platform-mobile #lol-minimap-canvas {
-      width: 130px;
-      height: 130px;
-    }
-    body.platform-mobile .lol-champ-wing .lol-stats-box {
+    /* --------------------------------------------------------------------------
+       8. Mobile Orientation Lock Screen (Forces Horizontal Landscape Mode)
+       -------------------------------------------------------------------------- */
+    #orientation-lock-screen {
+      position: fixed;
+      inset: 0;
+      z-index: 999999;
+      background: radial-gradient(circle at center, #091428 0%, #010a13 85%);
       display: none;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 30px;
+      text-align: center;
+      box-shadow: inset 0 0 80px rgba(0, 0, 0, 0.9);
+      border: 3px solid #785a28;
+    }
+    @media (orientation: portrait) and (max-width: 900px) {
+      #orientation-lock-screen {
+        display: flex !important;
+      }
+    }
+    .orient-device-wrapper {
+      position: relative;
+      width: 110px;
+      height: 110px;
+      margin-bottom: 24px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .orient-phone-icon {
+      width: 52px;
+      height: 94px;
+      border: 3px solid #c8aa6e;
+      border-radius: 12px;
+      background: rgba(1, 10, 19, 0.8);
+      box-shadow: 0 0 25px rgba(200, 170, 110, 0.45);
+      position: relative;
+      animation: rotatePhone 2.4s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+    }
+    .orient-phone-notch {
+      position: absolute;
+      top: 6px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 16px;
+      height: 3px;
+      background: #785a28;
+      border-radius: 2px;
+    }
+    .orient-phone-screen {
+      position: absolute;
+      inset: 14px 4px 14px 4px;
+      border-radius: 4px;
+      background: linear-gradient(135deg, rgba(10, 200, 185, 0.2), rgba(200, 170, 110, 0.2));
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 16px;
+    }
+    @keyframes rotatePhone {
+      0%, 25% { transform: rotate(0deg); }
+      75%, 100% { transform: rotate(90deg); }
+    }
+    .orient-lock-title {
+      font-family: var(--lol-font-title);
+      font-size: 24px;
+      font-weight: 900;
+      letter-spacing: 3px;
+      color: #f0e6d2;
+      text-transform: uppercase;
+      text-shadow: 0 0 15px rgba(200, 170, 110, 0.6);
+      margin-bottom: 10px;
+    }
+    .orient-lock-msg {
+      font-family: var(--font-title);
+      font-size: 15px;
+      font-weight: 700;
+      color: #0ac8b9;
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+      margin-bottom: 12px;
+    }
+    .orient-lock-desc {
+      font-family: var(--font-body);
+      font-size: 13px;
+      color: #8896b3;
+      max-width: 320px;
+      line-height: 1.5;
+    }
+
+    /* --------------------------------------------------------------------------
+       9. Game Landing Page & Showcase View
+       -------------------------------------------------------------------------- */
+    #landing-page {
+      position: fixed;
+      inset: 0;
+      z-index: 800;
+      background: radial-gradient(circle at top center, #091428 0%, #030812 60%, #010a13 100%);
+      display: none;
+      flex-direction: column;
+      overflow-y: auto;
+      overflow-x: hidden;
+      color: #f0e6d2;
+      font-family: var(--font-body);
+    }
+    .landing-header {
+      width: 100%;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 18px 40px;
+      background: rgba(1, 10, 19, 0.85);
+      border-bottom: 2px solid #785a28;
+      backdrop-filter: blur(12px);
+      position: sticky;
+      top: 0;
+      z-index: 50;
+    }
+    .landing-brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .landing-logo {
+      font-family: var(--lol-font-title);
+      font-size: 24px;
+      font-weight: 900;
+      letter-spacing: 4px;
+      background: linear-gradient(180deg, #f0e6d2 0%, #c8aa6e 60%, #785a28 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      text-shadow: 0 0 20px rgba(200, 170, 110, 0.4);
+    }
+    .landing-season-pill {
+      font-family: var(--font-mono);
+      font-size: 10px;
+      font-weight: 900;
+      color: #0ac8b9;
+      background: rgba(10, 200, 185, 0.12);
+      border: 1px solid rgba(10, 200, 185, 0.4);
+      padding: 3px 8px;
+      border-radius: 12px;
+      letter-spacing: 1px;
+    }
+    .landing-nav-links {
+      display: flex;
+      align-items: center;
+      gap: 24px;
+    }
+    .landing-nav-link {
+      background: none;
+      border: none;
+      color: #c8aa6e;
+      font-family: var(--font-title);
+      font-size: 13px;
+      font-weight: 700;
+      letter-spacing: 1.5px;
+      cursor: pointer;
+      transition: color 0.15s, text-shadow 0.15s;
+      text-transform: uppercase;
+    }
+    .landing-nav-link:hover {
+      color: #f0e6d2;
+      text-shadow: 0 0 10px rgba(200, 170, 110, 0.8);
+    }
+    .btn-landing-cta {
+      background: linear-gradient(180deg, #c8aa6e 0%, #785a28 100%);
+      border: 2px solid #f0e6d2;
+      color: #010a13;
+      font-family: var(--lol-font-title);
+      font-size: 13px;
+      font-weight: 900;
+      letter-spacing: 2px;
+      padding: 10px 24px;
+      border-radius: 4px;
+      cursor: pointer;
+      box-shadow: 0 0 20px rgba(200, 170, 110, 0.5);
+      transition: all 0.2s cubic-bezier(0.18, 0.89, 0.32, 1.28);
+    }
+    .btn-landing-cta:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 0 30px rgba(200, 170, 110, 0.8);
+      background: linear-gradient(180deg, #f0e6d2 0%, #c8aa6e 100%);
+    }
+
+    /* Landing Hero */
+    .landing-hero {
+      padding: 60px 40px 40px 40px;
+      max-width: 1200px;
+      margin: 0 auto;
+      text-align: center;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+    .landing-hero-tag {
+      font-family: var(--font-title);
+      font-size: 13px;
+      font-weight: 900;
+      letter-spacing: 4px;
+      color: #0ac8b9;
+      text-transform: uppercase;
+      margin-bottom: 12px;
+    }
+    .landing-hero-title {
+      font-family: var(--lol-font-title);
+      font-size: clamp(32px, 5vw, 56px);
+      font-weight: 900;
+      letter-spacing: 3px;
+      color: #f0e6d2;
+      text-shadow: 0 0 30px rgba(200, 170, 110, 0.5);
+      margin-bottom: 18px;
+      line-height: 1.15;
+      text-transform: uppercase;
+    }
+    .landing-hero-desc {
+      font-size: 16px;
+      color: #8896b3;
+      max-width: 680px;
+      line-height: 1.6;
+      margin-bottom: 30px;
+    }
+    .landing-hero-actions {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      margin-bottom: 40px;
+      flex-wrap: wrap;
+      justify-content: center;
+    }
+    .btn-hero-primary {
+      background: linear-gradient(180deg, #c8aa6e 0%, #785a28 100%);
+      border: 2px solid #f0e6d2;
+      color: #010a13;
+      font-family: var(--lol-font-title);
+      font-size: 15px;
+      font-weight: 900;
+      letter-spacing: 2px;
+      padding: 14px 36px;
+      border-radius: 4px;
+      cursor: pointer;
+      box-shadow: 0 0 25px rgba(200, 170, 110, 0.6);
+      transition: all 0.2s;
+    }
+    .btn-hero-primary:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 0 40px rgba(200, 170, 110, 0.9);
+      background: linear-gradient(180deg, #f0e6d2 0%, #c8aa6e 100%);
+    }
+    .btn-hero-wiki {
+      background: rgba(9, 20, 40, 0.85);
+      border: 2px solid #785a28;
+      color: #c8aa6e;
+      font-family: var(--lol-font-title);
+      font-size: 15px;
+      font-weight: 900;
+      letter-spacing: 2px;
+      padding: 14px 32px;
+      border-radius: 4px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .btn-hero-wiki:hover {
+      border-color: #0ac8b9;
+      color: #0ac8b9;
+      box-shadow: 0 0 25px rgba(10, 200, 185, 0.4);
+    }
+    .landing-stats-ribbon {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 30px;
+      padding: 16px 28px;
+      background: rgba(9, 20, 40, 0.7);
+      border: 1px solid #785a28;
+      border-radius: 8px;
+      box-shadow: 0 8px 30px rgba(0, 0, 0, 0.6);
+      flex-wrap: wrap;
+    }
+    .stat-pill {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+    .stat-pill-num {
+      font-family: var(--lol-font-title);
+      font-size: 20px;
+      font-weight: 900;
+      color: #c8aa6e;
+    }
+    .stat-pill-label {
+      font-family: var(--font-mono);
+      font-size: 10px;
+      color: #8896b3;
+      letter-spacing: 1px;
+    }
+
+    /* Landing Showcase Grid */
+    .landing-showcase-section {
+      max-width: 1200px;
+      margin: 20px auto 60px auto;
+      padding: 0 30px;
+      width: 100%;
+    }
+    .section-title-wrap {
+      text-align: center;
+      margin-bottom: 36px;
+    }
+    .section-title {
+      font-family: var(--lol-font-title);
+      font-size: 26px;
+      font-weight: 900;
+      letter-spacing: 3px;
+      color: #f0e6d2;
+      text-transform: uppercase;
+    }
+    .section-subtitle {
+      font-family: var(--font-title);
+      font-size: 13px;
+      color: #0ac8b9;
+      letter-spacing: 1.5px;
+      margin-top: 6px;
+    }
+    .showcase-cards-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+      gap: 20px;
+    }
+    .showcase-card {
+      background: rgba(9, 20, 40, 0.85);
+      border: 1.5px solid #785a28;
+      border-radius: 8px;
+      padding: 24px 20px;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.7);
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
+      transition: all 0.25s cubic-bezier(0.18, 0.89, 0.32, 1.28);
+      position: relative;
+      overflow: hidden;
+    }
+    .showcase-card:hover {
+      transform: translateY(-4px);
+      border-color: #c8aa6e;
+      box-shadow: 0 14px 40px rgba(200, 170, 110, 0.25);
+    }
+    .showcase-card-icon {
+      font-size: 32px;
+      margin-bottom: 14px;
+      display: inline-block;
+      filter: drop-shadow(0 0 10px rgba(200, 170, 110, 0.5));
+    }
+    .showcase-card-title {
+      font-family: var(--lol-font-title);
+      font-size: 17px;
+      font-weight: 900;
+      color: #f0e6d2;
+      letter-spacing: 1px;
+      margin-bottom: 8px;
+      text-transform: uppercase;
+    }
+    .showcase-card-desc {
+      font-size: 13px;
+      color: #8896b3;
+      line-height: 1.55;
+      margin-bottom: 14px;
+    }
+    .showcase-card-tag {
+      font-family: var(--font-mono);
+      font-size: 10px;
+      font-weight: 700;
+      color: #0ac8b9;
+      background: rgba(10, 200, 185, 0.1);
+      border: 1px solid rgba(10, 200, 185, 0.3);
+      padding: 3px 8px;
+      border-radius: 4px;
+      align-self: flex-start;
+      margin-top: auto;
+    }
+
+    /* --------------------------------------------------------------------------
+       10. Game Wiki Modal & Codex
+       -------------------------------------------------------------------------- */
+    #game-wiki-modal {
+      position: fixed;
+      inset: 0;
+      z-index: 1100;
+      background: rgba(1, 10, 19, 0.94);
+      backdrop-filter: blur(16px);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+    }
+    .wiki-container {
+      width: min(94vw, 1040px);
+      height: min(92vh, 760px);
+      background: #010a13;
+      border: 2px solid #c8aa6e;
+      border-radius: 8px;
+      box-shadow: 0 12px 60px rgba(0, 0, 0, 0.95), inset 0 0 30px rgba(200, 170, 110, 0.15);
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+    .wiki-header {
+      padding: 16px 24px;
+      background: rgba(9, 20, 40, 0.95);
+      border-bottom: 2px solid #785a28;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .wiki-title-group h2 {
+      font-family: var(--lol-font-title);
+      font-size: 20px;
+      font-weight: 900;
+      letter-spacing: 2px;
+      color: #f0e6d2;
+      text-transform: uppercase;
+      text-shadow: 0 0 12px rgba(200, 170, 110, 0.5);
+    }
+    .wiki-title-group span {
+      font-family: var(--font-title);
+      font-size: 11px;
+      color: #0ac8b9;
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+    }
+    .btn-close-wiki {
+      background: rgba(1, 10, 19, 0.8);
+      border: 1px solid #785a28;
+      color: #f0e6d2;
+      width: 32px;
+      height: 32px;
+      border-radius: 4px;
+      font-size: 16px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.15s;
+    }
+    .btn-close-wiki:hover {
+      border-color: #ff0054;
+      color: #ff0054;
+    }
+    .wiki-nav-tabs {
+      display: flex;
+      gap: 2px;
+      background: #030a13;
+      padding: 4px 16px 0 16px;
+      border-bottom: 1px solid #785a28;
+      overflow-x: auto;
+    }
+    .wiki-tab {
+      background: rgba(9, 20, 40, 0.5);
+      border: 1px solid #785a28;
+      border-bottom: none;
+      color: #8896b3;
+      font-family: var(--lol-font-title);
+      font-size: 11px;
+      font-weight: 900;
+      letter-spacing: 1.5px;
+      padding: 10px 18px;
+      border-top-left-radius: 4px;
+      border-top-right-radius: 4px;
+      cursor: pointer;
+      transition: all 0.15s;
+      white-space: nowrap;
+    }
+    .wiki-tab.active {
+      background: #010a13;
+      border-color: #c8aa6e;
+      color: #f0e6d2;
+      box-shadow: 0 -2px 10px rgba(200, 170, 110, 0.2);
+    }
+    .wiki-content-area {
+      flex: 1;
+      padding: 24px;
+      overflow-y: auto;
+      background: #010a13;
+      color: #f0e6d2;
+    }
+    .wiki-tab-panel {
+      display: none;
+      flex-direction: column;
+      gap: 20px;
+    }
+    .wiki-tab-panel.active {
+      display: flex;
+    }
+    .wiki-section-card {
+      background: rgba(9, 20, 40, 0.7);
+      border: 1px solid #785a28;
+      border-radius: 6px;
+      padding: 16px 20px;
+    }
+    .wiki-section-card h3 {
+      font-family: var(--lol-font-title);
+      font-size: 16px;
+      font-weight: 900;
+      letter-spacing: 1px;
+      color: #c8aa6e;
+      margin-bottom: 8px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .wiki-section-card p {
+      font-size: 13px;
+      color: #cbd5e1;
+      line-height: 1.6;
+      margin-bottom: 12px;
+    }
+    .wiki-recipe-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 12px;
+      margin-top: 10px;
+    }
+    .wiki-recipe-table th {
+      text-align: left;
+      padding: 8px 10px;
+      background: rgba(200, 170, 110, 0.1);
+      color: #c8aa6e;
+      font-family: var(--lol-font-title);
+      border-bottom: 1px solid #785a28;
+    }
+    .wiki-recipe-table td {
+      padding: 8px 10px;
+      border-bottom: 1px solid rgba(120, 90, 40, 0.3);
+      color: #f0e6d2;
+    }
+
+    /* --------------------------------------------------------------------------
+       11. AAA Client Full-Screen Lobby Styling
+       -------------------------------------------------------------------------- */
+    .lol-client-lobby {
+      position: fixed;
+      inset: 0;
+      width: 100vw;
+      height: 100vh;
+      background: radial-gradient(circle at center, #091428 0%, #010a13 85%);
+      display: flex;
+      flex-direction: column;
+      z-index: 500;
+      overflow: hidden;
+    }
+    .lol-client-header {
+      width: 100%;
+      height: 60px;
+      background: rgba(1, 10, 19, 0.95);
+      border-bottom: 2px solid #785a28;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 0 24px;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.8);
+      z-index: 20;
+    }
+    .lol-client-branding {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .lol-client-logo {
+      font-family: var(--lol-font-title);
+      font-size: 20px;
+      font-weight: 900;
+      letter-spacing: 3px;
+      color: #f0e6d2;
+      text-shadow: 0 0 15px rgba(200, 170, 110, 0.5);
+    }
+    .lol-client-nav {
+      display: flex;
+      gap: 8px;
+    }
+    .btn-client-tab {
+      background: rgba(9, 20, 40, 0.7);
+      border: 1px solid #785a28;
+      color: #c8aa6e;
+      font-family: var(--lol-font-title);
+      font-size: 11px;
+      font-weight: 900;
+      letter-spacing: 1.5px;
+      padding: 7px 16px;
+      border-radius: 4px;
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+    .btn-client-tab.active, .btn-client-tab:hover {
+      border-color: #c8aa6e;
+      color: #f0e6d2;
+      background: rgba(200, 170, 110, 0.15);
+      box-shadow: 0 0 12px rgba(200, 170, 110, 0.3);
+    }
+    .lol-client-profile-capsule {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      background: rgba(9, 20, 40, 0.8);
+      border: 1px solid #785a28;
+      border-radius: 20px;
+      padding: 4px 14px 4px 6px;
+    }
+    .client-avatar-circle {
+      width: 34px;
+      height: 34px;
+      border-radius: 50%;
+      border: 2px solid #0ac8b9;
+      background: #010a13;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 16px;
+    }
+    .client-name-input {
+      background: none;
+      border: none;
+      color: #f0e6d2;
+      font-family: var(--font-title);
+      font-size: 13px;
+      font-weight: 700;
+      outline: none;
+      width: 130px;
+    }
+    .client-tier-badge {
+      font-family: var(--font-mono);
+      font-size: 9px;
+      font-weight: 900;
+      color: #ffb703;
+      background: rgba(255, 183, 3, 0.15);
+      border: 1px solid rgba(255, 183, 3, 0.4);
+      padding: 2px 6px;
+      border-radius: 8px;
+    }
+
+    /* Lobby Main Stage Split (Left Champion Showcase + Right Match Queue) */
+    .lol-client-body {
+      flex: 1;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 24px;
+      padding: 20px 30px;
+      overflow-y: auto;
+      max-width: 1400px;
+      width: 100%;
+      margin: 0 auto;
+    }
+    .lol-stage-left, .lol-stage-right {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    /* Champion Showcase Card */
+    .champion-showcase-card {
+      background: linear-gradient(135deg, rgba(9, 20, 40, 0.95) 0%, rgba(1, 10, 19, 0.95) 100%);
+      border: 2px solid #785a28;
+      border-radius: 8px;
+      padding: 20px;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.8), inset 0 0 20px rgba(200, 170, 110, 0.1);
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+      position: relative;
+    }
+    .showcase-banner-top {
+      display: flex;
+      align-items: center;
+      gap: 18px;
+    }
+    .showcase-avatar-pod {
+      width: 80px;
+      height: 80px;
+      border-radius: 50%;
+      border: 3px solid #c8aa6e;
+      background: #010a13;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 40px;
+      box-shadow: 0 0 25px rgba(200, 170, 110, 0.5);
+      flex-shrink: 0;
+    }
+    .showcase-info-col h3 {
+      font-family: var(--lol-font-title);
+      font-size: 20px;
+      font-weight: 900;
+      color: #f0e6d2;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+    }
+    .showcase-role-pill {
+      font-family: var(--font-title);
+      font-size: 11px;
+      font-weight: 700;
+      color: #0ac8b9;
+      background: rgba(10, 200, 185, 0.12);
+      border: 1px solid rgba(10, 200, 185, 0.4);
+      padding: 2px 8px;
+      border-radius: 4px;
+      display: inline-block;
+      margin-top: 4px;
+    }
+    .showcase-desc-text {
+      font-size: 13px;
+      color: #8896b3;
+      line-height: 1.5;
+    }
+    .showcase-special-box {
+      background: rgba(1, 10, 19, 0.7);
+      border: 1px solid #3c301c;
+      border-radius: 6px;
+      padding: 10px 14px;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+    .showcase-special-lbl {
+      font-family: var(--lol-font-title);
+      font-size: 10px;
+      font-weight: 900;
+      color: #ffb703;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+    }
+    .showcase-special-name {
+      font-family: var(--font-title);
+      font-size: 13px;
+      font-weight: 700;
+      color: #f0e6d2;
+    }
+
+    /* Right Column: Match Queue & Action Launch */
+    .match-finder-card {
+      background: rgba(9, 20, 40, 0.9);
+      border: 2px solid #785a28;
+      border-radius: 8px;
+      padding: 20px;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.8);
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+    .btn-launch-arena {
+      background: linear-gradient(180deg, #c8aa6e 0%, #785a28 100%);
+      border: 2px solid #f0e6d2;
+      color: #010a13;
+      font-family: var(--lol-font-title);
+      font-size: 16px;
+      font-weight: 900;
+      letter-spacing: 3px;
+      padding: 16px 28px;
+      border-radius: 4px;
+      cursor: pointer;
+      box-shadow: 0 0 30px rgba(200, 170, 110, 0.6);
+      transition: all 0.2s cubic-bezier(0.18, 0.89, 0.32, 1.28);
+      text-transform: uppercase;
+      width: 100%;
+      margin-top: 8px;
+    }
+    .btn-launch-arena:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 0 50px rgba(200, 170, 110, 0.9);
+      background: linear-gradient(180deg, #f0e6d2 0%, #c8aa6e 100%);
+    }
+
+    /* --------------------------------------------------------------------------
+       12. Responsive Mobile Landscape Tuning & Gameplay Centering
+       -------------------------------------------------------------------------- */
+    @media (max-width: 950px), (max-height: 520px) {
+      /* Ensure viewport strictly matches without horizontal overflow */
+      html, body, #canvas-container, #ui-layer {
+        width: 100vw !important;
+        max-width: 100vw !important;
+        overflow-x: hidden !important;
+      }
+
+      /* Compact Top HUD in Mobile Landscape */
+      .lol-top-hud {
+        padding: 4px 10px !important;
+        height: 36px !important;
+      }
+      .team-score {
+        font-size: 13px !important;
+      }
+      .team-label {
+        font-size: 9px !important;
+      }
+      .lol-match-timer {
+        font-size: 12px !important;
+        padding: 2px 6px !important;
+        gap: 3px !important;
+      }
+      .wave-name {
+        font-size: 9px !important;
+      }
+      .wave-progress-bar {
+        width: 45px !important;
+        height: 3px !important;
+      }
+      .threats-badge {
+        font-size: 9px !important;
+        padding: 1px 4px !important;
+      }
+      .lol-cs-badge {
+        font-size: 10px !important;
+      }
+      .lol-perf-badge, #btn-lol-help {
+        display: none !important;
+      }
+      .btn-lol-icon {
+        width: 26px !important;
+        height: 26px !important;
+        font-size: 12px !important;
+      }
+
+      /* Compact Bottom Champion Console */
+      .lol-bottom-console {
+        transform: translateX(-50%) scale(0.7) !important;
+        transform-origin: bottom center !important;
+        bottom: 2px !important;
+        padding: 4px 8px !important;
+        gap: 6px !important;
+        max-width: calc(100vw - 120px) !important;
+      }
+      .lol-champ-wing .lol-stats-box {
+        display: none !important;
+      }
+      .lol-portrait-frame {
+        width: 44px !important;
+        height: 44px !important;
+      }
+      .lol-level-seal {
+        width: 18px !important;
+        height: 18px !important;
+        font-size: 10px !important;
+      }
+      .lol-vitals-bars {
+        width: 180px !important;
+        gap: 2px !important;
+      }
+      .lol-bar-track {
+        height: 11px !important;
+      }
+      .lol-bar-num {
+        font-size: 9px !important;
+      }
+      .lol-spell-slot {
+        width: 32px !important;
+        height: 32px !important;
+      }
+      .lol-spell-icon {
+        font-size: 14px !important;
+      }
+      .lol-passive-slot {
+        width: 26px !important;
+        height: 26px !important;
+      }
+      .lol-summoner-slot, .lol-recall-slot {
+        width: 28px !important;
+        height: 28px !important;
+      }
+      .lol-spell-pips {
+        display: none !important;
+      }
+      .lol-key-label {
+        font-size: 7px !important;
+        padding: 0 2px !important;
+        bottom: -3px !important;
+      }
+      .lol-items-grid {
+        grid-template-columns: repeat(4, 22px) !important;
+        gap: 2px !important;
+      }
+      .lol-item-slot {
+        width: 22px !important;
+        height: 22px !important;
+      }
+      .lol-item-icon {
+        font-size: 11px !important;
+      }
+      .lol-gold-row {
+        padding: 1px 4px !important;
+      }
+      .lol-gold-amount {
+        font-size: 9px !important;
+      }
+      .lol-minerals-mini {
+        display: none !important;
+      }
+
+      /* Compact Minimap on Mobile Landscape */
+      .lol-minimap-container {
+        width: 105px !important;
+        height: 105px !important;
+        bottom: 8px !important;
+        right: 8px !important;
+        background: rgba(1, 10, 19, 0.75) !important;
+        backdrop-filter: blur(4px) !important;
+      }
+      #lol-minimap-canvas {
+        width: 105px !important;
+        height: 105px !important;
+      }
+      .btn-minimap-action {
+        width: 16px !important;
+        height: 16px !important;
+        font-size: 8px !important;
+      }
+
+      /* Touch Joystick positioned cleanly on the bottom-left */
+      #joystick-zone {
+        bottom: 8px !important;
+        left: 8px !important;
+        width: 90px !important;
+        height: 90px !important;
+      }
+      .joystick-base {
+        width: 80px !important;
+        height: 80px !important;
+      }
+      .joystick-knob {
+        width: 32px !important;
+        height: 32px !important;
+      }
+
+      /* Client Lobby Split adjustments for Mobile Landscape */
+      .lol-client-body {
+        grid-template-columns: 1fr 1fr !important;
+        gap: 12px !important;
+        padding: 8px 14px !important;
+      }
+      .champion-showcase-card {
+        padding: 10px 14px !important;
+      }
+      .showcase-avatar-pod {
+        width: 50px !important;
+        height: 50px !important;
+        font-size: 26px !important;
+      }
+      .showcase-info-col h3 {
+        font-size: 14px !important;
+      }
+      .showcase-desc-text {
+        font-size: 11px !important;
+      }
+      .class-grid {
+        grid-template-columns: repeat(3, 1fr) !important;
+        gap: 6px !important;
+      }
+      .class-card {
+        padding: 6px !important;
+      }
+      .class-card-icon {
+        font-size: 20px !important;
+      }
+      .class-card-name {
+        font-size: 11px !important;
+      }
+      .class-card-desc, .class-card-special {
+        display: none !important;
+      }
     }
   </style>
 </head>
 <body>
+
+  <!-- MOBILE ORIENTATION LOCK SCREEN (Forces Horizontal Landscape Mode) -->
+  <div id="orientation-lock-screen">
+    <div class="orient-device-wrapper">
+      <div class="orient-phone-icon">
+        <div class="orient-phone-notch"></div>
+        <div class="orient-phone-screen">🔄</div>
+      </div>
+    </div>
+    <div class="orient-lock-title">Orientation Locked</div>
+    <div class="orient-lock-msg">Please Rotate Your Device to Landscape</div>
+    <div class="orient-lock-desc">Broadroads Arena is engineered for widescreen horizontal tactical combat. Rotate your phone horizontally to enter the arena.</div>
+  </div>
+
+  <!-- GAME LANDING PAGE & SHOWCASE VIEW -->
+  <div id="landing-page" style="display: flex;">
+    <header class="landing-header">
+      <div class="landing-brand">
+        <span style="font-size: 24px;">⚔️</span>
+        <div class="landing-logo">BROADROADS</div>
+        <div class="landing-season-pill" id="landing-season-pill">HALLOWED DUSK • SEASON I</div>
+      </div>
+      <div class="landing-nav-links">
+        <button class="landing-nav-link" id="nav-btn-champions">Champions</button>
+        <button class="landing-nav-link" id="nav-btn-minerals">Minerals & Forge</button>
+        <button class="landing-nav-link" id="nav-btn-bestiary">Bestiary</button>
+        <button class="landing-nav-link" id="nav-btn-wiki">Game Wiki</button>
+        <button class="btn-landing-cta" id="btn-landing-enter">⚔️ ENTER ARENA</button>
+      </div>
+    </header>
+
+    <div class="landing-hero">
+      <div class="landing-hero-tag">ISOMETRIC GEAR REFINERY ARENA</div>
+      <h1 class="landing-hero-title">Forge Your Legend In The Runic Arena</h1>
+      <p class="landing-hero-desc">
+        Command iconic Champions in high-octane wave combat. Slay void horrors, harvest elemental mineral ores, and channel the ancient Anvil crucible to forge legendary weapons, energy shields, and cosmic catalysts.
+      </p>
+      <div class="landing-hero-actions">
+        <button class="btn-hero-primary" id="btn-hero-play">⚔️ ENTER THE ARENA</button>
+        <button class="btn-hero-wiki" id="btn-hero-wiki-open">📜 EXPLORE GAME WIKI</button>
+      </div>
+
+      <div class="landing-stats-ribbon">
+        <div class="stat-pill">
+          <span class="stat-pill-num">12</span>
+          <span class="stat-pill-label">SEASONAL REALMS</span>
+        </div>
+        <div class="stat-pill">
+          <span class="stat-pill-num">36</span>
+          <span class="stat-pill-label">CHAMPION ROSTERS</span>
+        </div>
+        <div class="stat-pill">
+          <span class="stat-pill-num">4</span>
+          <span class="stat-pill-label">ELEMENTAL ORES</span>
+        </div>
+        <div class="stat-pill">
+          <span class="stat-pill-num">1-4</span>
+          <span class="stat-pill-label">SQUAD CO-OP</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Showcase Grid -->
+    <div class="landing-showcase-section">
+      <div class="section-title-wrap">
+        <h2 class="section-title">Battlefield Pillars & Features</h2>
+        <div class="section-subtitle">MASTER THE CORE PILLARS OF BROADROADS</div>
+      </div>
+
+      <div class="showcase-cards-grid">
+        <div class="showcase-card">
+          <div class="showcase-card-icon">🛡️</div>
+          <div class="showcase-card-title">Runic Champions</div>
+          <div class="showcase-card-desc">
+            Choose from heavy Vanguards, agile Marksmen, and devastating Arcanists. Each hero commands unique strike combos, tactical dash evasions, radial novas, and the game-altering Celestial Overcharge ultimate.
+          </div>
+          <div class="showcase-card-tag">ROLE MASTERY</div>
+        </div>
+
+        <div class="showcase-card">
+          <div class="showcase-card-icon">💎</div>
+          <div class="showcase-card-title">Mineral Alchemy</div>
+          <div class="showcase-card-desc">
+            Defeated horrors drop raw elemental essence: Pyrite (Attack Power), Aether (Shields & Cooldowns), Titanium (Armor & Fortitude), and Catalyst (Cosmic Might). Harvest ore before the wave concludes.
+          </div>
+          <div class="showcase-card-tag">ORE HARVESTING</div>
+        </div>
+
+        <div class="showcase-card">
+          <div class="showcase-card-icon">⚡</div>
+          <div class="showcase-card-title">The Gear Refinery</div>
+          <div class="showcase-card-desc">
+            Between ferocious combat waves, stand at the ancient central Anvil to transmute minerals into upgraded blades, fortified plate armor, and haste relics. Forge the ideal build for your playstyle.
+          </div>
+          <div class="showcase-card-tag">ANVIL CRUCIBLE</div>
+        </div>
+
+        <div class="showcase-card">
+          <div class="showcase-card-icon">💀</div>
+          <div class="showcase-card-title">Overlord Showdown</div>
+          <div class="showcase-card-desc">
+            Survive five escalating assault waves culminating in the confrontation against Ignis Rex, the Anvil Overlord. Dodge ground slams, clear minion swarms, and claim arena glory.
+          </div>
+          <div class="showcase-card-tag">EPIC BOSS ENCOUNTERS</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- GAME WIKI & CODEX MODAL (Zero Technical Jargon) -->
+  <div id="game-wiki-modal">
+    <div class="wiki-container">
+      <div class="wiki-header">
+        <div class="wiki-title-group">
+          <h2><span>📜</span> RUNIC ENCYCLOPEDIA & ARENA CODEX</h2>
+          <span>OFFICIAL GUIDE TO BROADROADS CHAMPIONS, ALCHEMY & COMBAT</span>
+        </div>
+        <button class="btn-close-wiki" id="btn-close-wiki" title="Close Codex">✕</button>
+      </div>
+
+      <div class="wiki-nav-tabs">
+        <button class="wiki-tab active" data-tab="wiki-champions">🛡️ Champions & Roles</button>
+        <button class="wiki-tab" data-tab="wiki-minerals">💎 Minerals & Forge Recipes</button>
+        <button class="wiki-tab" data-tab="wiki-combat">⚔️ Combat & Strategy</button>
+        <button class="wiki-tab" data-tab="wiki-bosses">💀 Overlords & Bestiary</button>
+      </div>
+
+      <div class="wiki-content-area">
+        <!-- Tab 1: Champions -->
+        <div class="wiki-tab-panel active" id="wiki-champions">
+          <div class="wiki-section-card">
+            <h3><span>🛡️</span> Champion Archetypes & Playstyles</h3>
+            <p>Every champion in Broadroads brings specialized tactical strengths to the arena floor:</p>
+            <ul style="list-style: none; display: flex; flex-direction: column; gap: 10px; margin-top: 8px;">
+              <li><strong>⚔️ Melee Vanguard (Paladin / Bruiser):</strong> Frontline juggernauts equipped with heavy shields and sweeping blades. High base armor, defensive barrier regeneration, and crowd-clearing radial slashes. Ideal for holding the central Anvil.</li>
+              <li><strong>🏹 Ranged Marksman (Gunner / Ranger):</strong> High mobility skirmishers armed with twin blasters or celestial bows. Excellent at kiting foes from afar, executing priority threats, and dodging danger zones.</li>
+              <li><strong>🔮 Arcane Arcanist (Mage / Seer):</strong> High burst spellcasters commanding elemental singularities and gravitational rifts. Unmatched area-of-effect wave destruction and enemy grouping.</li>
+            </ul>
+          </div>
+          <div class="wiki-section-card">
+            <h3><span>⚡</span> The Celestial Overcharge (Ultimate)</h3>
+            <p>When the combat energy threshold is reached (Key: R), your champion channels the celestial ley lines for 10 seconds: granting +60% Attack Damage, +40% Movement Speed, an instant radial shockwave, and a radiant golden combat aura.</p>
+          </div>
+        </div>
+
+        <!-- Tab 2: Minerals & Recipes -->
+        <div class="wiki-tab-panel" id="wiki-minerals">
+          <div class="wiki-section-card">
+            <h3><span>💎</span> The Four Elemental Minerals</h3>
+            <p>Slain enemies release crystallized elemental energy across the arena:</p>
+            <ul style="list-style: none; display: flex; flex-direction: column; gap: 8px; margin-top: 6px;">
+              <li><strong style="color: #fb8500;">🔥 Pyrite Ore:</strong> Concentrated fire essence. Empowers blade sharpness, physical attack damage, and critical strikes.</li>
+              <li><strong style="color: #00f5d4;">💧 Aether Shard:</strong> Flowing liquid crystal. Bolsters energetic shields, spell haste, and dash cooldown recovery.</li>
+              <li><strong style="color: #38b000;">🛡️ Titanium Crystal:</strong> Hardened earthen geomatter. Grants maximum health pools, damage reduction plating, and tenacity.</li>
+              <li><strong style="color: #a855f7;">✨ Catalyst Core:</strong> Rare celestial relic ore. Multiplies ultimate power and unlocks legendary passive enchantments.</li>
+            </ul>
+          </div>
+          <div class="wiki-section-card">
+            <h3><span>🔨</span> Crucible Forge Recipes</h3>
+            <p>At the conclusion of each wave, channel mineral pairs at the Refinery to forge upgraded gear:</p>
+            <table class="wiki-recipe-table">
+              <thead>
+                <tr>
+                  <th>Mineral Pair</th>
+                  <th>Crafted Equipment</th>
+                  <th>Combat Enchantment</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>🔥 Pyrite + 🔥 Pyrite</td>
+                  <td>Infernal Greatsword</td>
+                  <td>+35% Primary Attack Damage</td>
+                </tr>
+                <tr>
+                  <td>🔥 Pyrite + 💧 Aether</td>
+                  <td>Storm Cleaver</td>
+                  <td>+20% Attack Damage, +15% Attack Speed</td>
+                </tr>
+                <tr>
+                  <td>🛡️ Titanium + 🛡️ Titanium</td>
+                  <td>Aegis of the Colossus</td>
+                  <td>+60 Maximum Health, +20 Physical Armor</td>
+                </tr>
+                <tr>
+                  <td>🛡️ Titanium + 💧 Aether</td>
+                  <td>Runic Energy Ward</td>
+                  <td>+40 Shield Capacity, +15% Cooldown Haste</td>
+                </tr>
+                <tr>
+                  <td>✨ Catalyst + 🔥 Pyrite</td>
+                  <td>Sunfire Catalyst</td>
+                  <td>Emits searing heat waves damaging adjacent monsters</td>
+                </tr>
+                <tr>
+                  <td>✨ Catalyst + 🛡️ Titanium</td>
+                  <td>Immortal Core</td>
+                  <td>Grants temporary invulnerability barrier on critical health</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Tab 3: Combat Strategy -->
+        <div class="wiki-tab-panel" id="wiki-combat">
+          <div class="wiki-section-card">
+            <h3><span>🎯</span> Navigation & Controls</h3>
+            <p>Broadroads features an intuitive RTS hybrid control scheme:</p>
+            <ul style="list-style: none; display: flex; flex-direction: column; gap: 8px; margin-top: 6px;">
+              <li><strong>Right-Click Ground:</strong> Issues a precision League-of-Legends target movement command with an animated green ripple.</li>
+              <li><strong>Right-Click Enemy:</strong> Automatically approaches and locks onto the selected horror to strike.</li>
+              <li><strong>WASD / Touch Joystick:</strong> Direct manual directional movement for dodging skillshots.</li>
+              <li><strong>Q / Space / Left Click:</strong> Primary weapon strike.</li>
+              <li><strong>W / Shift / D:</strong> Tactical dash with invulnerability frames.</li>
+              <li><strong>E:</strong> Unleashes a radial shockwave nova pushing enemies back.</li>
+              <li><strong>R:</strong> Triggers the Celestial Overcharge ultimate.</li>
+              <li><strong>F:</strong> Toggles Auto-Attack target locking.</li>
+              <li><strong>B:</strong> Channels return to the Refinery forge.</li>
+            </ul>
+          </div>
+          <div class="wiki-section-card">
+            <h3><span>👥</span> Squad Survival & Revivals</h3>
+            <p>In online co-op, downed squadmates enter a revival state. Surviving allies can stand inside their revival ring for 3 seconds to restore them directly into combat!</p>
+          </div>
+        </div>
+
+        <!-- Tab 4: Bestiary -->
+        <div class="wiki-tab-panel" id="wiki-bosses">
+          <div class="wiki-section-card">
+            <h3><span>👾</span> Void Horrors & Minion Threats</h3>
+            <p>Horrors emerge from outer portals seeking to extinguish the central Anvil:</p>
+            <ul style="list-style: none; display: flex; flex-direction: column; gap: 8px; margin-top: 6px;">
+              <li><strong>Void Crawlers:</strong> Swarming fast melee minions that close distance quickly. Easy to cleave down with Novas.</li>
+              <li><strong>Corrupted Stalkers:</strong> Armored beasts with lunging attacks. Requires dodging before landing heavy strikes.</li>
+              <li><strong>Spire Artillery:</strong> Distant horrors that launch explosive mortar projectiles across the arena floor.</li>
+            </ul>
+          </div>
+          <div class="wiki-section-card">
+            <h3><span>💀</span> Ignis Rex - Anvil Overlord</h3>
+            <p>The colossal wave 5 Overlord towers above the arena with three deadly combat phases:</p>
+            <ul style="list-style: none; display: flex; flex-direction: column; gap: 8px; margin-top: 6px;">
+              <li><strong>Phase 1 (Anvil Slam):</strong> Ignis slams the earth, producing expanding magma shockwaves. Jump or dash over the wave.</li>
+              <li><strong>Phase 2 (Molten Swarm):</strong> Portals erupt around Ignis summoning elite escort horrors. Focus down the escorts while maintaining distance.</li>
+              <li><strong>Phase 3 (Enraged Core):</strong> Below 30% health, Ignis radiates continuous heat damage. Pop Celestial Overcharge (R) and focus all damage to claim victory!</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
 
   <div id="canvas-container"></div>
   <div id="anvil-flash" class="anvil-flash"></div>
@@ -3329,93 +4530,131 @@
     </div>
   </div>
 
-  <!-- START GAME & MODE / CLASS SELECTOR MODAL -->
-  <div class="modal-overlay" id="start-modal" style="display: flex;">
-    <div class="menu-card">
-      <h1 class="game-logo">BROADROADS</h1>
-      <div class="game-subtitle" id="theme-season-subtitle">ISOMETRIC GEAR REFINERY ARENA</div>
-
-      <!-- Commander Profile & Monthly Season Selector -->
-      <div class="commander-profile-bar">
-        <div class="profile-input-wrap">
-          <span class="profile-icon">👤</span>
-          <input type="text" id="input-username" class="username-input" placeholder="Commander Username (required)" maxlength="15" autocomplete="off" spellcheck="false">
-        </div>
+  <!-- AAA CLIENT FULL-SCREEN LOBBY SCREEN (League Client Aesthetics) -->
+  <div class="modal-overlay lol-client-lobby" id="start-modal" style="display: none;">
+    <!-- Top Client Bar -->
+    <header class="lol-client-header">
+      <div class="lol-client-branding">
+        <span style="font-size: 22px;">⚔️</span>
+        <div class="lol-client-logo">BROADROADS</div>
         <div class="theme-month-display" id="season-month-display">
           <span class="theme-month-icon" id="theme-season-icon">🎃</span>
           <div class="theme-month-info">
-            <span class="theme-month-label">ACTIVE ARENA SEASON</span>
+            <span class="theme-month-label">ACTIVE ARENA REALM</span>
             <span class="theme-month-name" id="theme-season-name">HALLOWED DUSK (OCTOBER)</span>
           </div>
         </div>
-      </div>
-      <div id="username-error-alert" class="username-error-alert" style="display: none;">⚠️ Commander username is required (min 2 characters)</div>
-
-      <!-- Mode Selector Tabs -->
-      <div class="mode-tabs">
-        <button class="tab-btn active" id="tab-solo">⚔️ SINGLE PLAYER</button>
-        <button class="tab-btn" id="tab-mp">🌐 ONLINE CO-OP (UP TO 4 PLAYERS)</button>
+        <div id="theme-season-subtitle" style="display: none;">ISOMETRIC GEAR REFINERY ARENA</div>
       </div>
 
-      <!-- Single Player Sub-Modes -->
-      <div class="tab-content" id="solo-panel">
-        <div class="mode-sub-grid">
-          <div class="sub-mode-card selected" id="sub-mode-classic" data-sub="classic">
-            <div class="sub-mode-title">🏆 Classic Survival</div>
-            <div class="sub-mode-desc">Survive 5 intense waves culminating in the Forge Overlord boss showdown.</div>
-          </div>
-          <div class="sub-mode-card" id="sub-mode-endless" data-sub="endless">
-            <div class="sub-mode-title">♾️ Endless Horde</div>
-            <div class="sub-mode-desc">Infinite scaling waves with recurring bosses. Test your ultimate refinery build!</div>
-          </div>
+      <div class="lol-client-nav">
+        <button class="btn-client-tab active" id="btn-client-nav-play">⚔️ ARENA</button>
+        <button class="btn-client-tab" id="btn-client-nav-wiki">📜 GAME WIKI</button>
+      </div>
+
+      <div style="display: flex; align-items: center; gap: 10px;">
+        <div class="lol-client-profile-capsule">
+          <div class="client-avatar-circle" id="client-avatar-badge">🛡️</div>
+          <input type="text" id="input-username" class="client-name-input" placeholder="Commander Name" maxlength="15" autocomplete="off" spellcheck="false">
+          <div class="client-tier-badge">CHALLENGER I</div>
         </div>
+        <button class="btn-client-tab" id="btn-lobby-home" title="Return to Landing Page">🏠 HOME</button>
       </div>
+    </header>
 
-      <!-- Multiplayer WebRTC Panel (Up to 4 Players) -->
-      <div class="tab-content" id="mp-panel" style="display: none;">
-        <div class="mp-panel">
-          <div class="mp-actions-row">
-            <button class="btn-mp-sub active" id="btn-host-room">Create Room (Host)</button>
-            <button class="btn-mp-sub" id="btn-join-room-tab">Join Room (Guest)</button>
-          </div>
+    <div id="username-error-alert" class="username-error-alert" style="display: none; margin: 10px auto 0 auto; width: 90%; max-width: 600px;">⚠️ Commander username is required (min 2 characters)</div>
 
-          <!-- Host View -->
-          <div id="host-view">
-            <div style="font-size: 11px; color: var(--text-muted); margin-bottom: 4px;">SHARE ROOM NUMBER (UP TO 4 PLAYERS):</div>
-            <div class="room-code-box" id="display-room-code">
-              <span id="room-code-text">#......</span>
-              <button id="btn-copy-code" style="background: none; border: 1px solid var(--neon-cyan); color: var(--neon-cyan); border-radius: 6px; padding: 2px 8px; font-size: 11px; cursor: pointer;">COPY</button>
+    <!-- Main Client Stage -->
+    <div class="lol-client-body">
+      <!-- Left Stage: Champion Showcase & Roster -->
+      <div class="lol-stage-left">
+        <div class="champion-showcase-card">
+          <div class="showcase-banner-top">
+            <div class="showcase-avatar-pod" id="showcase-champ-avatar">🛡️</div>
+            <div class="showcase-info-col">
+              <h3 id="showcase-champ-name">CRYPT REAPER</h3>
+              <div class="showcase-role-pill" id="showcase-champ-role">MELEE VANGUARD / BRUISER</div>
             </div>
-            <!-- 4-Player Roster Slots -->
-            <div class="lobby-roster" id="host-lobby-roster"></div>
-            <div class="lobby-status-pill" id="host-status-pill" style="margin-top: 8px;">🟢 Room Live (1/4 Players). Ready to deploy!</div>
-            <button class="btn-lobby-action btn-host-launch" id="btn-host-launch">🚀 LAUNCH SQUAD BATTLE</button>
+          </div>
+          <div class="showcase-desc-text" id="showcase-champ-desc">
+            Heavy Bone Scythe & Tombstone Shield. Cursed sweeping harvests and high resistance to physical trauma.
+          </div>
+          <div class="showcase-special-box">
+            <div class="showcase-special-lbl">SIGNATURE ULTIMATE</div>
+            <div class="showcase-special-name" id="showcase-champ-special">Reaper Cataclysm • Radial soul rupture tearing the lifeforce of surrounding horrors.</div>
+          </div>
+        </div>
+
+        <div>
+          <div class="class-selection-title" id="class-selection-title">CHOOSE HERO CLASS & PLAYSTYLE</div>
+          <div class="class-grid" id="class-selection-grid">
+            <!-- Populated dynamically based on Season Theme -->
+          </div>
+        </div>
+      </div>
+
+      <!-- Right Stage: Match Finder & Squad Hub -->
+      <div class="lol-stage-right">
+        <div class="match-finder-card">
+          <!-- Mode Selector Tabs -->
+          <div class="mode-tabs">
+            <button class="tab-btn active" id="tab-solo">⚔️ SINGLE PLAYER</button>
+            <button class="tab-btn" id="tab-mp">🌐 ONLINE CO-OP (UP TO 4 PLAYERS)</button>
           </div>
 
-          <!-- Join View -->
-          <div id="join-view" style="display: none;">
-            <div style="font-size: 11px; color: var(--text-muted); margin-bottom: 4px;">ENTER ROOM NUMBER:</div>
-            <div class="join-input-group">
-              <input type="tel" inputmode="numeric" class="join-input" id="input-room-code" placeholder="e.g. 748201" pattern="[0-9]*" style="letter-spacing: 4px; font-weight: 900;">
-              <button class="btn-mp-sub" id="btn-connect-peer" style="flex: 0 0 100px;">CONNECT</button>
+          <!-- Single Player Sub-Modes -->
+          <div class="tab-content" id="solo-panel">
+            <div class="mode-sub-grid">
+              <div class="sub-mode-card selected" id="sub-mode-classic" data-sub="classic">
+                <div class="sub-mode-title">🏆 Classic Survival</div>
+                <div class="sub-mode-desc">Survive 5 intense waves culminating in the Forge Overlord boss showdown.</div>
+              </div>
+              <div class="sub-mode-card" id="sub-mode-endless" data-sub="endless">
+                <div class="sub-mode-title">♾️ Endless Horde</div>
+                <div class="sub-mode-desc">Infinite scaling waves with recurring bosses. Test your ultimate refinery build!</div>
+              </div>
             </div>
-            <!-- Guest Roster Slots -->
-            <div class="lobby-roster" id="guest-lobby-roster" style="margin-top: 8px;"></div>
-            <div class="lobby-status-pill" id="guest-status-pill" style="margin-top: 8px;">Enter room number above and click Ready</div>
-            <button class="btn-lobby-action btn-ready-toggle" id="btn-guest-ready">🔴 CLICK TO READY UP</button>
           </div>
+
+          <!-- Multiplayer WebRTC Panel (Up to 4 Players) -->
+          <div class="tab-content" id="mp-panel" style="display: none;">
+            <div class="mp-panel">
+              <div class="mp-actions-row">
+                <button class="btn-mp-sub active" id="btn-host-room">Create Room (Host)</button>
+                <button class="btn-mp-sub" id="btn-join-room-tab">Join Room (Guest)</button>
+              </div>
+
+              <!-- Host View -->
+              <div id="host-view">
+                <div style="font-size: 11px; color: var(--text-muted); margin-bottom: 4px;">SHARE ROOM NUMBER (UP TO 4 PLAYERS):</div>
+                <div class="room-code-box" id="display-room-code">
+                  <span id="room-code-text">#......</span>
+                  <button id="btn-copy-code" style="background: none; border: 1px solid var(--neon-cyan); color: var(--neon-cyan); border-radius: 6px; padding: 2px 8px; font-size: 11px; cursor: pointer;">COPY</button>
+                </div>
+                <!-- 4-Player Roster Slots -->
+                <div class="lobby-roster" id="host-lobby-roster"></div>
+                <div class="lobby-status-pill" id="host-status-pill" style="margin-top: 8px;">🟢 Room Live (1/4 Players). Ready to deploy!</div>
+                <button class="btn-lobby-action btn-host-launch" id="btn-host-launch">🚀 LAUNCH SQUAD BATTLE</button>
+              </div>
+
+              <!-- Join View -->
+              <div id="join-view" style="display: none;">
+                <div style="font-size: 11px; color: var(--text-muted); margin-bottom: 4px;">ENTER ROOM NUMBER:</div>
+                <div class="join-input-group">
+                  <input type="tel" inputmode="numeric" class="join-input" id="input-room-code" placeholder="e.g. 748201" pattern="[0-9]*" style="letter-spacing: 4px; font-weight: 900;">
+                  <button class="btn-mp-sub" id="btn-connect-peer" style="flex: 0 0 100px;">CONNECT</button>
+                </div>
+                <!-- Guest Roster Slots -->
+                <div class="lobby-roster" id="guest-lobby-roster" style="margin-top: 8px;"></div>
+                <div class="lobby-status-pill" id="guest-status-pill" style="margin-top: 8px;">Enter room number above and click Ready</div>
+                <button class="btn-lobby-action btn-ready-toggle" id="btn-guest-ready">🔴 CLICK TO READY UP</button>
+              </div>
+            </div>
+          </div>
+
+          <button class="btn-launch-arena" id="btn-start-game">⚔️ ENTER ARENA</button>
         </div>
       </div>
-
-      <!-- Hero Class Selection -->
-      <div>
-        <div class="class-selection-title" id="class-selection-title">CHOOSE HERO CLASS & PLAYSTYLE</div>
-        <div class="class-grid" id="class-selection-grid">
-          <!-- Populated dynamically based on Season Theme -->
-        </div>
-      </div>
-
-      <button class="btn-start" id="btn-start-game">ENTER ARENA</button>
     </div>
   </div>
 
@@ -4187,6 +5426,28 @@
       }
     }
 
+    function updateLobbyFeaturedChampion(cls) {
+      if (!cls) return;
+      const avatarEl = document.getElementById('showcase-champ-avatar');
+      const nameEl = document.getElementById('showcase-champ-name');
+      const roleEl = document.getElementById('showcase-champ-role');
+      const descEl = document.getElementById('showcase-champ-desc');
+      const specialEl = document.getElementById('showcase-champ-special');
+      const clientAvatar = document.getElementById('client-avatar-badge');
+
+      if (avatarEl) avatarEl.textContent = cls.icon || '🛡️';
+      if (clientAvatar) clientAvatar.textContent = cls.icon || '🛡️';
+      if (nameEl) nameEl.textContent = (cls.name || 'CHAMPION').toUpperCase();
+      if (roleEl) {
+        let role = '🛡️ MELEE VANGUARD / BRUISER';
+        if (cls.type === 'ranged') role = '🏹 RANGED MARKSMAN';
+        else if (cls.type === 'magic') role = '🔮 ARCANE MAGE';
+        roleEl.textContent = role;
+      }
+      if (descEl) descEl.textContent = cls.desc || '';
+      if (specialEl) specialEl.textContent = `${cls.special} • ${cls.specialDesc || 'Channels ultimate runic force.'}`;
+    }
+
     function renderClassSelectionCards(monthIndex) {
       const theme = MONTHLY_THEMES[monthIndex] || MONTHLY_THEMES[0];
       const grid = document.getElementById('class-selection-grid');
@@ -4217,6 +5478,7 @@
           state.selectedClassIndex = idx;
           state.heroClass = cls.id;
           state.activeClassData = cls;
+          updateLobbyFeaturedChampion(cls);
           if (typeof hero !== 'undefined' && hero) {
             hero.setClass(cls.id, cls);
           }
@@ -4228,6 +5490,7 @@
       // Default active class data
       state.activeClassData = theme.classes[state.selectedClassIndex] || theme.classes[0];
       state.heroClass = state.activeClassData.id;
+      updateLobbyFeaturedChampion(state.activeClassData);
     }
 
     function createNameplateSprite(username = 'Commander', isHost = false, colorHex = '#00f5d4') {
@@ -7561,14 +8824,150 @@
       startMatchWithLoadingScreen(() => resetGame());
     });
 
+    // --------------------------------------------------------------------------
+    // Mobile Landscape Orientation Controller
+    // --------------------------------------------------------------------------
+    function checkOrientation() {
+      const isMobile = (state.platform === 'mobile' || isMobileDevice() || window.innerWidth <= 900);
+      const isPortrait = window.innerHeight > window.innerWidth;
+      const orientOverlay = document.getElementById('orientation-lock-screen');
+      if (orientOverlay) {
+        orientOverlay.style.display = (isMobile && isPortrait) ? 'flex' : 'none';
+      }
+    }
+
+    // --------------------------------------------------------------------------
+    // Landing Page & Game Wiki Codex Controller
+    // --------------------------------------------------------------------------
+    function initLandingAndWikiController() {
+      const landingPage = document.getElementById('landing-page');
+      const startModal = document.getElementById('start-modal');
+      const wikiModal = document.getElementById('game-wiki-modal');
+
+      function openLobby() {
+        sound.init();
+        sound.playPickup();
+        if (landingPage) landingPage.style.display = 'none';
+        if (startModal) startModal.style.display = 'flex';
+        if (screen.orientation && screen.orientation.lock) {
+          screen.orientation.lock('landscape').catch(() => {});
+        }
+      }
+
+      function openLanding() {
+        sound.init();
+        sound.playPickup();
+        if (startModal) startModal.style.display = 'none';
+        if (landingPage) landingPage.style.display = 'flex';
+      }
+
+      function openWiki(tabId = 'wiki-champions') {
+        sound.init();
+        sound.playPickup();
+        if (wikiModal) {
+          wikiModal.style.display = 'flex';
+          switchWikiTab(tabId);
+        }
+      }
+
+      function closeWiki() {
+        sound.init();
+        sound.playPickup();
+        if (wikiModal) wikiModal.style.display = 'none';
+      }
+
+      function switchWikiTab(tabId) {
+        document.querySelectorAll('.wiki-tab').forEach(t => {
+          t.classList.toggle('active', t.dataset.tab === tabId);
+        });
+        document.querySelectorAll('.wiki-tab-panel').forEach(p => {
+          p.classList.toggle('active', p.id === tabId);
+        });
+      }
+
+      // Landing CTA triggers
+      const btnLandingEnter = document.getElementById('btn-landing-enter');
+      if (btnLandingEnter) btnLandingEnter.addEventListener('click', openLobby);
+      const btnHeroPlay = document.getElementById('btn-hero-play');
+      if (btnHeroPlay) btnHeroPlay.addEventListener('click', openLobby);
+
+      // Wiki Triggers
+      const btnLandingWiki = document.getElementById('btn-hero-wiki-open');
+      if (btnLandingWiki) btnLandingWiki.addEventListener('click', () => openWiki('wiki-champions'));
+      const navBtnWiki = document.getElementById('nav-btn-wiki');
+      if (navBtnWiki) navBtnWiki.addEventListener('click', () => openWiki('wiki-champions'));
+      const navBtnChamps = document.getElementById('nav-btn-champions');
+      if (navBtnChamps) navBtnChamps.addEventListener('click', () => openWiki('wiki-champions'));
+      const navBtnMins = document.getElementById('nav-btn-minerals');
+      if (navBtnMins) navBtnMins.addEventListener('click', () => openWiki('wiki-minerals'));
+      const navBtnBestiary = document.getElementById('nav-btn-bestiary');
+      if (navBtnBestiary) navBtnBestiary.addEventListener('click', () => openWiki('wiki-bosses'));
+
+      // Lobby navigation buttons
+      const btnLobbyHome = document.getElementById('btn-lobby-home');
+      if (btnLobbyHome) btnLobbyHome.addEventListener('click', openLanding);
+      const btnClientNavWiki = document.getElementById('btn-client-nav-wiki');
+      if (btnClientNavWiki) btnClientNavWiki.addEventListener('click', () => openWiki('wiki-champions'));
+      const btnClientNavPlay = document.getElementById('btn-client-nav-play');
+      if (btnClientNavPlay) btnClientNavPlay.addEventListener('click', openLobby);
+
+      // Close Wiki button
+      const btnCloseWiki = document.getElementById('btn-close-wiki');
+      if (btnCloseWiki) btnCloseWiki.addEventListener('click', closeWiki);
+
+      // Wiki Tab clicks
+      document.querySelectorAll('.wiki-tab').forEach(tab => {
+        tab.addEventListener('click', () => {
+          sound.playPickup();
+          switchWikiTab(tab.dataset.tab);
+        });
+      });
+
+      // Connect the in-match help button to open the Game Wiki!
+      const btnLolHelp = document.getElementById('btn-lol-help');
+      if (btnLolHelp) {
+        btnLolHelp.addEventListener('click', (e) => {
+          e.stopPropagation();
+          openWiki('wiki-combat');
+        });
+      }
+
+      // League Bottom Console direct click/tap triggers for abilities
+      const btnQ = document.getElementById('btn-lol-q');
+      if (btnQ) btnQ.addEventListener('pointerdown', (e) => { e.stopPropagation(); performHeroAttack(); });
+      const btnW = document.getElementById('btn-lol-w');
+      if (btnW) btnW.addEventListener('pointerdown', (e) => { e.stopPropagation(); performDash(); });
+      const btnE = document.getElementById('btn-lol-e');
+      if (btnE) btnE.addEventListener('pointerdown', (e) => { e.stopPropagation(); performSpecialNova(); });
+      const btnR = document.getElementById('btn-lol-r');
+      if (btnR) btnR.addEventListener('pointerdown', (e) => { e.stopPropagation(); performUltimate(); });
+      const btnD = document.getElementById('btn-lol-d');
+      if (btnD) btnD.addEventListener('pointerdown', (e) => { e.stopPropagation(); performDash(); });
+      const btnF = document.getElementById('btn-lol-f');
+      if (btnF) btnF.addEventListener('pointerdown', (e) => { e.stopPropagation(); toggleAutoAttack(); });
+      const btnB = document.getElementById('btn-lol-b');
+      if (btnB) btnB.addEventListener('pointerdown', (e) => {
+        e.stopPropagation();
+        if (state.phase === 'refinery') {
+          document.getElementById('refinery-modal').style.display = 'flex';
+        } else {
+          showLolBanner('RECALL CHANNELING', 'REFINERY FORGE OPENS AT WAVE END');
+        }
+      });
+
+      checkOrientation();
+    }
+
     // Initialize Theme & Class Selection for active month
     applyTheme(state.currentMonth);
     updateStartModalButtons();
+    initLandingAndWikiController();
 
     window.addEventListener('resize', () => {
       camera.aspect = window.innerWidth / window.innerHeight;
       camera.updateProjectionMatrix();
       renderer.setSize(window.innerWidth, window.innerHeight);
+      checkOrientation();
 
       const newPlat = detectPlatform();
       if (newPlat !== state.platform) {
@@ -7585,6 +8984,7 @@
         document.body.classList.remove('platform-desktop', 'platform-mobile');
         document.body.classList.add(state.platform === 'desktop' ? 'platform-desktop' : 'platform-mobile');
         updateStartModalButtons();
+        checkOrientation();
       }, 200);
     });
 
