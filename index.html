@@ -3554,6 +3554,121 @@
         overflow-x: hidden !important;
       }
 
+      /* Compact Landing Page on Mobile Landscape */
+      #landing-page::-webkit-scrollbar {
+        width: 4px;
+      }
+      #landing-page::-webkit-scrollbar-thumb {
+        background: rgba(200, 170, 110, 0.4);
+        border-radius: 2px;
+      }
+      .landing-header {
+        padding: 2px 10px !important;
+        height: 30px !important;
+      }
+      .landing-logo {
+        font-size: 13px !important;
+        letter-spacing: 1.5px !important;
+      }
+      .landing-season-pill {
+        display: none !important;
+      }
+      .landing-nav-links {
+        gap: 6px !important;
+      }
+      .landing-nav-links .landing-nav-link:not(.btn-landing-cta) {
+        display: none !important;
+      }
+      .btn-landing-cta {
+        padding: 3px 10px !important;
+        font-size: 9px !important;
+        letter-spacing: 0.8px !important;
+        height: 22px !important;
+        display: inline-flex !important;
+        align-items: center !important;
+      }
+      .landing-hero {
+        padding: 4px 10px 4px 10px !important;
+      }
+      .landing-hero-tag {
+        font-size: 8px !important;
+        letter-spacing: 1.5px !important;
+        margin-bottom: 1px !important;
+      }
+      .landing-hero-title {
+        font-size: 14px !important;
+        letter-spacing: 1px !important;
+        margin-bottom: 2px !important;
+        line-height: 1.15 !important;
+      }
+      .landing-hero-desc {
+        font-size: 9px !important;
+        line-height: 1.25 !important;
+        max-width: 520px !important;
+        margin-bottom: 5px !important;
+      }
+      .landing-hero-actions {
+        gap: 6px !important;
+        margin-bottom: 5px !important;
+      }
+      .btn-hero-primary, .btn-hero-wiki {
+        padding: 4px 12px !important;
+        font-size: 9.5px !important;
+        letter-spacing: 0.8px !important;
+        height: 26px !important;
+        display: inline-flex !important;
+        align-items: center !important;
+      }
+      .landing-stats-ribbon {
+        padding: 2px 8px !important;
+        gap: 8px !important;
+        border-radius: 6px !important;
+      }
+      .stat-pill-num {
+        font-size: 10px !important;
+      }
+      .stat-pill-label {
+        font-size: 6.5px !important;
+      }
+      .landing-showcase-section {
+        margin: 8px auto 14px auto !important;
+        padding: 0 10px !important;
+      }
+      .section-title-wrap {
+        margin-bottom: 6px !important;
+      }
+      .section-title {
+        font-size: 13px !important;
+        letter-spacing: 1px !important;
+      }
+      .section-subtitle {
+        font-size: 8.5px !important;
+      }
+      .showcase-cards-grid {
+        grid-template-columns: repeat(2, 1fr) !important;
+        gap: 5px !important;
+      }
+      .showcase-card {
+        padding: 6px 8px !important;
+      }
+      .showcase-card-icon {
+        font-size: 15px !important;
+        margin-bottom: 2px !important;
+      }
+      .showcase-card-title {
+        font-size: 10px !important;
+        margin-bottom: 1px !important;
+      }
+      .showcase-card-desc {
+        font-size: 8.5px !important;
+        line-height: 1.2 !important;
+        margin-bottom: 2px !important;
+      }
+      .showcase-card-tag {
+        font-size: 6.5px !important;
+        padding: 1px 3px !important;
+      }
+
       /* Compact Top HUD in Mobile Landscape */
       .lol-top-hud {
         padding: 4px 10px !important;
@@ -3704,40 +3819,240 @@
       }
 
       /* Client Lobby Split adjustments for Mobile Landscape */
+      .lol-client-header {
+        height: 28px !important;
+        padding: 0 8px !important;
+      }
+      .lol-client-branding {
+        gap: 4px !important;
+      }
+      .lol-client-logo {
+        font-size: 12px !important;
+        letter-spacing: 1.2px !important;
+      }
+      .theme-month-display {
+        display: none !important;
+      }
+      .lol-client-nav {
+        gap: 4px !important;
+      }
+      .btn-client-tab {
+        padding: 2px 6px !important;
+        font-size: 8px !important;
+        height: 20px !important;
+      }
+      .lol-client-profile-capsule {
+        padding: 1px 4px !important;
+        gap: 3px !important;
+        height: 20px !important;
+      }
+      .client-avatar-circle {
+        width: 16px !important;
+        height: 16px !important;
+        font-size: 9px !important;
+      }
+      .client-name-input {
+        width: 70px !important;
+        font-size: 9px !important;
+        height: 18px !important;
+      }
+      .client-tier-badge {
+        display: none !important;
+      }
       .lol-client-body {
-        grid-template-columns: 1fr 1fr !important;
-        gap: 12px !important;
-        padding: 8px 14px !important;
+        grid-template-columns: 1.05fr 0.95fr !important;
+        gap: 6px !important;
+        padding: 2px 6px !important;
+        height: calc(100vh - 28px) !important;
+        max-height: calc(100vh - 28px) !important;
+        overflow-y: auto !important;
+        box-sizing: border-box !important;
+      }
+      .lol-stage-left, .lol-stage-right {
+        gap: 4px !important;
       }
       .champion-showcase-card {
-        padding: 10px 14px !important;
+        padding: 4px 6px !important;
+        gap: 2px !important;
+      }
+      .showcase-banner-top {
+        gap: 6px !important;
       }
       .showcase-avatar-pod {
-        width: 50px !important;
-        height: 50px !important;
-        font-size: 26px !important;
+        width: 26px !important;
+        height: 26px !important;
+        font-size: 13px !important;
+        border-radius: 6px !important;
       }
       .showcase-info-col h3 {
-        font-size: 14px !important;
+        font-size: 10.5px !important;
+        letter-spacing: 0.8px !important;
+        margin: 0 !important;
+      }
+      .showcase-role-pill {
+        font-size: 7px !important;
+        padding: 1px 3px !important;
       }
       .showcase-desc-text {
-        font-size: 11px !important;
+        font-size: 8.5px !important;
+        line-height: 1.15 !important;
+        margin: 0 !important;
+      }
+      .showcase-special-box {
+        display: none !important;
+      }
+      .class-selection-title {
+        font-size: 8px !important;
+        margin: 1px 0 !important;
       }
       .class-grid {
         grid-template-columns: repeat(3, 1fr) !important;
-        gap: 6px !important;
+        gap: 3px !important;
       }
       .class-card {
-        padding: 6px !important;
+        padding: 2px 3px !important;
+        border-radius: 6px !important;
       }
       .class-card-icon {
-        font-size: 20px !important;
+        font-size: 14px !important;
+        margin-bottom: 1px !important;
       }
       .class-card-name {
-        font-size: 11px !important;
+        font-size: 8px !important;
+        line-height: 1 !important;
       }
       .class-card-desc, .class-card-special {
         display: none !important;
+      }
+      .match-finder-card {
+        padding: 4px 6px !important;
+        gap: 3px !important;
+      }
+      .mode-tabs {
+        margin-bottom: 1px !important;
+        gap: 3px !important;
+      }
+      .tab-btn {
+        padding: 2px 5px !important;
+        font-size: 8px !important;
+        height: 20px !important;
+      }
+      .mode-sub-grid {
+        gap: 3px !important;
+      }
+      .sub-mode-card {
+        padding: 3px 5px !important;
+      }
+      .sub-mode-title {
+        font-size: 8.5px !important;
+        margin-bottom: 1px !important;
+      }
+      .sub-mode-desc {
+        font-size: 7px !important;
+        line-height: 1.1 !important;
+      }
+      .btn-launch-arena, .btn-host-launch {
+        padding: 4px 10px !important;
+        font-size: 10px !important;
+        letter-spacing: 1px !important;
+        margin-top: 2px !important;
+        height: 24px !important;
+        line-height: 1 !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+      }
+      .mp-actions-row {
+        gap: 3px !important;
+        margin-bottom: 2px !important;
+      }
+      .btn-mp-sub {
+        padding: 2px 5px !important;
+        font-size: 8px !important;
+        height: 18px !important;
+      }
+      .room-code-box {
+        padding: 2px 6px !important;
+        font-size: 9px !important;
+        margin: 2px 0 !important;
+      }
+      .lobby-status-pill {
+        font-size: 7.5px !important;
+        margin: 2px 0 !important;
+      }
+      .btn-lobby-action {
+        padding: 3px 8px !important;
+        font-size: 9px !important;
+        height: 22px !important;
+      }
+      .join-input {
+        height: 20px !important;
+        font-size: 9px !important;
+        padding: 1px 4px !important;
+      }
+
+      /* Compact Death / Victory Screen on Mobile */
+      .modal-overlay {
+        padding: 4px !important;
+      }
+      .gameover-card {
+        padding: 5px 12px 6px 12px !important;
+        gap: 2px !important;
+        border-radius: 10px !important;
+        border-width: 1.5px !important;
+        max-height: 96vh !important;
+        overflow-y: auto !important;
+        width: min(94%, 380px) !important;
+        box-sizing: border-box !important;
+      }
+      .end-title {
+        font-size: 14px !important;
+        letter-spacing: 1px !important;
+        margin: 0 !important;
+      }
+      #end-subtitle {
+        font-size: 8.5px !important;
+        margin: 0 0 2px 0 !important;
+        line-height: 1.1 !important;
+      }
+      .stats-table {
+        display: grid !important;
+        grid-template-columns: 1fr 1fr !important;
+        gap: 1px 8px !important;
+        padding: 3px 6px !important;
+        border-radius: 6px !important;
+        background: rgba(0, 0, 0, 0.45) !important;
+      }
+      .stat-row {
+        padding: 1px 0 !important;
+        font-size: 8.5px !important;
+        line-height: 1.15 !important;
+      }
+      .end-actions-row {
+        display: flex !important;
+        flex-direction: row !important;
+        gap: 6px !important;
+        width: 100% !important;
+        margin-top: 2px !important;
+      }
+      .btn-death-again, .btn-death-lobby {
+        padding: 4px 8px !important;
+        font-size: 9.5px !important;
+        letter-spacing: 0.8px !important;
+        border-radius: 5px !important;
+        flex: 1 !important;
+        margin: 0 !important;
+        height: 24px !important;
+        line-height: 1 !important;
+        display: inline-flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+      }
+      .btn-death-lobby {
+        background: linear-gradient(135deg, rgba(200, 170, 110, 0.25), rgba(120, 90, 40, 0.35)) !important;
+        border: 1px solid var(--lol-gold-2, #c8aa6e) !important;
+        color: var(--lol-gold-1, #f0e6d2) !important;
+        box-shadow: 0 0 8px rgba(200, 170, 110, 0.3) !important;
       }
     }
   </style>
@@ -4757,7 +5072,10 @@
         <div class="stat-row"><span>Run Time</span><span id="stat-time">02:45</span></div>
       </div>
 
-      <button class="btn-start" id="btn-restart-game">PLAY AGAIN</button>
+      <div class="end-actions-row">
+        <button class="btn-start btn-death-again" id="btn-restart-game">PLAY AGAIN</button>
+        <button class="btn-start btn-death-lobby" id="btn-death-lobby">RETURN TO LOBBY</button>
+      </div>
     </div>
   </div>
 
@@ -7258,11 +7576,13 @@
     }
 
     function openExitConfirmModal() {
+      state.isExitPaused = true;
       const modal = document.getElementById('exit-confirm-modal');
       if (modal) modal.style.display = 'flex';
     }
 
     function closeExitConfirmModal() {
+      state.isExitPaused = false;
       const modal = document.getElementById('exit-confirm-modal');
       if (modal) modal.style.display = 'none';
     }
@@ -7285,46 +7605,79 @@
 
     function returnToLobby() {
       state.phase = 'title';
+      state.isExitPaused = false;
       closePollVoteModal();
       closeExitConfirmModal();
-      document.getElementById('refinery-modal').style.display = 'none';
-      document.getElementById('gameover-modal').style.display = 'none';
-      document.getElementById('revive-banner').style.display = 'none';
-      document.getElementById('boss-hud').style.display = 'none';
 
-      // Clean arena entities
-      enemies.forEach(e => e.destroy());
-      enemies.length = 0;
-      materialDrops.forEach(m => scene.remove(m.mesh));
-      materialDrops.length = 0;
-      slashWaves.forEach(w => scene.remove(w.mesh));
-      slashWaves.length = 0;
-      projectiles.forEach(p => scene.remove(p.mesh));
-      projectiles.length = 0;
-      gunnerRockets.forEach(r => scene.remove(r.mesh));
-      gunnerRockets.length = 0;
-      blackHoles.forEach(h => scene.remove(h.mesh));
-      blackHoles.length = 0;
-      shockwaves.forEach(w => scene.remove(w.mesh));
-      shockwaves.length = 0;
-      explosions.forEach(x => scene.remove(x.pSystem));
-      explosions.length = 0;
+      const hideIds = [
+        'refinery-modal', 'gameover-modal', 'revive-banner', 'boss-hud',
+        'lol-top-hud', 'lol-bottom-console', 'lol-minimap-container',
+        'lol-boss-bar-container', 'lol-announcement-banner', 'lol-allies-hud'
+      ];
+      hideIds.forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.style.display = 'none';
+      });
+
+      document.querySelectorAll('.mobile-controls').forEach(el => {
+        el.style.display = 'none';
+      });
+
+      // Clean arena entities safely
+      try {
+        enemies.forEach(e => { try { e.destroy(); } catch(err){} });
+        enemies.length = 0;
+      } catch(e){}
+
+      try {
+        if (typeof droppedMaterials !== 'undefined' && Array.isArray(droppedMaterials)) {
+          droppedMaterials.forEach(m => {
+            try { if (m && m.mesh) scene.remove(m.mesh); } catch(err){}
+          });
+          droppedMaterials.length = 0;
+        }
+      } catch(e){}
+
+      try {
+        slashWaves.forEach(w => { try { scene.remove(w.mesh); } catch(err){} });
+        slashWaves.length = 0;
+        projectiles.forEach(p => { try { scene.remove(p.mesh); } catch(err){} });
+        projectiles.length = 0;
+        gunnerRockets.forEach(r => { try { scene.remove(r.mesh); } catch(err){} });
+        gunnerRockets.length = 0;
+        blackHoles.forEach(h => { try { scene.remove(h.mesh); } catch(err){} });
+        blackHoles.length = 0;
+        shockwaves.forEach(w => { try { scene.remove(w.mesh); } catch(err){} });
+        shockwaves.length = 0;
+        explosions.forEach(x => { try { scene.remove(x.pSystem); } catch(err){} });
+        explosions.length = 0;
+      } catch(e){}
 
       if (hero) {
         hero.position.set(0, 0, 0);
         hero.velocity.set(0, 0);
+        state.hero.health = state.hero.maxHealth;
+        state.hero.shield = state.hero.maxShield;
+        state.hero.isDowned = false;
       }
-      net.removeAllRemoteHeroes();
+      camera.position.set(0, 22, 22);
+      camera.lookAt(0, 0, 0);
+
+      try { net.removeAllRemoteHeroes(); } catch(e){}
       updateTeammatesHUD();
 
       // Show Start/Lobby Modal
-      document.getElementById('start-modal').style.display = 'flex';
+      const startModal = document.getElementById('start-modal');
+      if (startModal) startModal.style.display = 'flex';
+
       if (state.gameMode === 'multiplayer') {
         if (net.isHost) {
           net.initHost();
         } else {
-          document.getElementById('guest-status-pill').textContent = 'Enter room number above and click Ready';
-          document.getElementById('guest-lobby-roster').style.display = 'flex';
+          const guestPill = document.getElementById('guest-status-pill');
+          if (guestPill) guestPill.textContent = 'Enter room number above and click Ready';
+          const guestRoster = document.getElementById('guest-lobby-roster');
+          if (guestRoster) guestRoster.style.display = 'flex';
           const guestReadyBtn = document.getElementById('btn-guest-ready');
           if (guestReadyBtn) {
             guestReadyBtn.style.display = 'block';
@@ -8824,6 +9177,11 @@
       startMatchWithLoadingScreen(() => resetGame());
     });
 
+    bindAction(document.getElementById('btn-death-lobby'), () => {
+      sound.playHit();
+      returnToLobby();
+    });
+
     // --------------------------------------------------------------------------
     // Mobile Landscape Orientation Controller
     // --------------------------------------------------------------------------
@@ -9389,6 +9747,16 @@
         sound.playPickup();
         setTimeout(() => {
           loadingScreen.style.display = 'none';
+          state.isExitPaused = false;
+          const lolTop = document.getElementById('lol-top-hud');
+          if (lolTop) lolTop.style.display = 'flex';
+          const lolBottom = document.getElementById('lol-bottom-console');
+          if (lolBottom) lolBottom.style.display = 'flex';
+          const lolMinimap = document.getElementById('lol-minimap-container');
+          if (lolMinimap) lolMinimap.style.display = 'block';
+          if (state.platform === 'mobile' || isMobileDevice()) {
+            document.querySelectorAll('.mobile-controls').forEach(el => el.style.display = 'flex');
+          }
           if (onComplete) onComplete();
           showLolBanner('WELCOME TO BROADROADS ARENA', 'MINIONS & THREATS HAVE SPAWNED');
         }, 400);
@@ -9427,6 +9795,11 @@
 
     function animate(currentTime) {
       requestAnimationFrame(animate);
+
+      if (state.isExitPaused) {
+        renderer.render(scene, camera);
+        return;
+      }
 
       const dt = Math.min((currentTime - lastTime) / 1000, 0.1);
       lastTime = currentTime;
