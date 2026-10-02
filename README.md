@@ -14,7 +14,7 @@
   - **♾️ Endless Horde**: Infinite scaling waves, recurring boss encounters every 5 rounds, and record-tracking for highest wave survived.
 - 🌐 **Online Co-op Multiplayer (Peer-to-Peer WebRTC)**:
   - **Serverless P2P (PeerJS)**: Zero backend server needed. Runs free on static hosts (Vercel, GitHub Pages).
-  - **4-Letter Room Codes**: Quick shareable code (e.g. `BR-7K9W`) or direct invite link (`?room=XXXX`).
+  - **4-Letter Room Codes**: Quick shareable pure 4-letter alphabetical code (e.g. `WARP` or `ROAD`) or direct invite link (`?room=WARP`).
   - **Real-Time Synchronization**: 25Hz low-latency player positions, rotations, attacks, animations, and shared enemy waves.
   - **Co-op Revive System**: When a teammate falls to 0 HP, they enter a downed state. Standing in their runic circle for 3 seconds channels celestial energy to revive them with 50% HP!
 

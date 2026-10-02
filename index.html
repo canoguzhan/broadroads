@@ -1435,22 +1435,22 @@
 
           <!-- Host View -->
           <div id="host-view">
-            <div style="font-size: 11px; color: var(--text-muted); margin-bottom: 4px;">SHARE ROOM CODE WITH A FRIEND:</div>
+            <div style="font-size: 11px; color: var(--text-muted); margin-bottom: 4px;">SHARE 4-LETTER ROOM CODE WITH A FRIEND:</div>
             <div class="room-code-box" id="display-room-code">
-              <span id="room-code-text">ROAD-....</span>
+              <span id="room-code-text">....</span>
               <button id="btn-copy-code" style="background: none; border: 1px solid var(--neon-cyan); color: var(--neon-cyan); border-radius: 6px; padding: 2px 8px; font-size: 11px; cursor: pointer;">COPY</button>
             </div>
-            <div class="lobby-status-pill" id="host-status-pill">⏳ Waiting for teammate to join...</div>
+            <div class="lobby-status-pill" id="host-status-pill">⏳ Generating 4-letter code...</div>
           </div>
 
           <!-- Join View -->
           <div id="join-view" style="display: none;">
             <div style="font-size: 11px; color: var(--text-muted); margin-bottom: 4px;">ENTER 4-LETTER ROOM CODE:</div>
             <div class="join-input-group">
-              <input type="text" class="join-input" id="input-room-code" placeholder="XXXX" maxlength="6">
+              <input type="text" class="join-input" id="input-room-code" placeholder="XXXX" maxlength="4" style="letter-spacing: 6px; font-weight: 900;">
               <button class="btn-mp-sub" id="btn-connect-peer" style="flex: 0 0 100px;">CONNECT</button>
             </div>
-            <div class="lobby-status-pill" id="guest-status-pill">Enter room code above</div>
+            <div class="lobby-status-pill" id="guest-status-pill">Enter 4-letter code above</div>
           </div>
         </div>
       </div>
@@ -1870,11 +1870,11 @@
 
       initHost() {
         this.isHost = true;
-        // Generate random 4-letter room code (e.g. ROAD)
-        const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+        // Generate strictly a 4-LETTER code (pure letters A-Z, no digits, excluding ambiguous I/O)
+        const letters = 'ABCDEFGHJKLMNPQRSTUVWXYZ';
         let code = '';
-        for (let i = 0; i < 4; i++) code += chars.charAt(Math.floor(Math.random() * chars.length));
-        this.roomCode = 'BR-' + code;
+        for (let i = 0; i < 4; i++) code += letters.charAt(Math.floor(Math.random() * letters.length));
+        this.roomCode = code;
 
         const peerId = 'broadroads-' + code.toLowerCase();
         document.getElementById('room-code-text').textContent = this.roomCode;
@@ -1902,7 +1902,8 @@
 
       joinRoom(code) {
         this.isHost = false;
-        const cleaned = code.replace(/[^A-Za-z0-9]/g, '').toLowerCase().slice(-4);
+        // Clean out any symbols/prefixes and take the 4 letters
+        const cleaned = code.replace(/[^A-Za-z]/g, '').toLowerCase().slice(-4);
         const hostPeerId = 'broadroads-' + cleaned;
         document.getElementById('guest-status-pill').textContent = '🔄 Connecting to host...';
 
@@ -3668,16 +3669,33 @@
 
     document.getElementById('btn-copy-code').addEventListener('click', () => {
       const code = net.roomCode;
-      navigator.clipboard.writeText(code);
-      document.getElementById('btn-copy-code').textContent = 'COPIED!';
-      setTimeout(() => document.getElementById('btn-copy-code').textContent = 'COPY', 1500);
+      if (code) {
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+          navigator.clipboard.writeText(code).catch(() => {});
+        }
+        document.getElementById('btn-copy-code').textContent = 'COPIED!';
+        setTimeout(() => document.getElementById('btn-copy-code').textContent = 'COPY', 1500);
+      }
+    });
+
+    const roomInputEl = document.getElementById('input-room-code');
+    roomInputEl.addEventListener('input', () => {
+      roomInputEl.value = roomInputEl.value.replace(/[^A-Za-z]/g, '').toUpperCase().slice(0, 4);
+    });
+
+    roomInputEl.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') {
+        document.getElementById('btn-connect-peer').click();
+      }
     });
 
     document.getElementById('btn-connect-peer').addEventListener('click', () => {
-      const code = document.getElementById('input-room-code').value.trim();
-      if (code) {
+      const code = roomInputEl.value.trim().toUpperCase();
+      if (code.length === 4) {
         sound.init();
         net.joinRoom(code);
+      } else {
+        document.getElementById('guest-status-pill').textContent = '⚠️ Please enter exactly 4 letters';
       }
     });
 
@@ -3685,10 +3703,13 @@
     const urlParams = new URLSearchParams(window.location.search);
     const roomParam = urlParams.get('room');
     if (roomParam) {
+      const cleanParam = roomParam.replace(/[^A-Za-z]/g, '').toUpperCase().slice(0, 4);
       document.getElementById('tab-mp').click();
       document.getElementById('btn-join-room-tab').click();
-      document.getElementById('input-room-code').value = roomParam;
-      setTimeout(() => net.joinRoom(roomParam), 500);
+      roomInputEl.value = cleanParam;
+      if (cleanParam.length === 4) {
+        setTimeout(() => net.joinRoom(cleanParam), 500);
+      }
     }
 
     // Refinery Button Binds
