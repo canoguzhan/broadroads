@@ -1298,6 +1298,337 @@
       opacity: 0;
       transition: opacity 0.08s ease-out;
     }
+    /* Desktop vs Mobile Platform Responsive Adaptations */
+    body.platform-desktop #joystick-zone {
+      display: none !important;
+    }
+    body.platform-desktop .action-cluster {
+      opacity: 0.9;
+      transform: scale(0.92);
+      transform-origin: bottom right;
+    }
+    .btn-key-badge {
+      display: none;
+    }
+    body.platform-desktop .btn-key-badge {
+      display: inline-block;
+      position: absolute;
+      top: -5px;
+      right: -5px;
+      background: var(--theme-accent, #ffb703);
+      color: #030712;
+      font-family: var(--font-mono);
+      font-size: 9px;
+      font-weight: 900;
+      padding: 1px 5px;
+      border-radius: 4px;
+      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.6);
+      pointer-events: none;
+    }
+
+    /* Top HUD Action Buttons */
+    .hud-actions-group {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .btn-hud-exit {
+      background: rgba(255, 0, 84, 0.15);
+      border: 1px solid rgba(255, 0, 84, 0.4);
+      color: #ff3366;
+      padding: 7px 12px;
+      border-radius: 8px;
+      font-family: var(--font-title);
+      font-size: 11px;
+      font-weight: 800;
+      letter-spacing: 1px;
+      cursor: pointer;
+      transition: all 0.15s;
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      pointer-events: auto;
+    }
+    .btn-hud-exit:hover {
+      background: rgba(255, 0, 84, 0.35);
+      box-shadow: 0 0 14px rgba(255, 0, 84, 0.5);
+    }
+    .btn-hud-help {
+      background: rgba(0, 240, 255, 0.12);
+      border: 1px solid rgba(0, 240, 255, 0.35);
+      color: var(--theme-primary, #00f0ff);
+      padding: 7px 11px;
+      border-radius: 8px;
+      font-family: var(--font-title);
+      font-size: 11px;
+      font-weight: 800;
+      cursor: pointer;
+      transition: all 0.15s;
+      pointer-events: auto;
+    }
+    .btn-hud-help:hover {
+      background: rgba(0, 240, 255, 0.25);
+      box-shadow: 0 0 14px rgba(0, 240, 255, 0.4);
+    }
+
+    /* Theme Month Badge (Automatic Calendar Month Display) */
+    .theme-month-display {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      background: rgba(0, 0, 0, 0.45);
+      border: 1px solid var(--theme-primary, rgba(0, 240, 255, 0.35));
+      border-radius: 12px;
+      padding: 8px 14px;
+      box-shadow: inset 0 0 12px rgba(0, 0, 0, 0.5);
+    }
+    .theme-month-icon {
+      font-size: 22px;
+      line-height: 1;
+    }
+    .theme-month-info {
+      display: flex;
+      flex-direction: column;
+      text-align: left;
+    }
+    .theme-month-label {
+      font-family: var(--font-mono);
+      font-size: 9px;
+      color: var(--text-muted);
+      letter-spacing: 1px;
+      font-weight: 700;
+      text-transform: uppercase;
+    }
+    .theme-month-name {
+      font-family: var(--font-title);
+      font-size: 12px;
+      font-weight: 800;
+      color: var(--theme-primary, #00f0ff);
+      letter-spacing: 0.5px;
+      text-transform: uppercase;
+    }
+
+    /* Shortcuts How-to-Play Card */
+    .shortcuts-card {
+      background: linear-gradient(155deg, rgba(16, 24, 48, 0.98), rgba(8, 12, 26, 0.99));
+      border: 2px solid var(--theme-primary, #00f0ff);
+      border-radius: 20px;
+      width: min(92%, 520px);
+      padding: 24px;
+      text-align: center;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.8), 0 0 40px rgba(0,240,255,0.25);
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+      animation: modalFadeIn 0.25s ease-out;
+    }
+    .shortcuts-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 10px;
+      margin-top: 6px;
+      text-align: left;
+    }
+    .shortcut-row {
+      background: rgba(0,0,0,0.45);
+      border: 1px solid rgba(255,255,255,0.08);
+      padding: 10px 12px;
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .shortcut-key {
+      background: rgba(255,255,255,0.12);
+      border: 1px solid rgba(255,255,255,0.25);
+      border-bottom: 2px solid rgba(255,255,255,0.35);
+      border-radius: 6px;
+      padding: 3px 8px;
+      font-family: var(--font-mono);
+      font-size: 11px;
+      font-weight: 800;
+      color: var(--theme-primary, #00f0ff);
+    }
+    .shortcut-action {
+      font-size: 12px;
+      font-weight: 600;
+      color: #fff;
+    }
+
+    /* Exit Confirm Card */
+    .confirm-card {
+      background: linear-gradient(155deg, rgba(24, 12, 20, 0.98), rgba(12, 6, 14, 0.99));
+      border: 2px solid #ff0054;
+      border-radius: 20px;
+      width: min(92%, 440px);
+      padding: 24px;
+      text-align: center;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.8), 0 0 40px rgba(255, 0, 84, 0.3);
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+      animation: modalFadeIn 0.25s ease-out;
+    }
+    .confirm-title {
+      font-family: var(--font-title);
+      font-size: 20px;
+      font-weight: 900;
+      color: #ff3366;
+      letter-spacing: 1.5px;
+    }
+    .confirm-desc {
+      font-size: 13px;
+      color: var(--text-muted);
+      line-height: 1.5;
+    }
+    .confirm-actions {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      margin-top: 8px;
+    }
+    .btn-cancel {
+      background: rgba(255, 255, 255, 0.1);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      color: #fff;
+      padding: 12px;
+      border-radius: 10px;
+      font-family: var(--font-title);
+      font-size: 12px;
+      font-weight: 800;
+      cursor: pointer;
+    }
+    .btn-confirm-exit {
+      background: rgba(255, 0, 84, 0.25);
+      border: 2px solid #ff0054;
+      color: #ff3366;
+      padding: 12px;
+      border-radius: 10px;
+      font-family: var(--font-title);
+      font-size: 12px;
+      font-weight: 800;
+      cursor: pointer;
+    }
+
+    /* Lobby Host / Ready Action Buttons */
+    .btn-lobby-action {
+      width: 100%;
+      padding: 14px;
+      border-radius: 12px;
+      font-family: var(--font-title);
+      font-size: 14px;
+      font-weight: 900;
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+      cursor: pointer;
+      transition: all 0.2s;
+      margin-top: 10px;
+    }
+    .btn-ready-toggle {
+      background: rgba(255, 183, 3, 0.15);
+      border: 2px solid #ffb703;
+      color: #ffb703;
+    }
+    .btn-ready-toggle.is-ready {
+      background: rgba(0, 245, 212, 0.25);
+      border: 2px solid #00f5d4;
+      color: #00f5d4;
+      box-shadow: 0 0 20px rgba(0, 245, 212, 0.4);
+    }
+    .btn-host-launch {
+      background: linear-gradient(135deg, #00f5d4, #00bbf9);
+      border: none;
+      color: #030814;
+      box-shadow: 0 0 25px rgba(0, 245, 212, 0.5);
+    }
+    .btn-host-launch:disabled {
+      opacity: 0.45;
+      filter: grayscale(0.7);
+      cursor: not-allowed;
+      box-shadow: none;
+    }
+
+    /* Squad Poll Vote Modal (Player Departure & AI Bot Compensation) */
+    .poll-vote-card {
+      background: linear-gradient(155deg, rgba(28, 12, 24, 0.98), rgba(12, 6, 18, 0.99));
+      border: 2px solid #ff0054;
+      border-radius: 20px;
+      width: min(92%, 480px);
+      padding: 24px;
+      text-align: center;
+      box-shadow: 0 25px 70px rgba(0, 0, 0, 0.9), 0 0 45px rgba(255, 0, 84, 0.35);
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      animation: modalFadeIn 0.25s ease-out;
+    }
+    .poll-title {
+      font-family: var(--font-title);
+      font-size: 20px;
+      font-weight: 900;
+      color: #ff3366;
+      letter-spacing: 1.5px;
+    }
+    .poll-desc {
+      font-size: 13px;
+      color: var(--text-muted);
+      line-height: 1.45;
+    }
+    .poll-timer-bar {
+      height: 4px;
+      background: rgba(255, 255, 255, 0.1);
+      border-radius: 2px;
+      overflow: hidden;
+      margin: 4px 0;
+    }
+    .poll-timer-fill {
+      height: 100%;
+      background: #ff0054;
+      width: 100%;
+      transition: width 1s linear;
+    }
+    .poll-vote-buttons {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      margin-top: 8px;
+    }
+    .btn-vote-end {
+      background: rgba(255, 0, 84, 0.2);
+      border: 2px solid #ff0054;
+      color: #ff3366;
+      padding: 12px;
+      border-radius: 10px;
+      font-family: var(--font-title);
+      font-size: 13px;
+      font-weight: 800;
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+    .btn-vote-end:hover {
+      background: rgba(255, 0, 84, 0.4);
+    }
+    .btn-vote-continue {
+      background: rgba(0, 245, 212, 0.15);
+      border: 2px solid #00f5d4;
+      color: #00f5d4;
+      padding: 12px;
+      border-radius: 10px;
+      font-family: var(--font-title);
+      font-size: 13px;
+      font-weight: 800;
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+    .btn-vote-continue:hover {
+      background: rgba(0, 245, 212, 0.35);
+    }
+    .poll-tally {
+      font-family: var(--font-mono);
+      font-size: 11px;
+      color: var(--text-muted);
+    }
   </style>
 </head>
 <body>
@@ -1314,7 +1645,7 @@
         <!-- Local Player -->
         <div class="hero-vitals" id="local-vitals">
           <div class="vitals-header">
-            <span class="hero-name" id="local-hero-name">HERO (P1)</span>
+            <span class="hero-name" id="local-hero-name">COMMANDER</span>
             <span class="hero-level" id="hero-tier-tag">TIER I</span>
           </div>
           <div class="bar-wrap">
@@ -1349,12 +1680,19 @@
         <div class="mode-badge" id="hud-mode-badge">SOLO: CLASSIC</div>
       </div>
 
-      <!-- Materials HUD -->
-      <div class="materials-hud">
-        <div class="mat-pill"><div class="mat-dot dot-pyrite"></div><span id="hud-pyrite">0</span></div>
-        <div class="mat-pill"><div class="mat-dot dot-aether"></div><span id="hud-aether">0</span></div>
-        <div class="mat-pill"><div class="mat-dot dot-titanium"></div><span id="hud-titanium">0</span></div>
-        <div class="mat-pill"><div class="mat-dot dot-catalyst"></div><span id="hud-catalyst">0</span></div>
+      <!-- Materials HUD & Exit / Help Controls -->
+      <div style="display: flex; flex-direction: column; align-items: flex-end; gap: 8px;">
+        <div class="materials-hud">
+          <div class="mat-pill"><div class="mat-dot dot-pyrite"></div><span id="hud-pyrite">0</span></div>
+          <div class="mat-pill"><div class="mat-dot dot-aether"></div><span id="hud-aether">0</span></div>
+          <div class="mat-pill"><div class="mat-dot dot-titanium"></div><span id="hud-titanium">0</span></div>
+          <div class="mat-pill"><div class="mat-dot dot-catalyst"></div><span id="hud-catalyst">0</span></div>
+        </div>
+
+        <div class="hud-actions-group">
+          <button class="btn-hud-help" id="btn-open-shortcuts" title="Keyboard Shortcuts & How to Play">⌨️ HELP</button>
+          <button class="btn-hud-exit" id="btn-exit-game" title="Abandon Match & Return to Menu">🚪 EXIT</button>
+        </div>
       </div>
     </div>
 
@@ -1377,7 +1715,7 @@
 
     <!-- Mobile Virtual Controls -->
     <div class="mobile-controls">
-      <!-- Virtual Joystick -->
+      <!-- Virtual Joystick (Hidden on Desktop) -->
       <div id="joystick-zone">
         <div class="joystick-base" id="joystick-base">
           <div class="joystick-knob" id="joystick-knob"></div>
@@ -1388,26 +1726,30 @@
       <div class="action-cluster">
         <!-- Auto Attack Toggle -->
         <button class="btn-action btn-auto" id="btn-auto" title="Toggle Auto-Attack (C)">
+          <span class="btn-key-badge">C</span>
           <span class="btn-icon">🎯</span>
           <span class="btn-lbl" id="auto-lbl">AUTO: OFF</span>
         </button>
 
         <!-- Special Skill -->
-        <button class="btn-action btn-special ready" id="btn-special" title="Special Skill (E / Q)">
+        <button class="btn-action btn-special ready" id="btn-special" title="Special Skill (E / Q / L)">
+          <span class="btn-key-badge">E</span>
           <span class="btn-icon" id="special-btn-icon">⚡</span>
           <span class="btn-lbl" id="special-lbl">NOVA</span>
           <div class="cooldown-overlay" id="special-cooldown">READY</div>
         </button>
 
         <!-- Dash / Dodge -->
-        <button class="btn-action btn-dash" id="btn-dash" title="Dash (Shift / Right Click)">
+        <button class="btn-action btn-dash" id="btn-dash" title="Dash (Shift / Right Click / K)">
+          <span class="btn-key-badge">SHIFT</span>
           <span class="btn-icon">💨</span>
           <span class="btn-lbl">DASH</span>
           <div class="cooldown-overlay" id="dash-cooldown"></div>
         </button>
 
         <!-- Attack Button -->
-        <button class="btn-action btn-attack" id="btn-attack" title="Melee Strike (Space / Left Click)">
+        <button class="btn-action btn-attack" id="btn-attack" title="Attack (Space / Left Click / F / J)">
+          <span class="btn-key-badge">SPACE</span>
           <span class="btn-icon" id="attack-btn-icon">⚔️</span>
           <span class="btn-lbl">STRIKE</span>
         </button>
@@ -1538,9 +1880,12 @@
           <span class="profile-icon">👤</span>
           <input type="text" id="input-username" class="username-input" placeholder="Commander Username (required)" maxlength="15" autocomplete="off" spellcheck="false">
         </div>
-        <div class="theme-selector-wrap">
-          <span class="theme-icon">📅</span>
-          <select id="select-monthly-theme" class="theme-dropdown" title="Change Monthly Arena Season Theme"></select>
+        <div class="theme-month-display" id="season-month-display">
+          <span class="theme-month-icon" id="theme-season-icon">🎃</span>
+          <div class="theme-month-info">
+            <span class="theme-month-label">ACTIVE ARENA SEASON</span>
+            <span class="theme-month-name" id="theme-season-name">HALLOWED DUSK (OCTOBER)</span>
+          </div>
         </div>
       </div>
       <div id="username-error-alert" class="username-error-alert" style="display: none;">⚠️ Commander username is required (min 2 characters)</div>
@@ -1583,6 +1928,7 @@
             <!-- 4-Player Roster Slots -->
             <div class="lobby-roster" id="host-lobby-roster"></div>
             <div class="lobby-status-pill" id="host-status-pill" style="margin-top: 8px;">🟢 Room Live (1/4 Players). Ready to deploy!</div>
+            <button class="btn-lobby-action btn-host-launch" id="btn-host-launch">🚀 LAUNCH SQUAD BATTLE</button>
           </div>
 
           <!-- Join View -->
@@ -1595,6 +1941,7 @@
             <!-- Guest Roster Slots once connected -->
             <div class="lobby-roster" id="guest-lobby-roster" style="display: none; margin-top: 8px;"></div>
             <div class="lobby-status-pill" id="guest-status-pill" style="margin-top: 8px;">Enter room number above</div>
+            <button class="btn-lobby-action btn-ready-toggle" id="btn-guest-ready" style="display: none;">🔴 CLICK TO READY UP</button>
           </div>
         </div>
       </div>
@@ -1608,6 +1955,78 @@
       </div>
 
       <button class="btn-start" id="btn-start-game">ENTER ARENA</button>
+    </div>
+  </div>
+
+  <!-- DESKTOP HOW TO PLAY / KEYBOARD SHORTCUTS MODAL -->
+  <div class="modal-overlay" id="shortcuts-modal">
+    <div class="shortcuts-card">
+      <div class="shortcuts-header">
+        <span style="font-size: 32px;">⌨️</span>
+        <h2 style="font-family: var(--font-title); font-size: 22px; font-weight: 900; letter-spacing: 1.5px; color: var(--theme-primary, #00f0ff); margin: 6px 0 0 0;">DESKTOP CONTROLS</h2>
+      </div>
+      <p style="font-size: 13px; color: var(--text-muted); margin: 0;">Master the arena with rapid keyboard & mouse maneuvers</p>
+      
+      <div class="shortcuts-grid">
+        <div class="shortcut-row">
+          <span class="shortcut-action">🏃 Move Hero</span>
+          <span class="shortcut-key">W A S D / Arrows</span>
+        </div>
+        <div class="shortcut-row">
+          <span class="shortcut-action">⚔️ Aim & Strike</span>
+          <span class="shortcut-key">Space / Left Click / F / J</span>
+        </div>
+        <div class="shortcut-row">
+          <span class="shortcut-action">💨 Dash / Dodge</span>
+          <span class="shortcut-key">Shift / Right Click / K</span>
+        </div>
+        <div class="shortcut-row">
+          <span class="shortcut-action">⚡ Special Skill</span>
+          <span class="shortcut-key">E / Q / L</span>
+        </div>
+        <div class="shortcut-row">
+          <span class="shortcut-action">🎯 Auto-Attack</span>
+          <span class="shortcut-key">C / R</span>
+        </div>
+        <div class="shortcut-row">
+          <span class="shortcut-action">🚪 Abandon Match</span>
+          <span class="shortcut-key">Escape</span>
+        </div>
+      </div>
+
+      <button class="btn-start" id="btn-close-shortcuts" style="margin-top: 8px;">UNDERSTOOD • ENTER BATTLE</button>
+    </div>
+  </div>
+
+  <!-- EXIT MATCH CONFIRMATION MODAL -->
+  <div class="modal-overlay" id="exit-confirm-modal">
+    <div class="confirm-card">
+      <div class="confirm-title">🚪 ABANDON BATTLE?</div>
+      <div class="confirm-desc" id="exit-confirm-desc">Are you sure you want to abandon the current match and return to the lobby? If in multiplayer co-op, an AI Bot will take over your hero and your squad will vote whether to continue.</div>
+      <div class="confirm-actions">
+        <button class="btn-cancel" id="btn-cancel-exit">RESUME BATTLE</button>
+        <button class="btn-confirm-exit" id="btn-confirm-exit">CONFIRM EXIT</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- SQUAD POLL VOTE MODAL (PLAYER DISCONNECT / EXIT COMPENSATION) -->
+  <div class="modal-overlay" id="poll-vote-modal">
+    <div class="poll-vote-card">
+      <div class="poll-title">⚠️ SQUAD POLL VOTE</div>
+      <div class="poll-desc" id="poll-vote-desc">A squadmate has departed. An autonomous AI Bot has assumed command. Vote whether to return to the lobby or continue fighting:</div>
+      
+      <div class="poll-timer-bar">
+        <div class="poll-timer-fill" id="poll-timer-fill"></div>
+      </div>
+      <div class="poll-timer-text" id="poll-timer-text" style="font-family: var(--font-mono); font-size: 12px; color: var(--theme-accent, #ffb703);">Time remaining: 15s</div>
+
+      <div class="poll-vote-buttons">
+        <button class="btn-vote-end" id="btn-vote-end">🛑 End Match</button>
+        <button class="btn-vote-continue" id="btn-vote-continue">⚔️ Continue With AI</button>
+      </div>
+
+      <div class="poll-tally" id="poll-tally-text">Waiting for squad votes... (≥ 50% End votes returns to lobby)</div>
     </div>
   </div>
 
@@ -2076,11 +2495,11 @@
 
       // Profile & Theming
       username: localStorage.getItem('broadroads_username') || ('Commander_' + Math.floor(100 + Math.random() * 900)),
-      currentMonth: (parseInt(localStorage.getItem('broadroads_theme_month'), 10) >= 0 && parseInt(localStorage.getItem('broadroads_theme_month'), 10) < 12)
-        ? parseInt(localStorage.getItem('broadroads_theme_month'), 10)
-        : new Date().getMonth(),
+      currentMonth: new Date().getMonth(), // Automatically locked to current calendar month
       selectedClassIndex: 0,
       activeClassData: null,
+      platform: 'desktop', // 'desktop' or 'mobile'
+      guestIsReady: false,
 
       currentWave: 1,
       waveTimeRemaining: GAME_CONFIG.WAVE_DURATION,
@@ -2244,7 +2663,6 @@
     function applyTheme(monthIndex) {
       if (monthIndex < 0 || monthIndex >= MONTHLY_THEMES.length) monthIndex = 0;
       state.currentMonth = monthIndex;
-      localStorage.setItem('broadroads_theme_month', monthIndex);
       const theme = MONTHLY_THEMES[monthIndex];
 
       // 1. Update CSS Variables for Entire Web Application
@@ -2276,9 +2694,14 @@
       }
       if (typeof dustParticles !== 'undefined' && dustParticles) dustParticles.material.color.setHex(theme.dustHex);
 
-      // 3. Update Subtitle
+      // 3. Update Subtitle & Seasonal Month Badge
       const sub = document.getElementById('theme-season-subtitle');
       if (sub) sub.textContent = `SEASON ${theme.month + 1}: ${theme.name.toUpperCase()} (${theme.monthName.toUpperCase()})`;
+
+      const iconEl = document.getElementById('theme-season-icon');
+      if (iconEl) iconEl.textContent = theme.icon;
+      const nameEl = document.getElementById('theme-season-name');
+      if (nameEl) nameEl.textContent = `${theme.name.toUpperCase()} (${theme.monthName.toUpperCase()})`;
 
       // 4. Re-render Class Cards
       renderClassSelectionCards(monthIndex);
@@ -2401,6 +2824,9 @@
         this.peerId = peerId;
         this.username = username;
         this.isHost = (!isRemote && !!(net && net.isHost));
+        this.isAI = false;
+        this.aiAttackCooldown = 0;
+        this.aiSpecialCharge = 30;
         this.group = new THREE.Group();
         this.position = this.group.position;
         this.position.set(isRemote ? 3 : 0, 0, 0);
@@ -2601,14 +3027,100 @@
         this.triggerRemoteSpecial(pos);
       }
 
+      updateAIBot(dt) {
+        if (this.isDowned || state.phase !== 'playing') return;
+
+        if (this.aiAttackCooldown > 0) this.aiAttackCooldown -= dt;
+        this.aiSpecialCharge = Math.min(100, (this.aiSpecialCharge || 0) + dt * 5);
+
+        // 1. Check if human hero is downed and needs revive
+        if (state.hero.isDowned) {
+          const toLocal = new THREE.Vector3().subVectors(hero.position, this.position);
+          toLocal.y = 0;
+          const dist = toLocal.length();
+          if (dist > 1.8) {
+            toLocal.normalize();
+            this.position.addScaledVector(toLocal, 7.5 * dt);
+            this.group.rotation.y = Math.atan2(toLocal.x, toLocal.z);
+          } else {
+            // Helping revive local hero
+            state.hero.reviveProgress += dt * 0.45;
+            const banner = document.getElementById('revive-banner');
+            banner.style.display = 'block';
+            banner.textContent = `🤖 AI SQUADMATE REVIVING YOU... ${Math.min(100, Math.round((state.hero.reviveProgress / 2.5) * 100))}%`;
+
+            if (state.hero.reviveProgress >= 2.5) {
+              state.hero.reviveProgress = 0;
+              state.hero.isDowned = false;
+              state.hero.hp = state.hero.maxHp * 0.5;
+              updateVitalsHUD();
+              sound.playReviveChime();
+              banner.style.display = 'none';
+            }
+          }
+          return;
+        }
+
+        // 2. Target nearest alive enemy
+        let closest = null;
+        let minDist = 25.0;
+        enemies.forEach(e => {
+          if (e.dead) return;
+          const d = e.position.distanceTo(this.position);
+          if (d < minDist) { minDist = d; closest = e; }
+        });
+
+        if (closest) {
+          const toTarget = new THREE.Vector3().subVectors(closest.position, this.position);
+          toTarget.y = 0;
+          const dist = toTarget.length();
+          toTarget.normalize();
+
+          this.group.rotation.y = Math.atan2(toTarget.x, toTarget.z);
+
+          // Move towards enemy if beyond attack range
+          const idealRange = (this.classType === 'melee') ? 2.6 : 7.0;
+          if (dist > idealRange) {
+            this.position.addScaledVector(toTarget, 7.0 * dt);
+          }
+
+          // Attack when in range and off cooldown
+          if (dist <= idealRange + 1.2 && this.aiAttackCooldown <= 0) {
+            this.aiAttackCooldown = (this.classType === 'melee') ? 0.45 : 0.6;
+            this.triggerRemoteAttack(toTarget, 0, this.classId);
+
+            // Execute hit
+            const dmg = 28 + Math.floor(Math.random() * 10);
+            closest.takeDamage(dmg, false, this.username);
+            broadcastLocalEnemyHit(closest, dmg, false, { x: toTarget.x * 0.5, z: toTarget.z * 0.5 });
+          }
+
+          // Special Skill trigger when charged
+          if (this.aiSpecialCharge >= 100) {
+            this.aiSpecialCharge = 0;
+            this.triggerRemoteSpecial(this.position);
+            enemies.forEach(e => {
+              if (!e.dead && e.position.distanceTo(this.position) < 8.5) {
+                e.takeDamage(75, true, this.username);
+                broadcastLocalEnemyHit(e, 75, true, null);
+              }
+            });
+          }
+        }
+      }
+
       update(dt) {
         if (this.isRemote) {
-          // Smooth remote interpolation
-          this.position.lerp(this.targetPos, dt * 15);
-          let diff = this.targetRot - this.group.rotation.y;
-          while (diff < -Math.PI) diff += Math.PI * 2;
-          while (diff > Math.PI) diff -= Math.PI * 2;
-          this.group.rotation.y += diff * Math.min(dt * 15, 1);
+          if (this.isAI) {
+            this.updateAIBot(dt);
+          } else {
+            // Smooth remote interpolation for human player
+            this.position.lerp(this.targetPos, dt * 15);
+            let diff = this.targetRot - this.group.rotation.y;
+            while (diff < -Math.PI) diff += Math.PI * 2;
+            while (diff > Math.PI) diff -= Math.PI * 2;
+            this.group.rotation.y += diff * Math.min(dt * 15, 1);
+          }
 
           // Handle Downed state visual
           if (this.isDowned) {
@@ -3276,7 +3788,8 @@
               classData: null,
               hp: 140,
               maxHp: 140,
-              isDowned: false
+              isDowned: false,
+              isReady: false
             });
 
             // Send host info and season theme to guest
@@ -3300,6 +3813,13 @@
             });
 
             document.getElementById('guest-status-pill').textContent = '✅ Connected to squad! Waiting for host...';
+            const guestReadyBtn = document.getElementById('btn-guest-ready');
+            if (guestReadyBtn) {
+              guestReadyBtn.style.display = 'block';
+              guestReadyBtn.classList.remove('ready');
+              guestReadyBtn.textContent = '🔴 CLICK TO READY UP';
+            }
+            state.guestIsReady = false;
             this.startSync();
           }
         });
@@ -3310,15 +3830,38 @@
 
         conn.on('close', () => {
           if (this.isHost) {
+            const guest = this.connections.get(conn.peer);
+            const departedName = guest ? guest.username : 'Squadmate';
             this.connections.delete(conn.peer);
-            this.removeRemoteHero(conn.peer);
-            this.broadcast({ type: 'PLAYER_LEFT', peerId: conn.peer });
+
+            if (state.phase === 'playing' || state.phase === 'refinery') {
+              // Convert departed guest hero into autonomous AI Bot
+              const rh = remoteHeroes.get(conn.peer);
+              if (rh) {
+                rh.isAI = true;
+                rh.username = departedName + ' [AI]';
+                if (rh.nameplate) rh.nameplate.update(rh.username, rh.hp / rh.maxHp, rh.isDowned, false);
+              }
+              this.broadcast({
+                type: 'PLAYER_DEPARTED_AI',
+                peerId: conn.peer,
+                username: departedName
+              });
+              startSquadPollVote(departedName);
+            } else {
+              this.removeRemoteHero(conn.peer);
+              this.broadcast({ type: 'PLAYER_LEFT', peerId: conn.peer });
+            }
             this.updateLobbyUI();
             updateTeammatesHUD();
           } else {
             document.getElementById('guest-status-pill').textContent = '⚠️ Disconnected from host.';
-            this.removeAllRemoteHeroes();
-            updateTeammatesHUD();
+            if (state.phase === 'playing' || state.phase === 'refinery') {
+              startSquadPollVote('Host');
+            } else {
+              this.removeAllRemoteHeroes();
+              updateTeammatesHUD();
+            }
           }
         });
       }
@@ -3407,8 +3950,6 @@
           // Guest syncs active month theme with host
           if (packet.month !== undefined && packet.month !== state.currentMonth) {
             applyTheme(packet.month);
-            const selectEl = document.getElementById('select-monthly-theme');
-            if (selectEl) selectEl.value = packet.month;
           }
           senderConn.send({
             type: 'GUEST_HANDSHAKE',
@@ -3426,6 +3967,7 @@
               guest.username = packet.username || 'Commander';
               guest.heroClass = packet.heroClass || 'paladin';
               guest.classData = packet.classData;
+              guest.isReady = false;
             }
             this.updateLobbyUI();
 
@@ -3439,15 +3981,31 @@
           return;
         }
 
+        if (packet.type === 'GUEST_READY_TOGGLE') {
+          if (this.isHost) {
+            const guest = this.connections.get(packet.peerId || senderConn.peer);
+            if (guest) {
+              guest.isReady = !!packet.ready;
+            }
+            this.updateLobbyUI();
+            this.broadcast({
+              type: 'LOBBY_STATE_SYNC',
+              players: this.getPlayerRoster(),
+              month: state.currentMonth
+            });
+          }
+          return;
+        }
+
         if (packet.type === 'LOBBY_STATE_SYNC') {
           if (!this.isHost) {
             if (packet.month !== undefined && packet.month !== state.currentMonth) {
               applyTheme(packet.month);
-              const selectEl = document.getElementById('select-monthly-theme');
-              if (selectEl) selectEl.value = packet.month;
             }
             this.renderRosterInElement('guest-lobby-roster', packet.players);
             document.getElementById('guest-lobby-roster').style.display = 'flex';
+            const guestReadyBtn = document.getElementById('btn-guest-ready');
+            if (guestReadyBtn) guestReadyBtn.style.display = 'block';
             document.getElementById('guest-status-pill').textContent = `🟢 Connected to squad (${packet.players.length}/4 Players). Waiting for host...`;
           }
           return;
@@ -3455,6 +4013,83 @@
 
         if (packet.type === 'START_GAME') {
           resetGame();
+          return;
+        }
+
+        if (packet.type === 'GUEST_EXITED') {
+          if (this.isHost) {
+            const pId = packet.peerId || senderConn.peer;
+            const departedName = packet.username || 'Squadmate';
+            this.connections.delete(pId);
+            if (state.phase === 'playing' || state.phase === 'refinery') {
+              const rh = remoteHeroes.get(pId);
+              if (rh) {
+                rh.isAI = true;
+                rh.username = departedName + ' [AI]';
+                if (rh.nameplate) rh.nameplate.update(rh.username, rh.hp / rh.maxHp, rh.isDowned, false);
+              }
+              this.broadcast({
+                type: 'PLAYER_DEPARTED_AI',
+                peerId: pId,
+                username: departedName
+              }, pId);
+              startSquadPollVote(departedName);
+            } else {
+              this.removeRemoteHero(pId);
+              this.broadcast({ type: 'PLAYER_LEFT', peerId: pId }, pId);
+            }
+            this.updateLobbyUI();
+            updateTeammatesHUD();
+          }
+          return;
+        }
+
+        if (packet.type === 'HOST_EXITED') {
+          if (!this.isHost) {
+            if (state.phase === 'playing' || state.phase === 'refinery') {
+              startSquadPollVote(packet.username || 'Host');
+            } else {
+              returnToLobby();
+            }
+          }
+          return;
+        }
+
+        if (packet.type === 'PLAYER_DEPARTED_AI') {
+          if (!this.isHost) {
+            const rh = remoteHeroes.get(packet.peerId);
+            if (rh) {
+              rh.isAI = true;
+              rh.username = packet.username + ' [AI]';
+              if (rh.nameplate) rh.nameplate.update(rh.username, rh.hp / rh.maxHp, rh.isDowned, false);
+            }
+            startSquadPollVote(packet.username);
+            updateTeammatesHUD();
+          }
+          return;
+        }
+
+        if (packet.type === 'POLL_VOTE_START') {
+          if (!this.isHost) {
+            startSquadPollVote(packet.departedName, packet.totalHumans);
+          }
+          return;
+        }
+
+        if (packet.type === 'CAST_POLL_VOTE') {
+          if (this.isHost) {
+            recordPollVote(packet.voterId || senderConn.peer, packet.vote);
+          }
+          return;
+        }
+
+        if (packet.type === 'POLL_VOTE_TALLY') {
+          updatePollTallyUI(packet.endCount, packet.continueCount, packet.totalHumans);
+          return;
+        }
+
+        if (packet.type === 'POLL_VOTE_RESOLVED') {
+          resolvePollVote(packet.decision, packet.endCount, packet.continueCount);
           return;
         }
 
@@ -3475,11 +4110,13 @@
             remoteHeroes.set(pId, rh);
           }
 
-          rh.targetPos.set(packet.x, 0, packet.z);
-          rh.targetRot = packet.rot;
-          rh.hp = packet.hp;
-          rh.maxHp = packet.maxHp;
-          rh.isDowned = packet.isDowned;
+          if (!rh.isAI) {
+            rh.targetPos.set(packet.x, 0, packet.z);
+            rh.targetRot = packet.rot;
+            rh.hp = packet.hp;
+            rh.maxHp = packet.maxHp;
+            rh.isDowned = packet.isDowned;
+          }
           if (rh.nameplate) {
             rh.nameplate.update(packet.username || rh.username, packet.hp / packet.maxHp, packet.isDowned, rh.isHost);
           }
@@ -3497,7 +4134,7 @@
           }
 
           const rh = remoteHeroes.get(pId);
-          if (rh) {
+          if (rh && !rh.isAI) {
             rh.triggerRemoteAttack(packet.facing, packet.combo, packet.class);
             const facingDir = new THREE.Vector3(packet.facing.x, 0, packet.facing.z).normalize();
             if (packet.class === 'paladin' || packet.class === 'melee') {
@@ -3534,7 +4171,7 @@
           }
 
           const rh = remoteHeroes.get(pId);
-          if (rh) {
+          if (rh && !rh.isAI) {
             rh.triggerRemoteSpecial(packet.pos);
           }
           return;
@@ -3577,7 +4214,8 @@
           id: 'host',
           username: state.username,
           heroClass: state.heroClass,
-          isHost: true
+          isHost: true,
+          isReady: true
         }];
 
         this.connections.forEach((c, peerId) => {
@@ -3585,7 +4223,8 @@
             id: peerId,
             username: c.username || 'Commander',
             heroClass: c.heroClass || 'paladin',
-            isHost: false
+            isHost: false,
+            isReady: !!c.isReady
           });
         });
 
@@ -3597,7 +4236,28 @@
         this.renderRosterInElement('host-lobby-roster', roster);
         const pill = document.getElementById('host-status-pill');
         if (pill) {
-          pill.textContent = `🟢 Room #${this.roomNumber} Live (${roster.length}/4 Players). Ready to deploy!`;
+          pill.textContent = `🟢 Room #${this.roomNumber} Live (${roster.length}/4 Players).`;
+        }
+
+        // Host launch button state: only allow host to start, and only once everyone is ready
+        let allGuestsReady = true;
+        let guestCount = 0;
+        this.connections.forEach(g => {
+          guestCount++;
+          if (!g.isReady) allGuestsReady = false;
+        });
+
+        const launchBtn = document.getElementById('btn-host-launch');
+        if (launchBtn) {
+          if (guestCount > 0 && !allGuestsReady) {
+            launchBtn.disabled = true;
+            launchBtn.classList.remove('all-ready');
+            launchBtn.textContent = '⏳ WAITING FOR SQUAD TO READY UP...';
+          } else {
+            launchBtn.disabled = false;
+            launchBtn.classList.add('all-ready');
+            launchBtn.textContent = guestCount > 0 ? '🚀 LAUNCH SQUAD BATTLE (ALL READY)' : '🚀 LAUNCH SQUAD BATTLE';
+          }
         }
       }
 
@@ -3611,6 +4271,9 @@
           const p = players[i];
           if (p) {
             slot.className = 'roster-slot active';
+            const readyTag = p.isHost 
+              ? '<span class="slot-ready-tag is-ready">HOST</span>' 
+              : (p.isReady ? '<span class="slot-ready-tag is-ready">READY</span>' : '<span class="slot-ready-tag not-ready">NOT READY</span>');
             slot.innerHTML = `
               <div class="slot-player-info">
                 <span>${p.isHost ? '👑' : '👤'}</span>
@@ -3618,7 +4281,7 @@
               </div>
               <div style="display: flex; align-items: center; gap: 8px;">
                 <span class="slot-badge">${p.heroClass ? p.heroClass.toUpperCase() : 'WARRIOR'}</span>
-                <span class="slot-ready-tag">READY</span>
+                ${readyTag}
               </div>
             `;
           } else {
@@ -3650,6 +4313,267 @@
     }
 
     net = new NetworkManager();
+
+    /* ==========================================================================
+       9B. SQUAD POLL VOTE & EXIT MATCH MANAGERS
+       ========================================================================== */
+    const pollState = {
+      active: false,
+      timer: 15,
+      interval: null,
+      myVote: null,
+      votes: new Map(), // voterId -> 'end' | 'continue'
+      totalHumans: 1,
+      departedName: ''
+    };
+
+    function startSquadPollVote(departedName, incomingTotalHumans) {
+      if (pollState.active) return;
+      pollState.active = true;
+      pollState.timer = 15;
+      pollState.myVote = null;
+      pollState.votes.clear();
+      pollState.departedName = departedName || 'Squadmate';
+
+      if (net.isHost) {
+        pollState.totalHumans = Math.max(1, net.connections.size + 1);
+        net.broadcast({
+          type: 'POLL_VOTE_START',
+          departedName: pollState.departedName,
+          totalHumans: pollState.totalHumans
+        });
+      } else {
+        pollState.totalHumans = incomingTotalHumans || 2;
+      }
+
+      const modal = document.getElementById('poll-vote-modal');
+      if (modal) modal.style.display = 'flex';
+
+      const descEl = document.getElementById('poll-vote-desc');
+      if (descEl) {
+        descEl.textContent = `A squadmate (${pollState.departedName}) has departed. An autonomous AI Bot has assumed command. Vote whether to return to the lobby or continue fighting:`;
+      }
+
+      const btnEnd = document.getElementById('btn-vote-end');
+      const btnCont = document.getElementById('btn-vote-continue');
+      if (btnEnd) {
+        btnEnd.disabled = false;
+        btnEnd.classList.remove('voted');
+        btnEnd.textContent = '🛑 End Match';
+      }
+      if (btnCont) {
+        btnCont.disabled = false;
+        btnCont.classList.remove('voted');
+        btnCont.textContent = '⚔️ Continue With AI';
+      }
+
+      const fill = document.getElementById('poll-timer-fill');
+      if (fill) fill.style.width = '100%';
+
+      const text = document.getElementById('poll-timer-text');
+      if (text) text.textContent = 'Time remaining: 15s';
+
+      updatePollTallyUI(0, 0, pollState.totalHumans);
+
+      if (pollState.interval) clearInterval(pollState.interval);
+      pollState.interval = setInterval(() => {
+        pollState.timer--;
+        const pct = Math.max(0, (pollState.timer / 15) * 100);
+        if (fill) fill.style.width = `${pct}%`;
+        if (text) text.textContent = `Time remaining: ${Math.max(0, pollState.timer)}s`;
+
+        if (pollState.timer <= 0) {
+          clearInterval(pollState.interval);
+          if (net.isHost || !net.peer) {
+            let endCount = 0, continueCount = 0;
+            pollState.votes.forEach(v => { if (v === 'end') endCount++; else continueCount++; });
+            const decision = (endCount / pollState.totalHumans >= 0.5) ? 'end' : 'continue';
+            if (net.isHost) {
+              net.broadcast({ type: 'POLL_VOTE_RESOLVED', decision: decision, endCount, continueCount });
+            }
+            resolvePollVote(decision, endCount, continueCount);
+          }
+        }
+      }, 1000);
+    }
+
+    function castPollVote(choice) {
+      if (!pollState.active || pollState.myVote) return;
+      pollState.myVote = choice;
+
+      const btnEnd = document.getElementById('btn-vote-end');
+      const btnCont = document.getElementById('btn-vote-continue');
+      if (choice === 'end') {
+        if (btnEnd) { btnEnd.classList.add('voted'); btnEnd.textContent = '🛑 End Match (Voted)'; }
+        if (btnCont) btnCont.disabled = true;
+      } else {
+        if (btnCont) { btnCont.classList.add('voted'); btnCont.textContent = '⚔️ Continue (Voted)'; }
+        if (btnEnd) btnEnd.disabled = true;
+      }
+
+      const myId = (net && net.myId) ? net.myId : 'host';
+      recordPollVote(myId, choice);
+
+      if (net && net.peer && !net.isHost) {
+        net.send({ type: 'CAST_POLL_VOTE', voterId: myId, vote: choice });
+      }
+    }
+
+    function recordPollVote(voterId, vote) {
+      pollState.votes.set(voterId, vote);
+
+      let endCount = 0, continueCount = 0;
+      pollState.votes.forEach(v => {
+        if (v === 'end') endCount++;
+        else continueCount++;
+      });
+
+      if (net.isHost) {
+        net.broadcast({
+          type: 'POLL_VOTE_TALLY',
+          endCount: endCount,
+          continueCount: continueCount,
+          totalHumans: pollState.totalHumans
+        });
+      }
+      updatePollTallyUI(endCount, continueCount, pollState.totalHumans);
+
+      // Check if threshold >= 50% end votes is reached
+      if (net.isHost || !net.peer) {
+        if (endCount / pollState.totalHumans >= 0.5) {
+          if (pollState.interval) clearInterval(pollState.interval);
+          if (net.isHost) {
+            net.broadcast({ type: 'POLL_VOTE_RESOLVED', decision: 'end', endCount, continueCount });
+          }
+          resolvePollVote('end', endCount, continueCount);
+        } else if (pollState.votes.size >= pollState.totalHumans) {
+          if (pollState.interval) clearInterval(pollState.interval);
+          if (net.isHost) {
+            net.broadcast({ type: 'POLL_VOTE_RESOLVED', decision: 'continue', endCount, continueCount });
+          }
+          resolvePollVote('continue', endCount, continueCount);
+        }
+      }
+    }
+
+    function updatePollTallyUI(endCount, continueCount, total) {
+      const tallyEl = document.getElementById('poll-tally-text');
+      if (tallyEl) {
+        tallyEl.textContent = `Votes: ${endCount} End vs ${continueCount} Continue (${endCount + continueCount}/${total} Voted • ≥ 50% End returns to lobby)`;
+      }
+    }
+
+    function resolvePollVote(decision, endCount, continueCount) {
+      if (!pollState.active) return;
+      pollState.active = false;
+      if (pollState.interval) clearInterval(pollState.interval);
+
+      const modal = document.getElementById('poll-vote-modal');
+      if (modal) modal.style.display = 'none';
+
+      if (decision === 'end') {
+        returnToLobby();
+      } else {
+        const banner = document.getElementById('revive-banner');
+        if (banner) {
+          banner.style.display = 'block';
+          banner.style.borderColor = 'var(--neon-cyan)';
+          banner.textContent = `⚔️ SQUAD DECISION: CONTINUING BATTLE WITH AI SQUADMATE!`;
+          setTimeout(() => { if (banner && !state.hero.isDowned) banner.style.display = 'none'; }, 4000);
+        }
+      }
+    }
+
+    function closePollVoteModal() {
+      pollState.active = false;
+      if (pollState.interval) clearInterval(pollState.interval);
+      const modal = document.getElementById('poll-vote-modal');
+      if (modal) modal.style.display = 'none';
+    }
+
+    function openExitConfirmModal() {
+      const modal = document.getElementById('exit-confirm-modal');
+      if (modal) modal.style.display = 'flex';
+    }
+
+    function closeExitConfirmModal() {
+      const modal = document.getElementById('exit-confirm-modal');
+      if (modal) modal.style.display = 'none';
+    }
+
+    function executeExitMatch() {
+      closeExitConfirmModal();
+      if (state.gameMode === 'multiplayer') {
+        if (net.isHost) {
+          net.broadcast({ type: 'HOST_EXITED', username: state.username });
+        } else {
+          net.send({ type: 'GUEST_EXITED', peerId: net.myId, username: state.username });
+        }
+        if (net.peer) {
+          try { net.peer.destroy(); } catch(e){}
+          net.peer = null;
+        }
+      }
+      returnToLobby();
+    }
+
+    function returnToLobby() {
+      state.phase = 'title';
+      closePollVoteModal();
+      closeExitConfirmModal();
+      document.getElementById('refinery-modal').style.display = 'none';
+      document.getElementById('gameover-modal').style.display = 'none';
+      document.getElementById('revive-banner').style.display = 'none';
+      document.getElementById('boss-hud').style.display = 'none';
+
+      // Clean arena entities
+      enemies.forEach(e => e.destroy());
+      enemies.length = 0;
+      materialDrops.forEach(m => scene.remove(m.mesh));
+      materialDrops.length = 0;
+      slashWaves.forEach(w => scene.remove(w.mesh));
+      slashWaves.length = 0;
+      projectiles.forEach(p => scene.remove(p.mesh));
+      projectiles.length = 0;
+      gunnerRockets.forEach(r => scene.remove(r.mesh));
+      gunnerRockets.length = 0;
+      blackHoles.forEach(h => scene.remove(h.mesh));
+      blackHoles.length = 0;
+      shockwaves.forEach(w => scene.remove(w.mesh));
+      shockwaves.length = 0;
+      explosions.forEach(x => scene.remove(x.pSystem));
+      explosions.length = 0;
+
+      if (hero) {
+        hero.position.set(0, 0, 0);
+        hero.velocity.set(0, 0);
+      }
+      net.removeAllRemoteHeroes();
+      updateTeammatesHUD();
+
+      // Show Start/Lobby Modal
+      document.getElementById('start-modal').style.display = 'flex';
+      if (state.gameMode === 'multiplayer') {
+        if (net.isHost) {
+          net.initHost();
+        } else {
+          document.getElementById('guest-status-pill').textContent = 'Enter room number above';
+          document.getElementById('guest-lobby-roster').style.display = 'none';
+          const guestReadyBtn = document.getElementById('btn-guest-ready');
+          if (guestReadyBtn) guestReadyBtn.style.display = 'none';
+        }
+      }
+    }
+
+    function openShortcutsModal() {
+      const modal = document.getElementById('shortcuts-modal');
+      if (modal) modal.style.display = 'flex';
+    }
+
+    function closeShortcutsModal() {
+      const modal = document.getElementById('shortcuts-modal');
+      if (modal) modal.style.display = 'none';
+    }
 
     /* ==========================================================================
        10. COMBAT ACTIONS (BY HERO CLASS)
@@ -4240,6 +5164,10 @@
     }
 
     function updateVitalsHUD() {
+      const nameEl = document.getElementById('local-hero-name');
+      if (nameEl) {
+        nameEl.textContent = (state.username || 'COMMANDER').toUpperCase();
+      }
       const hpPct = Math.max(0, Math.min(100, (state.hero.hp / state.hero.maxHp) * 100));
       document.getElementById('hp-bar').style.width = `${hpPct}%`;
       document.getElementById('hp-text').textContent = `${Math.ceil(state.hero.hp)}/${state.hero.maxHp}`;
@@ -4499,12 +5427,46 @@
       hero.velocity.set(normX * (clampedDist / maxRadius), normY * (clampedDist / maxRadius));
     }
 
-    // Keyboard Controls
+    /* ==========================================================================
+       14B. PLATFORM DETECTION & KEYBOARD / TOUCH CONTROLS
+       ========================================================================== */
+    function detectPlatform() {
+      const isMobileUA = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+      const hasCoarsePointer = window.matchMedia && window.matchMedia('(pointer: coarse)').matches;
+      const hasHover = window.matchMedia && window.matchMedia('(hover: hover)').matches;
+      const isTouch = ('ontouchstart' in window) || (navigator.maxTouchPoints > 0);
+
+      if (isMobileUA || (isTouch && hasCoarsePointer && !hasHover)) {
+        return 'mobile';
+      }
+      return 'desktop';
+    }
+
+    state.platform = detectPlatform();
+    document.body.classList.remove('platform-desktop', 'platform-mobile');
+    document.body.classList.add(state.platform === 'desktop' ? 'platform-desktop' : 'platform-mobile');
+
+    // Keyboard Controls (STRICTLY GATED TO DESKTOP PLAYERS)
     const keys = {};
     window.addEventListener('keydown', (e) => {
+      if (state.platform !== 'desktop') return;
+      if (e.target && (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA')) {
+        return;
+      }
       sound.init();
       const k = e.key.toLowerCase();
       keys[k] = true;
+
+      // Escape key triggers exit confirmation
+      if (e.key === 'Escape') {
+        e.preventDefault();
+        if (state.phase === 'playing' || state.phase === 'refinery') {
+          openExitConfirmModal();
+        }
+        return;
+      }
+
+      if (state.phase !== 'playing') return;
 
       if (e.key === ' ' || k === 'f' || k === 'j') {
         e.preventDefault();
@@ -4521,10 +5483,13 @@
       }
     });
 
-    window.addEventListener('keyup', (e) => { keys[e.key.toLowerCase()] = false; });
+    window.addEventListener('keyup', (e) => {
+      if (state.platform !== 'desktop') return;
+      keys[e.key.toLowerCase()] = false;
+    });
 
     function updateKeyboardMovement() {
-      if (joystickActive) return;
+      if (state.platform !== 'desktop' || joystickActive || state.phase !== 'playing') return;
       let moveX = 0, moveZ = 0;
       if (keys['w'] || keys['arrowup']) moveZ -= 1;
       if (keys['s'] || keys['arrowdown']) moveZ += 1;
@@ -4537,32 +5502,6 @@
       } else {
         hero.velocity.set(0, 0);
       }
-    }
-
-    // Monthly Theme Selector Initialization
-    const themeSelect = document.getElementById('select-monthly-theme');
-    if (themeSelect) {
-      themeSelect.innerHTML = '';
-      MONTHLY_THEMES.forEach((thm, idx) => {
-        const opt = document.createElement('option');
-        opt.value = idx;
-        opt.textContent = `${thm.icon} ${thm.monthName} — ${thm.name}`;
-        if (idx === state.currentMonth) opt.selected = true;
-        themeSelect.appendChild(opt);
-      });
-
-      themeSelect.addEventListener('change', (e) => {
-        const monthIdx = parseInt(e.target.value, 10);
-        sound.playPickup();
-        applyTheme(monthIdx);
-        if (state.gameMode === 'multiplayer' && net.isHost) {
-          net.broadcast({
-            type: 'LOBBY_STATE_SYNC',
-            players: net.getPlayerRoster(),
-            month: monthIdx
-          });
-        }
-      });
     }
 
     // Username Requirement & Real-time Validation
@@ -4582,6 +5521,8 @@
       if (usernameAlert) usernameAlert.style.display = 'none';
       state.username = val;
       localStorage.setItem('broadroads_username', val);
+      const nameEl = document.getElementById('local-hero-name');
+      if (nameEl) nameEl.textContent = val.toUpperCase();
       if (hero && hero.nameplate) {
         hero.nameplate.update(val, state.hero.hp / state.hero.maxHp, state.hero.isDowned, net.isHost);
       }
@@ -4590,10 +5531,15 @@
 
     if (usernameInput) {
       usernameInput.value = state.username;
+      const nameEl = document.getElementById('local-hero-name');
+      if (nameEl) nameEl.textContent = state.username.toUpperCase();
+
       usernameInput.addEventListener('input', (e) => {
         const val = e.target.value.trim().slice(0, 16);
         state.username = val || 'Commander';
         localStorage.setItem('broadroads_username', state.username);
+        const nameHeader = document.getElementById('local-hero-name');
+        if (nameHeader) nameHeader.textContent = state.username.toUpperCase();
         if (val.length >= 2 && usernameAlert) {
           usernameAlert.style.display = 'none';
         }
@@ -4612,6 +5558,7 @@
       document.getElementById('tab-mp').classList.remove('active');
       document.getElementById('solo-panel').style.display = 'flex';
       document.getElementById('mp-panel').style.display = 'none';
+      document.getElementById('btn-start-game').style.display = 'block';
     });
 
     document.getElementById('tab-mp').addEventListener('click', () => {
@@ -4622,6 +5569,7 @@
       document.getElementById('tab-solo').classList.remove('active');
       document.getElementById('solo-panel').style.display = 'none';
       document.getElementById('mp-panel').style.display = 'flex';
+      document.getElementById('btn-start-game').style.display = 'none';
       if (!net.roomNumber) net.initHost();
     });
 
@@ -4690,6 +5638,47 @@
       }
     });
 
+    // Guest Ready Toggle Button
+    const btnGuestReady = document.getElementById('btn-guest-ready');
+    if (btnGuestReady) {
+      btnGuestReady.addEventListener('click', () => {
+        sound.playPickup();
+        state.guestIsReady = !state.guestIsReady;
+        if (state.guestIsReady) {
+          btnGuestReady.classList.add('ready');
+          btnGuestReady.textContent = '🟢 SQUAD READY! (WAITING FOR HOST)';
+        } else {
+          btnGuestReady.classList.remove('ready');
+          btnGuestReady.textContent = '🔴 CLICK TO READY UP';
+        }
+        net.send({
+          type: 'GUEST_READY_TOGGLE',
+          ready: state.guestIsReady,
+          peerId: net.myId,
+          username: state.username
+        });
+      });
+    }
+
+    // Host Launch Squad Battle Button
+    const btnHostLaunch = document.getElementById('btn-host-launch');
+    if (btnHostLaunch) {
+      btnHostLaunch.addEventListener('click', () => {
+        if (btnHostLaunch.disabled) return;
+        if (!validateUsername()) return;
+
+        if (state.platform === 'desktop' && !sessionStorage.getItem('broadroads_shortcuts_shown')) {
+          sessionStorage.setItem('broadroads_shortcuts_shown', '1');
+          pendingStartGame = true;
+          openShortcutsModal();
+          return;
+        }
+
+        net.broadcast({ type: 'START_GAME' });
+        resetGame();
+      });
+    }
+
     // Auto-fill from URL param ?room=123456
     const urlParams = new URLSearchParams(window.location.search);
     const roomParam = urlParams.get('room');
@@ -4705,6 +5694,74 @@
       }
     }
 
+    // Shortcuts Modal Handlers & Quick How To Play Dialog
+    let pendingStartGame = false;
+    const btnOpenShortcuts = document.getElementById('btn-open-shortcuts');
+    if (btnOpenShortcuts) {
+      btnOpenShortcuts.addEventListener('click', () => {
+        sound.playPickup();
+        pendingStartGame = false;
+        openShortcutsModal();
+      });
+    }
+
+    const btnCloseShortcuts = document.getElementById('btn-close-shortcuts');
+    if (btnCloseShortcuts) {
+      btnCloseShortcuts.addEventListener('click', () => {
+        sound.playPickup();
+        closeShortcutsModal();
+        if (pendingStartGame) {
+          pendingStartGame = false;
+          if (state.gameMode === 'multiplayer' && net.isHost) {
+            net.broadcast({ type: 'START_GAME' });
+          }
+          resetGame();
+        }
+      });
+    }
+
+    // Exit Game Modal Handlers
+    const btnExitGame = document.getElementById('btn-exit-game');
+    if (btnExitGame) {
+      btnExitGame.addEventListener('click', () => {
+        sound.playPickup();
+        openExitConfirmModal();
+      });
+    }
+
+    const btnCancelExit = document.getElementById('btn-cancel-exit');
+    if (btnCancelExit) {
+      btnCancelExit.addEventListener('click', () => {
+        sound.playPickup();
+        closeExitConfirmModal();
+      });
+    }
+
+    const btnConfirmExit = document.getElementById('btn-confirm-exit');
+    if (btnConfirmExit) {
+      btnConfirmExit.addEventListener('click', () => {
+        sound.playHit();
+        executeExitMatch();
+      });
+    }
+
+    // Squad Poll Vote Buttons
+    const btnVoteEnd = document.getElementById('btn-vote-end');
+    if (btnVoteEnd) {
+      btnVoteEnd.addEventListener('click', () => {
+        sound.playHit();
+        castPollVote('end');
+      });
+    }
+
+    const btnVoteContinue = document.getElementById('btn-vote-continue');
+    if (btnVoteContinue) {
+      btnVoteContinue.addEventListener('click', () => {
+        sound.playPickup();
+        castPollVote('continue');
+      });
+    }
+
     // Refinery Button Binds
     bindAction(document.getElementById('card-pyrite'), () => insertMaterialToCrucible('pyrite'));
     bindAction(document.getElementById('card-aether'), () => insertMaterialToCrucible('aether'));
@@ -4716,12 +5773,17 @@
     bindAction(document.getElementById('btn-quick-forge'), executeAutoForge);
     bindAction(document.getElementById('btn-next-wave'), () => startWave(state.currentWave + 1));
 
-    // Start Game Button
+    // Start Game Button (Solo Mode)
     bindAction(document.getElementById('btn-start-game'), () => {
       if (!validateUsername()) return;
-      if (state.gameMode === 'multiplayer' && net.isHost) {
-        net.broadcast({ type: 'START_GAME' });
+
+      if (state.platform === 'desktop' && !sessionStorage.getItem('broadroads_shortcuts_shown')) {
+        sessionStorage.setItem('broadroads_shortcuts_shown', '1');
+        pendingStartGame = true;
+        openShortcutsModal();
+        return;
       }
+
       resetGame();
     });
 

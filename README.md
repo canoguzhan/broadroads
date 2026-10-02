@@ -8,8 +8,8 @@
 
 ## 🌟 What's New & Core Features
 
-### 1. 📅 12 Monthly Seasonal Themes & 36 Unique Hero Classes
-BROADROADS moves beyond static neon styling with **12 complete monthly arena seasons**. Every month features tailored 3D lighting, custom ground palettes, ambient fog, dust motes, and **3 distinct thematic classes (Melee, Ranged, Magic)**:
+### 1. 📅 Automatic Monthly Seasonal Themes & 36 Unique Hero Classes
+BROADROADS moves beyond static neon styling with **12 complete monthly arena seasons**. The arena automatically synchronizes to the **current calendar month** (e.g. October Hallowed Dusk), featuring tailored 3D lighting, custom ground palettes, ambient fog, dust motes, and **3 distinct thematic classes (Melee, Ranged, Magic)**:
 
 | Month | Season Theme | 🛡️ Melee Class | 🏹 Ranged Class | 🔮 Magic Class |
 | :--- | :--- | :--- | :--- | :--- |
@@ -22,31 +22,41 @@ BROADROADS moves beyond static neon styling with **12 complete monthly arena sea
 | **July** | ✨ Astral Starlight Nexus | **Cosmic Knight** (`Supernova Blast`) | **Starlight Striker** (`Comet Volley`) | **Nebula Weaver** (`Singularity Rift`) |
 | **August** | ⚙️ Ironclad Wasteland | **Steam Dreadnought** (`Quake Cleave`) | **Gatling Mech** (`Overcharged Salvo`) | **Scrap Alchemist** (`Magnetic Vortex`) |
 | **September** | 🌸 Spirit Twilight Glen | **Moonlit Blade** (`Lunar Crescent`) | **Phantom Bowmaster** (`Ghost Spirit Missiles`) | **Spiritbinder** (`Soul Singularity`) |
-| **October** | 🎃 Hallowed Dusk | **Pumpkin Slayer** (`Jack-O-Lantern Slam`) | **Grave Marksman** (`Bat Swarm Rockets`) | **Necromancer** (`Void Soul Well`) |
+| **October** | 🎃 Hallowed Dusk | **Crypt Reaper** (`Reaper Cataclysm`) | **Grave Marksman** (`Spectral Volley`) | **Necro Caster** (`Nether Chasm Vortex`) |
 | **November** | 🕰️ Chrono Clockwork Vault | **Clockwork Sentinel** (`Time Rupture`) | **Steam Pulser** (`Temporal Rockets`) | **Chronomancer** (`Time Dilation Vortex`) |
 | **December** | 🌌 Aurora Borealis Solstice | **Glacier Champion** (`Boreal Cataclysm`) | **Aurora Gunslinger** (`Prismatic Rocket Rain`) | **Celestial Mystic** (`Aurora Vortex Well`) |
 
-Players can switch themes anytime using the seasonal dropdown menu in the start screen, or play the active calendar month automatically!
+The active season is automatically locked and showcased via the non-editable seasonal badge in the main lobby.
 
 ---
 
-### 2. 🌐 Up to 4-Player Peer-to-Peer Co-op Multiplayer
+### 2. 💻 Platform Adaptation & Desktop Shortcuts
+- **Automatic Platform Detection**: Detects desktop vs mobile touch environments. On desktop, the virtual touch joystick is hidden and keybind badges (`[C]`, `[E]`, `[SHIFT]`, `[SPACE]`) are displayed on action buttons.
+- **Desktop Keyboard Shortcuts**: Only desktop players can trigger keyboard shortcuts (`WASD`/Arrows to move, `Space`/`F`/`J` or Left Click to strike, `Shift`/`K` or Right Click to dash, `E`/`Q`/`L` for special skills, `C`/`R` for auto-attack, `Escape` to abandon match).
+- **Quick How-To-Play Modal**: Desktop users are greeted with a quick controls modal on their first match, and can reopen it anytime during combat via the `⌨️ HELP` button in the top HUD.
+- **Abandon / Exit Match**: Players can exit back to the lobby at any time using the `🚪 EXIT` button or pressing `Escape`.
+
+---
+
+### 3. 🌐 Up to 4-Player Peer-to-Peer Co-op Multiplayer
 - **Serverless WebRTC (PeerJS)**: Zero dedicated game server required! Runs entirely free on GitHub Pages and static web hosts.
-- **4-Player Lobbies**: Star-Topology Host relay connects up to 4 players simultaneously with real-time slot roster tracking.
-- **Pure Numeric Room Codes**: Generates clean numeric codes with no digit limit (e.g. `#748201`, `#4918234`), with direct invite URL support (`?room=748201`).
+- **Host Launch & Guest Ready System**: Only the room host can launch the squad battle. Connected guests click `🔴 CLICK TO READY UP`. The launch button is disabled until all connected squadmates are ready, ensuring everyone simultaneously enters the arena!
+- **AI Bot Compensation & Squad Poll Vote**:
+  - If a player disconnects or exits during battle, an autonomous AI Bot immediately assumes command of their hero to keep fighting, attacking enemies, casting skills, and helping revive teammates.
+  - A 15-second Squad Poll Vote (`🛑 End Match` vs `⚔️ Continue With AI`) triggers across remaining players. If ≥ 50% vote to end, the squad safely returns to the lobby; otherwise, the match continues with the AI bot.
+- **Pure Numeric Room Codes**: Generates clean numeric codes with no digit limit (e.g. `#108562`), with direct invite URL support (`?room=108562`).
 - **Synchronized Hit & Combat Visibility**:
   - All player attack swings, lasers, sparks, rockets, and ultimate vortexes are visible across all screens.
   - Every enemy strike broadcasts an authoritative `ENEMY_HIT` event showing the attacker's username, floating combat text (`CRIT! 84`), white damage flashes, and knockback!
 - **Co-op Squad Revives**:
-  - Downed teammates can crawl slowly while alive squadmates stand within their runic reviving circle to resurrect them with 50% HP.
+  - Downed teammates can crawl slowly while alive squadmates (or AI bots!) stand within their runic reviving circle to resurrect them with 50% HP.
   - Game Over triggers only when all connected squad members are downed.
 - **Required Commander Usernames**:
-  - Every player chooses a persistent Commander username (minimum 2 characters).
-  - Floating 3D overhead nameplates display player names, live HP bars, downed warnings, and host crowns (`👑`).
+  - Every player chooses a persistent Commander username displayed prominently in the top-left vitals bar and in 3D floating overhead nameplates.
 
 ---
 
-### 3. ⚔️ Single Player Modes
+### 4. ⚔️ Single Player Modes
 - **🏆 Classic Survival**: 5 waves of escalating enemy counts culminating in the Overlord boss fight.
 - **♾️ Endless Horde**: Uncapped scaling waves with recurring boss encounters every 5 rounds, tracking total kills, damage, and waves conquered.
 
@@ -61,6 +71,8 @@ Players can switch themes anytime using the seasonal dropdown menu in the start 
 | **Dash / Dodge** | Tap `💨 DASH` button | `Shift`, `K`, or Right Click |
 | **Special Skill** | Tap `⚡ NOVA / BARRAGE / VORTEX` | `E`, `Q`, or `L` |
 | **Auto-Attack** | Tap `🎯 AUTO` toggle | `C` or `R` |
+| **Controls Help** | N/A (Touch UI) | `⌨️ HELP` in top HUD |
+| **Exit Match** | Tap `🚪 EXIT` in top HUD | `🚪 EXIT` or `Escape` key |
 | **Refinery Craft**| Tap mineral cards to insert | Tap/Click minerals + `🔨 STRIKE ANVIL` |
 
 ---
