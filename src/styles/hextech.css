@@ -1,0 +1,2917 @@
+    /* ==========================================================================
+       LEAGUE OF HEXTECH DESIGN SYSTEM (LoL Match Screen & HUD)
+       ========================================================================== */
+    :root {
+      --lol-gold-1: #f0e6d2;
+      --lol-gold-2: #c8aa6e;
+      --lol-gold-3: #c89b3c;
+      --lol-gold-4: #785a28;
+      --lol-gold-5: #3c301c;
+      --lol-blue-dark: #010a13;
+      --lol-blue-card: rgba(9, 20, 40, 0.94);
+      --lol-blue-glow: rgba(0, 245, 212, 0.35);
+      --lol-teal: #0ac8b9;
+      --lol-hp-green: #15a05c;
+      --lol-hp-bright: #26d07c;
+      --lol-mana-blue: #00bbf9;
+      --lol-font-title: 'Cinzel', 'Chakra Petch', serif;
+    }
+
+    /* LoL Hextech Cursor */
+    html, body {
+      cursor: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 32 32"><polygon points="3,3 23,12 14,14 12,23" fill="%23c8aa6e" stroke="%233c301c" stroke-width="1.5"/><circle cx="10" cy="10" r="2.5" fill="%2300f5d4"/><polygon points="4,4 12,12 8,13" fill="%23f0e6d2"/></svg>'), default !important;
+    }
+    button, .interactive, .lol-spell-slot, .lol-item-slot, .btn-action, #lol-minimap-canvas {
+      cursor: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 32 32"><polygon points="3,3 23,12 14,14 12,23" fill="%23ffb703" stroke="%23785a28" stroke-width="1.5"/><circle cx="10" cy="10" r="2.5" fill="%23ff0054"/></svg>'), pointer !important;
+    }
+
+    /* Hide legacy mobile HUD elements on desktop when playing */
+    body.platform-desktop .top-hud {
+      display: none !important;
+    }
+    body.platform-desktop .mobile-controls {
+      display: none !important;
+    }
+
+    /* --------------------------------------------------------------------------
+       1. LoL Match Loading Screen (VS Cards)
+       -------------------------------------------------------------------------- */
+    .lol-loading-screen {
+      position: fixed;
+      top: 0; left: 0; width: 100vw; height: 100vh;
+      z-index: 9999;
+      background: radial-gradient(circle at center, #091428 0%, #010a13 75%, #000408 100%);
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      align-items: center;
+      padding: 30px 40px;
+      color: #f0e6d2;
+      overflow: hidden;
+      animation: lolFadeIn 0.4s ease-out;
+    }
+    @keyframes lolFadeIn {
+      from { opacity: 0; transform: scale(1.02); }
+      to { opacity: 1; transform: scale(1.0); }
+    }
+    .lol-loading-bg {
+      position: absolute;
+      top: 0; left: 0; width: 100%; height: 100%;
+      background: 
+        radial-gradient(ellipse at 50% 50%, rgba(200, 170, 110, 0.08) 0%, transparent 60%),
+        repeating-linear-gradient(45deg, rgba(255,255,255,0.015) 0px, rgba(255,255,255,0.015) 2px, transparent 2px, transparent 8px);
+      pointer-events: none;
+    }
+    .lol-loading-header {
+      z-index: 2;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 4px;
+    }
+    .lol-loading-logo {
+      font-family: var(--lol-font-title);
+      font-size: 26px;
+      font-weight: 900;
+      letter-spacing: 5px;
+      color: #f0e6d2;
+      background: linear-gradient(180deg, #f0e6d2 0%, #c8aa6e 60%, #785a28 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      text-shadow: 0 0 20px rgba(200, 170, 110, 0.5);
+    }
+    .lol-loading-mode {
+      font-family: var(--font-title);
+      font-size: 12px;
+      letter-spacing: 2px;
+      color: #0ac8b9;
+      text-transform: uppercase;
+    }
+    .lol-loading-cards-wrap {
+      z-index: 2;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 40px;
+      width: 100%;
+      max-width: 950px;
+    }
+    .lol-load-card {
+      width: 280px;
+      height: 440px;
+      background: #091428;
+      border: 3px solid #c8aa6e;
+      box-shadow: 0 10px 40px rgba(0, 0, 0, 0.9), 0 0 20px rgba(200, 170, 110, 0.25);
+      position: relative;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      overflow: hidden;
+      border-radius: 4px;
+      transition: transform 0.3s ease;
+    }
+    .lol-load-card.red-side {
+      border-color: #ff0054;
+      box-shadow: 0 10px 40px rgba(0,0,0,0.9), 0 0 20px rgba(255, 0, 84, 0.3);
+    }
+    .lol-card-frame {
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      position: relative;
+    }
+    .lol-card-art {
+      position: absolute;
+      top: 0; left: 0; width: 100%; height: 100%;
+      background: radial-gradient(circle at 50% 35%, rgba(0, 245, 212, 0.25) 0%, #060e1e 75%);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .lol-card-art.enemy-art {
+      background: radial-gradient(circle at 50% 35%, rgba(255, 0, 84, 0.3) 0%, #1a040c 75%);
+    }
+    .lol-card-avatar {
+      font-size: 84px;
+      filter: drop-shadow(0 0 25px rgba(0, 245, 212, 0.6));
+      animation: floatAvatar 3s ease-in-out infinite alternate;
+    }
+    @keyframes floatAvatar {
+      0% { transform: translateY(-5px); }
+      100% { transform: translateY(5px); }
+    }
+    .lol-card-ribbon {
+      position: relative;
+      z-index: 3;
+      align-self: center;
+      margin-top: 14px;
+      background: linear-gradient(90deg, #785a28, #c8aa6e, #785a28);
+      color: #010a13;
+      font-family: var(--lol-font-title);
+      font-size: 11px;
+      font-weight: 900;
+      letter-spacing: 2px;
+      padding: 3px 16px;
+      border-radius: 2px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.6);
+    }
+    .lol-card-ribbon.red-ribbon {
+      background: linear-gradient(90deg, #6b0f24, #ff0054, #6b0f24);
+      color: #fff;
+    }
+    .lol-card-details {
+      position: relative;
+      z-index: 3;
+      padding: 16px;
+      background: linear-gradient(to top, rgba(1, 10, 19, 0.96) 0%, rgba(1, 10, 19, 0.8) 60%, transparent 100%);
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+    .lol-card-champ {
+      font-family: var(--lol-font-title);
+      font-size: 18px;
+      font-weight: 900;
+      letter-spacing: 1px;
+      color: #f0e6d2;
+      text-transform: uppercase;
+    }
+    .lol-card-player {
+      font-family: var(--font-title);
+      font-size: 13px;
+      font-weight: 700;
+      color: #0ac8b9;
+      letter-spacing: 1px;
+    }
+    .lol-card-spells {
+      display: flex;
+      gap: 8px;
+      margin-top: 6px;
+    }
+    .card-spell, .card-rune {
+      width: 26px;
+      height: 26px;
+      background: rgba(9, 20, 40, 0.85);
+      border: 1px solid #c8aa6e;
+      border-radius: 3px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 14px;
+    }
+    .lol-card-loadbar-wrap {
+      position: relative;
+      z-index: 3;
+      width: 100%;
+      height: 22px;
+      background: #010a13;
+      border-top: 1px solid #785a28;
+    }
+    .lol-card-loadbar-fill {
+      height: 100%;
+      background: linear-gradient(90deg, #0ac8b9, #00f5d4);
+      box-shadow: 0 0 10px rgba(0, 245, 212, 0.8);
+      transition: width 0.15s ease-out;
+    }
+    .lol-card-loadbar-fill.red-loadbar {
+      background: linear-gradient(90deg, #ff0054, #ff5400);
+      box-shadow: 0 0 10px rgba(255, 0, 84, 0.8);
+    }
+    .lol-card-pct {
+      position: absolute;
+      top: 0; left: 0; width: 100%; height: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: var(--font-mono);
+      font-size: 11px;
+      font-weight: 900;
+      color: #fff;
+      text-shadow: 0 1px 3px #000;
+    }
+    .lol-vs-crest {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+    }
+    .vs-circle {
+      width: 70px;
+      height: 70px;
+      border-radius: 50%;
+      background: radial-gradient(circle, #c8aa6e 0%, #785a28 70%, #3c301c 100%);
+      border: 2px solid #f0e6d2;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: var(--lol-font-title);
+      font-size: 24px;
+      font-weight: 900;
+      color: #010a13;
+      box-shadow: 0 0 30px rgba(200, 170, 110, 0.7);
+    }
+    .lol-loading-footer {
+      z-index: 2;
+      width: 100%;
+      max-width: 950px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: rgba(9, 20, 40, 0.8);
+      border: 1px solid #785a28;
+      border-radius: 4px;
+      padding: 10px 18px;
+    }
+    .lol-pro-tip {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 13px;
+      color: #c8aa6e;
+    }
+    .lol-loading-actions {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+    .btn-skip-loading {
+      background: linear-gradient(180deg, #c8aa6e, #785a28);
+      border: 1px solid #f0e6d2;
+      color: #010a13;
+      font-family: var(--lol-font-title);
+      font-size: 11px;
+      font-weight: 900;
+      letter-spacing: 1px;
+      padding: 6px 14px;
+      border-radius: 3px;
+      cursor: pointer;
+    }
+
+    /* --------------------------------------------------------------------------
+       2. LoL Top Match Header / Scoreboard Bar
+       -------------------------------------------------------------------------- */
+    .lol-top-hud {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 8px 18px;
+      background: linear-gradient(180deg, rgba(1, 10, 19, 0.95) 0%, rgba(9, 20, 40, 0.8) 75%, transparent 100%);
+      border-bottom: 2px solid #785a28;
+      pointer-events: auto;
+      z-index: 40;
+    }
+    .lol-top-score-group {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .lol-score-badge {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 4px 10px;
+      border-radius: 4px;
+      font-family: var(--font-title);
+      font-weight: 900;
+    }
+    .lol-score-badge.blue-team {
+      background: rgba(10, 200, 185, 0.15);
+      border: 1px solid #0ac8b9;
+      color: #0ac8b9;
+    }
+    .lol-score-badge.red-team {
+      background: rgba(255, 0, 84, 0.15);
+      border: 1px solid #ff0054;
+      color: #ff0054;
+    }
+    .team-score {
+      font-family: var(--font-mono);
+      font-size: 17px;
+      font-weight: 900;
+      color: #fff;
+    }
+    .team-label {
+      font-size: 11px;
+      letter-spacing: 1px;
+    }
+    .lol-score-vs {
+      font-family: var(--lol-font-title);
+      font-size: 12px;
+      font-weight: 900;
+      color: #c8aa6e;
+    }
+    .lol-top-center-group {
+      display: flex;
+      align-items: center;
+      gap: 20px;
+    }
+    .lol-match-timer {
+      font-family: var(--font-mono);
+      font-size: 18px;
+      font-weight: 900;
+      color: #f0e6d2;
+      background: rgba(9, 20, 40, 0.85);
+      border: 1px solid #c8aa6e;
+      border-radius: 4px;
+      padding: 4px 12px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      box-shadow: 0 0 12px rgba(200, 170, 110, 0.25);
+    }
+    .lol-wave-objective {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      background: rgba(9, 20, 40, 0.7);
+      border: 1px solid #785a28;
+      border-radius: 4px;
+      padding: 4px 12px;
+    }
+    .wave-dragon-crest {
+      font-size: 18px;
+    }
+    .wave-info-col {
+      display: flex;
+      flex-direction: column;
+      gap: 3px;
+    }
+    .wave-name {
+      font-family: var(--font-title);
+      font-size: 11px;
+      font-weight: 900;
+      color: #ffb703;
+      letter-spacing: 1px;
+    }
+    .wave-progress-bar {
+      width: 100px;
+      height: 4px;
+      background: rgba(255, 255, 255, 0.1);
+      border-radius: 2px;
+      overflow: hidden;
+    }
+    .wave-progress-fill {
+      height: 100%;
+      background: linear-gradient(90deg, #ffb703, #fb8500);
+      transition: width 0.2s ease-out;
+    }
+    .threats-badge {
+      font-family: var(--font-mono);
+      font-size: 11px;
+      color: #ff0054;
+      background: rgba(255, 0, 84, 0.15);
+      border: 1px solid rgba(255, 0, 84, 0.4);
+      padding: 2px 6px;
+      border-radius: 3px;
+    }
+    .lol-top-right-group {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+    }
+    .lol-cs-badge {
+      font-family: var(--font-mono);
+      font-size: 13px;
+      font-weight: 700;
+      color: #c8aa6e;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+    .lol-perf-badge {
+      font-family: var(--font-mono);
+      font-size: 11px;
+      color: #8896b3;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .btn-lol-icon {
+      background: rgba(9, 20, 40, 0.8);
+      border: 1px solid #785a28;
+      color: #f0e6d2;
+      width: 32px;
+      height: 32px;
+      border-radius: 4px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 14px;
+      cursor: pointer;
+      transition: all 0.15s ease;
+    }
+    .btn-lol-icon:hover {
+      border-color: #c8aa6e;
+      box-shadow: 0 0 10px rgba(200, 170, 110, 0.5);
+    }
+    .btn-lol-exit:hover {
+      border-color: #ff0054;
+      color: #ff0054;
+      box-shadow: 0 0 10px rgba(255, 0, 84, 0.5);
+    }
+
+    /* --------------------------------------------------------------------------
+       3. Left Ally Team Frames (LoL Sidebar)
+       -------------------------------------------------------------------------- */
+    .lol-allies-hud {
+      position: absolute;
+      top: 70px;
+      left: 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      pointer-events: auto;
+      z-index: 35;
+    }
+    .lol-ally-card {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      background: rgba(9, 20, 40, 0.85);
+      border: 1px solid #785a28;
+      border-radius: 4px;
+      padding: 5px 8px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.6);
+      width: 140px;
+      position: relative;
+    }
+    .lol-ally-avatar {
+      width: 30px;
+      height: 30px;
+      border-radius: 50%;
+      border: 1.5px solid #0ac8b9;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 16px;
+      background: #010a13;
+    }
+    .lol-ally-col {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+      flex: 1;
+    }
+    .lol-ally-name {
+      font-family: var(--font-title);
+      font-size: 10px;
+      font-weight: 700;
+      color: #0ac8b9;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      max-width: 75px;
+    }
+    .lol-ally-bar-wrap {
+      width: 100%;
+      height: 4px;
+      background: rgba(255, 255, 255, 0.1);
+      border-radius: 2px;
+      overflow: hidden;
+    }
+    .lol-ally-hp-fill {
+      height: 100%;
+      background: #15a05c;
+      width: 100%;
+      transition: width 0.15s ease-out;
+    }
+    .lol-ally-ult-gem {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      background: #15a05c;
+      box-shadow: 0 0 6px #15a05c;
+      border: 1px solid #f0e6d2;
+    }
+    .lol-ally-ult-gem.charging {
+      background: #475569;
+      box-shadow: none;
+    }
+
+    /* --------------------------------------------------------------------------
+       4. LoL Baron Nashor / Dragon Epic Boss Bar
+       -------------------------------------------------------------------------- */
+    .lol-boss-bar-container {
+      position: absolute;
+      top: 65px;
+      left: 50%;
+      transform: translateX(-50%);
+      display: flex;
+      align-items: center;
+      z-index: 45;
+      pointer-events: none;
+      animation: bossDrop 0.5s cubic-bezier(0.18, 0.89, 0.32, 1.28);
+    }
+    @keyframes bossDrop {
+      from { opacity: 0; transform: translate(-50%, -30px); }
+      to { opacity: 1; transform: translate(-50%, 0); }
+    }
+    .lol-boss-center {
+      background: rgba(9, 20, 40, 0.95);
+      border: 2px solid #ff0054;
+      border-radius: 6px;
+      padding: 6px 16px;
+      box-shadow: 0 0 25px rgba(255, 0, 84, 0.5), inset 0 0 15px rgba(0,0,0,0.8);
+      min-width: 380px;
+    }
+    .lol-boss-title-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 4px;
+    }
+    .lol-boss-name {
+      font-family: var(--lol-font-title);
+      font-size: 13px;
+      font-weight: 900;
+      letter-spacing: 1.5px;
+      color: #ff0054;
+      text-transform: uppercase;
+    }
+    .lol-boss-pct {
+      font-family: var(--font-mono);
+      font-size: 12px;
+      font-weight: 900;
+      color: #ffb703;
+    }
+    .lol-boss-track {
+      width: 100%;
+      height: 10px;
+      background: #010a13;
+      border: 1px solid #785a28;
+      border-radius: 4px;
+      overflow: hidden;
+      position: relative;
+    }
+    .lol-boss-fill {
+      height: 100%;
+      background: linear-gradient(90deg, #ff0054, #ff5400, #ffb703);
+      box-shadow: 0 0 12px rgba(255, 0, 84, 0.9);
+      transition: width 0.15s ease-out;
+    }
+
+    /* --------------------------------------------------------------------------
+       5. Center Announcements Banner (LoL Announcer)
+       -------------------------------------------------------------------------- */
+    .lol-announcement-banner {
+      position: absolute;
+      top: 130px;
+      left: 50%;
+      transform: translateX(-50%) scale(0.9);
+      background: linear-gradient(90deg, transparent 0%, rgba(9, 20, 40, 0.95) 20%, rgba(9, 20, 40, 0.95) 80%, transparent 100%);
+      border-top: 1px solid #c8aa6e;
+      border-bottom: 1px solid #c8aa6e;
+      padding: 10px 60px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      pointer-events: none;
+      opacity: 0;
+      transition: all 0.3s cubic-bezier(0.18, 0.89, 0.32, 1.28);
+      z-index: 50;
+    }
+    .lol-announcement-banner.active {
+      opacity: 1;
+      transform: translateX(-50%) scale(1.0);
+    }
+    .lol-announcement-sub {
+      font-family: var(--font-title);
+      font-size: 11px;
+      letter-spacing: 3px;
+      color: #0ac8b9;
+      text-transform: uppercase;
+    }
+    .lol-announcement-main {
+      font-family: var(--lol-font-title);
+      font-size: 22px;
+      font-weight: 900;
+      letter-spacing: 2px;
+      color: #f0e6d2;
+      text-shadow: 0 0 15px rgba(200, 170, 110, 0.8);
+      text-transform: uppercase;
+    }
+
+    /* --------------------------------------------------------------------------
+       6. Bottom Master Champion Console (The Iconic LoL HUD)
+       -------------------------------------------------------------------------- */
+    .lol-bottom-console {
+      position: absolute;
+      bottom: 0;
+      left: 50%;
+      transform: translateX(-50%);
+      display: flex;
+      align-items: flex-end;
+      background: linear-gradient(to top, #010a13 0%, rgba(9, 20, 40, 0.96) 80%, rgba(9, 20, 40, 0.7) 100%);
+      border-top: 2px solid #785a28;
+      border-left: 2px solid #785a28;
+      border-right: 2px solid #785a28;
+      border-top-left-radius: 8px;
+      border-top-right-radius: 8px;
+      box-shadow: 0 -4px 30px rgba(0, 0, 0, 0.85), inset 0 0 15px rgba(200, 170, 110, 0.15);
+      padding: 6px 14px 8px 14px;
+      gap: 12px;
+      pointer-events: auto;
+      z-index: 40;
+    }
+
+    /* Left Wing: Champion Portrait & Level & Stats */
+    .lol-champ-wing {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      position: relative;
+    }
+    .lol-portrait-container {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .lol-portrait-frame {
+      width: 58px;
+      height: 58px;
+      border-radius: 50%;
+      border: 3px solid #c8aa6e;
+      background: #010a13;
+      box-shadow: 0 0 15px rgba(200, 170, 110, 0.4);
+      position: relative;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .lol-portrait-avatar {
+      font-size: 32px;
+    }
+    .lol-level-seal {
+      position: absolute;
+      bottom: -4px;
+      left: -4px;
+      width: 22px;
+      height: 22px;
+      border-radius: 50%;
+      background: radial-gradient(circle, #c8aa6e, #785a28);
+      border: 1.5px solid #f0e6d2;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: var(--font-mono);
+      font-size: 11px;
+      font-weight: 900;
+      color: #010a13;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.8);
+    }
+    .lol-champ-info {
+      display: flex;
+      flex-direction: column;
+      gap: 1px;
+    }
+    .lol-champ-title {
+      font-family: var(--lol-font-title);
+      font-size: 12px;
+      font-weight: 900;
+      color: #f0e6d2;
+      letter-spacing: 1px;
+    }
+    .lol-summoner-name {
+      font-family: var(--font-title);
+      font-size: 10px;
+      color: #0ac8b9;
+      letter-spacing: 0.5px;
+    }
+    .lol-stats-box {
+      display: grid;
+      grid-template-columns: repeat(2, 54px);
+      gap: 2px 6px;
+      background: rgba(1, 10, 19, 0.6);
+      border: 1px solid #3c301c;
+      border-radius: 4px;
+      padding: 4px 6px;
+    }
+    .lol-stat-item {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      font-family: var(--font-mono);
+      font-size: 10px;
+      color: #c8aa6e;
+    }
+    .lol-stat-item span:last-child {
+      color: #fff;
+      font-weight: 700;
+    }
+
+    /* Center Wing: Health & Shield Bars + Abilities */
+    .lol-center-wing {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      align-items: center;
+    }
+    .lol-bars-container {
+      width: 100%;
+      display: flex;
+      flex-direction: column;
+      gap: 3px;
+    }
+    .lol-bar-track {
+      width: 100%;
+      height: 14px;
+      background: #010a13;
+      border: 1.5px solid #785a28;
+      border-radius: 3px;
+      position: relative;
+      overflow: hidden;
+    }
+    .lol-mana-track {
+      height: 9px;
+      border-color: #3c301c;
+    }
+    .lol-hp-fill {
+      height: 100%;
+      background: linear-gradient(180deg, #26d07c 0%, #15a05c 60%, #0d6e3e 100%);
+      box-shadow: 0 0 10px rgba(38, 208, 124, 0.5);
+      transition: width 0.15s ease-out;
+    }
+    .lol-mana-fill {
+      height: 100%;
+      background: linear-gradient(180deg, #00f5d4 0%, #00bbf9 50%, #0077b6 100%);
+      box-shadow: 0 0 10px rgba(0, 187, 249, 0.5);
+      transition: width 0.15s ease-out;
+    }
+    .lol-bar-text {
+      position: absolute;
+      top: 0; left: 0; width: 100%; height: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: var(--font-mono);
+      font-size: 10px;
+      font-weight: 900;
+      color: #fff;
+      text-shadow: 0 1px 3px #000, 0 0 2px #000;
+      gap: 6px;
+    }
+    .lol-mana-track .lol-bar-text {
+      font-size: 8px;
+    }
+    .lol-regen-text {
+      color: #26d07c;
+      font-size: 9px;
+    }
+    .lol-mana-track .lol-regen-text {
+      color: #00f5d4;
+      font-size: 8px;
+    }
+
+    /* Abilities Row: Passive + Q W E R + D F + B */
+    .lol-abilities-row {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .lol-spell-slot {
+      width: 48px;
+      height: 48px;
+      background: #010a13;
+      border: 2px solid #785a28;
+      border-radius: 4px;
+      position: relative;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.8);
+      transition: all 0.12s ease;
+      touch-action: manipulation;
+    }
+    .lol-spell-slot:hover {
+      border-color: #c8aa6e;
+      transform: translateY(-2px);
+      box-shadow: 0 4px 14px rgba(200, 170, 110, 0.4);
+    }
+    .lol-spell-slot:active {
+      transform: scale(0.95);
+    }
+    .lol-spell-slot.ready {
+      border-color: #c8aa6e;
+    }
+    .lol-passive-slot {
+      width: 38px;
+      height: 38px;
+      border-color: #3c301c;
+      border-radius: 50%;
+    }
+    .lol-passive-slot .lol-key-label {
+      bottom: -6px;
+      font-size: 8px;
+    }
+    .lol-ult-slot {
+      width: 52px;
+      height: 52px;
+      border-color: #ffb703;
+      box-shadow: 0 0 15px rgba(255, 183, 3, 0.4);
+    }
+    .lol-ult-slot.ready {
+      animation: ultPulse 2s infinite alternate;
+    }
+    @keyframes ultPulse {
+      0% { box-shadow: 0 0 10px rgba(255, 183, 3, 0.4); border-color: #ffb703; }
+      100% { box-shadow: 0 0 22px rgba(255, 183, 3, 0.85); border-color: #fff; }
+    }
+    .lol-spell-icon {
+      font-size: 24px;
+      pointer-events: none;
+    }
+    .lol-passive-slot .lol-spell-icon {
+      font-size: 18px;
+    }
+    .lol-ult-slot .lol-spell-icon {
+      font-size: 28px;
+    }
+    .lol-cooldown-overlay {
+      position: absolute;
+      top: 0; left: 0; width: 100%; height: 100%;
+      background: rgba(1, 10, 19, 0.85);
+      color: #fff;
+      font-family: var(--font-mono);
+      font-size: 13px;
+      font-weight: 900;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      border-radius: 2px;
+      pointer-events: none;
+    }
+    .lol-key-label {
+      position: absolute;
+      bottom: -5px;
+      right: -3px;
+      background: #010a13;
+      border: 1px solid #c8aa6e;
+      color: #f0e6d2;
+      font-family: var(--font-mono);
+      font-size: 9px;
+      font-weight: 900;
+      padding: 1px 4px;
+      border-radius: 3px;
+      pointer-events: none;
+    }
+    .lol-spell-pips {
+      position: absolute;
+      top: -5px;
+      display: flex;
+      gap: 2px;
+    }
+    .pip {
+      width: 5px;
+      height: 3px;
+      background: #3c301c;
+      border-radius: 1px;
+    }
+    .pip.active {
+      background: #ffb703;
+      box-shadow: 0 0 4px #ffb703;
+    }
+    .lol-spell-divider {
+      width: 1px;
+      height: 36px;
+      background: #785a28;
+      margin: 0 2px;
+    }
+    .lol-summoner-slot {
+      width: 38px;
+      height: 38px;
+    }
+    .lol-summoner-slot .lol-spell-icon {
+      font-size: 18px;
+    }
+    .lol-recall-slot {
+      width: 38px;
+      height: 38px;
+      border-color: #0ac8b9;
+    }
+    .lol-recall-slot .lol-spell-icon {
+      font-size: 18px;
+    }
+
+    /* Right Wing: Items Inventory & Gold */
+    .lol-items-wing {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+    .lol-items-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 28px);
+      gap: 3px;
+    }
+    .lol-item-slot {
+      width: 28px;
+      height: 28px;
+      background: #010a13;
+      border: 1px solid #785a28;
+      border-radius: 3px;
+      position: relative;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: inset 0 0 6px rgba(0,0,0,0.8);
+    }
+    .lol-trinket-slot {
+      border-color: #ffb703;
+      background: rgba(255, 183, 3, 0.08);
+    }
+    .lol-item-icon {
+      font-size: 14px;
+    }
+    .lol-item-key {
+      position: absolute;
+      top: 1px;
+      right: 2px;
+      font-family: var(--font-mono);
+      font-size: 7px;
+      color: #785a28;
+      pointer-events: none;
+    }
+    .lol-gold-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 6px;
+      background: rgba(1, 10, 19, 0.6);
+      border: 1px solid #3c301c;
+      border-radius: 3px;
+      padding: 2px 6px;
+    }
+    .lol-gold-display {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      font-family: var(--font-mono);
+      font-size: 11px;
+      font-weight: 900;
+      color: #ffb703;
+    }
+    .lol-minerals-mini {
+      display: flex;
+      gap: 4px;
+      font-family: var(--font-mono);
+      font-size: 9px;
+      color: #8896b3;
+    }
+
+    /* --------------------------------------------------------------------------
+       7. LoL Minimap (Bottom-Right Radar)
+       -------------------------------------------------------------------------- */
+    .lol-minimap-container {
+      position: absolute;
+      bottom: 12px;
+      right: 14px;
+      width: 190px;
+      height: 190px;
+      background: #010a13;
+      border: 2px solid #c8aa6e;
+      border-radius: 4px;
+      box-shadow: 0 8px 30px rgba(0, 0, 0, 0.9), inset 0 0 15px rgba(200, 170, 110, 0.2);
+      pointer-events: auto;
+      z-index: 40;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+    .lol-minimap-controls {
+      display: flex;
+      justify-content: flex-end;
+      gap: 4px;
+      position: absolute;
+      top: 4px;
+      right: 4px;
+      z-index: 2;
+    }
+    .btn-minimap-action {
+      background: rgba(9, 20, 40, 0.85);
+      border: 1px solid #785a28;
+      color: #f0e6d2;
+      width: 22px;
+      height: 22px;
+      border-radius: 3px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 11px;
+      cursor: pointer;
+    }
+    .btn-minimap-action:hover {
+      border-color: #c8aa6e;
+    }
+    #lol-minimap-canvas {
+      width: 190px;
+      height: 190px;
+      display: block;
+    }
+
+    /* --------------------------------------------------------------------------
+       8. Mobile Orientation Lock Screen (Forces Horizontal Landscape Mode)
+       -------------------------------------------------------------------------- */
+    #orientation-lock-screen {
+      position: fixed;
+      inset: 0;
+      z-index: 999999;
+      background: radial-gradient(circle at center, #091428 0%, #010a13 85%);
+      display: none;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 30px;
+      text-align: center;
+      box-shadow: inset 0 0 80px rgba(0, 0, 0, 0.9);
+      border: 3px solid #785a28;
+    }
+    @media (orientation: portrait) and (max-width: 900px) {
+      #orientation-lock-screen {
+        display: flex !important;
+      }
+    }
+    .orient-device-wrapper {
+      position: relative;
+      width: 110px;
+      height: 110px;
+      margin-bottom: 24px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .orient-phone-icon {
+      width: 52px;
+      height: 94px;
+      border: 3px solid #c8aa6e;
+      border-radius: 12px;
+      background: rgba(1, 10, 19, 0.8);
+      box-shadow: 0 0 25px rgba(200, 170, 110, 0.45);
+      position: relative;
+      animation: rotatePhone 2.4s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+    }
+    .orient-phone-notch {
+      position: absolute;
+      top: 6px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 16px;
+      height: 3px;
+      background: #785a28;
+      border-radius: 2px;
+    }
+    .orient-phone-screen {
+      position: absolute;
+      inset: 14px 4px 14px 4px;
+      border-radius: 4px;
+      background: linear-gradient(135deg, rgba(10, 200, 185, 0.2), rgba(200, 170, 110, 0.2));
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 16px;
+    }
+    @keyframes rotatePhone {
+      0%, 25% { transform: rotate(0deg); }
+      75%, 100% { transform: rotate(90deg); }
+    }
+    .orient-lock-title {
+      font-family: var(--lol-font-title);
+      font-size: 24px;
+      font-weight: 900;
+      letter-spacing: 3px;
+      color: #f0e6d2;
+      text-transform: uppercase;
+      text-shadow: 0 0 15px rgba(200, 170, 110, 0.6);
+      margin-bottom: 10px;
+    }
+    .orient-lock-msg {
+      font-family: var(--font-title);
+      font-size: 15px;
+      font-weight: 700;
+      color: #0ac8b9;
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+      margin-bottom: 12px;
+    }
+    .orient-lock-desc {
+      font-family: var(--font-body);
+      font-size: 13px;
+      color: #8896b3;
+      max-width: 320px;
+      line-height: 1.5;
+    }
+
+    /* --------------------------------------------------------------------------
+       9. Game Landing Page & Showcase View
+       -------------------------------------------------------------------------- */
+    #landing-page {
+      position: fixed;
+      inset: 0;
+      z-index: 800;
+      background: radial-gradient(circle at top center, #091428 0%, #030812 60%, #010a13 100%);
+      display: none;
+      flex-direction: column;
+      overflow-y: auto;
+      overflow-x: hidden;
+      color: #f0e6d2;
+      font-family: var(--font-body);
+    }
+    .landing-header {
+      width: 100%;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 18px 40px;
+      background: rgba(1, 10, 19, 0.85);
+      border-bottom: 2px solid #785a28;
+      backdrop-filter: blur(12px);
+      position: sticky;
+      top: 0;
+      z-index: 50;
+    }
+    .landing-brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .landing-logo {
+      font-family: var(--lol-font-title);
+      font-size: 24px;
+      font-weight: 900;
+      letter-spacing: 4px;
+      background: linear-gradient(180deg, #f0e6d2 0%, #c8aa6e 60%, #785a28 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      text-shadow: 0 0 20px rgba(200, 170, 110, 0.4);
+    }
+    .landing-season-pill {
+      font-family: var(--font-mono);
+      font-size: 10px;
+      font-weight: 900;
+      color: #0ac8b9;
+      background: rgba(10, 200, 185, 0.12);
+      border: 1px solid rgba(10, 200, 185, 0.4);
+      padding: 3px 8px;
+      border-radius: 12px;
+      letter-spacing: 1px;
+    }
+    .landing-nav-links {
+      display: flex;
+      align-items: center;
+      gap: 24px;
+    }
+    .landing-nav-link {
+      background: none;
+      border: none;
+      color: #c8aa6e;
+      font-family: var(--font-title);
+      font-size: 13px;
+      font-weight: 700;
+      letter-spacing: 1.5px;
+      cursor: pointer;
+      transition: color 0.15s, text-shadow 0.15s;
+      text-transform: uppercase;
+    }
+    .landing-nav-link:hover {
+      color: #f0e6d2;
+      text-shadow: 0 0 10px rgba(200, 170, 110, 0.8);
+    }
+    .btn-landing-cta {
+      background: linear-gradient(180deg, #c8aa6e 0%, #785a28 100%);
+      border: 2px solid #f0e6d2;
+      color: #010a13;
+      font-family: var(--lol-font-title);
+      font-size: 13px;
+      font-weight: 900;
+      letter-spacing: 2px;
+      padding: 10px 24px;
+      border-radius: 4px;
+      cursor: pointer;
+      box-shadow: 0 0 20px rgba(200, 170, 110, 0.5);
+      transition: all 0.2s cubic-bezier(0.18, 0.89, 0.32, 1.28);
+    }
+    .btn-landing-cta:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 0 30px rgba(200, 170, 110, 0.8);
+      background: linear-gradient(180deg, #f0e6d2 0%, #c8aa6e 100%);
+    }
+
+    /* Landing Hero */
+    .landing-hero {
+      padding: 60px 40px 40px 40px;
+      max-width: 1200px;
+      margin: 0 auto;
+      text-align: center;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+    .landing-hero-tag {
+      font-family: var(--font-title);
+      font-size: 13px;
+      font-weight: 900;
+      letter-spacing: 4px;
+      color: #0ac8b9;
+      text-transform: uppercase;
+      margin-bottom: 12px;
+    }
+    .landing-hero-title {
+      font-family: var(--lol-font-title);
+      font-size: clamp(32px, 5vw, 56px);
+      font-weight: 900;
+      letter-spacing: 3px;
+      color: #f0e6d2;
+      text-shadow: 0 0 30px rgba(200, 170, 110, 0.5);
+      margin-bottom: 18px;
+      line-height: 1.15;
+      text-transform: uppercase;
+    }
+    .landing-hero-desc {
+      font-size: 16px;
+      color: #8896b3;
+      max-width: 680px;
+      line-height: 1.6;
+      margin-bottom: 30px;
+    }
+    .landing-hero-actions {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      margin-bottom: 40px;
+      flex-wrap: wrap;
+      justify-content: center;
+    }
+    .btn-hero-primary {
+      background: linear-gradient(180deg, #c8aa6e 0%, #785a28 100%);
+      border: 2px solid #f0e6d2;
+      color: #010a13;
+      font-family: var(--lol-font-title);
+      font-size: 15px;
+      font-weight: 900;
+      letter-spacing: 2px;
+      padding: 14px 36px;
+      border-radius: 4px;
+      cursor: pointer;
+      box-shadow: 0 0 25px rgba(200, 170, 110, 0.6);
+      transition: all 0.2s;
+    }
+    .btn-hero-primary:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 0 40px rgba(200, 170, 110, 0.9);
+      background: linear-gradient(180deg, #f0e6d2 0%, #c8aa6e 100%);
+    }
+    .btn-hero-wiki {
+      background: rgba(9, 20, 40, 0.85);
+      border: 2px solid #785a28;
+      color: #c8aa6e;
+      font-family: var(--lol-font-title);
+      font-size: 15px;
+      font-weight: 900;
+      letter-spacing: 2px;
+      padding: 14px 32px;
+      border-radius: 4px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .btn-hero-wiki:hover {
+      border-color: #0ac8b9;
+      color: #0ac8b9;
+      box-shadow: 0 0 25px rgba(10, 200, 185, 0.4);
+    }
+    .landing-stats-ribbon {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 30px;
+      padding: 16px 28px;
+      background: rgba(9, 20, 40, 0.7);
+      border: 1px solid #785a28;
+      border-radius: 8px;
+      box-shadow: 0 8px 30px rgba(0, 0, 0, 0.6);
+      flex-wrap: wrap;
+    }
+    .stat-pill {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+    .stat-pill-num {
+      font-family: var(--lol-font-title);
+      font-size: 20px;
+      font-weight: 900;
+      color: #c8aa6e;
+    }
+    .stat-pill-label {
+      font-family: var(--font-mono);
+      font-size: 10px;
+      color: #8896b3;
+      letter-spacing: 1px;
+    }
+
+    /* Landing Showcase Grid */
+    .landing-showcase-section {
+      max-width: 1200px;
+      margin: 20px auto 60px auto;
+      padding: 0 30px;
+      width: 100%;
+    }
+    .section-title-wrap {
+      text-align: center;
+      margin-bottom: 36px;
+    }
+    .section-title {
+      font-family: var(--lol-font-title);
+      font-size: 26px;
+      font-weight: 900;
+      letter-spacing: 3px;
+      color: #f0e6d2;
+      text-transform: uppercase;
+    }
+    .section-subtitle {
+      font-family: var(--font-title);
+      font-size: 13px;
+      color: #0ac8b9;
+      letter-spacing: 1.5px;
+      margin-top: 6px;
+    }
+    .showcase-cards-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+      gap: 20px;
+    }
+    .showcase-card {
+      background: rgba(9, 20, 40, 0.85);
+      border: 1.5px solid #785a28;
+      border-radius: 8px;
+      padding: 24px 20px;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.7);
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
+      transition: all 0.25s cubic-bezier(0.18, 0.89, 0.32, 1.28);
+      position: relative;
+      overflow: hidden;
+    }
+    .showcase-card:hover {
+      transform: translateY(-4px);
+      border-color: #c8aa6e;
+      box-shadow: 0 14px 40px rgba(200, 170, 110, 0.25);
+    }
+    .showcase-card-icon {
+      font-size: 32px;
+      margin-bottom: 14px;
+      display: inline-block;
+      filter: drop-shadow(0 0 10px rgba(200, 170, 110, 0.5));
+    }
+    .showcase-card-title {
+      font-family: var(--lol-font-title);
+      font-size: 17px;
+      font-weight: 900;
+      color: #f0e6d2;
+      letter-spacing: 1px;
+      margin-bottom: 8px;
+      text-transform: uppercase;
+    }
+    .showcase-card-desc {
+      font-size: 13px;
+      color: #8896b3;
+      line-height: 1.55;
+      margin-bottom: 14px;
+    }
+    .showcase-card-tag {
+      font-family: var(--font-mono);
+      font-size: 10px;
+      font-weight: 700;
+      color: #0ac8b9;
+      background: rgba(10, 200, 185, 0.1);
+      border: 1px solid rgba(10, 200, 185, 0.3);
+      padding: 3px 8px;
+      border-radius: 4px;
+      align-self: flex-start;
+      margin-top: auto;
+    }
+
+    /* --------------------------------------------------------------------------
+       10. Game Wiki Modal & Codex
+       -------------------------------------------------------------------------- */
+    #game-wiki-modal {
+      position: fixed;
+      inset: 0;
+      z-index: 1100;
+      background: rgba(1, 10, 19, 0.94);
+      backdrop-filter: blur(16px);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+    }
+    .wiki-container {
+      width: min(94vw, 1040px);
+      height: min(92vh, 760px);
+      background: #010a13;
+      border: 2px solid #c8aa6e;
+      border-radius: 8px;
+      box-shadow: 0 12px 60px rgba(0, 0, 0, 0.95), inset 0 0 30px rgba(200, 170, 110, 0.15);
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+    .wiki-header {
+      padding: 16px 24px;
+      background: rgba(9, 20, 40, 0.95);
+      border-bottom: 2px solid #785a28;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .wiki-title-group h2 {
+      font-family: var(--lol-font-title);
+      font-size: 20px;
+      font-weight: 900;
+      letter-spacing: 2px;
+      color: #f0e6d2;
+      text-transform: uppercase;
+      text-shadow: 0 0 12px rgba(200, 170, 110, 0.5);
+    }
+    .wiki-title-group span {
+      font-family: var(--font-title);
+      font-size: 11px;
+      color: #0ac8b9;
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+    }
+    .btn-close-wiki {
+      background: rgba(1, 10, 19, 0.8);
+      border: 1px solid #785a28;
+      color: #f0e6d2;
+      width: 32px;
+      height: 32px;
+      border-radius: 4px;
+      font-size: 16px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.15s;
+    }
+    .btn-close-wiki:hover {
+      border-color: #ff0054;
+      color: #ff0054;
+    }
+    .wiki-nav-tabs {
+      display: flex;
+      gap: 2px;
+      background: #030a13;
+      padding: 4px 16px 0 16px;
+      border-bottom: 1px solid #785a28;
+      overflow-x: auto;
+    }
+    .wiki-tab {
+      background: rgba(9, 20, 40, 0.5);
+      border: 1px solid #785a28;
+      border-bottom: none;
+      color: #8896b3;
+      font-family: var(--lol-font-title);
+      font-size: 11px;
+      font-weight: 900;
+      letter-spacing: 1.5px;
+      padding: 10px 18px;
+      border-top-left-radius: 4px;
+      border-top-right-radius: 4px;
+      cursor: pointer;
+      transition: all 0.15s;
+      white-space: nowrap;
+    }
+    .wiki-tab.active {
+      background: #010a13;
+      border-color: #c8aa6e;
+      color: #f0e6d2;
+      box-shadow: 0 -2px 10px rgba(200, 170, 110, 0.2);
+    }
+    .wiki-content-area {
+      flex: 1;
+      padding: 24px;
+      overflow-y: auto;
+      background: #010a13;
+      color: #f0e6d2;
+    }
+    .wiki-tab-panel {
+      display: none;
+      flex-direction: column;
+      gap: 20px;
+    }
+    .wiki-tab-panel.active {
+      display: flex;
+    }
+    .wiki-section-card {
+      background: rgba(9, 20, 40, 0.7);
+      border: 1px solid #785a28;
+      border-radius: 6px;
+      padding: 16px 20px;
+    }
+    .wiki-section-card h3 {
+      font-family: var(--lol-font-title);
+      font-size: 16px;
+      font-weight: 900;
+      letter-spacing: 1px;
+      color: #c8aa6e;
+      margin-bottom: 8px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .wiki-section-card p {
+      font-size: 13px;
+      color: #cbd5e1;
+      line-height: 1.6;
+      margin-bottom: 12px;
+    }
+    .wiki-recipe-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 12px;
+      margin-top: 10px;
+    }
+    .wiki-recipe-table th {
+      text-align: left;
+      padding: 8px 10px;
+      background: rgba(200, 170, 110, 0.1);
+      color: #c8aa6e;
+      font-family: var(--lol-font-title);
+      border-bottom: 1px solid #785a28;
+    }
+    .wiki-recipe-table td {
+      padding: 8px 10px;
+      border-bottom: 1px solid rgba(120, 90, 40, 0.3);
+      color: #f0e6d2;
+    }
+
+    /* --------------------------------------------------------------------------
+       11. AAA Client Full-Screen Lobby Styling
+       -------------------------------------------------------------------------- */
+    .lol-client-lobby {
+      position: fixed;
+      inset: 0;
+      width: 100vw;
+      height: 100vh;
+      background: radial-gradient(circle at center, #091428 0%, #010a13 85%);
+      display: flex;
+      flex-direction: column;
+      z-index: 500;
+      overflow: hidden;
+    }
+    .lol-client-header {
+      width: 100%;
+      height: 60px;
+      background: rgba(1, 10, 19, 0.95);
+      border-bottom: 2px solid #785a28;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 0 24px;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.8);
+      z-index: 20;
+    }
+    .lol-client-branding {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .lol-client-logo {
+      font-family: var(--lol-font-title);
+      font-size: 20px;
+      font-weight: 900;
+      letter-spacing: 3px;
+      color: #f0e6d2;
+      text-shadow: 0 0 15px rgba(200, 170, 110, 0.5);
+    }
+    .lol-client-nav {
+      display: flex;
+      gap: 8px;
+    }
+    .btn-client-tab {
+      background: rgba(9, 20, 40, 0.7);
+      border: 1px solid #785a28;
+      color: #c8aa6e;
+      font-family: var(--lol-font-title);
+      font-size: 11px;
+      font-weight: 900;
+      letter-spacing: 1.5px;
+      padding: 7px 16px;
+      border-radius: 4px;
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+    .btn-client-tab.active, .btn-client-tab:hover {
+      border-color: #c8aa6e;
+      color: #f0e6d2;
+      background: rgba(200, 170, 110, 0.15);
+      box-shadow: 0 0 12px rgba(200, 170, 110, 0.3);
+    }
+    .lol-client-profile-capsule {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      background: rgba(9, 20, 40, 0.8);
+      border: 1px solid #785a28;
+      border-radius: 20px;
+      padding: 4px 14px 4px 6px;
+    }
+    .client-avatar-circle {
+      width: 34px;
+      height: 34px;
+      border-radius: 50%;
+      border: 2px solid #0ac8b9;
+      background: #010a13;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 16px;
+    }
+    .client-name-input {
+      background: none;
+      border: none;
+      color: #f0e6d2;
+      font-family: var(--font-title);
+      font-size: 13px;
+      font-weight: 700;
+      outline: none;
+      width: 130px;
+    }
+    .client-tier-badge {
+      font-family: var(--font-mono);
+      font-size: 9px;
+      font-weight: 900;
+      color: #ffb703;
+      background: rgba(255, 183, 3, 0.15);
+      border: 1px solid rgba(255, 183, 3, 0.4);
+      padding: 2px 6px;
+      border-radius: 8px;
+    }
+
+    /* Lobby Main Stage Split (Left Champion Showcase + Right Match Queue) */
+    .lol-client-body {
+      flex: 1;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 24px;
+      padding: 20px 30px;
+      overflow-y: auto;
+      max-width: 1400px;
+      width: 100%;
+      margin: 0 auto;
+    }
+    .lol-stage-left, .lol-stage-right {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    /* Champion Showcase Card */
+    .champion-showcase-card {
+      background: linear-gradient(135deg, rgba(9, 20, 40, 0.95) 0%, rgba(1, 10, 19, 0.95) 100%);
+      border: 2px solid #785a28;
+      border-radius: 8px;
+      padding: 20px;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.8), inset 0 0 20px rgba(200, 170, 110, 0.1);
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+      position: relative;
+    }
+    .showcase-banner-top {
+      display: flex;
+      align-items: center;
+      gap: 18px;
+    }
+    .showcase-avatar-pod {
+      width: 80px;
+      height: 80px;
+      border-radius: 50%;
+      border: 3px solid #c8aa6e;
+      background: #010a13;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 40px;
+      box-shadow: 0 0 25px rgba(200, 170, 110, 0.5);
+      flex-shrink: 0;
+    }
+    .showcase-info-col h3 {
+      font-family: var(--lol-font-title);
+      font-size: 20px;
+      font-weight: 900;
+      color: #f0e6d2;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+    }
+    .showcase-role-pill {
+      font-family: var(--font-title);
+      font-size: 11px;
+      font-weight: 700;
+      color: #0ac8b9;
+      background: rgba(10, 200, 185, 0.12);
+      border: 1px solid rgba(10, 200, 185, 0.4);
+      padding: 2px 8px;
+      border-radius: 4px;
+      display: inline-block;
+      margin-top: 4px;
+    }
+    .showcase-desc-text {
+      font-size: 13px;
+      color: #8896b3;
+      line-height: 1.5;
+    }
+    .showcase-special-box {
+      background: rgba(1, 10, 19, 0.7);
+      border: 1px solid #3c301c;
+      border-radius: 6px;
+      padding: 10px 14px;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+    .showcase-special-lbl {
+      font-family: var(--lol-font-title);
+      font-size: 10px;
+      font-weight: 900;
+      color: #ffb703;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+    }
+    .showcase-special-name {
+      font-family: var(--font-title);
+      font-size: 13px;
+      font-weight: 700;
+      color: #f0e6d2;
+    }
+
+    /* Right Column: Match Queue & Action Launch */
+    .match-finder-card {
+      background: rgba(9, 20, 40, 0.9);
+      border: 2px solid #785a28;
+      border-radius: 8px;
+      padding: 20px;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.8);
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+    .btn-launch-arena {
+      background: linear-gradient(180deg, #c8aa6e 0%, #785a28 100%);
+      border: 2px solid #f0e6d2;
+      color: #010a13;
+      font-family: var(--lol-font-title);
+      font-size: 16px;
+      font-weight: 900;
+      letter-spacing: 3px;
+      padding: 16px 28px;
+      border-radius: 4px;
+      cursor: pointer;
+      box-shadow: 0 0 30px rgba(200, 170, 110, 0.6);
+      transition: all 0.2s cubic-bezier(0.18, 0.89, 0.32, 1.28);
+      text-transform: uppercase;
+      width: 100%;
+      margin-top: 8px;
+    }
+    .btn-launch-arena:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 0 50px rgba(200, 170, 110, 0.9);
+      background: linear-gradient(180deg, #f0e6d2 0%, #c8aa6e 100%);
+    }
+
+    /* --------------------------------------------------------------------------
+       12. Responsive Mobile Landscape Tuning & Gameplay Centering
+       -------------------------------------------------------------------------- */
+    @media (max-width: 950px), (max-height: 520px) {
+      /* Ensure viewport strictly matches without horizontal overflow */
+      html, body, #canvas-container, #ui-layer {
+        width: 100vw !important;
+        max-width: 100vw !important;
+        overflow-x: hidden !important;
+      }
+
+      /* Compact Landing Page on Mobile Landscape */
+      #landing-page::-webkit-scrollbar {
+        width: 4px;
+      }
+      #landing-page::-webkit-scrollbar-thumb {
+        background: rgba(200, 170, 110, 0.4);
+        border-radius: 2px;
+      }
+      .landing-header {
+        padding: 2px 10px !important;
+        height: 30px !important;
+      }
+      .landing-logo {
+        font-size: 13px !important;
+        letter-spacing: 1.5px !important;
+      }
+      .landing-season-pill {
+        display: none !important;
+      }
+      .landing-nav-links {
+        gap: 6px !important;
+      }
+      .landing-nav-links .landing-nav-link:not(.btn-landing-cta) {
+        display: none !important;
+      }
+      .btn-landing-cta {
+        padding: 3px 10px !important;
+        font-size: 9px !important;
+        letter-spacing: 0.8px !important;
+        height: 22px !important;
+        display: inline-flex !important;
+        align-items: center !important;
+      }
+      .landing-hero {
+        padding: 4px 10px 4px 10px !important;
+      }
+      .landing-hero-tag {
+        font-size: 8px !important;
+        letter-spacing: 1.5px !important;
+        margin-bottom: 1px !important;
+      }
+      .landing-hero-title {
+        font-size: 14px !important;
+        letter-spacing: 1px !important;
+        margin-bottom: 2px !important;
+        line-height: 1.15 !important;
+      }
+      .landing-hero-desc {
+        font-size: 9px !important;
+        line-height: 1.25 !important;
+        max-width: 520px !important;
+        margin-bottom: 5px !important;
+      }
+      .landing-hero-actions {
+        gap: 6px !important;
+        margin-bottom: 5px !important;
+      }
+      .btn-hero-primary, .btn-hero-wiki {
+        padding: 4px 12px !important;
+        font-size: 9.5px !important;
+        letter-spacing: 0.8px !important;
+        height: 26px !important;
+        display: inline-flex !important;
+        align-items: center !important;
+      }
+      .landing-stats-ribbon {
+        padding: 2px 8px !important;
+        gap: 8px !important;
+        border-radius: 6px !important;
+      }
+      .stat-pill-num {
+        font-size: 10px !important;
+      }
+      .stat-pill-label {
+        font-size: 6.5px !important;
+      }
+      .landing-showcase-section {
+        margin: 8px auto 14px auto !important;
+        padding: 0 10px !important;
+      }
+      .section-title-wrap {
+        margin-bottom: 6px !important;
+      }
+      .section-title {
+        font-size: 13px !important;
+        letter-spacing: 1px !important;
+      }
+      .section-subtitle {
+        font-size: 8.5px !important;
+      }
+      .showcase-cards-grid {
+        grid-template-columns: repeat(2, 1fr) !important;
+        gap: 5px !important;
+      }
+      .showcase-card {
+        padding: 6px 8px !important;
+      }
+      .showcase-card-icon {
+        font-size: 15px !important;
+        margin-bottom: 2px !important;
+      }
+      .showcase-card-title {
+        font-size: 10px !important;
+        margin-bottom: 1px !important;
+      }
+      .showcase-card-desc {
+        font-size: 8.5px !important;
+        line-height: 1.2 !important;
+        margin-bottom: 2px !important;
+      }
+      .showcase-card-tag {
+        font-size: 6.5px !important;
+        padding: 1px 3px !important;
+      }
+
+      /* Hide legacy duplicated HUD everywhere */
+      .top-hud {
+        display: none !important;
+      }
+
+      /* --------------------------------------------------------------------------
+         MOBILE REDESIGN 1: Top Ribbon Match Scoreboard (#lol-top-hud)
+         -------------------------------------------------------------------------- */
+      .lol-top-hud {
+        position: absolute !important;
+        top: 6px !important;
+        left: 92px !important;
+        right: 8px !important;
+        width: auto !important;
+        height: 32px !important;
+        padding: 0 10px !important;
+        background: linear-gradient(180deg, rgba(2, 8, 18, 0.95) 0%, rgba(9, 20, 40, 0.9) 100%) !important;
+        border: 1.5px solid rgba(200, 170, 110, 0.5) !important;
+        border-radius: 8px !important;
+        box-shadow: 0 4px 16px rgba(0, 0, 0, 0.75), inset 0 0 10px rgba(200, 170, 110, 0.1) !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: space-between !important;
+        box-sizing: border-box !important;
+        z-index: 40 !important;
+      }
+      .lol-top-score-group {
+        gap: 6px !important;
+      }
+      .lol-score-badge {
+        padding: 2px 7px !important;
+        height: 22px !important;
+        border-radius: 4px !important;
+      }
+      .team-score {
+        font-size: 13px !important;
+      }
+      .team-label {
+        display: none !important;
+      }
+      .lol-score-vs {
+        font-size: 10px !important;
+        font-weight: 900 !important;
+        color: #c8aa6e !important;
+      }
+      .lol-top-center-group {
+        gap: 8px !important;
+      }
+      .lol-match-timer {
+        font-size: 11px !important;
+        height: 22px !important;
+        padding: 2px 6px !important;
+        border-radius: 4px !important;
+        gap: 4px !important;
+      }
+      .lol-wave-objective {
+        height: 22px !important;
+        padding: 2px 8px !important;
+        border-radius: 4px !important;
+        gap: 6px !important;
+      }
+      .wave-dragon-crest {
+        font-size: 13px !important;
+      }
+      .wave-name {
+        font-size: 9.5px !important;
+        font-weight: 900 !important;
+      }
+      .wave-progress-bar {
+        width: 36px !important;
+        height: 3.5px !important;
+      }
+      .threats-badge {
+        font-size: 9px !important;
+        height: 18px !important;
+        padding: 1px 5px !important;
+        font-weight: 900 !important;
+      }
+      .lol-top-right-group {
+        gap: 8px !important;
+      }
+      .lol-cs-badge {
+        font-size: 10px !important;
+        padding: 2px 6px !important;
+        gap: 3px !important;
+      }
+      .lol-perf-badge, #btn-lol-help {
+        display: none !important;
+      }
+      .btn-lol-icon {
+        width: 24px !important;
+        height: 24px !important;
+        font-size: 11px !important;
+      }
+      .btn-lol-exit {
+        width: 26px !important;
+        height: 26px !important;
+        font-size: 13px !important;
+        border-radius: 6px !important;
+        background: rgba(255, 0, 84, 0.18) !important;
+        border: 1px solid rgba(255, 0, 84, 0.45) !important;
+        color: #ff0054 !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        transition: transform 0.1s ease !important;
+      }
+      .btn-lol-exit:active {
+        transform: scale(0.9) !important;
+      }
+
+      /* --------------------------------------------------------------------------
+         MOBILE REDESIGN 2: Top-Left Radar Minimap (#lol-minimap-container)
+         -------------------------------------------------------------------------- */
+      .lol-minimap-container {
+        position: absolute !important;
+        top: 6px !important;
+        left: 8px !important;
+        bottom: auto !important;
+        right: auto !important;
+        width: 78px !important;
+        height: 78px !important;
+        background: rgba(1, 8, 18, 0.92) !important;
+        backdrop-filter: blur(10px) !important;
+        -webkit-backdrop-filter: blur(10px) !important;
+        border: 1.5px solid var(--lol-gold-2, #c8aa6e) !important;
+        border-radius: 12px !important;
+        box-shadow: 0 4px 14px rgba(0, 0, 0, 0.8), 0 0 10px rgba(200, 170, 110, 0.3) !important;
+        z-index: 45 !important;
+        overflow: hidden !important;
+        pointer-events: auto !important;
+      }
+      #lol-minimap-canvas {
+        width: 78px !important;
+        height: 78px !important;
+        border-radius: 10px !important;
+      }
+      .lol-minimap-controls {
+        top: 4px !important;
+        right: 4px !important;
+        flex-direction: column !important;
+        gap: 3px !important;
+      }
+      .btn-minimap-action {
+        width: 18px !important;
+        height: 18px !important;
+        font-size: 9px !important;
+        padding: 0 !important;
+        border-radius: 4px !important;
+        background: rgba(1, 10, 19, 0.85) !important;
+        border: 1px solid rgba(200, 170, 110, 0.5) !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        pointer-events: auto !important;
+      }
+      .btn-minimap-action:active {
+        transform: scale(0.9) !important;
+      }
+
+      /* --------------------------------------------------------------------------
+         MOBILE REDESIGN 3: Streamlined Hero Status Console (#lol-bottom-console)
+         -------------------------------------------------------------------------- */
+      .lol-bottom-console {
+        position: absolute !important;
+        bottom: 6px !important;
+        left: 50% !important;
+        transform: translateX(-50%) !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        gap: 8px !important;
+        padding: 4px 10px !important;
+        background: linear-gradient(180deg, rgba(2, 8, 18, 0.95) 0%, rgba(9, 20, 40, 0.92) 100%) !important;
+        border: 1.5px solid rgba(200, 170, 110, 0.5) !important;
+        border-radius: 12px !important;
+        box-shadow: 0 4px 18px rgba(0, 0, 0, 0.85), 0 0 10px rgba(0,0,0,0.5) !important;
+        max-width: 320px !important;
+        width: auto !important;
+        z-index: 35 !important;
+        pointer-events: auto !important;
+      }
+      .lol-champ-wing {
+        display: flex !important;
+        align-items: center !important;
+        gap: 6px !important;
+      }
+      .lol-portrait-container {
+        display: flex !important;
+        align-items: center !important;
+        gap: 6px !important;
+      }
+      .lol-portrait-frame {
+        width: 34px !important;
+        height: 34px !important;
+        border-radius: 50% !important;
+        border: 2px solid #c8aa6e !important;
+        background: #010a13 !important;
+        box-shadow: 0 0 10px rgba(200, 170, 110, 0.5) !important;
+      }
+      .lol-portrait-avatar {
+        font-size: 18px !important;
+      }
+      .lol-level-seal {
+        bottom: -3px !important;
+        left: -3px !important;
+        width: 15px !important;
+        height: 15px !important;
+        font-size: 8.5px !important;
+        border: 1px solid #fff !important;
+      }
+      .lol-champ-info {
+        display: flex !important;
+        flex-direction: column !important;
+        gap: 1px !important;
+      }
+      .lol-champ-title {
+        font-size: 10px !important;
+        font-weight: 900 !important;
+        color: #f0e6d2 !important;
+        letter-spacing: 0.5px !important;
+        max-width: 65px !important;
+        white-space: nowrap !important;
+        overflow: hidden !important;
+        text-overflow: ellipsis !important;
+      }
+      .lol-summoner-name {
+        display: none !important;
+      }
+      .lol-champ-wing .lol-stats-box {
+        display: none !important;
+      }
+
+      .lol-center-wing {
+        display: flex !important;
+        flex-direction: column !important;
+        gap: 3px !important;
+        align-items: center !important;
+      }
+      .lol-bars-container {
+        width: 120px !important;
+        display: flex !important;
+        flex-direction: column !important;
+        gap: 2px !important;
+      }
+      .lol-bar-track {
+        width: 100% !important;
+        height: 11px !important;
+        border: 1px solid #785a28 !important;
+        border-radius: 3px !important;
+      }
+      .lol-mana-track {
+        height: 7px !important;
+        border-color: #3c301c !important;
+      }
+      .lol-bar-text {
+        font-size: 8.5px !important;
+        font-weight: 900 !important;
+        gap: 3px !important;
+      }
+      .lol-mana-track .lol-bar-text {
+        font-size: 7px !important;
+      }
+      .lol-regen-text {
+        font-size: 7.5px !important;
+      }
+      .lol-mana-track .lol-regen-text {
+        font-size: 6.5px !important;
+      }
+
+      /* Hide redundant keyboard abilities row in mobile */
+      .lol-abilities-row {
+        display: none !important;
+      }
+
+      /* Mini loadout & gold display */
+      .lol-items-wing {
+        display: flex !important;
+        flex-direction: column !important;
+        gap: 2px !important;
+        align-items: flex-end !important;
+        cursor: pointer !important;
+      }
+      .lol-items-grid {
+        display: grid !important;
+        grid-template-columns: repeat(4, 18px) !important;
+        gap: 2px !important;
+      }
+      .lol-item-slot {
+        width: 18px !important;
+        height: 18px !important;
+        border-radius: 3px !important;
+      }
+      .lol-item-icon {
+        font-size: 10px !important;
+      }
+      .lol-item-key, .lol-trinket-slot, #lol-item-5, #lol-item-6 {
+        display: none !important;
+      }
+      .lol-gold-row {
+        padding: 1px 4px !important;
+        border-radius: 3px !important;
+      }
+      .lol-gold-amount {
+        font-size: 9px !important;
+      }
+      .lol-minerals-mini {
+        display: none !important;
+      }
+
+      /* --------------------------------------------------------------------------
+         MOBILE REDESIGN 4: MLBB Compass Joystick (#joystick-zone)
+         -------------------------------------------------------------------------- */
+      .mobile-controls {
+        display: block !important;
+      }
+      #joystick-zone {
+        display: block !important;
+        position: absolute !important;
+        bottom: 12px !important;
+        left: 12px !important;
+        width: 96px !important;
+        height: 96px !important;
+        z-index: 45 !important;
+        pointer-events: auto !important;
+        touch-action: none !important;
+      }
+      .joystick-base {
+        width: 88px !important;
+        height: 88px !important;
+        border-radius: 50% !important;
+        border: 2px solid rgba(255, 183, 3, 0.6) !important;
+        background: radial-gradient(circle, rgba(0, 245, 212, 0.15) 0%, rgba(2, 6, 18, 0.88) 75%, rgba(0,0,0,0.95) 100%) !important;
+        box-shadow: 0 0 18px rgba(0, 0, 0, 0.8), 0 0 10px rgba(255, 183, 3, 0.35), inset 0 0 14px rgba(0, 245, 212, 0.15) !important;
+        position: relative !important;
+      }
+      .joystick-ring-compass {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        border-radius: 50%;
+        pointer-events: none;
+      }
+      .compass-marker {
+        position: absolute;
+        font-size: 7px;
+        color: rgba(255, 183, 3, 0.75);
+        font-weight: 900;
+        line-height: 1;
+      }
+      .comp-n { top: 2px; left: 50%; transform: translateX(-50%); }
+      .comp-s { bottom: 2px; left: 50%; transform: translateX(-50%); }
+      .comp-w { left: 3px; top: 50%; transform: translateY(-50%); }
+      .comp-e { right: 3px; top: 50%; transform: translateY(-50%); }
+      .joystick-knob {
+        width: 36px !important;
+        height: 36px !important;
+        border-radius: 50% !important;
+        background: radial-gradient(circle, #00f5d4 20%, #00bbf9 65%, #05162b 100%) !important;
+        border: 2.5px solid #ffb703 !important;
+        box-shadow: 0 0 16px rgba(0, 245, 212, 0.9), inset 0 0 8px rgba(255, 255, 255, 0.8) !important;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+      .knob-inner-gem {
+        width: 10px;
+        height: 10px;
+        border-radius: 50%;
+        background: #ffffff;
+        box-shadow: 0 0 8px #00f5d4;
+      }
+
+      /* --------------------------------------------------------------------------
+         MOBILE REDESIGN 5: Mobile Legends: Bang Bang (MLBB) Radial Combat Cluster
+         -------------------------------------------------------------------------- */
+      .action-cluster {
+        position: absolute !important;
+        bottom: 6px !important;
+        right: 6px !important;
+        width: 195px !important;
+        height: 175px !important;
+        display: block !important;
+        pointer-events: auto !important;
+        z-index: 45 !important;
+        touch-action: manipulation !important;
+        user-select: none !important;
+        -webkit-user-select: none !important;
+      }
+
+      /* Iconic MLBB Large Golden Basic Attack Button */
+      .btn-attack, .mlbb-attack-btn {
+        position: absolute !important;
+        bottom: 4px !important;
+        right: 4px !important;
+        width: 68px !important;
+        height: 68px !important;
+        border-radius: 50% !important;
+        background: radial-gradient(circle, rgba(255, 183, 3, 0.45) 0%, rgba(38, 24, 6, 0.98) 72%, #080c18 100%) !important;
+        border: 3px solid #ffb703 !important;
+        box-shadow: 0 0 20px rgba(255, 183, 3, 0.65), 0 4px 14px rgba(0,0,0,0.85), inset 0 0 14px rgba(255, 215, 0, 0.4) !important;
+        display: flex !important;
+        flex-direction: column !important;
+        align-items: center !important;
+        justify-content: center !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        cursor: pointer !important;
+        transition: transform 0.08s ease, box-shadow 0.08s ease !important;
+      }
+      .btn-attack:active, .mlbb-attack-btn:active {
+        transform: scale(0.91) !important;
+        box-shadow: 0 0 28px rgba(255, 183, 3, 0.95), inset 0 0 20px rgba(255, 215, 0, 0.7) !important;
+      }
+      .btn-attack .btn-icon, .mlbb-attack-btn .btn-icon {
+        font-size: 28px !important;
+        line-height: 1 !important;
+        margin-bottom: 1px !important;
+        filter: drop-shadow(0 0 6px rgba(255, 183, 3, 0.8));
+      }
+      .btn-attack .btn-lbl, .mlbb-attack-btn .btn-lbl {
+        font-family: var(--font-title) !important;
+        font-size: 8px !important;
+        font-weight: 900 !important;
+        letter-spacing: 1px !important;
+        color: #ffb703 !important;
+        text-shadow: 0 1px 3px rgba(0,0,0,0.9);
+      }
+
+      /* Skill 1: Dash / Flicker [H] - 10 o'clock */
+      .btn-dash, .mlbb-skill-1 {
+        position: absolute !important;
+        bottom: 12px !important;
+        right: 86px !important;
+        width: 46px !important;
+        height: 46px !important;
+        border-radius: 50% !important;
+        background: radial-gradient(circle, rgba(0, 245, 212, 0.4) 0%, rgba(6, 22, 38, 0.96) 100%) !important;
+        border: 2px solid #00f5d4 !important;
+        box-shadow: 0 0 14px rgba(0, 245, 212, 0.55), inset 0 0 8px rgba(0, 245, 212, 0.25) !important;
+        display: flex !important;
+        flex-direction: column !important;
+        align-items: center !important;
+        justify-content: center !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        cursor: pointer !important;
+        transition: transform 0.08s ease !important;
+      }
+      .btn-dash:active, .mlbb-skill-1:active {
+        transform: scale(0.92) !important;
+      }
+      .btn-dash .btn-icon, .mlbb-skill-1 .btn-icon {
+        font-size: 19px !important;
+        line-height: 1 !important;
+        margin-bottom: 1px !important;
+      }
+      .btn-dash .btn-lbl, .mlbb-skill-1 .btn-lbl {
+        font-size: 7px !important;
+        font-weight: 900 !important;
+        color: #00f5d4 !important;
+      }
+
+      /* Skill 2: Nova / Skill Shot [J] - 12 o'clock */
+      .btn-special, .mlbb-skill-2 {
+        position: absolute !important;
+        bottom: 74px !important;
+        right: 76px !important;
+        width: 46px !important;
+        height: 46px !important;
+        border-radius: 50% !important;
+        background: radial-gradient(circle, rgba(168, 85, 247, 0.45) 0%, rgba(28, 12, 44, 0.96) 100%) !important;
+        border: 2px solid #c084fc !important;
+        box-shadow: 0 0 14px rgba(168, 85, 247, 0.55), inset 0 0 8px rgba(192, 132, 252, 0.25) !important;
+        display: flex !important;
+        flex-direction: column !important;
+        align-items: center !important;
+        justify-content: center !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        cursor: pointer !important;
+        transition: transform 0.08s ease !important;
+      }
+      .btn-special:active, .mlbb-skill-2:active {
+        transform: scale(0.92) !important;
+      }
+      .btn-special.ready, .mlbb-skill-2.ready {
+        border-color: #e9d5ff !important;
+        box-shadow: 0 0 18px rgba(192, 132, 252, 0.85), inset 0 0 10px rgba(233, 213, 255, 0.5) !important;
+      }
+      .btn-special .btn-icon, .mlbb-skill-2 .btn-icon {
+        font-size: 19px !important;
+        line-height: 1 !important;
+        margin-bottom: 1px !important;
+      }
+      .btn-special .btn-lbl, .mlbb-skill-2 .btn-lbl {
+        font-size: 7px !important;
+        font-weight: 900 !important;
+        color: #d8b4fe !important;
+      }
+
+      /* Skill 3: Ultimate [K] - 2 o'clock (MLBB Golden Dragon Crown Crest) */
+      .btn-ultimate, .mlbb-skill-ult {
+        position: absolute !important;
+        bottom: 84px !important;
+        right: 12px !important;
+        width: 52px !important;
+        height: 52px !important;
+        border-radius: 50% !important;
+        background: radial-gradient(circle, rgba(255, 0, 84, 0.45) 0%, rgba(40, 10, 22, 0.98) 100%) !important;
+        border: 2.5px solid #ffc83b !important;
+        box-shadow: 0 0 20px rgba(255, 200, 59, 0.8), inset 0 0 12px rgba(255, 0, 84, 0.4) !important;
+        display: flex !important;
+        flex-direction: column !important;
+        align-items: center !important;
+        justify-content: center !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        cursor: pointer !important;
+        transition: transform 0.08s ease !important;
+      }
+      .btn-ultimate:active, .mlbb-skill-ult:active {
+        transform: scale(0.92) !important;
+      }
+      .btn-ultimate.ready, .mlbb-skill-ult.ready {
+        box-shadow: 0 0 24px rgba(255, 200, 59, 1), inset 0 0 14px rgba(255, 215, 0, 0.6) !important;
+        border-color: #ffd700 !important;
+        animation: mlbbUltCrownGlow 1.8s infinite alternate !important;
+      }
+      @keyframes mlbbUltCrownGlow {
+        0% { box-shadow: 0 0 16px rgba(255, 200, 59, 0.7); transform: scale(1); }
+        100% { box-shadow: 0 0 26px rgba(255, 215, 0, 1), 0 0 12px rgba(255, 0, 84, 0.9); transform: scale(1.04); }
+      }
+      .mlbb-ult-crown {
+        position: absolute;
+        top: -7px;
+        font-size: 11px;
+        filter: drop-shadow(0 0 4px #ffd700);
+      }
+      .btn-ultimate .btn-icon, .mlbb-skill-ult .btn-icon {
+        font-size: 19px !important;
+        line-height: 1 !important;
+        margin-bottom: 1px !important;
+      }
+      .btn-ultimate .btn-lbl, .mlbb-skill-ult .btn-lbl {
+        font-size: 7px !important;
+        font-weight: 900 !important;
+        color: #ffc83b !important;
+      }
+
+      /* Aux 1: Recall / Refinery Forge [L] */
+      .btn-mobile-recall {
+        position: absolute !important;
+        bottom: 130px !important;
+        right: 16px !important;
+        width: 36px !important;
+        height: 36px !important;
+        border-radius: 50% !important;
+        background: radial-gradient(circle, rgba(10, 200, 185, 0.35) 0%, rgba(4, 16, 28, 0.96) 100%) !important;
+        border: 1.5px solid #0ac8b9 !important;
+        box-shadow: 0 0 10px rgba(10, 200, 185, 0.45) !important;
+        display: flex !important;
+        flex-direction: column !important;
+        align-items: center !important;
+        justify-content: center !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        cursor: pointer !important;
+        transition: transform 0.08s ease !important;
+      }
+      .btn-mobile-recall:active {
+        transform: scale(0.92) !important;
+        box-shadow: 0 0 16px rgba(10, 200, 185, 0.85) !important;
+      }
+      .btn-mobile-recall .btn-icon {
+        font-size: 15px !important;
+        line-height: 1 !important;
+      }
+      .btn-mobile-recall .btn-lbl {
+        font-size: 6px !important;
+        font-weight: 900 !important;
+        color: #0ac8b9 !important;
+        letter-spacing: 0.3px !important;
+      }
+
+      /* Aux 2: Auto-Attack Lock / Target Selector [C] */
+      .btn-auto {
+        position: absolute !important;
+        bottom: 124px !important;
+        right: 68px !important;
+        width: 34px !important;
+        height: 34px !important;
+        border-radius: 50% !important;
+        background: rgba(8, 16, 28, 0.92) !important;
+        border: 1.5px solid rgba(255, 255, 255, 0.35) !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        cursor: pointer !important;
+        transition: all 0.12s ease !important;
+      }
+      .btn-auto:active {
+        transform: scale(0.92) !important;
+      }
+      .btn-auto.active {
+        border-color: #ffb703 !important;
+        background: radial-gradient(circle, rgba(255, 183, 3, 0.4) 0%, rgba(20, 12, 4, 0.96) 100%) !important;
+        box-shadow: 0 0 14px rgba(255, 183, 3, 0.85) !important;
+      }
+      .btn-auto .btn-icon {
+        font-size: 15px !important;
+        margin-bottom: 0 !important;
+      }
+      .btn-auto .btn-lbl {
+        display: none !important;
+      }
+
+      /* Quick Signals Attached to Minimap */
+      .mlbb-signals {
+        display: flex !important;
+        flex-direction: column !important;
+        gap: 3px !important;
+        top: 2px !important;
+        right: 2px !important;
+      }
+      .mlbb-sig-atk {
+        background: rgba(255, 0, 84, 0.25) !important;
+        border: 1px solid rgba(255, 0, 84, 0.7) !important;
+        color: #ff3366 !important;
+      }
+      .mlbb-sig-def {
+        background: rgba(0, 187, 249, 0.25) !important;
+        border: 1px solid rgba(0, 187, 249, 0.7) !important;
+        color: #00bbf9 !important;
+      }
+      .mlbb-sig-center {
+        background: rgba(255, 183, 3, 0.25) !important;
+        border: 1px solid rgba(255, 183, 3, 0.7) !important;
+        color: #ffb703 !important;
+      }
+
+      /* Hide keyboard badges on mobile */
+      .btn-action .btn-key-badge {
+        display: none !important;
+      }
+
+      /* Cooldown Overlays on mobile action buttons */
+      .action-cluster .cooldown-overlay {
+        position: absolute !important;
+        top: 0 !important;
+        left: 0 !important;
+        width: 100% !important;
+        height: 100% !important;
+        border-radius: 50% !important;
+        background: rgba(1, 10, 19, 0.88) !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        font-family: var(--font-mono) !important;
+        font-size: 11px !important;
+        font-weight: 900 !important;
+        color: #fff !important;
+        text-shadow: 0 1px 3px #000 !important;
+        pointer-events: none !important;
+      }
+
+      /* Pulse animation for ultimate */
+      @keyframes ultPulse {
+        0% { box-shadow: 0 0 14px rgba(255, 0, 84, 0.7); }
+        50% { box-shadow: 0 0 24px rgba(255, 215, 0, 0.9), 0 0 10px rgba(255, 0, 84, 0.8); }
+        100% { box-shadow: 0 0 14px rgba(255, 0, 84, 0.7); }
+      }
+
+      /* Compact scaling for ultra-short mobile viewports (height <= 340px) */
+      @media (max-height: 340px) {
+        .action-cluster {
+          transform: scale(0.85) !important;
+          transform-origin: bottom right !important;
+        }
+        #joystick-zone {
+          transform: scale(0.85) !important;
+          transform-origin: bottom left !important;
+        }
+        .lol-bottom-console {
+          transform: translateX(-50%) scale(0.88) !important;
+          bottom: 2px !important;
+        }
+        .lol-top-hud {
+          height: 26px !important;
+          top: 3px !important;
+        }
+        .lol-minimap-container {
+          width: 66px !important;
+          height: 66px !important;
+          top: 3px !important;
+          left: 5px !important;
+        }
+        #lol-minimap-canvas {
+          width: 66px !important;
+          height: 66px !important;
+        }
+      }
+
+      /* Compact Announcer Banner */
+      .lol-announcement-banner {
+        top: 34px !important;
+        padding: 4px 18px !important;
+        transform: translateX(-50%) scale(0.7) !important;
+      }
+      .lol-announcement-banner.active {
+        transform: translateX(-50%) scale(0.75) !important;
+      }
+      .lol-announcement-sub {
+        font-size: 7.5px !important;
+        letter-spacing: 1.5px !important;
+      }
+      .lol-announcement-main {
+        font-size: 12px !important;
+        letter-spacing: 1.2px !important;
+      }
+
+      /* Client Lobby Split adjustments for Mobile Landscape */
+      .lol-client-header {
+        height: 28px !important;
+        padding: 0 8px !important;
+      }
+      .lol-client-branding {
+        gap: 4px !important;
+      }
+      .lol-client-logo {
+        font-size: 12px !important;
+        letter-spacing: 1.2px !important;
+      }
+      .theme-month-display {
+        display: none !important;
+      }
+      .lol-client-nav {
+        gap: 4px !important;
+      }
+      .btn-client-tab {
+        padding: 2px 6px !important;
+        font-size: 8px !important;
+        height: 20px !important;
+      }
+      .lol-client-profile-capsule {
+        padding: 1px 4px !important;
+        gap: 3px !important;
+        height: 20px !important;
+      }
+      .client-avatar-circle {
+        width: 16px !important;
+        height: 16px !important;
+        font-size: 9px !important;
+      }
+      .client-name-input {
+        width: 70px !important;
+        font-size: 9px !important;
+        height: 18px !important;
+      }
+      .client-tier-badge {
+        display: none !important;
+      }
+      .lol-client-body {
+        grid-template-columns: 1.05fr 0.95fr !important;
+        gap: 6px !important;
+        padding: 2px 6px !important;
+        height: calc(100vh - 28px) !important;
+        max-height: calc(100vh - 28px) !important;
+        overflow-y: auto !important;
+        box-sizing: border-box !important;
+      }
+      .lol-stage-left, .lol-stage-right {
+        gap: 4px !important;
+      }
+      .champion-showcase-card {
+        padding: 4px 6px !important;
+        gap: 2px !important;
+      }
+      .showcase-banner-top {
+        gap: 6px !important;
+      }
+      .showcase-avatar-pod {
+        width: 26px !important;
+        height: 26px !important;
+        font-size: 13px !important;
+        border-radius: 6px !important;
+      }
+      .showcase-info-col h3 {
+        font-size: 10.5px !important;
+        letter-spacing: 0.8px !important;
+        margin: 0 !important;
+      }
+      .showcase-role-pill {
+        font-size: 7px !important;
+        padding: 1px 3px !important;
+      }
+      .showcase-desc-text {
+        font-size: 8.5px !important;
+        line-height: 1.15 !important;
+        margin: 0 !important;
+      }
+      .showcase-special-box {
+        display: none !important;
+      }
+      .class-selection-title {
+        font-size: 8px !important;
+        margin: 1px 0 !important;
+      }
+      .class-grid {
+        grid-template-columns: repeat(3, 1fr) !important;
+        gap: 3px !important;
+      }
+      .class-card {
+        padding: 2px 3px !important;
+        border-radius: 6px !important;
+      }
+      .class-card-icon {
+        font-size: 14px !important;
+        margin-bottom: 1px !important;
+      }
+      .class-card-name {
+        font-size: 8px !important;
+        line-height: 1 !important;
+      }
+      .class-card-desc, .class-card-special {
+        display: none !important;
+      }
+      .match-finder-card {
+        padding: 4px 6px !important;
+        gap: 3px !important;
+      }
+      .mode-tabs {
+        margin-bottom: 1px !important;
+        gap: 3px !important;
+      }
+      .tab-btn {
+        padding: 2px 5px !important;
+        font-size: 8px !important;
+        height: 20px !important;
+      }
+      .mode-sub-grid {
+        gap: 3px !important;
+      }
+      .sub-mode-card {
+        padding: 3px 5px !important;
+      }
+      .sub-mode-title {
+        font-size: 8.5px !important;
+        margin-bottom: 1px !important;
+      }
+      .sub-mode-desc {
+        font-size: 7px !important;
+        line-height: 1.1 !important;
+      }
+      .btn-launch-arena, .btn-host-launch {
+        padding: 4px 10px !important;
+        font-size: 10px !important;
+        letter-spacing: 1px !important;
+        margin-top: 2px !important;
+        height: 24px !important;
+        line-height: 1 !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+      }
+      .mp-actions-row {
+        gap: 3px !important;
+        margin-bottom: 2px !important;
+      }
+      .btn-mp-sub {
+        padding: 2px 5px !important;
+        font-size: 8px !important;
+        height: 18px !important;
+      }
+      .room-code-box {
+        padding: 2px 6px !important;
+        font-size: 9px !important;
+        margin: 2px 0 !important;
+      }
+      .lobby-status-pill {
+        font-size: 7.5px !important;
+        margin: 2px 0 !important;
+      }
+      .btn-lobby-action {
+        padding: 3px 8px !important;
+        font-size: 9px !important;
+        height: 22px !important;
+      }
+      .join-input {
+        height: 20px !important;
+        font-size: 9px !important;
+        padding: 1px 4px !important;
+      }
+
+      /* Compact Death / Victory Screen on Mobile */
+      .modal-overlay {
+        padding: 4px !important;
+      }
+      .gameover-card {
+        padding: 5px 12px 6px 12px !important;
+        gap: 2px !important;
+        border-radius: 10px !important;
+        border-width: 1.5px !important;
+        max-height: 96vh !important;
+        overflow-y: auto !important;
+        width: min(94%, 380px) !important;
+        box-sizing: border-box !important;
+      }
+      .end-title {
+        font-size: 14px !important;
+        letter-spacing: 1px !important;
+        margin: 0 !important;
+      }
+      #end-subtitle {
+        font-size: 8.5px !important;
+        margin: 0 0 2px 0 !important;
+        line-height: 1.1 !important;
+      }
+      .stats-table {
+        display: grid !important;
+        grid-template-columns: 1fr 1fr !important;
+        gap: 1px 8px !important;
+        padding: 3px 6px !important;
+        border-radius: 6px !important;
+        background: rgba(0, 0, 0, 0.45) !important;
+      }
+      .stat-row {
+        padding: 1px 0 !important;
+        font-size: 8.5px !important;
+        line-height: 1.15 !important;
+      }
+      .end-actions-row {
+        display: flex !important;
+        flex-direction: row !important;
+        gap: 6px !important;
+        width: 100% !important;
+        margin-top: 2px !important;
+      }
+      .btn-death-again, .btn-death-lobby {
+        padding: 4px 8px !important;
+        font-size: 9.5px !important;
+        letter-spacing: 0.8px !important;
+        border-radius: 5px !important;
+        flex: 1 !important;
+        margin: 0 !important;
+        height: 24px !important;
+        line-height: 1 !important;
+        display: inline-flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+      }
+      .btn-death-lobby {
+        background: linear-gradient(135deg, rgba(200, 170, 110, 0.25), rgba(120, 90, 40, 0.35)) !important;
+        border: 1px solid var(--lol-gold-2, #c8aa6e) !important;
+        color: var(--lol-gold-1, #f0e6d2) !important;
+        box-shadow: 0 0 8px rgba(200, 170, 110, 0.3) !important;
+      }
+    }
+

@@ -27,9 +27,6 @@ export default defineConfig(({ mode }) => {
   const sql = neon(dbUrl);
 
   return {
-    define: {
-      __NEON_DB_URL__: JSON.stringify(dbUrl)
-    },
     build: {
       outDir: 'dist'
     },
