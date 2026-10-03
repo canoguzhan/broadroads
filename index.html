@@ -78,13 +78,9 @@
       padding: env(safe-area-inset-top, 12px) env(safe-area-inset-right, 16px) env(safe-area-inset-bottom, 16px) env(safe-area-inset-left, 16px);
     }
 
-    /* Top HUD */
+    /* Top HUD (Legacy - replaced by LoL Top HUD) */
     .top-hud {
-      display: flex;
-      justify-content: space-between;
-      align-items: flex-start;
-      gap: 10px;
-      pointer-events: auto;
+      display: none !important;
     }
 
     .vitals-container {
@@ -3669,90 +3665,125 @@
         padding: 1px 3px !important;
       }
 
-      /* Compact Top HUD in Mobile Landscape */
+      /* Hide legacy duplicated HUD everywhere */
+      .top-hud {
+        display: none !important;
+      }
+
+      /* Compact Top Scoreboard HUD positioned adjacent to the Top-Left Minimap */
       .lol-top-hud {
-        padding: 4px 10px !important;
-        height: 36px !important;
+        position: absolute !important;
+        top: 4px !important;
+        left: 88px !important;
+        right: 6px !important;
+        width: calc(100vw - 94px) !important;
+        height: 28px !important;
+        padding: 2px 8px !important;
+        border-radius: 6px !important;
+        box-sizing: border-box !important;
+        z-index: 40 !important;
+      }
+      .lol-top-score-group {
+        gap: 4px !important;
+      }
+      .lol-score-badge {
+        padding: 1px 6px !important;
+        height: 20px !important;
       }
       .team-score {
-        font-size: 13px !important;
+        font-size: 11px !important;
       }
       .team-label {
-        font-size: 9px !important;
+        font-size: 8px !important;
+      }
+      .lol-score-vs {
+        font-size: 8px !important;
       }
       .lol-match-timer {
-        font-size: 12px !important;
-        padding: 2px 6px !important;
-        gap: 3px !important;
+        font-size: 10px !important;
+        padding: 1px 5px !important;
+        height: 20px !important;
+        gap: 2px !important;
       }
       .wave-name {
-        font-size: 9px !important;
+        font-size: 8px !important;
       }
       .wave-progress-bar {
-        width: 45px !important;
+        width: 32px !important;
         height: 3px !important;
       }
       .threats-badge {
-        font-size: 9px !important;
+        font-size: 8px !important;
         padding: 1px 4px !important;
+        height: 18px !important;
       }
       .lol-cs-badge {
-        font-size: 10px !important;
+        font-size: 9px !important;
+        padding: 1px 4px !important;
+        gap: 2px !important;
       }
       .lol-perf-badge, #btn-lol-help {
         display: none !important;
       }
       .btn-lol-icon {
-        width: 26px !important;
-        height: 26px !important;
-        font-size: 12px !important;
+        width: 24px !important;
+        height: 24px !important;
+        font-size: 11px !important;
       }
 
       /* Compact Bottom Champion Console */
       .lol-bottom-console {
-        transform: translateX(-50%) scale(0.7) !important;
+        transform: translateX(-50%) scale(0.62) !important;
         transform-origin: bottom center !important;
         bottom: 2px !important;
-        padding: 4px 8px !important;
-        gap: 6px !important;
-        max-width: calc(100vw - 120px) !important;
+        left: 50% !important;
+        padding: 2px 6px !important;
+        gap: 4px !important;
+        max-width: 440px !important;
+        z-index: 35 !important;
       }
       .lol-champ-wing .lol-stats-box {
         display: none !important;
       }
       .lol-portrait-frame {
-        width: 44px !important;
-        height: 44px !important;
+        width: 38px !important;
+        height: 38px !important;
       }
       .lol-level-seal {
-        width: 18px !important;
-        height: 18px !important;
+        width: 16px !important;
+        height: 16px !important;
+        font-size: 9px !important;
+      }
+      .lol-champ-title {
         font-size: 10px !important;
       }
+      .lol-summoner-name {
+        font-size: 8px !important;
+      }
       .lol-vitals-bars {
-        width: 180px !important;
+        width: 160px !important;
         gap: 2px !important;
       }
       .lol-bar-track {
-        height: 11px !important;
+        height: 10px !important;
       }
       .lol-bar-num {
-        font-size: 9px !important;
+        font-size: 8px !important;
       }
       .lol-spell-slot {
-        width: 32px !important;
-        height: 32px !important;
-      }
-      .lol-spell-icon {
-        font-size: 14px !important;
-      }
-      .lol-passive-slot {
-        width: 26px !important;
-        height: 26px !important;
-      }
-      .lol-summoner-slot, .lol-recall-slot {
         width: 28px !important;
         height: 28px !important;
+      }
+      .lol-spell-icon {
+        font-size: 12px !important;
+      }
+      .lol-passive-slot {
+        width: 22px !important;
+        height: 22px !important;
+      }
+      .lol-summoner-slot, .lol-recall-slot {
+        width: 24px !important;
+        height: 24px !important;
       }
       .lol-spell-pips {
         display: none !important;
@@ -3763,59 +3794,219 @@
         bottom: -3px !important;
       }
       .lol-items-grid {
-        grid-template-columns: repeat(4, 22px) !important;
+        grid-template-columns: repeat(4, 20px) !important;
         gap: 2px !important;
       }
       .lol-item-slot {
-        width: 22px !important;
-        height: 22px !important;
+        width: 20px !important;
+        height: 20px !important;
       }
       .lol-item-icon {
-        font-size: 11px !important;
+        font-size: 10px !important;
       }
       .lol-gold-row {
-        padding: 1px 4px !important;
+        padding: 1px 3px !important;
       }
       .lol-gold-amount {
-        font-size: 9px !important;
+        font-size: 8.5px !important;
       }
       .lol-minerals-mini {
         display: none !important;
       }
 
-      /* Compact Minimap on Mobile Landscape */
+      /* Radar Minimap anchored in Top-Left like standard mobile MOBAs (Wild Rift) */
       .lol-minimap-container {
-        width: 105px !important;
-        height: 105px !important;
-        bottom: 8px !important;
-        right: 8px !important;
-        background: rgba(1, 10, 19, 0.75) !important;
-        backdrop-filter: blur(4px) !important;
+        position: absolute !important;
+        top: 4px !important;
+        left: 6px !important;
+        bottom: auto !important;
+        right: auto !important;
+        width: 76px !important;
+        height: 76px !important;
+        background: rgba(1, 10, 19, 0.85) !important;
+        backdrop-filter: blur(8px) !important;
+        -webkit-backdrop-filter: blur(8px) !important;
+        border: 1.5px solid var(--lol-gold-2, #c8aa6e) !important;
+        border-radius: 8px !important;
+        box-shadow: 0 0 10px rgba(0, 0, 0, 0.8), 0 0 5px rgba(200, 170, 110, 0.4) !important;
+        z-index: 45 !important;
+        pointer-events: auto !important;
       }
       #lol-minimap-canvas {
-        width: 105px !important;
-        height: 105px !important;
+        width: 76px !important;
+        height: 76px !important;
+        border-radius: 7px !important;
+      }
+      .lol-minimap-controls {
+        top: 2px !important;
+        right: 2px !important;
+        gap: 2px !important;
       }
       .btn-minimap-action {
-        width: 16px !important;
-        height: 16px !important;
-        font-size: 8px !important;
+        width: 14px !important;
+        height: 14px !important;
+        font-size: 7px !important;
+        padding: 0 !important;
+        border-radius: 3px !important;
       }
 
-      /* Touch Joystick positioned cleanly on the bottom-left */
+      /* Mobile Controls & Touch Joystick positioned cleanly on the bottom-left */
+      .mobile-controls {
+        display: block !important;
+      }
       #joystick-zone {
+        display: block !important;
         bottom: 8px !important;
         left: 8px !important;
-        width: 90px !important;
-        height: 90px !important;
+        width: 86px !important;
+        height: 86px !important;
+        z-index: 45 !important;
       }
       .joystick-base {
-        width: 80px !important;
-        height: 80px !important;
+        width: 78px !important;
+        height: 78px !important;
+        border: 2px solid rgba(0, 245, 212, 0.35) !important;
+        background: radial-gradient(circle, rgba(0, 245, 212, 0.1) 0%, rgba(4, 7, 18, 0.65) 100%) !important;
       }
       .joystick-knob {
-        width: 32px !important;
-        height: 32px !important;
+        width: 28px !important;
+        height: 28px !important;
+        background: radial-gradient(circle, #00f5d4 20%, #00bbf9 100%) !important;
+        box-shadow: 0 0 12px rgba(0, 245, 212, 0.8) !important;
+      }
+
+      /* Ergonomic Mobile Action Cluster (Radial Thumb Arc) on Bottom-Right */
+      .action-cluster {
+        position: absolute !important;
+        bottom: 6px !important;
+        right: 8px !important;
+        width: 160px !important;
+        height: 135px !important;
+        display: block !important;
+        pointer-events: auto !important;
+        z-index: 45 !important;
+      }
+      .btn-attack {
+        position: absolute !important;
+        bottom: 2px !important;
+        right: 4px !important;
+        width: 54px !important;
+        height: 54px !important;
+        border-radius: 50% !important;
+        background: radial-gradient(circle, rgba(0, 245, 212, 0.45) 0%, rgba(13, 25, 45, 0.95) 100%) !important;
+        border: 2px solid #00f5d4 !important;
+        box-shadow: 0 0 16px rgba(0, 245, 212, 0.6) !important;
+        margin: 0 !important;
+      }
+      .btn-attack .btn-icon {
+        font-size: 22px !important;
+        margin-bottom: 0px !important;
+      }
+      .btn-attack .btn-lbl {
+        font-size: 7.5px !important;
+        font-weight: 900 !important;
+        letter-spacing: 0.5px !important;
+      }
+
+      .btn-dash {
+        position: absolute !important;
+        bottom: 6px !important;
+        right: 66px !important;
+        width: 38px !important;
+        height: 38px !important;
+        border-radius: 50% !important;
+        background: radial-gradient(circle, rgba(160, 140, 255, 0.4) 0%, rgba(18, 14, 38, 0.95) 100%) !important;
+        border: 1.5px solid #a78bfa !important;
+        box-shadow: 0 0 10px rgba(167, 139, 250, 0.4) !important;
+        margin: 0 !important;
+      }
+      .btn-dash .btn-icon {
+        font-size: 15px !important;
+        margin-bottom: 0 !important;
+      }
+      .btn-dash .btn-lbl {
+        font-size: 6.5px !important;
+      }
+
+      .btn-special {
+        position: absolute !important;
+        bottom: 50px !important;
+        right: 58px !important;
+        width: 38px !important;
+        height: 38px !important;
+        border-radius: 50% !important;
+        background: radial-gradient(circle, rgba(255, 183, 3, 0.4) 0%, rgba(28, 20, 8, 0.95) 100%) !important;
+        border: 1.5px solid #ffb703 !important;
+        box-shadow: 0 0 10px rgba(255, 183, 3, 0.4) !important;
+        margin: 0 !important;
+      }
+      .btn-special .btn-icon {
+        font-size: 15px !important;
+        margin-bottom: 0 !important;
+      }
+      .btn-special .btn-lbl {
+        font-size: 6.5px !important;
+      }
+
+      .btn-ultimate {
+        position: absolute !important;
+        bottom: 64px !important;
+        right: 6px !important;
+        width: 42px !important;
+        height: 42px !important;
+        border-radius: 50% !important;
+        background: radial-gradient(circle, rgba(255, 0, 84, 0.45) 0%, rgba(35, 8, 18, 0.95) 100%) !important;
+        border: 2px solid #ff0054 !important;
+        box-shadow: 0 0 14px rgba(255, 0, 84, 0.6) !important;
+        margin: 0 !important;
+      }
+      .btn-ultimate .btn-icon {
+        font-size: 16px !important;
+        margin-bottom: 0 !important;
+      }
+      .btn-ultimate .btn-lbl {
+        font-size: 6.5px !important;
+        color: #ff3366 !important;
+      }
+
+      .btn-auto {
+        position: absolute !important;
+        bottom: 96px !important;
+        right: 54px !important;
+        width: 30px !important;
+        height: 30px !important;
+        border-radius: 50% !important;
+        background: rgba(10, 18, 32, 0.9) !important;
+        border: 1.2px solid rgba(255, 255, 255, 0.35) !important;
+        margin: 0 !important;
+      }
+      .btn-auto .btn-icon {
+        font-size: 13px !important;
+        margin-bottom: 0 !important;
+      }
+      .btn-auto .btn-lbl {
+        display: none !important;
+      }
+      .btn-action .btn-key-badge {
+        display: none !important;
+      }
+
+      /* Compact Announcer Banner */
+      .lol-announcement-banner {
+        top: 34px !important;
+        padding: 4px 18px !important;
+        transform: translateX(-50%) scale(0.7) !important;
+      }
+      .lol-announcement-banner.active {
+        transform: translateX(-50%) scale(0.75) !important;
+      }
+      .lol-announcement-sub {
+        font-size: 7.5px !important;
+        letter-spacing: 1.5px !important;
+      }
+      .lol-announcement-main {
+        font-size: 12px !important;
+        letter-spacing: 1.2px !important;
       }
 
       /* Client Lobby Split adjustments for Mobile Landscape */
@@ -4580,6 +4771,14 @@
           <span class="btn-key-badge">SPACE</span>
           <span class="btn-icon" id="attack-btn-icon">⚔️</span>
           <span class="btn-lbl">STRIKE</span>
+        </button>
+
+        <!-- Ultimate Button (R) -->
+        <button class="btn-action btn-ultimate ready" id="btn-mobile-ultimate" title="Celestial Overcharge Ultimate (R)">
+          <span class="btn-key-badge">R</span>
+          <span class="btn-icon">👑</span>
+          <span class="btn-lbl">ULT</span>
+          <div class="cooldown-overlay" id="mobile-ult-cooldown" style="display: none;"></div>
         </button>
       </div>
     </div>
@@ -8400,6 +8599,19 @@
       } else {
         dashOverlay.style.display = 'none';
       }
+
+      const ultOverlay = document.getElementById('mobile-ult-cooldown');
+      const ultBtn = document.getElementById('btn-mobile-ultimate');
+      if (ultOverlay && ultBtn) {
+        if (state.hero.ultimateCooldown && state.hero.ultimateCooldown > 0) {
+          ultOverlay.style.display = 'flex';
+          ultOverlay.textContent = `${Math.ceil(state.hero.ultimateCooldown)}s`;
+          ultBtn.classList.remove('ready');
+        } else {
+          ultOverlay.style.display = 'none';
+          ultBtn.classList.add('ready');
+        }
+      }
     }
 
     /* ==========================================================================
@@ -8562,6 +8774,7 @@
     bindAction(document.getElementById('btn-dash'), performDash);
     bindAction(document.getElementById('btn-special'), performSpecialNova);
     bindAction(document.getElementById('btn-auto'), toggleAutoAttack);
+    bindAction(document.getElementById('btn-mobile-ultimate'), performUltimate);
 
     // League of Legends Action Console Buttons
     bindAction(document.getElementById('btn-lol-q'), performHeroAttack);
@@ -8704,7 +8917,7 @@
     }
 
     function detectPlatform() {
-      if (isMobileDevice()) return 'mobile';
+      if (isMobileDevice() || (window.innerWidth <= 950 && window.innerHeight <= 520) || (window.innerHeight <= 450)) return 'mobile';
       return 'desktop';
     }
 
@@ -9754,8 +9967,8 @@
           if (lolBottom) lolBottom.style.display = 'flex';
           const lolMinimap = document.getElementById('lol-minimap-container');
           if (lolMinimap) lolMinimap.style.display = 'block';
-          if (state.platform === 'mobile' || isMobileDevice()) {
-            document.querySelectorAll('.mobile-controls').forEach(el => el.style.display = 'flex');
+          if (state.platform === 'mobile' || isMobileDevice() || window.innerWidth <= 950 || window.innerHeight <= 520) {
+            document.querySelectorAll('.mobile-controls').forEach(el => el.style.display = 'block');
           }
           if (onComplete) onComplete();
           showLolBanner('WELCOME TO BROADROADS ARENA', 'MINIONS & THREATS HAVE SPAWNED');
