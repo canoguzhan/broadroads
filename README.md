@@ -67,10 +67,12 @@ The active season is automatically locked and showcased via the non-editable sea
 | Action | Mobile (Touch) | Desktop (Mouse & Keyboard) |
 | :--- | :--- | :--- |
 | **Move** | Left virtual joystick | `W`, `A`, `S`, `D` or Arrow Keys |
-| **Strike / Shoot** | Tap `⚔️ STRIKE` or tap canvas | `Space`, `F`, `J`, or Left Click |
-| **Dash / Dodge** | Tap `💨 DASH` button | `Shift`, `K`, or Right Click |
-| **Special Skill** | Tap `⚡ NOVA / BARRAGE / VORTEX` | `E`, `Q`, or `L` |
-| **Auto-Attack** | Tap `🎯 AUTO` toggle | `C` or `R` |
+| **Primary Strike / Shoot** | Tap `⚔️ STRIKE` or tap canvas | `Space` or Left Click |
+| **Dash / Dodge** | Tap `💨 DASH` button | `H` or `Shift` |
+| **Special Skill** | Tap `⚡ NOVA / BARRAGE / VORTEX` | `J` |
+| **Ultimate** | Tap `👑 ULT` button | `K` |
+| **Recall / Forge** | Tap `🌀 RECALL` button | `L` or `B` |
+| **Auto-Attack** | Tap `🎯 AUTO` toggle | `C` or `F` |
 | **Controls Help** | N/A (Touch UI) | `⌨️ HELP` in top HUD |
 | **Exit Match** | Tap `🚪 EXIT` in top HUD | `🚪 EXIT` or `Escape` key |
 | **Refinery Craft**| Tap mineral cards to insert | Tap/Click minerals + `🔨 STRIKE ANVIL` |
