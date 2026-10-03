@@ -1,4 +1,13 @@
 /* Enemy System & Spawner */
+const showLolBanner = (main, sub) => (window.showLolBanner || (() => {}))(main, sub);
+const spawnFloatingCombatText = (...args) => (window.spawnFloatingCombatText || (() => {}))(...args);
+const spawnExplosion = (...args) => (window.spawnExplosion || (() => {}))(...args);
+const spawnMaterialDrops = (...args) => (window.spawnMaterialDrops || (() => {}))(...args);
+const updateSpecialButton = () => (window.updateSpecialButton || (() => {}))();
+const damagePlayer = (...args) => (window.damagePlayer || (() => {}))(...args);
+const spawnEnemyProjectile = (...args) => (window.spawnEnemyProjectile || (() => {}))(...args);
+const spawnGroundShockwave = (...args) => (window.spawnGroundShockwave || (() => {}))(...args);
+
     class EnemyEntity {
       constructor(type, spawnPos, id = null) {
         this.id = id || Math.random().toString(36).substring(2, 9);

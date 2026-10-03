@@ -8,17 +8,18 @@ import './services/auth.js';
 import './game/scene.js';
 import './game/themeEngine.js';
 import './game/hero.js';
-import './game/enemies.js';
 import './game/weapons.js';
 import './game/loot.js';
+import './game/combat.js';
+import './game/enemies.js';
+import './game/refinery.js';
+import './game/waves.js';
+import './game/gameOver.js';
 import './net/multiplayer.js';
 import './net/poll.js';
-import './game/combat.js';
-import './game/waves.js';
-import './game/refinery.js';
-import './game/gameOver.js';
 import './ui/controls.js';
 import './ui/hud.js';
+
 
 /* ==========================================================================
    15. MAIN GAME LOOP & APPLICATION BOOTSTRAP

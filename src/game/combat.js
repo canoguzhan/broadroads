@@ -367,7 +367,7 @@
 
 export {
   broadcastLocalEnemyHit, performHeroAttack, performDash, performSpecialNova,
-  toggleAutoAttack, performUltimate, damagePlayer, checkCoopReviveState,
+  toggleAutoAttack, performUltimate, showLolBanner, damagePlayer, checkCoopReviveState,
   spawnFloatingCombatText, triggerScreenShake, triggerAnvilFlash
 };
 window.broadcastLocalEnemyHit = broadcastLocalEnemyHit;
@@ -376,6 +376,7 @@ window.performDash = performDash;
 window.performSpecialNova = performSpecialNova;
 window.toggleAutoAttack = toggleAutoAttack;
 window.performUltimate = performUltimate;
+window.showLolBanner = showLolBanner;
 window.damagePlayer = damagePlayer;
 window.checkCoopReviveState = checkCoopReviveState;
 window.spawnFloatingCombatText = spawnFloatingCombatText;
