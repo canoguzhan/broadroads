@@ -99,6 +99,7 @@ export {
   arenaGroup, arenaMesh, arenaMat, runeRing, runeRingMat, outerRing, outerRingMat,
   pylonMeshes, pylonCrystalMat, dustParticles, dustGeo, dustPositions
 };
+window.container = container;
 window.scene = scene;
 window.camera = camera;
 window.renderer = renderer;

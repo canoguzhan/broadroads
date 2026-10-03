@@ -679,7 +679,7 @@
       }
     }
 
-    net = new NetworkManager();
+    window.net = new NetworkManager();
 
 export { NetworkManager, updateTeammatesHUD };
 window.NetworkManager = NetworkManager;

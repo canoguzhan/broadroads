@@ -400,7 +400,7 @@
       }
     }
 
-    hero = new HeroEntity(false, 'local', state.username, state.heroClass);
+    window.hero = new HeroEntity(false, 'local', state.username, state.heroClass);
 
 export { HeroEntity };
 window.HeroEntity = HeroEntity;

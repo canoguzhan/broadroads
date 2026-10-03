@@ -1,4 +1,5 @@
 /* BROADROADS - Modular Game Engine Entrypoint */
+import './globals.js';
 import './audio/sound.js';
 import './config/constants.js';
 import './config/themes.js';

@@ -1,0 +1,23 @@
+/* BROADROADS - Shared Engine Globals & Entity Registries */
+window.hero = null;
+window.net = null;
+window.remoteHeroes = new Map();
+window.enemies = [];
+window.projectiles = [];
+window.slashWaves = [];
+window.gunnerRockets = [];
+window.blackHoles = [];
+window.shockwaves = [];
+window.explosions = [];
+window.droppedMaterials = [];
+window.clickRipples = [];
+window.pylonMeshes = [];
+window.keys = {};
+window.isPointerLocked = false;
+window.pendingStartGame = false;
+window.lastCountdownBeep = -1;
+window.waveSpawnTimer = 0;
+window.bannerTimeout = null;
+window.joystickActive = false;
+window.joystickTouchId = null;
+window.joystickOrigin = { x: 0, y: 0 };
