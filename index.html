@@ -3976,7 +3976,7 @@
       }
 
       /* --------------------------------------------------------------------------
-         MOBILE REDESIGN 4: Touch Joystick (#joystick-zone)
+         MOBILE REDESIGN 4: MLBB Compass Joystick (#joystick-zone)
          -------------------------------------------------------------------------- */
       .mobile-controls {
         display: block !important;
@@ -3986,38 +3986,69 @@
         position: absolute !important;
         bottom: 12px !important;
         left: 12px !important;
-        width: 92px !important;
-        height: 92px !important;
+        width: 96px !important;
+        height: 96px !important;
         z-index: 45 !important;
         pointer-events: auto !important;
         touch-action: none !important;
       }
       .joystick-base {
-        width: 84px !important;
-        height: 84px !important;
+        width: 88px !important;
+        height: 88px !important;
         border-radius: 50% !important;
-        border: 2px solid rgba(0, 245, 212, 0.45) !important;
-        background: radial-gradient(circle, rgba(0, 245, 212, 0.12) 0%, rgba(2, 6, 16, 0.78) 100%) !important;
-        box-shadow: 0 0 16px rgba(0, 245, 212, 0.25), inset 0 0 12px rgba(0, 245, 212, 0.1) !important;
+        border: 2px solid rgba(255, 183, 3, 0.6) !important;
+        background: radial-gradient(circle, rgba(0, 245, 212, 0.15) 0%, rgba(2, 6, 18, 0.88) 75%, rgba(0,0,0,0.95) 100%) !important;
+        box-shadow: 0 0 18px rgba(0, 0, 0, 0.8), 0 0 10px rgba(255, 183, 3, 0.35), inset 0 0 14px rgba(0, 245, 212, 0.15) !important;
+        position: relative !important;
       }
+      .joystick-ring-compass {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        border-radius: 50%;
+        pointer-events: none;
+      }
+      .compass-marker {
+        position: absolute;
+        font-size: 7px;
+        color: rgba(255, 183, 3, 0.75);
+        font-weight: 900;
+        line-height: 1;
+      }
+      .comp-n { top: 2px; left: 50%; transform: translateX(-50%); }
+      .comp-s { bottom: 2px; left: 50%; transform: translateX(-50%); }
+      .comp-w { left: 3px; top: 50%; transform: translateY(-50%); }
+      .comp-e { right: 3px; top: 50%; transform: translateY(-50%); }
       .joystick-knob {
-        width: 32px !important;
-        height: 32px !important;
+        width: 36px !important;
+        height: 36px !important;
         border-radius: 50% !important;
-        background: radial-gradient(circle, #00f5d4 25%, #00bbf9 100%) !important;
-        border: 2px solid #ffffff !important;
-        box-shadow: 0 0 14px rgba(0, 245, 212, 0.85) !important;
+        background: radial-gradient(circle, #00f5d4 20%, #00bbf9 65%, #05162b 100%) !important;
+        border: 2.5px solid #ffb703 !important;
+        box-shadow: 0 0 16px rgba(0, 245, 212, 0.9), inset 0 0 8px rgba(255, 255, 255, 0.8) !important;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+      .knob-inner-gem {
+        width: 10px;
+        height: 10px;
+        border-radius: 50%;
+        background: #ffffff;
+        box-shadow: 0 0 8px #00f5d4;
       }
 
       /* --------------------------------------------------------------------------
-         MOBILE REDESIGN 5: Ergonomic Radial Action Cluster (.action-cluster)
+         MOBILE REDESIGN 5: Mobile Legends: Bang Bang (MLBB) Radial Combat Cluster
          -------------------------------------------------------------------------- */
       .action-cluster {
         position: absolute !important;
-        bottom: 8px !important;
-        right: 8px !important;
-        width: 180px !important;
-        height: 165px !important;
+        bottom: 6px !important;
+        right: 6px !important;
+        width: 195px !important;
+        height: 175px !important;
         display: block !important;
         pointer-events: auto !important;
         z-index: 45 !important;
@@ -4026,17 +4057,17 @@
         -webkit-user-select: none !important;
       }
 
-      /* Primary Strike (Attack) */
-      .btn-attack {
+      /* Iconic MLBB Large Golden Basic Attack Button */
+      .btn-attack, .mlbb-attack-btn {
         position: absolute !important;
         bottom: 4px !important;
         right: 4px !important;
-        width: 60px !important;
-        height: 60px !important;
+        width: 68px !important;
+        height: 68px !important;
         border-radius: 50% !important;
-        background: radial-gradient(circle, rgba(0, 245, 212, 0.4) 0%, rgba(8, 22, 40, 0.96) 100%) !important;
-        border: 2.5px solid #00f5d4 !important;
-        box-shadow: 0 0 16px rgba(0, 245, 212, 0.6), inset 0 0 10px rgba(0, 245, 212, 0.3) !important;
+        background: radial-gradient(circle, rgba(255, 183, 3, 0.45) 0%, rgba(38, 24, 6, 0.98) 72%, #080c18 100%) !important;
+        border: 3px solid #ffb703 !important;
+        box-shadow: 0 0 20px rgba(255, 183, 3, 0.65), 0 4px 14px rgba(0,0,0,0.85), inset 0 0 14px rgba(255, 215, 0, 0.4) !important;
         display: flex !important;
         flex-direction: column !important;
         align-items: center !important;
@@ -4046,33 +4077,36 @@
         cursor: pointer !important;
         transition: transform 0.08s ease, box-shadow 0.08s ease !important;
       }
-      .btn-attack:active {
-        transform: scale(0.92) !important;
-        box-shadow: 0 0 24px rgba(0, 245, 212, 0.9) !important;
+      .btn-attack:active, .mlbb-attack-btn:active {
+        transform: scale(0.91) !important;
+        box-shadow: 0 0 28px rgba(255, 183, 3, 0.95), inset 0 0 20px rgba(255, 215, 0, 0.7) !important;
       }
-      .btn-attack .btn-icon {
-        font-size: 26px !important;
+      .btn-attack .btn-icon, .mlbb-attack-btn .btn-icon {
+        font-size: 28px !important;
         line-height: 1 !important;
         margin-bottom: 1px !important;
+        filter: drop-shadow(0 0 6px rgba(255, 183, 3, 0.8));
       }
-      .btn-attack .btn-lbl {
+      .btn-attack .btn-lbl, .mlbb-attack-btn .btn-lbl {
+        font-family: var(--font-title) !important;
         font-size: 8px !important;
         font-weight: 900 !important;
-        letter-spacing: 0.8px !important;
-        color: #00f5d4 !important;
+        letter-spacing: 1px !important;
+        color: #ffb703 !important;
+        text-shadow: 0 1px 3px rgba(0,0,0,0.9);
       }
 
-      /* Celestial Overcharge Ultimate (R) */
-      .btn-ultimate {
+      /* Skill 1: Dash / Flicker [H] - 10 o'clock */
+      .btn-dash, .mlbb-skill-1 {
         position: absolute !important;
-        bottom: 74px !important;
-        right: 8px !important;
+        bottom: 12px !important;
+        right: 86px !important;
         width: 46px !important;
         height: 46px !important;
         border-radius: 50% !important;
-        background: radial-gradient(circle, rgba(255, 0, 84, 0.45) 0%, rgba(32, 6, 18, 0.96) 100%) !important;
-        border: 2px solid #ff0054 !important;
-        box-shadow: 0 0 14px rgba(255, 0, 84, 0.6), inset 0 0 8px rgba(255, 0, 84, 0.3) !important;
+        background: radial-gradient(circle, rgba(0, 245, 212, 0.4) 0%, rgba(6, 22, 38, 0.96) 100%) !important;
+        border: 2px solid #00f5d4 !important;
+        box-shadow: 0 0 14px rgba(0, 245, 212, 0.55), inset 0 0 8px rgba(0, 245, 212, 0.25) !important;
         display: flex !important;
         flex-direction: column !important;
         align-items: center !important;
@@ -4082,74 +4116,31 @@
         cursor: pointer !important;
         transition: transform 0.08s ease !important;
       }
-      .btn-ultimate:active {
+      .btn-dash:active, .mlbb-skill-1:active {
         transform: scale(0.92) !important;
       }
-      .btn-ultimate.ready {
-        box-shadow: 0 0 18px rgba(255, 0, 84, 0.85), inset 0 0 12px rgba(255, 215, 0, 0.4) !important;
-        border-color: #ffd700 !important;
-        animation: ultPulse 2s infinite ease-in-out !important;
-      }
-      .btn-ultimate .btn-icon {
-        font-size: 18px !important;
+      .btn-dash .btn-icon, .mlbb-skill-1 .btn-icon {
+        font-size: 19px !important;
         line-height: 1 !important;
         margin-bottom: 1px !important;
       }
-      .btn-ultimate .btn-lbl {
+      .btn-dash .btn-lbl, .mlbb-skill-1 .btn-lbl {
         font-size: 7px !important;
         font-weight: 900 !important;
-        color: #ff3366 !important;
+        color: #00f5d4 !important;
       }
 
-      /* Class Special Skill (E) */
-      .btn-special {
+      /* Skill 2: Nova / Skill Shot [J] - 12 o'clock */
+      .btn-special, .mlbb-skill-2 {
         position: absolute !important;
-        bottom: 64px !important;
-        right: 68px !important;
-        width: 44px !important;
-        height: 44px !important;
-        border-radius: 50% !important;
-        background: radial-gradient(circle, rgba(255, 183, 3, 0.4) 0%, rgba(28, 18, 5, 0.96) 100%) !important;
-        border: 2px solid #ffb703 !important;
-        box-shadow: 0 0 12px rgba(255, 183, 3, 0.5), inset 0 0 8px rgba(255, 183, 3, 0.25) !important;
-        display: flex !important;
-        flex-direction: column !important;
-        align-items: center !important;
-        justify-content: center !important;
-        margin: 0 !important;
-        padding: 0 !important;
-        cursor: pointer !important;
-        transition: transform 0.08s ease !important;
-      }
-      .btn-special:active {
-        transform: scale(0.92) !important;
-      }
-      .btn-special.ready {
-        border-color: #ffe600 !important;
-        box-shadow: 0 0 16px rgba(255, 215, 0, 0.8) !important;
-      }
-      .btn-special .btn-icon {
-        font-size: 18px !important;
-        line-height: 1 !important;
-        margin-bottom: 1px !important;
-      }
-      .btn-special .btn-lbl {
-        font-size: 7px !important;
-        font-weight: 900 !important;
-        color: #ffb703 !important;
-      }
-
-      /* Dash / Dodge (Shift) */
-      .btn-dash {
-        position: absolute !important;
-        bottom: 8px !important;
+        bottom: 74px !important;
         right: 76px !important;
-        width: 44px !important;
-        height: 44px !important;
+        width: 46px !important;
+        height: 46px !important;
         border-radius: 50% !important;
-        background: radial-gradient(circle, rgba(167, 139, 250, 0.4) 0%, rgba(18, 12, 36, 0.96) 100%) !important;
-        border: 2px solid #a78bfa !important;
-        box-shadow: 0 0 12px rgba(167, 139, 250, 0.5), inset 0 0 8px rgba(167, 139, 250, 0.25) !important;
+        background: radial-gradient(circle, rgba(168, 85, 247, 0.45) 0%, rgba(28, 12, 44, 0.96) 100%) !important;
+        border: 2px solid #c084fc !important;
+        box-shadow: 0 0 14px rgba(168, 85, 247, 0.55), inset 0 0 8px rgba(192, 132, 252, 0.25) !important;
         display: flex !important;
         flex-direction: column !important;
         align-items: center !important;
@@ -4159,25 +4150,113 @@
         cursor: pointer !important;
         transition: transform 0.08s ease !important;
       }
-      .btn-dash:active {
+      .btn-special:active, .mlbb-skill-2:active {
         transform: scale(0.92) !important;
       }
-      .btn-dash .btn-icon {
-        font-size: 18px !important;
+      .btn-special.ready, .mlbb-skill-2.ready {
+        border-color: #e9d5ff !important;
+        box-shadow: 0 0 18px rgba(192, 132, 252, 0.85), inset 0 0 10px rgba(233, 213, 255, 0.5) !important;
+      }
+      .btn-special .btn-icon, .mlbb-skill-2 .btn-icon {
+        font-size: 19px !important;
         line-height: 1 !important;
         margin-bottom: 1px !important;
       }
-      .btn-dash .btn-lbl {
+      .btn-special .btn-lbl, .mlbb-skill-2 .btn-lbl {
         font-size: 7px !important;
         font-weight: 900 !important;
-        color: #c4b5fd !important;
+        color: #d8b4fe !important;
       }
 
-      /* Auto-Attack Toggle Lock (C) */
+      /* Skill 3: Ultimate [K] - 2 o'clock (MLBB Golden Dragon Crown Crest) */
+      .btn-ultimate, .mlbb-skill-ult {
+        position: absolute !important;
+        bottom: 84px !important;
+        right: 12px !important;
+        width: 52px !important;
+        height: 52px !important;
+        border-radius: 50% !important;
+        background: radial-gradient(circle, rgba(255, 0, 84, 0.45) 0%, rgba(40, 10, 22, 0.98) 100%) !important;
+        border: 2.5px solid #ffc83b !important;
+        box-shadow: 0 0 20px rgba(255, 200, 59, 0.8), inset 0 0 12px rgba(255, 0, 84, 0.4) !important;
+        display: flex !important;
+        flex-direction: column !important;
+        align-items: center !important;
+        justify-content: center !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        cursor: pointer !important;
+        transition: transform 0.08s ease !important;
+      }
+      .btn-ultimate:active, .mlbb-skill-ult:active {
+        transform: scale(0.92) !important;
+      }
+      .btn-ultimate.ready, .mlbb-skill-ult.ready {
+        box-shadow: 0 0 24px rgba(255, 200, 59, 1), inset 0 0 14px rgba(255, 215, 0, 0.6) !important;
+        border-color: #ffd700 !important;
+        animation: mlbbUltCrownGlow 1.8s infinite alternate !important;
+      }
+      @keyframes mlbbUltCrownGlow {
+        0% { box-shadow: 0 0 16px rgba(255, 200, 59, 0.7); transform: scale(1); }
+        100% { box-shadow: 0 0 26px rgba(255, 215, 0, 1), 0 0 12px rgba(255, 0, 84, 0.9); transform: scale(1.04); }
+      }
+      .mlbb-ult-crown {
+        position: absolute;
+        top: -7px;
+        font-size: 11px;
+        filter: drop-shadow(0 0 4px #ffd700);
+      }
+      .btn-ultimate .btn-icon, .mlbb-skill-ult .btn-icon {
+        font-size: 19px !important;
+        line-height: 1 !important;
+        margin-bottom: 1px !important;
+      }
+      .btn-ultimate .btn-lbl, .mlbb-skill-ult .btn-lbl {
+        font-size: 7px !important;
+        font-weight: 900 !important;
+        color: #ffc83b !important;
+      }
+
+      /* Aux 1: Recall / Refinery Forge [L] */
+      .btn-mobile-recall {
+        position: absolute !important;
+        bottom: 130px !important;
+        right: 16px !important;
+        width: 36px !important;
+        height: 36px !important;
+        border-radius: 50% !important;
+        background: radial-gradient(circle, rgba(10, 200, 185, 0.35) 0%, rgba(4, 16, 28, 0.96) 100%) !important;
+        border: 1.5px solid #0ac8b9 !important;
+        box-shadow: 0 0 10px rgba(10, 200, 185, 0.45) !important;
+        display: flex !important;
+        flex-direction: column !important;
+        align-items: center !important;
+        justify-content: center !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        cursor: pointer !important;
+        transition: transform 0.08s ease !important;
+      }
+      .btn-mobile-recall:active {
+        transform: scale(0.92) !important;
+        box-shadow: 0 0 16px rgba(10, 200, 185, 0.85) !important;
+      }
+      .btn-mobile-recall .btn-icon {
+        font-size: 15px !important;
+        line-height: 1 !important;
+      }
+      .btn-mobile-recall .btn-lbl {
+        font-size: 6px !important;
+        font-weight: 900 !important;
+        color: #0ac8b9 !important;
+        letter-spacing: 0.3px !important;
+      }
+
+      /* Aux 2: Auto-Attack Lock / Target Selector [C] */
       .btn-auto {
         position: absolute !important;
-        bottom: 118px !important;
-        right: 64px !important;
+        bottom: 124px !important;
+        right: 68px !important;
         width: 34px !important;
         height: 34px !important;
         border-radius: 50% !important;
@@ -4195,9 +4274,9 @@
         transform: scale(0.92) !important;
       }
       .btn-auto.active {
-        border-color: #00f5d4 !important;
-        background: radial-gradient(circle, rgba(0, 245, 212, 0.35) 0%, rgba(8, 24, 32, 0.95) 100%) !important;
-        box-shadow: 0 0 12px rgba(0, 245, 212, 0.7) !important;
+        border-color: #ffb703 !important;
+        background: radial-gradient(circle, rgba(255, 183, 3, 0.4) 0%, rgba(20, 12, 4, 0.96) 100%) !important;
+        box-shadow: 0 0 14px rgba(255, 183, 3, 0.85) !important;
       }
       .btn-auto .btn-icon {
         font-size: 15px !important;
@@ -4207,39 +4286,28 @@
         display: none !important;
       }
 
-      /* Recall / Refinery Forge Button (B) */
-      .btn-mobile-recall {
-        position: absolute !important;
-        bottom: 124px !important;
-        right: 14px !important;
-        width: 36px !important;
-        height: 36px !important;
-        border-radius: 50% !important;
-        background: radial-gradient(circle, rgba(10, 200, 185, 0.3) 0%, rgba(4, 16, 28, 0.95) 100%) !important;
-        border: 1.5px solid #0ac8b9 !important;
-        box-shadow: 0 0 10px rgba(10, 200, 185, 0.4) !important;
+      /* Quick Signals Attached to Minimap */
+      .mlbb-signals {
         display: flex !important;
         flex-direction: column !important;
-        align-items: center !important;
-        justify-content: center !important;
-        margin: 0 !important;
-        padding: 0 !important;
-        cursor: pointer !important;
-        transition: transform 0.08s ease !important;
+        gap: 3px !important;
+        top: 2px !important;
+        right: 2px !important;
       }
-      .btn-mobile-recall:active {
-        transform: scale(0.92) !important;
-        box-shadow: 0 0 16px rgba(10, 200, 185, 0.8) !important;
+      .mlbb-sig-atk {
+        background: rgba(255, 0, 84, 0.25) !important;
+        border: 1px solid rgba(255, 0, 84, 0.7) !important;
+        color: #ff3366 !important;
       }
-      .btn-mobile-recall .btn-icon {
-        font-size: 16px !important;
-        line-height: 1 !important;
+      .mlbb-sig-def {
+        background: rgba(0, 187, 249, 0.25) !important;
+        border: 1px solid rgba(0, 187, 249, 0.7) !important;
+        color: #00bbf9 !important;
       }
-      .btn-mobile-recall .btn-lbl {
-        font-size: 6px !important;
-        font-weight: 900 !important;
-        color: #0ac8b9 !important;
-        letter-spacing: 0.3px !important;
+      .mlbb-sig-center {
+        background: rgba(255, 183, 3, 0.25) !important;
+        border: 1px solid rgba(255, 183, 3, 0.7) !important;
+        color: #ffb703 !important;
       }
 
       /* Hide keyboard badges on mobile */
@@ -4559,6 +4627,573 @@
         box-shadow: 0 0 8px rgba(200, 170, 110, 0.3) !important;
       }
     }
+
+    /* ==========================================================================
+       NEONDB USER AUTHENTICATION & PROGRESSION STYLES
+       ========================================================================== */
+    .btn-landing-auth {
+      background: linear-gradient(135deg, rgba(0, 245, 212, 0.15), rgba(0, 187, 249, 0.25)) !important;
+      border: 1px solid var(--neon-cyan) !important;
+      color: #00f5d4 !important;
+      border-radius: 8px !important;
+      padding: 6px 14px !important;
+      font-weight: 700 !important;
+      letter-spacing: 1px !important;
+      box-shadow: 0 0 12px rgba(0, 245, 212, 0.3) !important;
+      cursor: pointer !important;
+      transition: all 0.2s ease !important;
+    }
+    .btn-landing-auth:hover {
+      background: rgba(0, 245, 212, 0.3) !important;
+      box-shadow: 0 0 20px rgba(0, 245, 212, 0.6) !important;
+      transform: translateY(-1px) !important;
+    }
+    .btn-auth-pill {
+      background: linear-gradient(135deg, rgba(255, 183, 3, 0.2), rgba(251, 133, 0, 0.3)) !important;
+      border: 1px solid var(--neon-gold) !important;
+      color: #ffb703 !important;
+      font-weight: 800 !important;
+      letter-spacing: 0.8px !important;
+      box-shadow: 0 0 10px rgba(255, 183, 3, 0.3) !important;
+    }
+    .btn-auth-pill:hover {
+      box-shadow: 0 0 18px rgba(255, 183, 3, 0.7) !important;
+      transform: translateY(-1px) !important;
+    }
+
+    /* Auth Modal Overlay & Card */
+    #auth-modal {
+      z-index: 1000;
+    }
+    .auth-card {
+      background: linear-gradient(180deg, rgba(8, 14, 28, 0.98) 0%, rgba(3, 7, 16, 0.98) 100%);
+      border: 2px solid var(--neon-cyan);
+      border-radius: 16px;
+      box-shadow: 0 12px 40px rgba(0, 0, 0, 0.9), 0 0 30px rgba(0, 245, 212, 0.35);
+      width: 92%;
+      max-width: 440px;
+      padding: 24px 28px;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      box-sizing: border-box;
+      animation: modalFadeIn 0.25s ease-out;
+    }
+    .auth-header {
+      text-align: center;
+    }
+    .auth-brand-icon {
+      font-size: 32px;
+      display: block;
+      margin-bottom: 4px;
+      filter: drop-shadow(0 0 10px #00f5d4);
+    }
+    .auth-title {
+      font-family: var(--font-title);
+      font-size: 20px;
+      font-weight: 900;
+      letter-spacing: 2px;
+      color: #ffffff;
+      margin: 0;
+      text-shadow: 0 0 12px rgba(0, 245, 212, 0.6);
+    }
+    .auth-sub {
+      font-size: 11.5px;
+      color: var(--text-muted);
+      margin-top: 4px;
+      line-height: 1.35;
+    }
+    .auth-tabs {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 6px;
+      background: rgba(0, 0, 0, 0.4);
+      padding: 4px;
+      border-radius: 8px;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+    }
+    .auth-tab-btn {
+      background: transparent;
+      border: none;
+      color: var(--text-muted);
+      font-family: var(--font-title);
+      font-size: 11px;
+      font-weight: 800;
+      letter-spacing: 1px;
+      padding: 8px 12px;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: all 0.15s ease;
+    }
+    .auth-tab-btn.active {
+      background: linear-gradient(135deg, rgba(0, 245, 212, 0.3), rgba(0, 187, 249, 0.4));
+      color: #ffffff;
+      border: 1px solid var(--neon-cyan);
+      box-shadow: 0 0 10px rgba(0, 245, 212, 0.4);
+    }
+    .auth-alert {
+      padding: 8px 12px;
+      border-radius: 6px;
+      font-size: 11.5px;
+      line-height: 1.3;
+      text-align: center;
+      font-weight: 600;
+    }
+    .auth-alert.error {
+      background: rgba(255, 0, 84, 0.2);
+      border: 1px solid #ff0054;
+      color: #ff4d79;
+    }
+    .auth-alert.success {
+      background: rgba(56, 176, 0, 0.2);
+      border: 1px solid #38b000;
+      color: #70e000;
+    }
+    .auth-form {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+    .auth-input-group {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      text-align: left;
+    }
+    .auth-label {
+      font-family: var(--font-title);
+      font-size: 10px;
+      font-weight: 800;
+      letter-spacing: 1px;
+      color: var(--text-muted);
+    }
+    .auth-input {
+      background: rgba(4, 9, 20, 0.9);
+      border: 1px solid rgba(0, 245, 212, 0.4);
+      border-radius: 8px;
+      padding: 10px 14px;
+      font-family: var(--font-body);
+      font-size: 13px;
+      color: #ffffff;
+      outline: none;
+      transition: border-color 0.2s, box-shadow 0.2s;
+    }
+    .auth-input:focus {
+      border-color: var(--neon-cyan);
+      box-shadow: 0 0 12px rgba(0, 245, 212, 0.5);
+    }
+    .btn-auth-submit {
+      background: linear-gradient(135deg, #00f5d4 0%, #00bbf9 100%);
+      border: none;
+      border-radius: 8px;
+      padding: 11px 16px;
+      font-family: var(--font-title);
+      font-size: 12px;
+      font-weight: 900;
+      letter-spacing: 1.5px;
+      color: #010a13;
+      cursor: pointer;
+      box-shadow: 0 0 18px rgba(0, 245, 212, 0.6);
+      transition: transform 0.1s ease, box-shadow 0.15s ease;
+      margin-top: 4px;
+    }
+    .btn-auth-submit:active {
+      transform: scale(0.97);
+    }
+    .auth-footer-row {
+      display: flex;
+      justify-content: space-between;
+      gap: 10px;
+      margin-top: 4px;
+    }
+    .btn-auth-guest, .btn-auth-close {
+      background: transparent;
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      color: var(--text-muted);
+      border-radius: 6px;
+      padding: 6px 12px;
+      font-size: 10.5px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all 0.15s ease;
+    }
+    .btn-auth-guest:hover {
+      border-color: #ffb703;
+      color: #ffb703;
+    }
+    .btn-auth-close:hover {
+      border-color: #ff0054;
+      color: #ff0054;
+    }
+
+    /* ==========================================================================
+       1,000 DUNGEONS PROGRESSION MODE STYLES
+       ========================================================================== */
+    #sub-mode-dungeon {
+      background: radial-gradient(circle at top left, rgba(255, 183, 3, 0.15) 0%, rgba(13, 22, 45, 0.9) 70%);
+      border: 1.5px solid rgba(255, 183, 3, 0.5);
+    }
+    #sub-mode-dungeon.selected {
+      border-color: #ffb703 !important;
+      box-shadow: 0 0 16px rgba(255, 183, 3, 0.6), inset 0 0 12px rgba(255, 183, 3, 0.2) !important;
+    }
+    .dungeon-badge-row {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      margin-top: 4px;
+    }
+    .dungeon-pill-floor, .dungeon-pill-lvl {
+      font-family: var(--font-mono);
+      font-size: 9.5px;
+      font-weight: 900;
+      padding: 2px 6px;
+      border-radius: 4px;
+      line-height: 1.2;
+    }
+    .dungeon-pill-floor {
+      background: rgba(255, 183, 3, 0.2);
+      border: 1px solid #ffb703;
+      color: #ffc83b;
+    }
+    .dungeon-pill-lvl {
+      background: rgba(0, 245, 212, 0.2);
+      border: 1px solid #00f5d4;
+      color: #00f5d4;
+    }
+
+    /* Dungeon Floor Clear Modal */
+    #dungeon-clear-modal, #dungeon-levelup-modal, #ascension-modal {
+      z-index: 1050;
+    }
+    .dungeon-clear-card {
+      background: linear-gradient(180deg, rgba(8, 18, 38, 0.98) 0%, rgba(2, 6, 16, 0.98) 100%);
+      border: 2px solid #00f5d4;
+      border-radius: 16px;
+      box-shadow: 0 12px 40px rgba(0, 0, 0, 0.9), 0 0 30px rgba(0, 245, 212, 0.4);
+      width: 92%;
+      max-width: 440px;
+      padding: 20px 24px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      text-align: center;
+      gap: 10px;
+      animation: modalFadeIn 0.25s ease-out;
+    }
+    .dungeon-clear-crest {
+      font-size: 38px;
+      filter: drop-shadow(0 0 12px #00f5d4);
+      animation: rotatePortal 8s linear infinite;
+    }
+    @keyframes rotatePortal {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+    .dungeon-clear-sub {
+      font-family: var(--font-title);
+      font-size: 10.5px;
+      letter-spacing: 2px;
+      color: #0ac8b9;
+      text-transform: uppercase;
+      margin: 0;
+    }
+    .dungeon-clear-title {
+      font-family: var(--font-title);
+      font-size: 22px;
+      font-weight: 900;
+      letter-spacing: 1.5px;
+      color: #ffffff;
+      margin: 0;
+      text-shadow: 0 0 12px rgba(0, 245, 212, 0.7);
+    }
+    .dungeon-clear-desc {
+      font-size: 11.5px;
+      color: var(--text-muted);
+      line-height: 1.35;
+      margin: 0;
+    }
+    .dungeon-clear-stats-row {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 6px;
+      width: 100%;
+      background: rgba(0, 0, 0, 0.4);
+      padding: 8px 10px;
+      border-radius: 8px;
+      border: 1px solid rgba(0, 245, 212, 0.25);
+      margin: 4px 0;
+    }
+    .dungeon-stat-col {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+    .dungeon-stat-lbl {
+      font-size: 8px;
+      font-family: var(--font-title);
+      letter-spacing: 0.8px;
+      color: var(--text-muted);
+    }
+    .dungeon-stat-val {
+      font-family: var(--font-mono);
+      font-size: 11px;
+      font-weight: 900;
+      color: #ffffff;
+    }
+    .dungeon-clear-actions {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      width: 100%;
+      margin-top: 4px;
+    }
+    .btn-dungeon-descend {
+      background: linear-gradient(135deg, #00f5d4 0%, #00bbf9 100%);
+      border: none;
+      border-radius: 8px;
+      padding: 10px 16px;
+      font-family: var(--font-title);
+      font-size: 12px;
+      font-weight: 900;
+      letter-spacing: 1.5px;
+      color: #010a13;
+      cursor: pointer;
+      box-shadow: 0 0 20px rgba(0, 245, 212, 0.7);
+      transition: transform 0.1s ease;
+    }
+    .btn-dungeon-descend:active { transform: scale(0.96); }
+    .btn-dungeon-lobby {
+      background: rgba(255, 255, 255, 0.08);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      border-radius: 8px;
+      padding: 8px 14px;
+      font-family: var(--font-title);
+      font-size: 10.5px;
+      font-weight: 700;
+      letter-spacing: 1px;
+      color: var(--text-muted);
+      cursor: pointer;
+    }
+    .btn-dungeon-lobby:hover { border-color: #ffb703; color: #ffb703; }
+
+    /* Dungeon Level Up Modal */
+    .levelup-card {
+      background: linear-gradient(180deg, rgba(28, 18, 5, 0.98) 0%, rgba(10, 6, 2, 0.98) 100%);
+      border: 2.5px solid #ffb703;
+      border-radius: 18px;
+      box-shadow: 0 12px 40px rgba(0, 0, 0, 0.95), 0 0 35px rgba(255, 183, 3, 0.6);
+      width: 92%;
+      max-width: 450px;
+      padding: 22px 24px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      text-align: center;
+      gap: 12px;
+      position: relative;
+      overflow: hidden;
+      animation: modalFadeIn 0.3s ease-out;
+    }
+    .levelup-badge {
+      font-size: 44px;
+      filter: drop-shadow(0 0 16px #ffb703);
+      animation: bounceStar 1.5s infinite alternate;
+    }
+    @keyframes bounceStar {
+      0% { transform: scale(1); }
+      100% { transform: scale(1.15) rotate(5deg); }
+    }
+    .levelup-sub {
+      font-family: var(--font-title);
+      font-size: 11px;
+      letter-spacing: 2px;
+      color: #ffb703;
+      text-transform: uppercase;
+      margin: 0;
+    }
+    .levelup-title {
+      font-family: var(--font-title);
+      font-size: 23px;
+      font-weight: 900;
+      letter-spacing: 1.5px;
+      color: #ffffff;
+      margin: 0;
+      text-shadow: 0 0 16px rgba(255, 183, 3, 0.8);
+    }
+    .levelup-desc {
+      font-size: 11.5px;
+      color: #e5e7eb;
+      line-height: 1.35;
+      margin: 0;
+    }
+    .levelup-perks-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 8px;
+      width: 100%;
+      margin: 4px 0;
+    }
+    .perk-card {
+      background: rgba(0, 0, 0, 0.5);
+      border: 1px solid rgba(255, 183, 3, 0.4);
+      border-radius: 8px;
+      padding: 8px 6px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 2px;
+    }
+    .perk-icon { font-size: 20px; }
+    .perk-val {
+      font-family: var(--font-mono);
+      font-size: 11.5px;
+      font-weight: 900;
+      color: #00f5d4;
+    }
+    .perk-lbl {
+      font-family: var(--font-title);
+      font-size: 7.5px;
+      letter-spacing: 0.8px;
+      color: #ffb703;
+    }
+    .levelup-progress-note {
+      font-size: 10.5px;
+      color: var(--text-muted);
+      font-family: var(--font-mono);
+    }
+    .btn-levelup-continue {
+      background: linear-gradient(135deg, #ffb703 0%, #fb8500 100%);
+      border: none;
+      border-radius: 8px;
+      padding: 11px 20px;
+      font-family: var(--font-title);
+      font-size: 12px;
+      font-weight: 900;
+      letter-spacing: 1.5px;
+      color: #010a13;
+      cursor: pointer;
+      box-shadow: 0 0 20px rgba(255, 183, 3, 0.8);
+      width: 100%;
+      transition: transform 0.1s ease;
+    }
+    .btn-levelup-continue:active { transform: scale(0.96); }
+
+    /* Celestial Ascension (1,000 Dungeons Conquered) */
+    .ascension-card {
+      background: radial-gradient(circle at center, rgba(30, 20, 50, 0.98) 0%, rgba(6, 4, 16, 0.98) 100%);
+      border: 3px solid #ffd700;
+      border-radius: 20px;
+      box-shadow: 0 0 50px rgba(255, 215, 0, 0.7), 0 0 100px rgba(157, 78, 221, 0.5);
+      width: 92%;
+      max-width: 480px;
+      padding: 26px 28px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      text-align: center;
+      gap: 14px;
+      animation: modalFadeIn 0.4s ease-out;
+    }
+    .ascension-crown {
+      font-size: 52px;
+      filter: drop-shadow(0 0 20px #ffd700);
+      animation: pulseGold 2s infinite alternate;
+    }
+    @keyframes pulseGold {
+      0% { transform: scale(1); filter: drop-shadow(0 0 15px #ffd700); }
+      100% { transform: scale(1.15); filter: drop-shadow(0 0 30px #ffb703); }
+    }
+    .ascension-sub {
+      font-family: var(--font-title);
+      font-size: 11px;
+      letter-spacing: 3px;
+      color: #ffd700;
+      text-transform: uppercase;
+    }
+    .ascension-title {
+      font-family: var(--font-title);
+      font-size: 26px;
+      font-weight: 900;
+      letter-spacing: 2px;
+      color: #ffffff;
+      margin: 0;
+      text-shadow: 0 0 20px rgba(255, 215, 0, 0.8);
+    }
+    .ascension-desc {
+      font-size: 12px;
+      color: #e2e8f0;
+      line-height: 1.4;
+      margin: 0;
+    }
+    .ascension-stats-box {
+      background: rgba(0, 0, 0, 0.6);
+      border: 1px solid rgba(255, 215, 0, 0.5);
+      border-radius: 10px;
+      padding: 10px 14px;
+      width: 100%;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      text-align: left;
+      font-size: 11px;
+      box-sizing: border-box;
+    }
+    .asc-stat-item {
+      display: flex;
+      justify-content: space-between;
+      color: var(--text-muted);
+    }
+    .asc-stat-item strong {
+      color: #ffd700;
+      font-family: var(--font-mono);
+    }
+    .btn-ascension-claim {
+      background: linear-gradient(135deg, #ffd700 0%, #ff8c00 100%);
+      border: none;
+      border-radius: 10px;
+      padding: 12px 22px;
+      font-family: var(--font-title);
+      font-size: 12.5px;
+      font-weight: 900;
+      letter-spacing: 1.5px;
+      color: #010a13;
+      cursor: pointer;
+      box-shadow: 0 0 25px rgba(255, 215, 0, 0.8);
+      width: 100%;
+      transition: transform 0.1s ease;
+    }
+    .btn-ascension-claim:active { transform: scale(0.97); }
+
+    /* ==========================================================================
+       MOBILE LEGENDS: BANG BANG (MLBB) ANNOUNCER KILL BANNER STYLING
+       ========================================================================== */
+    .lol-announcement-banner {
+      background: linear-gradient(90deg, transparent 0%, rgba(40, 10, 18, 0.96) 20%, rgba(55, 14, 25, 0.98) 50%, rgba(40, 10, 18, 0.96) 80%, transparent 100%) !important;
+      border-top: 2px solid #ffb703 !important;
+      border-bottom: 2px solid #ffb703 !important;
+      box-shadow: 0 0 30px rgba(255, 0, 84, 0.7), inset 0 0 20px rgba(255, 183, 3, 0.4) !important;
+    }
+    .lol-announcement-banner::before {
+      content: '⚜️';
+      position: absolute;
+      left: 20px;
+      font-size: 18px;
+      color: #ffb703;
+      filter: drop-shadow(0 0 8px #ffb703);
+    }
+    .lol-announcement-banner::after {
+      content: '⚜️';
+      position: absolute;
+      right: 20px;
+      font-size: 18px;
+      color: #ffb703;
+      filter: drop-shadow(0 0 8px #ffb703);
+    }
+    .lol-announcement-main {
+      color: #ffd700 !important;
+      text-shadow: 0 0 16px rgba(255, 215, 0, 0.9), 0 2px 6px #000 !important;
+    }
   </style>
 </head>
 <body>
@@ -4589,6 +5224,7 @@
         <button class="landing-nav-link" id="nav-btn-minerals">Minerals & Forge</button>
         <button class="landing-nav-link" id="nav-btn-bestiary">Bestiary</button>
         <button class="landing-nav-link" id="nav-btn-wiki">Game Wiki</button>
+        <button class="landing-nav-link btn-landing-auth" id="btn-landing-auth">👤 LOGIN / REGISTER</button>
         <button class="btn-landing-cta" id="btn-landing-enter">⚔️ ENTER ARENA</button>
       </div>
     </header>
@@ -5045,59 +5681,69 @@
     <!-- Floating Combat Text Overlay -->
     <div id="fct-layer"></div>
 
-    <!-- Mobile Virtual Controls -->
+    <!-- Mobile Virtual Controls (Mobile Legends: Bang Bang Layout) -->
     <div class="mobile-controls">
-      <!-- Virtual Joystick (Hidden on Desktop) -->
+      <!-- MLBB Compass Joystick -->
       <div id="joystick-zone">
         <div class="joystick-base" id="joystick-base">
-          <div class="joystick-knob" id="joystick-knob"></div>
+          <div class="joystick-ring-compass">
+            <span class="compass-marker comp-n">▲</span>
+            <span class="compass-marker comp-s">▼</span>
+            <span class="compass-marker comp-w">◀</span>
+            <span class="compass-marker comp-e">▶</span>
+          </div>
+          <div class="joystick-knob" id="joystick-knob">
+            <div class="knob-inner-gem"></div>
+          </div>
         </div>
       </div>
 
-      <!-- Action Cluster -->
-      <div class="action-cluster">
-        <!-- Auto Attack Toggle -->
-        <button class="btn-action btn-auto" id="btn-auto" title="Toggle Auto-Attack (C)">
-          <span class="btn-key-badge">C</span>
-          <span class="btn-icon">🎯</span>
-          <span class="btn-lbl" id="auto-lbl">AUTO: OFF</span>
+      <!-- MLBB Radial Combat Action Cluster -->
+      <div class="action-cluster" id="mlbb-action-cluster">
+        <!-- Center Large Golden Basic Attack Button (68px) -->
+        <button class="btn-action btn-attack mlbb-attack-btn" id="btn-attack" title="Basic Attack (Space / Left Click)">
+          <span class="btn-key-badge">SPACE</span>
+          <span class="btn-icon" id="attack-btn-icon">⚔️</span>
+          <span class="btn-lbl">ATTACK</span>
         </button>
 
-        <!-- Special Skill -->
-        <button class="btn-action btn-special ready" id="btn-special" title="Special Skill (E / Q / L)">
-          <span class="btn-key-badge">E</span>
-          <span class="btn-icon" id="special-btn-icon">⚡</span>
-          <span class="btn-lbl" id="special-lbl">NOVA</span>
-          <div class="cooldown-overlay" id="special-cooldown">READY</div>
-        </button>
-
-        <!-- Dash / Dodge -->
-        <button class="btn-action btn-dash" id="btn-dash" title="Dash (Shift / Right Click / K)">
-          <span class="btn-key-badge">SHIFT</span>
+        <!-- Skill 1: Dash / Flicker [H] - 10 o'clock -->
+        <button class="btn-action btn-dash mlbb-skill-1" id="btn-dash" title="Dash (H / Shift)">
+          <span class="btn-key-badge">H</span>
           <span class="btn-icon">💨</span>
           <span class="btn-lbl">DASH</span>
           <div class="cooldown-overlay" id="dash-cooldown"></div>
         </button>
 
-        <!-- Attack Button -->
-        <button class="btn-action btn-attack" id="btn-attack" title="Attack (Space / Left Click / F / J)">
-          <span class="btn-key-badge">SPACE</span>
-          <span class="btn-icon" id="attack-btn-icon">⚔️</span>
-          <span class="btn-lbl">STRIKE</span>
+        <!-- Skill 2: Special Nova [J] - 12 o'clock -->
+        <button class="btn-action btn-special mlbb-skill-2 ready" id="btn-special" title="Special Nova Skill (J)">
+          <span class="btn-key-badge">J</span>
+          <span class="btn-icon" id="special-btn-icon">⚡</span>
+          <span class="btn-lbl" id="special-lbl">NOVA</span>
+          <div class="cooldown-overlay" id="special-cooldown">READY</div>
         </button>
 
-        <!-- Ultimate Button (R) -->
-        <button class="btn-action btn-ultimate ready" id="btn-mobile-ultimate" title="Celestial Overcharge Ultimate (R)">
-          <span class="btn-key-badge">R</span>
-          <span class="btn-icon">👑</span>
+        <!-- Skill 3: Ultimate [K] - 2 o'clock (Golden Dragon Crown Trim) -->
+        <button class="btn-action btn-ultimate mlbb-skill-ult ready" id="btn-mobile-ultimate" title="Celestial Overcharge Ultimate (K)">
+          <div class="mlbb-ult-crown">👑</div>
+          <span class="btn-key-badge">K</span>
+          <span class="btn-icon">✨</span>
           <span class="btn-lbl">ULT</span>
           <div class="cooldown-overlay" id="mobile-ult-cooldown" style="display: none;"></div>
         </button>
 
-        <!-- Recall / Forge Channel Button (B) -->
-        <button class="btn-action btn-mobile-recall" id="btn-mobile-recall" title="Recall / Refinery Forge (B)">
+        <!-- Aux 1: Recall / Refinery Forge [L] -->
+        <button class="btn-action btn-mobile-recall" id="btn-mobile-recall" title="Recall / Refinery Forge (L / B)">
+          <span class="btn-key-badge">L</span>
           <span class="btn-icon">🌀</span>
           <span class="btn-lbl">RECALL</span>
+        </button>
+
+        <!-- Aux 2: Auto Attack / Target Lock [C] -->
+        <button class="btn-action btn-auto" id="btn-auto" title="Toggle Auto-Attack (C)">
+          <span class="btn-key-badge">C</span>
+          <span class="btn-icon">🎯</span>
+          <span class="btn-lbl" id="auto-lbl">AUTO: OFF</span>
         </button>
       </div>
     </div>
@@ -5238,9 +5884,10 @@
 
     <!-- LEAGUE OF LEGENDS REAL-TIME RADAR MINIMAP -->
     <div id="lol-minimap-container" class="lol-minimap-container">
-      <div class="lol-minimap-controls">
-        <button class="btn-minimap-action" id="btn-minimap-ping" title="Danger Ping (G / Alt-Click)">⚠️</button>
-        <button class="btn-minimap-action" id="btn-minimap-center" title="Center Camera on Champion (Space)">🎯</button>
+      <div class="lol-minimap-controls mlbb-signals">
+        <button class="btn-minimap-action mlbb-sig-atk" id="btn-signal-attack" title="Launch Attack! (Ping)">⚔️</button>
+        <button class="btn-minimap-action mlbb-sig-def" id="btn-signal-retreat" title="Retreat / Defend! (Ping)">🛡️</button>
+        <button class="btn-minimap-action mlbb-sig-center" id="btn-minimap-center" title="Center Camera on Champion (Space)">🎯</button>
       </div>
       <canvas id="lol-minimap-canvas" width="190" height="190"></canvas>
     </div>
@@ -5379,11 +6026,12 @@
         <button class="btn-client-tab" id="btn-client-nav-wiki">📜 GAME WIKI</button>
       </div>
 
-      <div style="display: flex; align-items: center; gap: 10px;">
+      <div style="display: flex; align-items: center; gap: 8px;">
+        <button class="btn-client-tab btn-auth-pill" id="btn-lobby-auth" title="Account & Progress (NeonDB)">🔐 SIGN IN</button>
         <div class="lol-client-profile-capsule">
           <div class="client-avatar-circle" id="client-avatar-badge">🛡️</div>
           <input type="text" id="input-username" class="client-name-input" placeholder="Commander Name" maxlength="15" autocomplete="off" spellcheck="false">
-          <div class="client-tier-badge">CHALLENGER I</div>
+          <div class="client-tier-badge" id="client-level-badge">LV. 1</div>
         </div>
         <button class="btn-client-tab" id="btn-lobby-home" title="Return to Landing Page">🏠 HOME</button>
       </div>
@@ -5439,6 +6087,14 @@
               <div class="sub-mode-card" id="sub-mode-endless" data-sub="endless">
                 <div class="sub-mode-title">♾️ Endless Horde</div>
                 <div class="sub-mode-desc">Infinite scaling waves with recurring bosses. Test your ultimate refinery build!</div>
+              </div>
+              <div class="sub-mode-card" id="sub-mode-dungeon" data-sub="dungeon">
+                <div class="sub-mode-title">🏰 1,000 Dungeons: The Crucible</div>
+                <div class="sub-mode-desc">Conquer 1,000 dungeon floors to unlock full potential! 10 Floors = +1 Level (Cap: Lv.100). Boss encounters every 10 floors.</div>
+                <div class="dungeon-badge-row">
+                  <span class="dungeon-pill-floor" id="dungeon-lobby-floor">FLOOR: 1 / 1000</span>
+                  <span class="dungeon-pill-lvl" id="dungeon-lobby-lvl">LEVEL: 1 / 100</span>
+                </div>
               </div>
             </div>
           </div>
@@ -5588,6 +6244,118 @@
         <button class="btn-start btn-death-again" id="btn-restart-game">PLAY AGAIN</button>
         <button class="btn-start btn-death-lobby" id="btn-death-lobby">RETURN TO LOBBY</button>
       </div>
+    </div>
+  </div>
+
+  <!-- NEONDB USER REGISTRATION & LOGIN MODAL -->
+  <div class="modal-overlay" id="auth-modal" style="display: none;">
+    <div class="auth-card">
+      <div class="auth-header">
+        <span class="auth-brand-icon">⚔️</span>
+        <h2 class="auth-title">RUNIC ARENA PASSPORT</h2>
+        <p class="auth-sub">Save your 1,000 Dungeon floors, character levels & refined gear to Neon Cloud Database</p>
+      </div>
+      
+      <div class="auth-tabs">
+        <button class="auth-tab-btn active" id="tab-auth-login">SIGN IN</button>
+        <button class="auth-tab-btn" id="tab-auth-register">CREATE ACCOUNT</button>
+      </div>
+
+      <div id="auth-alert" class="auth-alert" style="display: none;"></div>
+
+      <form id="auth-form" class="auth-form" onsubmit="return false;">
+        <div class="auth-input-group">
+          <label class="auth-label">COMMANDER USERNAME</label>
+          <input type="text" id="auth-username" class="auth-input" placeholder="e.g. ShadowKnight" maxlength="15" autocomplete="username" spellcheck="false" required>
+        </div>
+
+        <div class="auth-input-group">
+          <label class="auth-label">SECRET PASSPHRASE</label>
+          <input type="password" id="auth-password" class="auth-input" placeholder="••••••••" minlength="4" maxlength="32" autocomplete="current-password" required>
+        </div>
+
+        <button type="submit" class="btn-auth-submit" id="btn-auth-submit">🔐 SIGN IN TO ARENA</button>
+      </form>
+
+      <div class="auth-footer-row">
+        <button class="btn-auth-guest" id="btn-auth-guest">PLAY AS GUEST (OFFLINE)</button>
+        <button class="btn-auth-close" id="btn-auth-close">CANCEL</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- DUNGEON FLOOR CLEAR MODAL -->
+  <div class="modal-overlay" id="dungeon-clear-modal" style="display: none;">
+    <div class="dungeon-clear-card">
+      <div class="dungeon-clear-crest">🌀</div>
+      <div class="dungeon-clear-sub" id="dungeon-clear-sub">THE INFINITE CRUCIBLE</div>
+      <h2 class="dungeon-clear-title" id="dungeon-clear-title">FLOOR 1 CLEARED!</h2>
+      <p class="dungeon-clear-desc" id="dungeon-clear-desc">The abyssal creatures on this floor have been vanquished. Descend deeper into the crucible to unlock full potential!</p>
+      <div class="dungeon-clear-stats-row">
+        <div class="dungeon-stat-col">
+          <span class="dungeon-stat-lbl">CURRENT FLOOR</span>
+          <span class="dungeon-stat-val" id="dungeon-modal-floor">1 / 1000</span>
+        </div>
+        <div class="dungeon-stat-col">
+          <span class="dungeon-stat-lbl">DUNGEON LEVEL</span>
+          <span class="dungeon-stat-val" id="dungeon-modal-level">LEVEL 1 / 100</span>
+        </div>
+        <div class="dungeon-stat-col">
+          <span class="dungeon-stat-lbl">NEXT LEVEL UP</span>
+          <span class="dungeon-stat-val" id="dungeon-modal-next">9 FLOORS TO GO</span>
+        </div>
+      </div>
+      <div class="dungeon-clear-actions">
+        <button class="btn-dungeon-descend" id="btn-dungeon-next">🌀 DESCEND TO NEXT FLOOR</button>
+        <button class="btn-dungeon-lobby" id="btn-dungeon-exit">🚪 RETURN TO LOBBY (SAVED)</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- DUNGEON LEVEL UP CELEBRATION MODAL (Every 10 Floors) -->
+  <div class="modal-overlay" id="dungeon-levelup-modal" style="display: none;">
+    <div class="levelup-card">
+      <div class="levelup-badge">🌟</div>
+      <div class="levelup-sub">10 DUNGEONS CONQUERED!</div>
+      <h2 class="levelup-title" id="levelup-title">LEVEL UP: REACHED LEVEL 2!</h2>
+      <p class="levelup-desc">Your champion has forged deeper combat resonance within the Infinite Crucible. Permanent combat attributes augmented!</p>
+      
+      <div class="levelup-perks-grid">
+        <div class="perk-card">
+          <span class="perk-icon">❤️</span>
+          <span class="perk-val">+15 MAX HP</span>
+          <span class="perk-lbl">VITALITY SURGE</span>
+        </div>
+        <div class="perk-card">
+          <span class="perk-icon">⚔️</span>
+          <span class="perk-val">+3 ATTACK</span>
+          <span class="perk-lbl">MARTIAL MIGHT</span>
+        </div>
+        <div class="perk-card">
+          <span class="perk-icon">🛡️</span>
+          <span class="perk-val">+10 SHIELD</span>
+          <span class="perk-lbl">RUNIC BARRIER</span>
+        </div>
+      </div>
+
+      <div class="levelup-progress-note" id="levelup-next-note">Complete 10 more dungeons to reach Level 3!</div>
+      <button class="btn-levelup-continue" id="btn-levelup-continue">⚔️ EMBRACE ASCENSION & CONTINUE</button>
+    </div>
+  </div>
+
+  <!-- CELESTIAL ASCENSION MODAL (1,000 Dungeons Conquered) -->
+  <div class="modal-overlay" id="ascension-modal" style="display: none;">
+    <div class="ascension-card">
+      <div class="ascension-crown">👑</div>
+      <div class="ascension-sub">THE ULTIMATE ARENA PINNACLE REACHED</div>
+      <h1 class="ascension-title">FULL GAME POTENTIAL UNLOCKED!</h1>
+      <p class="ascension-desc">You have conquered all 1,000 floors of the Infinite Crucible and reached Level 100! Your champion has achieved Celestial Ascension. All future game expansions, celestial artifacts, and divine arena realms are now permanently unlocked for your account.</p>
+      <div class="ascension-stats-box">
+        <div class="asc-stat-item"><span>TOTAL DUNGEONS:</span> <strong>1,000 / 1,000</strong></div>
+        <div class="asc-stat-item"><span>FINAL LEVEL:</span> <strong>LEVEL 100 (MAX CAP)</strong></div>
+        <div class="asc-stat-item"><span>STATUS:</span> <strong>CELESTIAL MASTER 🏆</strong></div>
+      </div>
+      <button class="btn-ascension-claim" id="btn-ascension-close">🌟 CLAIM CELESTIAL TITLE & RETURN TO LOBBY</button>
     </div>
   </div>
 
@@ -6096,10 +6864,320 @@
         relic: { name: 'Void Ring', tier: 1, icon: '💍', stat: '+10% CRIT' }
       },
 
+      // 1,000 Dungeons Progression & NeonDB Account
+      dungeonFloor: parseInt(localStorage.getItem('broadroads_dungeon_floor'), 10) || 1,
+      dungeonLevel: parseInt(localStorage.getItem('broadroads_dungeon_level'), 10) || 1,
+      totalDungeonsCleared: parseInt(localStorage.getItem('broadroads_dungeons_cleared'), 10) || 0,
+      maxFloorReached: parseInt(localStorage.getItem('broadroads_max_floor'), 10) || 1,
+      accountUser: JSON.parse(localStorage.getItem('broadroads_user') || 'null'),
+      killStreak: 0,
+      lastKillTime: 0,
+      firstBloodAwarded: false,
+
       crucible: {
         slot1: null,
         slot2: null,
         predictedRecipe: null
+      }
+    };
+
+    /* ==========================================================================
+       NEONDB AUTHENTICATION & CLOUD PROGRESSION ENGINE
+       ========================================================================== */
+    const authManager = {
+      activeTab: 'login',
+
+      init() {
+        const storedUser = localStorage.getItem('broadroads_user');
+        if (storedUser) {
+          try {
+            state.accountUser = JSON.parse(storedUser);
+            if (state.accountUser && state.accountUser.username) {
+              state.username = state.accountUser.username;
+            }
+          } catch(e) {}
+        }
+        this.updateProfileUI();
+        if (state.accountUser && state.accountUser.username) {
+          this.loadProgress(state.accountUser.username);
+        }
+        this.bindEvents();
+      },
+
+      updateProfileUI() {
+        const landingAuthBtn = document.getElementById('btn-landing-auth');
+        const lobbyAuthBtn = document.getElementById('btn-lobby-auth');
+        const levelBadge = document.getElementById('client-level-badge');
+        const floorBadge = document.getElementById('dungeon-lobby-floor');
+        const lvlBadge = document.getElementById('dungeon-lobby-lvl');
+        const nameInput = document.getElementById('input-username');
+
+        const currentLvl = Math.min(100, Math.max(1, state.dungeonLevel || Math.floor((state.totalDungeonsCleared || 0) / 10) + 1));
+        state.dungeonLevel = currentLvl;
+
+        if (levelBadge) levelBadge.textContent = `LV. ${currentLvl}`;
+        if (floorBadge) floorBadge.textContent = `FLOOR: ${state.dungeonFloor || 1} / 1000`;
+        if (lvlBadge) lvlBadge.textContent = `LEVEL: ${currentLvl} / 100`;
+
+        if (state.accountUser) {
+          if (landingAuthBtn) landingAuthBtn.textContent = `👤 ${state.accountUser.username.toUpperCase()} (LV.${currentLvl})`;
+          if (lobbyAuthBtn) lobbyAuthBtn.textContent = `🚪 LOGOUT (${state.accountUser.username.toUpperCase()})`;
+          if (nameInput) {
+            nameInput.value = state.accountUser.username;
+            state.username = state.accountUser.username;
+          }
+        } else {
+          if (landingAuthBtn) landingAuthBtn.textContent = `👤 LOGIN / REGISTER`;
+          if (lobbyAuthBtn) lobbyAuthBtn.textContent = `🔐 SIGN IN`;
+        }
+      },
+
+      async register(username, password) {
+        this.showAlert('Registering account with NeonDB...', 'info');
+        try {
+          const res = await fetch('/api/auth/register', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ username, password })
+          });
+          const data = await res.json();
+          if (!data.success) {
+            this.showAlert(data.error || 'Registration failed', 'error');
+            return false;
+          }
+
+          state.accountUser = data.user;
+          localStorage.setItem('broadroads_user', JSON.stringify(data.user));
+          state.username = data.user.username;
+          localStorage.setItem('broadroads_username', data.user.username);
+
+          if (data.progress) {
+            this.applyProgress(data.progress);
+          }
+
+          this.showAlert('🎉 Account created! Cloud saving active.', 'success');
+          setTimeout(() => {
+            this.closeModal();
+            this.updateProfileUI();
+          }, 900);
+          return true;
+        } catch(err) {
+          console.error('Auth register error:', err);
+          this.showAlert('Network error connecting to NeonDB', 'error');
+          return false;
+        }
+      },
+
+      async login(username, password) {
+        this.showAlert('Authenticating with NeonDB...', 'info');
+        try {
+          const res = await fetch('/api/auth/login', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ username, password })
+          });
+          const data = await res.json();
+          if (!data.success) {
+            this.showAlert(data.error || 'Invalid credentials', 'error');
+            return false;
+          }
+
+          state.accountUser = data.user;
+          localStorage.setItem('broadroads_user', JSON.stringify(data.user));
+          state.username = data.user.username;
+          localStorage.setItem('broadroads_username', data.user.username);
+
+          if (data.progress) {
+            this.applyProgress(data.progress);
+          }
+
+          this.showAlert('✨ Welcome back, Commander!', 'success');
+          setTimeout(() => {
+            this.closeModal();
+            this.updateProfileUI();
+          }, 900);
+          return true;
+        } catch(err) {
+          console.error('Auth login error:', err);
+          this.showAlert('Network error connecting to NeonDB', 'error');
+          return false;
+        }
+      },
+
+      async loadProgress(username) {
+        if (!username) return;
+        try {
+          const res = await fetch(`/api/progress/load?username=${encodeURIComponent(username)}`);
+          const data = await res.json();
+          if (data.success && data.progress) {
+            this.applyProgress(data.progress);
+            this.updateProfileUI();
+          }
+        } catch(err) {
+          console.warn('Could not load progress from NeonDB, using local progress:', err);
+        }
+      },
+
+      applyProgress(p) {
+        if (p.dungeon_floor) state.dungeonFloor = parseInt(p.dungeon_floor, 10);
+        if (p.total_dungeons_cleared !== undefined) state.totalDungeonsCleared = parseInt(p.total_dungeons_cleared, 10);
+        state.dungeonLevel = Math.min(100, Math.max(1, parseInt(p.dungeon_level, 10) || Math.floor((state.totalDungeonsCleared || 0) / 10) + 1));
+        if (p.max_floor_reached) state.maxFloorReached = parseInt(p.max_floor_reached, 10);
+        if (p.gold !== undefined) {
+          const g = parseInt(p.gold, 10);
+          const goldEl = document.getElementById('lol-gold-count');
+          if (goldEl) goldEl.textContent = g;
+        }
+
+        localStorage.setItem('broadroads_dungeon_floor', state.dungeonFloor);
+        localStorage.setItem('broadroads_dungeon_level', state.dungeonLevel);
+        localStorage.setItem('broadroads_dungeons_cleared', state.totalDungeonsCleared);
+        localStorage.setItem('broadroads_max_floor', state.maxFloorReached);
+      },
+
+      async saveProgress() {
+        localStorage.setItem('broadroads_dungeon_floor', state.dungeonFloor);
+        localStorage.setItem('broadroads_dungeon_level', state.dungeonLevel);
+        localStorage.setItem('broadroads_dungeons_cleared', state.totalDungeonsCleared);
+        localStorage.setItem('broadroads_max_floor', state.maxFloorReached);
+
+        this.updateProfileUI();
+
+        if (!state.accountUser || !state.accountUser.username) return;
+
+        try {
+          const goldAmount = parseInt(document.getElementById('lol-gold-count')?.textContent || '350', 10);
+          const payload = {
+            username: state.accountUser.username,
+            dungeon_floor: state.dungeonFloor,
+            dungeon_level: state.dungeonLevel,
+            max_floor_reached: state.maxFloorReached,
+            total_dungeons_cleared: state.totalDungeonsCleared,
+            gold: goldAmount,
+            materials: state.materials || {},
+            equipped_gear: state.gear || {}
+          };
+
+          const res = await fetch('/api/progress/save', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+          });
+          const data = await res.json();
+          if (data.success) {
+            console.log('Progress successfully synced to NeonDB');
+          }
+        } catch(err) {
+          console.warn('NeonDB progress sync delayed / offline fallback active:', err);
+        }
+      },
+
+      logout() {
+        localStorage.removeItem('broadroads_user');
+        state.accountUser = null;
+        state.username = 'Commander_' + Math.floor(100 + Math.random() * 900);
+        localStorage.setItem('broadroads_username', state.username);
+        this.updateProfileUI();
+        showLolBanner('LOGGED OUT', 'PLAYING IN GUEST MODE');
+      },
+
+      openModal(tab = 'login') {
+        const modal = document.getElementById('auth-modal');
+        if (!modal) return;
+        modal.style.display = 'flex';
+        this.switchTab(tab);
+        const alertBox = document.getElementById('auth-alert');
+        if (alertBox) alertBox.style.display = 'none';
+        const userInp = document.getElementById('auth-username');
+        if (userInp) {
+          userInp.value = state.accountUser ? state.accountUser.username : '';
+          userInp.focus();
+        }
+        const passInp = document.getElementById('auth-password');
+        if (passInp) passInp.value = '';
+      },
+
+      closeModal() {
+        const modal = document.getElementById('auth-modal');
+        if (modal) modal.style.display = 'none';
+      },
+
+      switchTab(tab) {
+        this.activeTab = tab;
+        const tabLogin = document.getElementById('tab-auth-login');
+        const tabReg = document.getElementById('tab-auth-register');
+        const submitBtn = document.getElementById('btn-auth-submit');
+        const alertBox = document.getElementById('auth-alert');
+        if (alertBox) alertBox.style.display = 'none';
+
+        if (tab === 'login') {
+          if (tabLogin) tabLogin.classList.add('active');
+          if (tabReg) tabReg.classList.remove('active');
+          if (submitBtn) submitBtn.textContent = '🔐 SIGN IN TO ARENA';
+        } else {
+          if (tabReg) tabReg.classList.add('active');
+          if (tabLogin) tabLogin.classList.remove('active');
+          if (submitBtn) submitBtn.textContent = '✨ CREATE ACCOUNT & SAVE PROGRESS';
+        }
+      },
+
+      showAlert(msg, type = 'error') {
+        const alertBox = document.getElementById('auth-alert');
+        if (!alertBox) return;
+        alertBox.textContent = msg;
+        alertBox.className = `auth-alert ${type}`;
+        alertBox.style.display = 'block';
+      },
+
+      bindEvents() {
+        const landingBtn = document.getElementById('btn-landing-auth');
+        if (landingBtn) landingBtn.addEventListener('click', () => {
+          if (state.accountUser) this.logout();
+          else this.openModal('login');
+        });
+
+        const lobbyBtn = document.getElementById('btn-lobby-auth');
+        if (lobbyBtn) lobbyBtn.addEventListener('click', () => {
+          if (state.accountUser) this.logout();
+          else this.openModal('login');
+        });
+
+        const tabLogin = document.getElementById('tab-auth-login');
+        if (tabLogin) tabLogin.addEventListener('click', () => this.switchTab('login'));
+
+        const tabReg = document.getElementById('tab-auth-register');
+        if (tabReg) tabReg.addEventListener('click', () => this.switchTab('register'));
+
+        const closeBtn = document.getElementById('btn-auth-close');
+        if (closeBtn) closeBtn.addEventListener('click', () => this.closeModal());
+
+        const guestBtn = document.getElementById('btn-auth-guest');
+        if (guestBtn) guestBtn.addEventListener('click', () => {
+          this.closeModal();
+          showLolBanner('GUEST MODE ACTIVE', 'PROGRESS SAVED LOCALLY');
+        });
+
+        const form = document.getElementById('auth-form');
+        if (form) form.addEventListener('submit', (e) => {
+          e.preventDefault();
+          const userInp = document.getElementById('auth-username');
+          const passInp = document.getElementById('auth-password');
+          const username = userInp ? userInp.value.trim() : '';
+          const password = passInp ? passInp.value : '';
+
+          if (!username || username.length < 2) {
+            return this.showAlert('Username must be at least 2 characters');
+          }
+          if (!password || password.length < 4) {
+            return this.showAlert('Password must be at least 4 characters');
+          }
+
+          if (this.activeTab === 'register') {
+            this.register(username, password);
+          } else {
+            this.login(username, password);
+          }
+        });
       }
     };
 
@@ -6803,7 +7881,7 @@
         this.dead = false;
         this.flashTimer = 0;
 
-        const waveScale = state.soloSubMode === 'endless' ? (state.currentWave * 20) : (state.currentWave * 12);
+        const waveScale = state.soloSubMode === 'dungeon' ? (state.currentWave * 4.5) : (state.soloSubMode === 'endless' ? (state.currentWave * 20) : (state.currentWave * 12));
 
         if (type === 'crawler') {
           this.maxHp = 45 + waveScale;
@@ -6850,7 +7928,7 @@
           this.group.add(this.mesh);
 
         } else if (type === 'boss') {
-          this.maxHp = 1400 + (state.currentWave > 5 ? (state.currentWave - 5) * 500 : 0);
+          this.maxHp = (state.soloSubMode === 'dungeon') ? (900 + state.currentWave * 60) : (1400 + (state.currentWave > 5 ? (state.currentWave - 5) * 500 : 0));
           this.hp = this.maxHp;
           this.speed = 3.8;
           this.damage = 38;
@@ -6910,6 +7988,28 @@
         state.kills++;
         state.hero.specialCharge = Math.min(state.hero.specialMaxCharge, state.hero.specialCharge + 15);
         updateSpecialButton();
+
+        // Mobile Legends: Bang Bang multikill streak announcer
+        const now = performance.now();
+        if (!state.lastKillTime || (now - state.lastKillTime) > 4000) {
+          state.killStreak = 1;
+        } else {
+          state.killStreak++;
+        }
+        state.lastKillTime = now;
+
+        if (!state.firstBloodAwarded) {
+          state.firstBloodAwarded = true;
+          showLolBanner('FIRST BLOOD!', 'AN ENEMY HAS BEEN SLAIN!');
+        } else if (state.killStreak === 2) {
+          showLolBanner('DOUBLE KILL!', 'DOMINATING!');
+        } else if (state.killStreak === 3) {
+          showLolBanner('TRIPLE KILL!', 'MEGA KILL!');
+        } else if (state.killStreak === 4) {
+          showLolBanner('MANIAC!', 'UNSTOPPABLE!');
+        } else if (state.killStreak >= 5) {
+          showLolBanner('SAVAGE!', 'LEGENDARY!');
+        }
 
         spawnMaterialDrops(this.position, this.type);
         spawnExplosion(this.position, this.type === 'boss' ? 0xffb703 : 0x00f5d4);
@@ -8588,20 +9688,58 @@
 
     function startWave(waveNumber) {
       state.phase = 'playing';
-      state.currentWave = waveNumber;
-      state.waveTimeRemaining = GAME_CONFIG.WAVE_DURATION;
+      if (state.soloSubMode === 'dungeon') {
+        state.currentWave = state.dungeonFloor || 1;
+        waveNumber = state.dungeonFloor || 1;
+      } else {
+        state.currentWave = waveNumber;
+      }
+      state.waveTimeRemaining = (state.soloSubMode === 'dungeon') ? 35 : GAME_CONFIG.WAVE_DURATION;
       waveSpawnTimer = 0;
 
       document.getElementById('refinery-modal').style.display = 'none';
       document.getElementById('start-modal').style.display = 'none';
       document.getElementById('revive-banner').style.display = 'none';
+      const clearModal = document.getElementById('dungeon-clear-modal');
+      if (clearModal) clearModal.style.display = 'none';
+      const lvlModal = document.getElementById('dungeon-levelup-modal');
+      if (lvlModal) lvlModal.style.display = 'none';
+      const ascModal = document.getElementById('ascension-modal');
+      if (ascModal) ascModal.style.display = 'none';
 
-      const modeTitle = state.gameMode === 'multiplayer' ? 'CO-OP' : (state.soloSubMode === 'endless' ? 'ENDLESS' : 'CLASSIC');
-      document.getElementById('wave-display-title').textContent = `WAVE ${waveNumber} ${state.soloSubMode === 'endless' ? '' : '/ 5'}`;
-      document.getElementById('hud-mode-badge').textContent = `${modeTitle.toUpperCase()} • ${state.heroClass.toUpperCase()}`;
+      if (state.soloSubMode === 'dungeon') {
+        document.getElementById('wave-display-title').textContent = `DUNGEON: F-${state.dungeonFloor} / 1000`;
+        document.getElementById('hud-mode-badge').textContent = `LEVEL ${state.dungeonLevel} / 100 • ${state.heroClass.toUpperCase()}`;
+      } else {
+        const modeTitle = state.gameMode === 'multiplayer' ? 'CO-OP' : (state.soloSubMode === 'endless' ? 'ENDLESS' : 'CLASSIC');
+        document.getElementById('wave-display-title').textContent = `WAVE ${waveNumber} ${state.soloSubMode === 'endless' ? '' : '/ 5'}`;
+        document.getElementById('hud-mode-badge').textContent = `${modeTitle.toUpperCase()} • ${state.heroClass.toUpperCase()}`;
+      }
 
-      if (waveNumber % 5 === 0) {
+      // Check Boss Spawn: Every 10 floors in Dungeon Mode, or Wave 5 in other modes
+      const isBossFloor = (state.soloSubMode === 'dungeon' && waveNumber % 10 === 0) || (state.soloSubMode !== 'dungeon' && waveNumber % 5 === 0);
+      if (isBossFloor) {
         document.getElementById('boss-hud').style.display = 'block';
+        const bossNameEl = document.getElementById('boss-display-name');
+        const lolBossNameEl = document.getElementById('lol-boss-name');
+        let bTitle = 'IGNIS REX - ANVIL OVERLORD';
+        if (state.soloSubMode === 'dungeon') {
+          const bossTitles = {
+            10: 'ABYSSAL WARDEN',
+            20: 'OBSIDIAN GOLEM',
+            30: 'INFERNAL OVERLORD',
+            40: 'VOID REAPER',
+            50: 'CELESTIAL TITAN',
+            60: 'NIGHTSHADE DRAKE',
+            70: 'ASTRAL ARCHON',
+            80: 'CHRONOS CRUCIBLE',
+            90: 'ANVIL DEMIURGE',
+            100: 'ETERNAL VOID ARCHON'
+          };
+          bTitle = bossTitles[waveNumber] || `FLOOR ${waveNumber} CRUCIBLE GUARDIAN`;
+        }
+        if (bossNameEl) bossNameEl.textContent = bTitle;
+        if (lolBossNameEl) lolBossNameEl.textContent = bTitle;
         spawnEnemy('boss');
       }
 
@@ -8628,7 +9766,7 @@
 
       waveSpawnTimer -= dt;
       if (waveSpawnTimer <= 0 && state.waveTimeRemaining > 2) {
-        const interval = Math.max(0.6, 2.5 - state.currentWave * 0.25);
+        const interval = Math.max(0.6, 2.5 - Math.min(10, state.currentWave) * 0.2);
         waveSpawnTimer = interval;
 
         if (state.currentWave === 1) {
@@ -8645,13 +9783,71 @@
         }
       }
 
-      if (state.waveTimeRemaining <= 0 || (state.currentWave % 5 === 0 && enemies.some(e => e.type === 'boss' && e.dead))) {
+      const isBossFloor = (state.soloSubMode === 'dungeon' && state.currentWave % 10 === 0) || (state.soloSubMode !== 'dungeon' && state.currentWave % 5 === 0);
+      if (state.waveTimeRemaining <= 0 || (isBossFloor && enemies.some(e => e.type === 'boss' && e.dead))) {
         completeWave();
       }
     }
 
     function completeWave() {
       enemies.forEach(e => { if (!e.dead && e.type !== 'boss') e.die(); });
+
+      if (state.soloSubMode === 'dungeon') {
+        state.totalDungeonsCleared++;
+        state.maxFloorReached = Math.max(state.maxFloorReached, state.dungeonFloor);
+        const oldLvl = state.dungeonLevel;
+        state.dungeonLevel = Math.min(100, Math.floor(state.totalDungeonsCleared / 10) + 1);
+
+        authManager.saveProgress();
+
+        if (state.dungeonFloor >= 1000) {
+          sound.playVictory();
+          const ascModal = document.getElementById('ascension-modal');
+          if (ascModal) ascModal.style.display = 'flex';
+          showLolBanner('1,000 DUNGEONS CONQUERED!', 'FULL GAME POTENTIAL UNLOCKED');
+          return;
+        }
+
+        if (state.dungeonLevel > oldLvl) {
+          sound.playVictory();
+          const lvlModal = document.getElementById('dungeon-levelup-modal');
+          const lvlTitle = document.getElementById('levelup-title');
+          const lvlNext = document.getElementById('levelup-next-note');
+          if (lvlTitle) lvlTitle.textContent = `LEVEL UP: REACHED LEVEL ${state.dungeonLevel}!`;
+          if (lvlNext) {
+            const rem = 10 - (state.totalDungeonsCleared % 10);
+            lvlNext.textContent = state.dungeonLevel >= 100 ? 'MAXIMUM LEVEL CAP REACHED (LV.100)!' : `Complete ${rem} more dungeons to reach Level ${state.dungeonLevel + 1}!`;
+          }
+          // Permanent Stat Boosts
+          state.hero.maxHp += 15;
+          state.hero.hp = state.hero.maxHp;
+          state.hero.attackDamage += 3;
+          state.hero.maxShield += 10;
+          state.hero.shield = state.hero.maxShield;
+
+          if (lvlModal) lvlModal.style.display = 'flex';
+          showLolBanner(`LEVEL UP! REACHED LEVEL ${state.dungeonLevel}`, '+15 HP • +3 ATK • +10 SHIELD');
+          return;
+        }
+
+        // Normal Floor Clear Modal
+        sound.playFanfare();
+        const clearModal = document.getElementById('dungeon-clear-modal');
+        const clearTitle = document.getElementById('dungeon-clear-title');
+        const clearFloor = document.getElementById('dungeon-modal-floor');
+        const clearLevel = document.getElementById('dungeon-modal-level');
+        const clearNext = document.getElementById('dungeon-modal-next');
+        if (clearTitle) clearTitle.textContent = `FLOOR ${state.dungeonFloor} CLEARED!`;
+        if (clearFloor) clearFloor.textContent = `${state.dungeonFloor} / 1000`;
+        if (clearLevel) clearLevel.textContent = `LEVEL ${state.dungeonLevel} / 100`;
+        if (clearNext) {
+          const rem = 10 - (state.totalDungeonsCleared % 10);
+          clearNext.textContent = state.dungeonLevel >= 100 ? 'MAX LEVEL CAP' : `${rem} FLOORS TO LV.${state.dungeonLevel + 1}`;
+        }
+        if (clearModal) clearModal.style.display = 'flex';
+        showLolBanner(`FLOOR ${state.dungeonFloor} CLEARED!`, 'WIPE OUT! ALL ENEMIES ELIMINATED');
+        return;
+      }
 
       if (state.soloSubMode !== 'endless' && state.currentWave >= GAME_CONFIG.TOTAL_WAVES) {
         handleGameOver(true);
@@ -9018,6 +10214,18 @@
         state.hero.moveSpeed = 8.2;
         state.hero.attackDamage = 34;
         state.hero.critChance = 0.28;
+      }
+
+      if (state.soloSubMode === 'dungeon') {
+        state.currentWave = state.dungeonFloor || 1;
+        const currentLvl = Math.min(100, Math.max(1, state.dungeonLevel || Math.floor((state.totalDungeonsCleared || 0) / 10) + 1));
+        state.dungeonLevel = currentLvl;
+        const bonusHp = (currentLvl - 1) * 15;
+        const bonusDmg = (currentLvl - 1) * 3;
+        const bonusShield = (currentLvl - 1) * 10;
+        state.hero.maxHp += bonusHp;
+        state.hero.attackDamage += bonusDmg;
+        state.hero.maxShield += bonusShield;
       }
 
       state.hero.hp = state.hero.maxHp;
@@ -9859,10 +11067,85 @@
       checkOrientation();
     }
 
-    // Initialize Theme & Class Selection for active month
+    // Initialize Theme, Auth & Class Selection
     applyTheme(state.currentMonth);
     updateStartModalButtons();
     initLandingAndWikiController();
+    authManager.init();
+
+    // 1,000 Dungeons Flow Listeners
+    const btnDungeonNext = document.getElementById('btn-dungeon-next');
+    if (btnDungeonNext) {
+      btnDungeonNext.addEventListener('click', () => {
+        sound.playPickup();
+        const clearModal = document.getElementById('dungeon-clear-modal');
+        if (clearModal) clearModal.style.display = 'none';
+        state.dungeonFloor++;
+        authManager.saveProgress();
+        startWave(state.dungeonFloor);
+      });
+    }
+
+    const btnDungeonExit = document.getElementById('btn-dungeon-exit');
+    if (btnDungeonExit) {
+      btnDungeonExit.addEventListener('click', () => {
+        sound.playHit();
+        const clearModal = document.getElementById('dungeon-clear-modal');
+        if (clearModal) clearModal.style.display = 'none';
+        returnToLobby();
+      });
+    }
+
+    const btnLvlContinue = document.getElementById('btn-levelup-continue');
+    if (btnLvlContinue) {
+      btnLvlContinue.addEventListener('click', () => {
+        sound.playPickup();
+        const lvlModal = document.getElementById('dungeon-levelup-modal');
+        if (lvlModal) lvlModal.style.display = 'none';
+        state.dungeonFloor++;
+        authManager.saveProgress();
+        startWave(state.dungeonFloor);
+      });
+    }
+
+    const btnAscensionClose = document.getElementById('btn-ascension-close');
+    if (btnAscensionClose) {
+      btnAscensionClose.addEventListener('click', () => {
+        sound.playPickup();
+        const ascModal = document.getElementById('ascension-modal');
+        if (ascModal) ascModal.style.display = 'none';
+        returnToLobby();
+      });
+    }
+
+    // Mobile Legends: Bang Bang Quick Signal Ping Binds
+    const btnSigAtk = document.getElementById('btn-signal-attack');
+    if (btnSigAtk) {
+      btnSigAtk.addEventListener('click', (e) => {
+        e.stopPropagation();
+        sound.playFanfare();
+        showLolBanner('⚔️ ATTACK COMMAND!', 'LAUNCH AN ATTACK!');
+        if (hero) spawnClickRipple(hero.position.x, hero.position.z);
+      });
+    }
+
+    const btnSigDef = document.getElementById('btn-signal-retreat');
+    if (btnSigDef) {
+      btnSigDef.addEventListener('click', (e) => {
+        e.stopPropagation();
+        sound.playHit();
+        showLolBanner('🛡️ RETREAT PROTOCOL!', 'DEFEND THE CRUCIBLE ANVIL!');
+      });
+    }
+
+    const btnMiniCenter = document.getElementById('btn-minimap-center');
+    if (btnMiniCenter) {
+      btnMiniCenter.addEventListener('click', (e) => {
+        e.stopPropagation();
+        sound.playPickup();
+        if (hero && controls) controls.target.copy(hero.position);
+      });
+    }
 
     window.addEventListener('resize', () => {
       camera.aspect = window.innerWidth / window.innerHeight;
