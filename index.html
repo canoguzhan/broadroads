@@ -3670,57 +3670,86 @@
         display: none !important;
       }
 
-      /* Compact Top Scoreboard HUD positioned adjacent to the Top-Left Minimap */
+      /* --------------------------------------------------------------------------
+         MOBILE REDESIGN 1: Top Ribbon Match Scoreboard (#lol-top-hud)
+         -------------------------------------------------------------------------- */
       .lol-top-hud {
         position: absolute !important;
-        top: 4px !important;
-        left: 88px !important;
-        right: 6px !important;
-        width: calc(100vw - 94px) !important;
-        height: 28px !important;
-        padding: 2px 8px !important;
-        border-radius: 6px !important;
+        top: 6px !important;
+        left: 92px !important;
+        right: 8px !important;
+        width: auto !important;
+        height: 32px !important;
+        padding: 0 10px !important;
+        background: linear-gradient(180deg, rgba(2, 8, 18, 0.95) 0%, rgba(9, 20, 40, 0.9) 100%) !important;
+        border: 1.5px solid rgba(200, 170, 110, 0.5) !important;
+        border-radius: 8px !important;
+        box-shadow: 0 4px 16px rgba(0, 0, 0, 0.75), inset 0 0 10px rgba(200, 170, 110, 0.1) !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: space-between !important;
         box-sizing: border-box !important;
         z-index: 40 !important;
       }
       .lol-top-score-group {
-        gap: 4px !important;
+        gap: 6px !important;
       }
       .lol-score-badge {
-        padding: 1px 6px !important;
-        height: 20px !important;
+        padding: 2px 7px !important;
+        height: 22px !important;
+        border-radius: 4px !important;
       }
       .team-score {
-        font-size: 11px !important;
+        font-size: 13px !important;
       }
       .team-label {
-        font-size: 8px !important;
+        display: none !important;
       }
       .lol-score-vs {
-        font-size: 8px !important;
+        font-size: 10px !important;
+        font-weight: 900 !important;
+        color: #c8aa6e !important;
+      }
+      .lol-top-center-group {
+        gap: 8px !important;
       }
       .lol-match-timer {
-        font-size: 10px !important;
-        padding: 1px 5px !important;
-        height: 20px !important;
-        gap: 2px !important;
+        font-size: 11px !important;
+        height: 22px !important;
+        padding: 2px 6px !important;
+        border-radius: 4px !important;
+        gap: 4px !important;
+      }
+      .lol-wave-objective {
+        height: 22px !important;
+        padding: 2px 8px !important;
+        border-radius: 4px !important;
+        gap: 6px !important;
+      }
+      .wave-dragon-crest {
+        font-size: 13px !important;
       }
       .wave-name {
-        font-size: 8px !important;
+        font-size: 9.5px !important;
+        font-weight: 900 !important;
       }
       .wave-progress-bar {
-        width: 32px !important;
-        height: 3px !important;
+        width: 36px !important;
+        height: 3.5px !important;
       }
       .threats-badge {
-        font-size: 8px !important;
-        padding: 1px 4px !important;
+        font-size: 9px !important;
         height: 18px !important;
+        padding: 1px 5px !important;
+        font-weight: 900 !important;
+      }
+      .lol-top-right-group {
+        gap: 8px !important;
       }
       .lol-cs-badge {
-        font-size: 9px !important;
-        padding: 1px 4px !important;
-        gap: 2px !important;
+        font-size: 10px !important;
+        padding: 2px 6px !important;
+        gap: 3px !important;
       }
       .lol-perf-badge, #btn-lol-help {
         display: none !important;
@@ -3730,265 +3759,549 @@
         height: 24px !important;
         font-size: 11px !important;
       }
+      .btn-lol-exit {
+        width: 26px !important;
+        height: 26px !important;
+        font-size: 13px !important;
+        border-radius: 6px !important;
+        background: rgba(255, 0, 84, 0.18) !important;
+        border: 1px solid rgba(255, 0, 84, 0.45) !important;
+        color: #ff0054 !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        transition: transform 0.1s ease !important;
+      }
+      .btn-lol-exit:active {
+        transform: scale(0.9) !important;
+      }
 
-      /* Compact Bottom Champion Console */
+      /* --------------------------------------------------------------------------
+         MOBILE REDESIGN 2: Top-Left Radar Minimap (#lol-minimap-container)
+         -------------------------------------------------------------------------- */
+      .lol-minimap-container {
+        position: absolute !important;
+        top: 6px !important;
+        left: 8px !important;
+        bottom: auto !important;
+        right: auto !important;
+        width: 78px !important;
+        height: 78px !important;
+        background: rgba(1, 8, 18, 0.92) !important;
+        backdrop-filter: blur(10px) !important;
+        -webkit-backdrop-filter: blur(10px) !important;
+        border: 1.5px solid var(--lol-gold-2, #c8aa6e) !important;
+        border-radius: 12px !important;
+        box-shadow: 0 4px 14px rgba(0, 0, 0, 0.8), 0 0 10px rgba(200, 170, 110, 0.3) !important;
+        z-index: 45 !important;
+        overflow: hidden !important;
+        pointer-events: auto !important;
+      }
+      #lol-minimap-canvas {
+        width: 78px !important;
+        height: 78px !important;
+        border-radius: 10px !important;
+      }
+      .lol-minimap-controls {
+        top: 4px !important;
+        right: 4px !important;
+        flex-direction: column !important;
+        gap: 3px !important;
+      }
+      .btn-minimap-action {
+        width: 18px !important;
+        height: 18px !important;
+        font-size: 9px !important;
+        padding: 0 !important;
+        border-radius: 4px !important;
+        background: rgba(1, 10, 19, 0.85) !important;
+        border: 1px solid rgba(200, 170, 110, 0.5) !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        pointer-events: auto !important;
+      }
+      .btn-minimap-action:active {
+        transform: scale(0.9) !important;
+      }
+
+      /* --------------------------------------------------------------------------
+         MOBILE REDESIGN 3: Streamlined Hero Status Console (#lol-bottom-console)
+         -------------------------------------------------------------------------- */
       .lol-bottom-console {
-        transform: translateX(-50%) scale(0.62) !important;
-        transform-origin: bottom center !important;
-        bottom: 2px !important;
+        position: absolute !important;
+        bottom: 6px !important;
         left: 50% !important;
-        padding: 2px 6px !important;
-        gap: 4px !important;
-        max-width: 440px !important;
+        transform: translateX(-50%) !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        gap: 8px !important;
+        padding: 4px 10px !important;
+        background: linear-gradient(180deg, rgba(2, 8, 18, 0.95) 0%, rgba(9, 20, 40, 0.92) 100%) !important;
+        border: 1.5px solid rgba(200, 170, 110, 0.5) !important;
+        border-radius: 12px !important;
+        box-shadow: 0 4px 18px rgba(0, 0, 0, 0.85), 0 0 10px rgba(0,0,0,0.5) !important;
+        max-width: 320px !important;
+        width: auto !important;
         z-index: 35 !important;
+        pointer-events: auto !important;
+      }
+      .lol-champ-wing {
+        display: flex !important;
+        align-items: center !important;
+        gap: 6px !important;
+      }
+      .lol-portrait-container {
+        display: flex !important;
+        align-items: center !important;
+        gap: 6px !important;
+      }
+      .lol-portrait-frame {
+        width: 34px !important;
+        height: 34px !important;
+        border-radius: 50% !important;
+        border: 2px solid #c8aa6e !important;
+        background: #010a13 !important;
+        box-shadow: 0 0 10px rgba(200, 170, 110, 0.5) !important;
+      }
+      .lol-portrait-avatar {
+        font-size: 18px !important;
+      }
+      .lol-level-seal {
+        bottom: -3px !important;
+        left: -3px !important;
+        width: 15px !important;
+        height: 15px !important;
+        font-size: 8.5px !important;
+        border: 1px solid #fff !important;
+      }
+      .lol-champ-info {
+        display: flex !important;
+        flex-direction: column !important;
+        gap: 1px !important;
+      }
+      .lol-champ-title {
+        font-size: 10px !important;
+        font-weight: 900 !important;
+        color: #f0e6d2 !important;
+        letter-spacing: 0.5px !important;
+        max-width: 65px !important;
+        white-space: nowrap !important;
+        overflow: hidden !important;
+        text-overflow: ellipsis !important;
+      }
+      .lol-summoner-name {
+        display: none !important;
       }
       .lol-champ-wing .lol-stats-box {
         display: none !important;
       }
-      .lol-portrait-frame {
-        width: 38px !important;
-        height: 38px !important;
+
+      .lol-center-wing {
+        display: flex !important;
+        flex-direction: column !important;
+        gap: 3px !important;
+        align-items: center !important;
       }
-      .lol-level-seal {
-        width: 16px !important;
-        height: 16px !important;
-        font-size: 9px !important;
-      }
-      .lol-champ-title {
-        font-size: 10px !important;
-      }
-      .lol-summoner-name {
-        font-size: 8px !important;
-      }
-      .lol-vitals-bars {
-        width: 160px !important;
+      .lol-bars-container {
+        width: 120px !important;
+        display: flex !important;
+        flex-direction: column !important;
         gap: 2px !important;
       }
       .lol-bar-track {
-        height: 10px !important;
+        width: 100% !important;
+        height: 11px !important;
+        border: 1px solid #785a28 !important;
+        border-radius: 3px !important;
       }
-      .lol-bar-num {
-        font-size: 8px !important;
+      .lol-mana-track {
+        height: 7px !important;
+        border-color: #3c301c !important;
       }
-      .lol-spell-slot {
-        width: 28px !important;
-        height: 28px !important;
+      .lol-bar-text {
+        font-size: 8.5px !important;
+        font-weight: 900 !important;
+        gap: 3px !important;
       }
-      .lol-spell-icon {
-        font-size: 12px !important;
+      .lol-mana-track .lol-bar-text {
+        font-size: 7px !important;
       }
-      .lol-passive-slot {
-        width: 22px !important;
-        height: 22px !important;
+      .lol-regen-text {
+        font-size: 7.5px !important;
       }
-      .lol-summoner-slot, .lol-recall-slot {
-        width: 24px !important;
-        height: 24px !important;
+      .lol-mana-track .lol-regen-text {
+        font-size: 6.5px !important;
       }
-      .lol-spell-pips {
+
+      /* Hide redundant keyboard abilities row in mobile */
+      .lol-abilities-row {
         display: none !important;
       }
-      .lol-key-label {
-        font-size: 7px !important;
-        padding: 0 2px !important;
-        bottom: -3px !important;
+
+      /* Mini loadout & gold display */
+      .lol-items-wing {
+        display: flex !important;
+        flex-direction: column !important;
+        gap: 2px !important;
+        align-items: flex-end !important;
+        cursor: pointer !important;
       }
       .lol-items-grid {
-        grid-template-columns: repeat(4, 20px) !important;
+        display: grid !important;
+        grid-template-columns: repeat(4, 18px) !important;
         gap: 2px !important;
       }
       .lol-item-slot {
-        width: 20px !important;
-        height: 20px !important;
+        width: 18px !important;
+        height: 18px !important;
+        border-radius: 3px !important;
       }
       .lol-item-icon {
         font-size: 10px !important;
       }
+      .lol-item-key, .lol-trinket-slot, #lol-item-5, #lol-item-6 {
+        display: none !important;
+      }
       .lol-gold-row {
-        padding: 1px 3px !important;
+        padding: 1px 4px !important;
+        border-radius: 3px !important;
       }
       .lol-gold-amount {
-        font-size: 8.5px !important;
+        font-size: 9px !important;
       }
       .lol-minerals-mini {
         display: none !important;
       }
 
-      /* Radar Minimap anchored in Top-Left like standard mobile MOBAs (Wild Rift) */
-      .lol-minimap-container {
-        position: absolute !important;
-        top: 4px !important;
-        left: 6px !important;
-        bottom: auto !important;
-        right: auto !important;
-        width: 76px !important;
-        height: 76px !important;
-        background: rgba(1, 10, 19, 0.85) !important;
-        backdrop-filter: blur(8px) !important;
-        -webkit-backdrop-filter: blur(8px) !important;
-        border: 1.5px solid var(--lol-gold-2, #c8aa6e) !important;
-        border-radius: 8px !important;
-        box-shadow: 0 0 10px rgba(0, 0, 0, 0.8), 0 0 5px rgba(200, 170, 110, 0.4) !important;
-        z-index: 45 !important;
-        pointer-events: auto !important;
-      }
-      #lol-minimap-canvas {
-        width: 76px !important;
-        height: 76px !important;
-        border-radius: 7px !important;
-      }
-      .lol-minimap-controls {
-        top: 2px !important;
-        right: 2px !important;
-        gap: 2px !important;
-      }
-      .btn-minimap-action {
-        width: 14px !important;
-        height: 14px !important;
-        font-size: 7px !important;
-        padding: 0 !important;
-        border-radius: 3px !important;
-      }
-
-      /* Mobile Controls & Touch Joystick positioned cleanly on the bottom-left */
+      /* --------------------------------------------------------------------------
+         MOBILE REDESIGN 4: Touch Joystick (#joystick-zone)
+         -------------------------------------------------------------------------- */
       .mobile-controls {
         display: block !important;
       }
       #joystick-zone {
         display: block !important;
-        bottom: 8px !important;
-        left: 8px !important;
-        width: 86px !important;
-        height: 86px !important;
+        position: absolute !important;
+        bottom: 12px !important;
+        left: 12px !important;
+        width: 92px !important;
+        height: 92px !important;
         z-index: 45 !important;
+        pointer-events: auto !important;
+        touch-action: none !important;
       }
       .joystick-base {
-        width: 78px !important;
-        height: 78px !important;
-        border: 2px solid rgba(0, 245, 212, 0.35) !important;
-        background: radial-gradient(circle, rgba(0, 245, 212, 0.1) 0%, rgba(4, 7, 18, 0.65) 100%) !important;
+        width: 84px !important;
+        height: 84px !important;
+        border-radius: 50% !important;
+        border: 2px solid rgba(0, 245, 212, 0.45) !important;
+        background: radial-gradient(circle, rgba(0, 245, 212, 0.12) 0%, rgba(2, 6, 16, 0.78) 100%) !important;
+        box-shadow: 0 0 16px rgba(0, 245, 212, 0.25), inset 0 0 12px rgba(0, 245, 212, 0.1) !important;
       }
       .joystick-knob {
-        width: 28px !important;
-        height: 28px !important;
-        background: radial-gradient(circle, #00f5d4 20%, #00bbf9 100%) !important;
-        box-shadow: 0 0 12px rgba(0, 245, 212, 0.8) !important;
+        width: 32px !important;
+        height: 32px !important;
+        border-radius: 50% !important;
+        background: radial-gradient(circle, #00f5d4 25%, #00bbf9 100%) !important;
+        border: 2px solid #ffffff !important;
+        box-shadow: 0 0 14px rgba(0, 245, 212, 0.85) !important;
       }
 
-      /* Ergonomic Mobile Action Cluster (Radial Thumb Arc) on Bottom-Right */
+      /* --------------------------------------------------------------------------
+         MOBILE REDESIGN 5: Ergonomic Radial Action Cluster (.action-cluster)
+         -------------------------------------------------------------------------- */
       .action-cluster {
         position: absolute !important;
-        bottom: 6px !important;
+        bottom: 8px !important;
         right: 8px !important;
-        width: 160px !important;
-        height: 135px !important;
+        width: 180px !important;
+        height: 165px !important;
         display: block !important;
         pointer-events: auto !important;
         z-index: 45 !important;
+        touch-action: manipulation !important;
+        user-select: none !important;
+        -webkit-user-select: none !important;
       }
+
+      /* Primary Strike (Attack) */
       .btn-attack {
         position: absolute !important;
-        bottom: 2px !important;
+        bottom: 4px !important;
         right: 4px !important;
-        width: 54px !important;
-        height: 54px !important;
+        width: 60px !important;
+        height: 60px !important;
         border-radius: 50% !important;
-        background: radial-gradient(circle, rgba(0, 245, 212, 0.45) 0%, rgba(13, 25, 45, 0.95) 100%) !important;
-        border: 2px solid #00f5d4 !important;
-        box-shadow: 0 0 16px rgba(0, 245, 212, 0.6) !important;
+        background: radial-gradient(circle, rgba(0, 245, 212, 0.4) 0%, rgba(8, 22, 40, 0.96) 100%) !important;
+        border: 2.5px solid #00f5d4 !important;
+        box-shadow: 0 0 16px rgba(0, 245, 212, 0.6), inset 0 0 10px rgba(0, 245, 212, 0.3) !important;
+        display: flex !important;
+        flex-direction: column !important;
+        align-items: center !important;
+        justify-content: center !important;
         margin: 0 !important;
+        padding: 0 !important;
+        cursor: pointer !important;
+        transition: transform 0.08s ease, box-shadow 0.08s ease !important;
+      }
+      .btn-attack:active {
+        transform: scale(0.92) !important;
+        box-shadow: 0 0 24px rgba(0, 245, 212, 0.9) !important;
       }
       .btn-attack .btn-icon {
-        font-size: 22px !important;
-        margin-bottom: 0px !important;
+        font-size: 26px !important;
+        line-height: 1 !important;
+        margin-bottom: 1px !important;
       }
       .btn-attack .btn-lbl {
-        font-size: 7.5px !important;
+        font-size: 8px !important;
         font-weight: 900 !important;
-        letter-spacing: 0.5px !important;
+        letter-spacing: 0.8px !important;
+        color: #00f5d4 !important;
       }
 
-      .btn-dash {
-        position: absolute !important;
-        bottom: 6px !important;
-        right: 66px !important;
-        width: 38px !important;
-        height: 38px !important;
-        border-radius: 50% !important;
-        background: radial-gradient(circle, rgba(160, 140, 255, 0.4) 0%, rgba(18, 14, 38, 0.95) 100%) !important;
-        border: 1.5px solid #a78bfa !important;
-        box-shadow: 0 0 10px rgba(167, 139, 250, 0.4) !important;
-        margin: 0 !important;
-      }
-      .btn-dash .btn-icon {
-        font-size: 15px !important;
-        margin-bottom: 0 !important;
-      }
-      .btn-dash .btn-lbl {
-        font-size: 6.5px !important;
-      }
-
-      .btn-special {
-        position: absolute !important;
-        bottom: 50px !important;
-        right: 58px !important;
-        width: 38px !important;
-        height: 38px !important;
-        border-radius: 50% !important;
-        background: radial-gradient(circle, rgba(255, 183, 3, 0.4) 0%, rgba(28, 20, 8, 0.95) 100%) !important;
-        border: 1.5px solid #ffb703 !important;
-        box-shadow: 0 0 10px rgba(255, 183, 3, 0.4) !important;
-        margin: 0 !important;
-      }
-      .btn-special .btn-icon {
-        font-size: 15px !important;
-        margin-bottom: 0 !important;
-      }
-      .btn-special .btn-lbl {
-        font-size: 6.5px !important;
-      }
-
+      /* Celestial Overcharge Ultimate (R) */
       .btn-ultimate {
         position: absolute !important;
-        bottom: 64px !important;
-        right: 6px !important;
-        width: 42px !important;
-        height: 42px !important;
+        bottom: 74px !important;
+        right: 8px !important;
+        width: 46px !important;
+        height: 46px !important;
         border-radius: 50% !important;
-        background: radial-gradient(circle, rgba(255, 0, 84, 0.45) 0%, rgba(35, 8, 18, 0.95) 100%) !important;
+        background: radial-gradient(circle, rgba(255, 0, 84, 0.45) 0%, rgba(32, 6, 18, 0.96) 100%) !important;
         border: 2px solid #ff0054 !important;
-        box-shadow: 0 0 14px rgba(255, 0, 84, 0.6) !important;
+        box-shadow: 0 0 14px rgba(255, 0, 84, 0.6), inset 0 0 8px rgba(255, 0, 84, 0.3) !important;
+        display: flex !important;
+        flex-direction: column !important;
+        align-items: center !important;
+        justify-content: center !important;
         margin: 0 !important;
+        padding: 0 !important;
+        cursor: pointer !important;
+        transition: transform 0.08s ease !important;
+      }
+      .btn-ultimate:active {
+        transform: scale(0.92) !important;
+      }
+      .btn-ultimate.ready {
+        box-shadow: 0 0 18px rgba(255, 0, 84, 0.85), inset 0 0 12px rgba(255, 215, 0, 0.4) !important;
+        border-color: #ffd700 !important;
+        animation: ultPulse 2s infinite ease-in-out !important;
       }
       .btn-ultimate .btn-icon {
-        font-size: 16px !important;
-        margin-bottom: 0 !important;
+        font-size: 18px !important;
+        line-height: 1 !important;
+        margin-bottom: 1px !important;
       }
       .btn-ultimate .btn-lbl {
-        font-size: 6.5px !important;
+        font-size: 7px !important;
+        font-weight: 900 !important;
         color: #ff3366 !important;
       }
 
+      /* Class Special Skill (E) */
+      .btn-special {
+        position: absolute !important;
+        bottom: 64px !important;
+        right: 68px !important;
+        width: 44px !important;
+        height: 44px !important;
+        border-radius: 50% !important;
+        background: radial-gradient(circle, rgba(255, 183, 3, 0.4) 0%, rgba(28, 18, 5, 0.96) 100%) !important;
+        border: 2px solid #ffb703 !important;
+        box-shadow: 0 0 12px rgba(255, 183, 3, 0.5), inset 0 0 8px rgba(255, 183, 3, 0.25) !important;
+        display: flex !important;
+        flex-direction: column !important;
+        align-items: center !important;
+        justify-content: center !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        cursor: pointer !important;
+        transition: transform 0.08s ease !important;
+      }
+      .btn-special:active {
+        transform: scale(0.92) !important;
+      }
+      .btn-special.ready {
+        border-color: #ffe600 !important;
+        box-shadow: 0 0 16px rgba(255, 215, 0, 0.8) !important;
+      }
+      .btn-special .btn-icon {
+        font-size: 18px !important;
+        line-height: 1 !important;
+        margin-bottom: 1px !important;
+      }
+      .btn-special .btn-lbl {
+        font-size: 7px !important;
+        font-weight: 900 !important;
+        color: #ffb703 !important;
+      }
+
+      /* Dash / Dodge (Shift) */
+      .btn-dash {
+        position: absolute !important;
+        bottom: 8px !important;
+        right: 76px !important;
+        width: 44px !important;
+        height: 44px !important;
+        border-radius: 50% !important;
+        background: radial-gradient(circle, rgba(167, 139, 250, 0.4) 0%, rgba(18, 12, 36, 0.96) 100%) !important;
+        border: 2px solid #a78bfa !important;
+        box-shadow: 0 0 12px rgba(167, 139, 250, 0.5), inset 0 0 8px rgba(167, 139, 250, 0.25) !important;
+        display: flex !important;
+        flex-direction: column !important;
+        align-items: center !important;
+        justify-content: center !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        cursor: pointer !important;
+        transition: transform 0.08s ease !important;
+      }
+      .btn-dash:active {
+        transform: scale(0.92) !important;
+      }
+      .btn-dash .btn-icon {
+        font-size: 18px !important;
+        line-height: 1 !important;
+        margin-bottom: 1px !important;
+      }
+      .btn-dash .btn-lbl {
+        font-size: 7px !important;
+        font-weight: 900 !important;
+        color: #c4b5fd !important;
+      }
+
+      /* Auto-Attack Toggle Lock (C) */
       .btn-auto {
         position: absolute !important;
-        bottom: 96px !important;
-        right: 54px !important;
-        width: 30px !important;
-        height: 30px !important;
+        bottom: 118px !important;
+        right: 64px !important;
+        width: 34px !important;
+        height: 34px !important;
         border-radius: 50% !important;
-        background: rgba(10, 18, 32, 0.9) !important;
-        border: 1.2px solid rgba(255, 255, 255, 0.35) !important;
+        background: rgba(8, 16, 28, 0.92) !important;
+        border: 1.5px solid rgba(255, 255, 255, 0.35) !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
         margin: 0 !important;
+        padding: 0 !important;
+        cursor: pointer !important;
+        transition: all 0.12s ease !important;
+      }
+      .btn-auto:active {
+        transform: scale(0.92) !important;
+      }
+      .btn-auto.active {
+        border-color: #00f5d4 !important;
+        background: radial-gradient(circle, rgba(0, 245, 212, 0.35) 0%, rgba(8, 24, 32, 0.95) 100%) !important;
+        box-shadow: 0 0 12px rgba(0, 245, 212, 0.7) !important;
       }
       .btn-auto .btn-icon {
-        font-size: 13px !important;
+        font-size: 15px !important;
         margin-bottom: 0 !important;
       }
       .btn-auto .btn-lbl {
         display: none !important;
       }
+
+      /* Recall / Refinery Forge Button (B) */
+      .btn-mobile-recall {
+        position: absolute !important;
+        bottom: 124px !important;
+        right: 14px !important;
+        width: 36px !important;
+        height: 36px !important;
+        border-radius: 50% !important;
+        background: radial-gradient(circle, rgba(10, 200, 185, 0.3) 0%, rgba(4, 16, 28, 0.95) 100%) !important;
+        border: 1.5px solid #0ac8b9 !important;
+        box-shadow: 0 0 10px rgba(10, 200, 185, 0.4) !important;
+        display: flex !important;
+        flex-direction: column !important;
+        align-items: center !important;
+        justify-content: center !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        cursor: pointer !important;
+        transition: transform 0.08s ease !important;
+      }
+      .btn-mobile-recall:active {
+        transform: scale(0.92) !important;
+        box-shadow: 0 0 16px rgba(10, 200, 185, 0.8) !important;
+      }
+      .btn-mobile-recall .btn-icon {
+        font-size: 16px !important;
+        line-height: 1 !important;
+      }
+      .btn-mobile-recall .btn-lbl {
+        font-size: 6px !important;
+        font-weight: 900 !important;
+        color: #0ac8b9 !important;
+        letter-spacing: 0.3px !important;
+      }
+
+      /* Hide keyboard badges on mobile */
       .btn-action .btn-key-badge {
         display: none !important;
+      }
+
+      /* Cooldown Overlays on mobile action buttons */
+      .action-cluster .cooldown-overlay {
+        position: absolute !important;
+        top: 0 !important;
+        left: 0 !important;
+        width: 100% !important;
+        height: 100% !important;
+        border-radius: 50% !important;
+        background: rgba(1, 10, 19, 0.88) !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        font-family: var(--font-mono) !important;
+        font-size: 11px !important;
+        font-weight: 900 !important;
+        color: #fff !important;
+        text-shadow: 0 1px 3px #000 !important;
+        pointer-events: none !important;
+      }
+
+      /* Pulse animation for ultimate */
+      @keyframes ultPulse {
+        0% { box-shadow: 0 0 14px rgba(255, 0, 84, 0.7); }
+        50% { box-shadow: 0 0 24px rgba(255, 215, 0, 0.9), 0 0 10px rgba(255, 0, 84, 0.8); }
+        100% { box-shadow: 0 0 14px rgba(255, 0, 84, 0.7); }
+      }
+
+      /* Compact scaling for ultra-short mobile viewports (height <= 340px) */
+      @media (max-height: 340px) {
+        .action-cluster {
+          transform: scale(0.85) !important;
+          transform-origin: bottom right !important;
+        }
+        #joystick-zone {
+          transform: scale(0.85) !important;
+          transform-origin: bottom left !important;
+        }
+        .lol-bottom-console {
+          transform: translateX(-50%) scale(0.88) !important;
+          bottom: 2px !important;
+        }
+        .lol-top-hud {
+          height: 26px !important;
+          top: 3px !important;
+        }
+        .lol-minimap-container {
+          width: 66px !important;
+          height: 66px !important;
+          top: 3px !important;
+          left: 5px !important;
+        }
+        #lol-minimap-canvas {
+          width: 66px !important;
+          height: 66px !important;
+        }
       }
 
       /* Compact Announcer Banner */
@@ -4779,6 +5092,12 @@
           <span class="btn-icon">👑</span>
           <span class="btn-lbl">ULT</span>
           <div class="cooldown-overlay" id="mobile-ult-cooldown" style="display: none;"></div>
+        </button>
+
+        <!-- Recall / Forge Channel Button (B) -->
+        <button class="btn-action btn-mobile-recall" id="btn-mobile-recall" title="Recall / Refinery Forge (B)">
+          <span class="btn-icon">🌀</span>
+          <span class="btn-lbl">RECALL</span>
         </button>
       </div>
     </div>
@@ -8593,7 +8912,7 @@
 
     function updateCooldownOverlays() {
       const dashOverlay = document.getElementById('dash-cooldown');
-      if (state.hero.dashTimer > 0) {
+      if (state.hero.dashTimer > 0.05) {
         dashOverlay.style.display = 'flex';
         dashOverlay.textContent = `${state.hero.dashTimer.toFixed(1)}s`;
       } else {
@@ -8775,6 +9094,24 @@
     bindAction(document.getElementById('btn-special'), performSpecialNova);
     bindAction(document.getElementById('btn-auto'), toggleAutoAttack);
     bindAction(document.getElementById('btn-mobile-ultimate'), performUltimate);
+    bindAction(document.getElementById('btn-mobile-recall'), () => {
+      if (state.phase === 'refinery') {
+        document.getElementById('refinery-modal').style.display = 'flex';
+      } else {
+        showLolBanner('RECALL CHANNELING', 'REFINERY FORGE OPENS AT WAVE END');
+      }
+    });
+
+    const lolItemsWing = document.querySelector('.lol-items-wing');
+    if (lolItemsWing) {
+      bindAction(lolItemsWing, () => {
+        if (state.phase === 'refinery') {
+          document.getElementById('refinery-modal').style.display = 'flex';
+        } else {
+          showLolBanner('EQUIPPED ARSENAL', 'VISIT FORGE AT WAVE COMPLETION');
+        }
+      });
+    }
 
     // League of Legends Action Console Buttons
     bindAction(document.getElementById('btn-lol-q'), performHeroAttack);
