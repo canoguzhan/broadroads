@@ -4862,6 +4862,65 @@
       color: #00f5d4;
     }
 
+    /* 3-Second Arena Battle Countdown Overlay */
+    .arena-countdown-overlay {
+      position: fixed;
+      top: 36%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      pointer-events: none;
+      z-index: 9999;
+      text-align: center;
+      transition: opacity 0.4s ease, transform 0.4s ease;
+    }
+    .arena-countdown-overlay.fade-out {
+      opacity: 0;
+      transform: translate(-50%, -50%) scale(1.18);
+    }
+    .countdown-badge {
+      font-family: var(--lol-font-title, 'Cinzel', serif);
+      font-size: 13px;
+      font-weight: 800;
+      letter-spacing: 3px;
+      color: #c8aa6e;
+      text-transform: uppercase;
+      background: rgba(1, 10, 19, 0.85);
+      border: 1px solid rgba(200, 170, 110, 0.6);
+      border-radius: 20px;
+      padding: 4px 18px;
+      margin-bottom: 8px;
+      box-shadow: 0 0 15px rgba(200, 170, 110, 0.35);
+      backdrop-filter: blur(6px);
+    }
+    .countdown-digit {
+      font-family: var(--lol-font-title, 'Cinzel', serif);
+      font-size: 72px;
+      font-weight: 900;
+      color: #f0e6d2;
+      text-shadow: 0 0 25px rgba(240, 230, 210, 0.9), 0 0 50px rgba(0, 240, 255, 0.6);
+      letter-spacing: 2px;
+      line-height: 1;
+    }
+    @keyframes countdownPulse {
+      0% { transform: scale(1.4); opacity: 0.5; filter: drop-shadow(0 0 20px #00f0ff); }
+      50% { transform: scale(1); opacity: 1; filter: drop-shadow(0 0 35px #f0e6d2); }
+      100% { transform: scale(0.95); opacity: 0.9; }
+    }
+    .countdown-status {
+      font-family: var(--lol-font-body, 'Beaufort for LOL', sans-serif);
+      font-size: 13px;
+      font-weight: 700;
+      letter-spacing: 2px;
+      color: #a09b8c;
+      text-transform: uppercase;
+      margin-top: 6px;
+      text-shadow: 0 2px 4px rgba(0,0,0,0.8);
+    }
+
     /* Dungeon Floor Clear Modal */
     #dungeon-clear-modal, #dungeon-levelup-modal, #ascension-modal {
       z-index: 1050;
@@ -6284,6 +6343,13 @@
     </div>
   </div>
 
+  <!-- 3-SECOND ARENA BATTLE COUNTDOWN OVERLAY -->
+  <div id="arena-countdown-overlay" class="arena-countdown-overlay" style="display: none;">
+    <div class="countdown-badge">⚔️ ARENA PREPARATION ⚔️</div>
+    <div class="countdown-digit" id="countdown-digit">3</div>
+    <div class="countdown-status" id="countdown-status">THREATS SPAWNING IN 3 SECONDS...</div>
+  </div>
+
   <!-- DUNGEON FLOOR CLEAR MODAL -->
   <div class="modal-overlay" id="dungeon-clear-modal" style="display: none;">
     <div class="dungeon-clear-card">
@@ -6453,7 +6519,32 @@
           osc.start(now);
           osc.stop(now + 0.19);
         } catch(e) {}
-      }
+      },
+
+      playCountdownBeep(isFinal) {
+        if (this.muted || !this.ctx) return;
+        try {
+          const now = this.ctx.currentTime;
+          const osc = this.ctx.createOscillator();
+          const gain = this.ctx.createGain();
+          osc.type = isFinal ? 'triangle' : 'sine';
+          osc.frequency.setValueAtTime(isFinal ? 880 : 440, now);
+          if (isFinal) {
+            osc.frequency.exponentialRampToValueAtTime(1320, now + 0.22);
+            gain.gain.setValueAtTime(0.35, now);
+            gain.gain.exponentialRampToValueAtTime(0.01, now + 0.3);
+            osc.start(now);
+            osc.stop(now + 0.32);
+          } else {
+            gain.gain.setValueAtTime(0.25, now);
+            gain.gain.exponentialRampToValueAtTime(0.01, now + 0.16);
+            osc.start(now);
+            osc.stop(now + 0.17);
+          }
+          osc.connect(gain);
+          gain.connect(this.ctx.destination);
+        } catch(e) {}
+      },
 
       playHit() {
         if (this.muted || !this.ctx) return;
@@ -6912,8 +7003,14 @@
         const lvlBadge = document.getElementById('dungeon-lobby-lvl');
         const nameInput = document.getElementById('input-username');
 
-        const currentLvl = Math.min(100, Math.max(1, state.dungeonLevel || Math.floor((state.totalDungeonsCleared || 0) / 10) + 1));
+        // Sanitize any corrupted cleared counts from previous loop bug
+        if (state.totalDungeonsCleared > (state.dungeonFloor || 1) * 2) {
+          state.totalDungeonsCleared = Math.max(0, (state.dungeonFloor || 1) - 1);
+        }
+        const currentLvl = Math.min(100, Math.max(1, Math.floor((state.totalDungeonsCleared || 0) / 10) + 1));
         state.dungeonLevel = currentLvl;
+        localStorage.setItem('broadroads_dungeon_level', currentLvl);
+        localStorage.setItem('broadroads_dungeons_cleared', state.totalDungeonsCleared);
 
         if (levelBadge) levelBadge.textContent = `LV. ${currentLvl}`;
         if (floorBadge) floorBadge.textContent = `FLOOR: ${state.dungeonFloor || 1} / 1000`;
@@ -7021,7 +7118,10 @@
       applyProgress(p) {
         if (p.dungeon_floor) state.dungeonFloor = parseInt(p.dungeon_floor, 10);
         if (p.total_dungeons_cleared !== undefined) state.totalDungeonsCleared = parseInt(p.total_dungeons_cleared, 10);
-        state.dungeonLevel = Math.min(100, Math.max(1, parseInt(p.dungeon_level, 10) || Math.floor((state.totalDungeonsCleared || 0) / 10) + 1));
+        if (state.totalDungeonsCleared > (state.dungeonFloor || 1) * 2) {
+          state.totalDungeonsCleared = Math.max(0, (state.dungeonFloor || 1) - 1);
+        }
+        state.dungeonLevel = Math.min(100, Math.max(1, Math.floor((state.totalDungeonsCleared || 0) / 10) + 1));
         if (p.max_floor_reached) state.maxFloorReached = parseInt(p.max_floor_reached, 10);
         if (p.gold !== undefined) {
           const g = parseInt(p.gold, 10);
@@ -9685,6 +9785,55 @@
        11. WAVE MANAGER & SPAWNER
        ========================================================================== */
     let waveSpawnTimer = 0;
+    let lastCountdownBeep = -1;
+
+    function showArenaCountdown() {
+      state.spawnDelayCountdown = 3.0;
+      lastCountdownBeep = -1;
+      const overlay = document.getElementById('arena-countdown-overlay');
+      if (overlay) {
+        overlay.style.display = 'flex';
+        overlay.classList.remove('fade-out');
+      }
+      updateCountdownOverlay(3.0);
+    }
+
+    function updateCountdownOverlay(remaining) {
+      const overlay = document.getElementById('arena-countdown-overlay');
+      const digitEl = document.getElementById('countdown-digit');
+      const statusEl = document.getElementById('countdown-status');
+      if (!overlay || !digitEl) return;
+
+      if (remaining > 0) {
+        const sec = Math.ceil(remaining);
+        if (sec !== lastCountdownBeep) {
+          lastCountdownBeep = sec;
+          sound.playCountdownBeep(false);
+          digitEl.textContent = sec;
+          digitEl.style.animation = 'none';
+          void digitEl.offsetWidth;
+          digitEl.style.animation = 'countdownPulse 0.8s ease-out';
+          if (statusEl) statusEl.textContent = `THREATS SPAWNING IN ${sec} SECOND${sec > 1 ? 'S' : ''}...`;
+        }
+      } else {
+        if (lastCountdownBeep !== 0) {
+          lastCountdownBeep = 0;
+          sound.playCountdownBeep(true);
+          digitEl.textContent = '⚔️ FIGHT!';
+          digitEl.style.fontSize = '44px';
+          digitEl.style.color = '#00f0ff';
+          if (statusEl) statusEl.textContent = 'ARENA BATTLE COMMENCED!';
+          setTimeout(() => {
+            overlay.classList.add('fade-out');
+            setTimeout(() => {
+              overlay.style.display = 'none';
+              digitEl.style.fontSize = '';
+              digitEl.style.color = '';
+            }, 350);
+          }, 550);
+        }
+      }
+    }
 
     function startWave(waveNumber) {
       state.phase = 'playing';
@@ -9696,6 +9845,7 @@
       }
       state.waveTimeRemaining = (state.soloSubMode === 'dungeon') ? 35 : GAME_CONFIG.WAVE_DURATION;
       waveSpawnTimer = 0;
+      state.bossSpawnedThisWave = false;
 
       document.getElementById('refinery-modal').style.display = 'none';
       document.getElementById('start-modal').style.display = 'none';
@@ -9740,14 +9890,33 @@
         }
         if (bossNameEl) bossNameEl.textContent = bTitle;
         if (lolBossNameEl) lolBossNameEl.textContent = bTitle;
-        spawnEnemy('boss');
+      } else {
+        document.getElementById('boss-hud').style.display = 'none';
       }
 
       sound.playFanfare();
+      // START 3-SECOND TIMER BEFORE MOB SPAWNING
+      showArenaCountdown();
     }
 
     function updateWaveSpawning(dt) {
       if (state.phase !== 'playing') return;
+
+      // 3-SECOND TIMER BEFORE MOB SPAWNING
+      if (state.spawnDelayCountdown > 0) {
+        state.spawnDelayCountdown -= dt;
+        updateCountdownOverlay(state.spawnDelayCountdown);
+        const cdDigit = Math.max(1, Math.ceil(state.spawnDelayCountdown));
+        document.getElementById('enemies-alive-text').textContent = `SPAWNING IN ${cdDigit}s...`;
+        return; // Hold mob spawning and wave time drain during 3s prep!
+      }
+
+      // Spawn boss once countdown ends if boss floor
+      const isBossFloor = (state.soloSubMode === 'dungeon' && state.currentWave % 10 === 0) || (state.soloSubMode !== 'dungeon' && state.currentWave % 5 === 0);
+      if (isBossFloor && !state.bossSpawnedThisWave) {
+        state.bossSpawnedThisWave = true;
+        spawnEnemy('boss');
+      }
 
       state.waveTimeRemaining -= dt;
       state.runTimer += dt;
@@ -9783,16 +9952,19 @@
         }
       }
 
-      const isBossFloor = (state.soloSubMode === 'dungeon' && state.currentWave % 10 === 0) || (state.soloSubMode !== 'dungeon' && state.currentWave % 5 === 0);
       if (state.waveTimeRemaining <= 0 || (isBossFloor && enemies.some(e => e.type === 'boss' && e.dead))) {
         completeWave();
       }
     }
 
     function completeWave() {
+      if (state.phase !== 'playing') return;
+      state.phase = 'wave_cleared';
       enemies.forEach(e => { if (!e.dead && e.type !== 'boss') e.die(); });
 
       if (state.soloSubMode === 'dungeon') {
+        state.phase = 'dungeon_clear';
+        state.waveTimeRemaining = 999;
         state.totalDungeonsCleared++;
         state.maxFloorReached = Math.max(state.maxFloorReached, state.dungeonFloor);
         const oldLvl = state.dungeonLevel;
@@ -10567,13 +10739,14 @@
       const btnReady = document.getElementById('btn-guest-ready');
       if (!btnStart) return;
 
-      btnStart.style.display = 'block'; // ALWAYS visible on both mobile and desktop!
       btnStart.classList.remove('ready-not-ready', 'ready-confirmed', 'launch-disabled');
 
       if (state.gameMode === 'solo') {
-        btnStart.textContent = 'ENTER ARENA';
+        btnStart.style.display = 'block'; // Single player uses the main Enter Arena button
+        btnStart.textContent = '⚔️ ENTER ARENA';
         btnStart.disabled = false;
       } else {
+        btnStart.style.display = 'none'; // In online co-op, hide bottom button to avoid duplicate launch/ready buttons!
         const isGuestTab = document.getElementById('btn-join-room-tab') && document.getElementById('btn-join-room-tab').classList.contains('active');
         if (isGuestTab) {
           const readyText = state.guestIsReady ? '🟢 SQUAD READY! (WAITING FOR HOST)' : '🔴 CLICK TO READY UP';
@@ -10583,10 +10756,6 @@
             if (state.guestIsReady) btnReady.classList.add('ready');
             else btnReady.classList.remove('ready');
           }
-          btnStart.textContent = readyText;
-          btnStart.disabled = false;
-          if (state.guestIsReady) btnStart.classList.add('ready-confirmed');
-          else btnStart.classList.add('ready-not-ready');
         } else {
           // Host view
           let allGuestsReady = true;
@@ -10606,10 +10775,6 @@
             if (canLaunch) btnLaunch.classList.add('all-ready');
             else btnLaunch.classList.remove('all-ready');
           }
-
-          btnStart.textContent = launchText;
-          btnStart.disabled = !canLaunch;
-          if (!canLaunch) btnStart.classList.add('launch-disabled');
         }
       }
     }
@@ -11521,95 +11686,28 @@
 
     function startMatchWithLoadingScreen(onComplete) {
       sound.init();
-      const loadingScreen = document.getElementById('lol-loading-screen');
       const startModal = document.getElementById('start-modal');
       const gameoverModal = document.getElementById('gameover-modal');
+      const loadingScreen = document.getElementById('lol-loading-screen');
 
       if (startModal) startModal.style.display = 'none';
       if (gameoverModal) gameoverModal.style.display = 'none';
+      if (loadingScreen) loadingScreen.style.display = 'none'; // Skip loading screen entirely
 
-      // Setup loading card data
-      const cls = state.activeClassData || { name: 'Spirit Samurai', icon: '🛡️' };
-      const champNameEl = document.getElementById('lol-card-champ-name');
-      if (champNameEl) champNameEl.textContent = cls.name.toUpperCase();
-      const userEl = document.getElementById('lol-card-username');
-      if (userEl) userEl.textContent = (state.username || 'COMMANDER').toUpperCase();
-      const avatarIconEl = document.getElementById('lol-card-avatar-icon');
-      if (avatarIconEl) avatarIconEl.textContent = cls.icon || '🛡️';
-
-      // Random tips
-      const tips = [
-        "Right-click ground to move like in League of Legends, or use WASD for hybrid mobility!",
-        "Insert 2 minerals into the Crucible during Refinery phase to synthesize Mythic Tier weapons.",
-        "Press R to unleash your Ultimate: Celestial Overcharge for massive damage and divine shield.",
-        "Watch the real-time radar minimap in the bottom-right corner to spot incoming void threats!",
-        "Stand close to downed teammates in Co-op mode to channel a rapid combat revive."
-      ];
-      const tipEl = document.getElementById('lol-tip-text');
-      if (tipEl) tipEl.textContent = `Pro Tip: ${tips[Math.floor(Math.random() * tips.length)]}`;
-
-      loadingScreen.style.display = 'flex';
-      const playerFill = document.getElementById('lol-card-player-fill');
-      const playerPct = document.getElementById('lol-card-player-pct');
-      const enemyFill = document.getElementById('lol-card-enemy-fill');
-      const enemyPct = document.getElementById('lol-card-enemy-pct');
-
-      playerFill.style.width = '0%';
-      enemyFill.style.width = '0%';
-      playerPct.textContent = '0%';
-      enemyPct.textContent = '0%';
-
-      let progress = 0;
-      let finished = false;
-
-      function finishLoading() {
-        if (finished) return;
-        finished = true;
-        playerFill.style.width = '100%';
-        enemyFill.style.width = '100%';
-        playerPct.textContent = '100%';
-        enemyPct.textContent = '100%';
-
-        sound.playPickup();
-        setTimeout(() => {
-          loadingScreen.style.display = 'none';
-          state.isExitPaused = false;
-          const lolTop = document.getElementById('lol-top-hud');
-          if (lolTop) lolTop.style.display = 'flex';
-          const lolBottom = document.getElementById('lol-bottom-console');
-          if (lolBottom) lolBottom.style.display = 'flex';
-          const lolMinimap = document.getElementById('lol-minimap-container');
-          if (lolMinimap) lolMinimap.style.display = 'block';
-          if (state.platform === 'mobile' || isMobileDevice() || window.innerWidth <= 950 || window.innerHeight <= 520) {
-            document.querySelectorAll('.mobile-controls').forEach(el => el.style.display = 'block');
-          }
-          if (onComplete) onComplete();
-          showLolBanner('WELCOME TO BROADROADS ARENA', 'MINIONS & THREATS HAVE SPAWNED');
-        }, 400);
+      // Immediately show HUD and enter game
+      state.isExitPaused = false;
+      const lolTop = document.getElementById('lol-top-hud');
+      if (lolTop) lolTop.style.display = 'flex';
+      const lolBottom = document.getElementById('lol-bottom-console');
+      if (lolBottom) lolBottom.style.display = 'flex';
+      const lolMinimap = document.getElementById('lol-minimap-container');
+      if (lolMinimap) lolMinimap.style.display = 'block';
+      if (state.platform === 'mobile' || isMobileDevice() || window.innerWidth <= 950 || window.innerHeight <= 520) {
+        document.querySelectorAll('.mobile-controls').forEach(el => el.style.display = 'block');
       }
 
-      const btnSkip = document.getElementById('btn-skip-loading');
-      if (btnSkip) {
-        btnSkip.onclick = () => finishLoading();
-      }
-
-      const interval = setInterval(() => {
-        if (finished) {
-          clearInterval(interval);
-          return;
-        }
-        progress += Math.floor(Math.random() * 20) + 15;
-        if (progress >= 100) {
-          progress = 100;
-          clearInterval(interval);
-          finishLoading();
-        }
-        playerFill.style.width = progress + '%';
-        playerPct.textContent = progress + '%';
-        const enemyProg = Math.max(0, progress - Math.floor(Math.random() * 8));
-        enemyFill.style.width = enemyProg + '%';
-        enemyPct.textContent = enemyProg + '%';
-      }, 180);
+      // Execute game reset callback — the 3-second countdown overlay is triggered inside startWave()
+      if (onComplete) onComplete();
     }
 
     initLolMinimap();
