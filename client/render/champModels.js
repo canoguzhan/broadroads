@@ -37,6 +37,7 @@ export function attachChampModel(view, gltf, height) {
   const box = new THREE.Box3().setFromObject(model);
   const s = height / Math.max(0.01, box.max.y - box.min.y);
   model.scale.setScalar(s);
+  model.rotation.y = -Math.PI / 2; // Tripo rigs face 90° off the procedural models' forward
   model.position.y = -box.min.y * s;
   model.traverse(o => {
     if (!o.isMesh) return;
