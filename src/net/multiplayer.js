@@ -48,8 +48,23 @@
         this.enemySyncInterval = null;
       }
 
+      initHostRoom() {
+        return this.initHost();
+      }
+
       initHost() {
         this.isHost = true;
+
+        // If existing peer is active and connected, reuse it
+        if (this.peer && !this.peer.destroyed && this.roomNumber) {
+          const roomEl = document.getElementById('room-code-text');
+          if (roomEl) roomEl.textContent = '#' + this.roomNumber;
+          const statusEl = document.getElementById('host-status-pill');
+          if (statusEl) statusEl.textContent = `🟢 Room #${this.roomNumber} Live (${this.connections.size + 1}/4 Players). Ready to deploy!`;
+          this.updateLobbyUI();
+          return;
+        }
+
         this.connections.clear();
         this.removeAllRemoteHeroes();
 
@@ -58,17 +73,26 @@
         this.roomNumber = roomNum;
         const peerId = 'broadroads-room-' + roomNum;
 
-        document.getElementById('room-code-text').textContent = '#' + roomNum;
-        document.getElementById('host-status-pill').textContent = '⏳ Registering room number...';
+        const roomEl = document.getElementById('room-code-text');
+        if (roomEl) roomEl.textContent = '#' + roomNum;
+        const statusEl = document.getElementById('host-status-pill');
+        if (statusEl) statusEl.textContent = '⏳ Registering room number...';
         this.updateLobbyUI();
 
         try {
-          if (this.peer) this.peer.destroy();
+          if (this.peer) {
+            try {
+              this.peer.removeAllListeners();
+              this.peer.destroy();
+            } catch(e) {}
+            this.peer = null;
+          }
           this.peer = new Peer(peerId, { debug: 1 });
 
           this.peer.on('open', (id) => {
             this.myId = id;
-            document.getElementById('host-status-pill').textContent = `🟢 Room #${roomNum} Live (1/4 Players). Ready to deploy!`;
+            const status = document.getElementById('host-status-pill');
+            if (status) status.textContent = `🟢 Room #${roomNum} Live (1/4 Players). Ready to deploy!`;
             this.updateLobbyUI();
           });
 
@@ -83,10 +107,29 @@
             this.setupConnection(conn);
           });
 
+          this.peer.on('disconnected', () => {
+            if (this.peer && !this.peer.destroyed) {
+              try { this.peer.reconnect(); } catch(e) {}
+            }
+          });
+
           this.peer.on('error', (err) => {
-            console.warn('Host Peer error:', err);
-            document.getElementById('host-status-pill').textContent = '⚠️ Re-generating room number...';
-            setTimeout(() => this.initHost(), 1200);
+            const errType = err ? (err.type || err.message) : '';
+            console.warn('Host Peer notification:', errType);
+            if (errType === 'unavailable-id') {
+              if (!this._retrying) {
+                this._retrying = true;
+                setTimeout(() => {
+                  this._retrying = false;
+                  this.roomNumber = '';
+                  this.initHost();
+                }, 1500);
+              }
+            } else if (errType === 'disconnected' || (typeof errType === 'string' && errType.includes('Lost connection'))) {
+              if (this.peer && !this.peer.destroyed && !this.peer.disconnected) {
+                try { this.peer.reconnect(); } catch(e) {}
+              }
+            }
           });
         } catch (e) {
           console.error(e);
@@ -100,16 +143,24 @@
 
         const cleanNum = roomNum.toString().replace(/[^0-9]/g, '');
         if (!cleanNum) {
-          document.getElementById('guest-status-pill').textContent = '⚠️ Please enter a room number';
+          const status = document.getElementById('guest-status-pill');
+          if (status) status.textContent = '⚠️ Please enter a room number';
           return;
         }
 
         this.roomNumber = cleanNum;
         const hostPeerId = 'broadroads-room-' + cleanNum;
-        document.getElementById('guest-status-pill').textContent = `🔄 Connecting to room #${cleanNum}...`;
+        const guestStatus = document.getElementById('guest-status-pill');
+        if (guestStatus) guestStatus.textContent = `🔄 Connecting to room #${cleanNum}...`;
 
         try {
-          if (this.peer) this.peer.destroy();
+          if (this.peer) {
+            try {
+              this.peer.removeAllListeners();
+              this.peer.destroy();
+            } catch(e) {}
+            this.peer = null;
+          }
           this.peer = new Peer({ debug: 1 });
 
           this.peer.on('open', (myId) => {
@@ -118,13 +169,37 @@
             this.setupConnection(conn);
           });
 
+          this.peer.on('disconnected', () => {
+            if (this.peer && !this.peer.destroyed) {
+              try { this.peer.reconnect(); } catch(e) {}
+            }
+          });
+
           this.peer.on('error', (err) => {
-            console.warn('Guest Peer error:', err);
-            document.getElementById('guest-status-pill').textContent = '❌ Failed to connect. Check room number.';
+            const errType = err ? (err.type || err.message) : '';
+            console.warn('Guest Peer notification:', errType);
+            const status = document.getElementById('guest-status-pill');
+            if (status) status.textContent = '❌ Failed to connect. Check room number.';
           });
         } catch (e) {
           console.error('Join error:', e);
         }
+      }
+
+      simulateAddGuest(username) {
+        if (this.connections.size >= 3) return;
+        const fakePeerId = 'sim_friend_' + username.toLowerCase().replace(/[^a-z0-9]/g, '_');
+        this.connections.set(fakePeerId, {
+          conn: { send: () => {} },
+          username: username,
+          heroClass: ['paladin', 'gunner', 'arcanist'][Math.floor(Math.random() * 3)],
+          classData: null,
+          hp: 140,
+          maxHp: 140,
+          isDowned: false,
+          isReady: true
+        });
+        this.updateLobbyUI();
       }
 
       setupConnection(conn) {

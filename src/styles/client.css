@@ -1,0 +1,889 @@
+/* ==========================================================================
+   BROADROADS - LEAGUE OF LEGENDS PHASED CLIENT & SOCIAL DESIGN SYSTEM
+   ========================================================================== */
+
+/* Top Header Profile & Locked Username (Non-Editable) */
+.lol-client-profile-capsule {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: rgba(9, 20, 40, 0.85);
+  border: 1px solid var(--lol-gold-3, #785a28);
+  border-radius: 20px;
+  padding: 4px 14px 4px 6px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+.lol-client-profile-capsule:hover {
+  border-color: var(--lol-gold-1, #f0e6d2);
+  background: rgba(200, 170, 110, 0.15);
+  box-shadow: 0 0 14px rgba(200, 170, 110, 0.35);
+}
+.client-name-display {
+  color: #f0e6d2;
+  font-family: var(--font-title, 'Cinzel', serif);
+  font-size: 13px;
+  font-weight: 800;
+  letter-spacing: 0.8px;
+  user-select: none;
+  max-width: 140px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* ==========================================================================
+   PHASE 1: GAME MODE SELECTION VIEW
+   ========================================================================== */
+.view-mode-select {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: space-between;
+  padding: 24px 36px 30px 36px;
+  overflow-y: auto;
+  animation: fadeInClient 0.25s ease-out;
+}
+.mode-select-header {
+  text-align: center;
+  margin-bottom: 20px;
+}
+.mode-select-title {
+  font-family: var(--font-title, 'Cinzel', serif);
+  font-size: 26px;
+  font-weight: 900;
+  letter-spacing: 4px;
+  color: #f0e6d2;
+  text-shadow: 0 0 20px rgba(200, 170, 110, 0.6);
+  margin: 0 0 6px 0;
+}
+.mode-select-subtitle {
+  font-size: 13px;
+  color: #c8aa6e;
+  letter-spacing: 1px;
+}
+
+/* 5 Game Mode Cards Grid */
+.mode-cards-grid {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 16px;
+  width: 100%;
+  max-width: 1350px;
+  margin: auto 0;
+}
+@media (max-width: 1100px) {
+  .mode-cards-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+@media (max-width: 768px) {
+  .mode-cards-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.mode-card-tile {
+  background: linear-gradient(180deg, rgba(9, 20, 40, 0.95) 0%, rgba(2, 10, 20, 0.98) 100%);
+  border: 2px solid #785a28;
+  border-radius: 8px;
+  padding: 22px 18px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  cursor: pointer;
+  transition: all 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+  position: relative;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.7);
+  min-height: 240px;
+}
+.mode-card-tile:hover {
+  transform: translateY(-4px);
+  border-color: #c8aa6e;
+  box-shadow: 0 12px 30px rgba(200, 170, 110, 0.25), 0 0 20px rgba(0, 240, 255, 0.2);
+}
+.mode-card-tile.selected {
+  border-color: #00f0ff;
+  background: linear-gradient(180deg, rgba(0, 40, 70, 0.95) 0%, rgba(4, 18, 36, 0.98) 100%);
+  box-shadow: 0 0 25px rgba(0, 240, 255, 0.5), inset 0 0 20px rgba(0, 240, 255, 0.15);
+}
+
+.mode-badge-tag {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  font-family: var(--font-mono, monospace);
+  font-size: 9px;
+  font-weight: 900;
+  padding: 3px 8px;
+  border-radius: 4px;
+  letter-spacing: 1px;
+}
+.badge-pvp { background: rgba(255, 0, 84, 0.2); border: 1px solid #ff0054; color: #ff3377; }
+.badge-coop { background: rgba(0, 240, 255, 0.2); border: 1px solid #00f0ff; color: #00f0ff; }
+.badge-dungeon { background: rgba(255, 183, 3, 0.2); border: 1px solid #ffb703; color: #ffb703; }
+.badge-solo { background: rgba(200, 170, 110, 0.2); border: 1px solid #c8aa6e; color: #f0e6d2; }
+
+.mode-card-icon {
+  font-size: 44px;
+  margin: 12px 0 14px 0;
+  filter: drop-shadow(0 0 12px rgba(255, 255, 255, 0.3));
+}
+.mode-card-title {
+  font-family: var(--font-title, 'Cinzel', serif);
+  font-size: 15px;
+  font-weight: 900;
+  letter-spacing: 1.5px;
+  color: #f0e6d2;
+  margin-bottom: 8px;
+}
+.mode-card-desc {
+  font-size: 11.5px;
+  color: #a09b8c;
+  line-height: 1.4;
+  margin-bottom: auto;
+}
+.mode-card-players {
+  margin-top: 12px;
+  font-size: 10.5px;
+  font-weight: 700;
+  color: #c8aa6e;
+  letter-spacing: 0.8px;
+}
+
+/* Mode Select Footer */
+.mode-select-footer {
+  width: 100%;
+  max-width: 1350px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: rgba(1, 10, 19, 0.95);
+  border: 1px solid #785a28;
+  border-radius: 8px;
+  padding: 16px 24px;
+  margin-top: 20px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.8);
+}
+.mode-summary-info {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.mode-summary-title {
+  font-family: var(--font-title, 'Cinzel', serif);
+  font-size: 16px;
+  font-weight: 900;
+  color: #00f0ff;
+  letter-spacing: 1.5px;
+}
+.mode-summary-text {
+  font-size: 12px;
+  color: #c8aa6e;
+}
+
+.btn-hextech-cta {
+  background: linear-gradient(135deg, #c8aa6e 0%, #785a28 100%);
+  border: 2px solid #f0e6d2;
+  color: #010a13;
+  font-family: var(--font-title, 'Cinzel', serif);
+  font-size: 14px;
+  font-weight: 900;
+  letter-spacing: 2px;
+  padding: 14px 32px;
+  border-radius: 4px;
+  cursor: pointer;
+  box-shadow: 0 0 20px rgba(200, 170, 110, 0.5);
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.btn-hextech-cta:hover {
+  transform: scale(1.03);
+  box-shadow: 0 0 30px rgba(200, 170, 110, 0.8);
+  filter: brightness(1.15);
+}
+
+/* ==========================================================================
+   PHASE 2: DEDICATED LOBBY VIEW
+   ========================================================================== */
+.view-lobby {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  padding: 18px 30px 24px 30px;
+  overflow-y: auto;
+  animation: fadeInClient 0.25s ease-out;
+}
+.lobby-top-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 16px;
+  width: 100%;
+}
+.btn-back-to-modes {
+  background: rgba(9, 20, 40, 0.8);
+  border: 1px solid #785a28;
+  color: #c8aa6e;
+  font-family: var(--font-title, 'Cinzel', serif);
+  font-size: 12px;
+  font-weight: 800;
+  padding: 8px 18px;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.btn-back-to-modes:hover {
+  border-color: #c8aa6e;
+  color: #f0e6d2;
+  background: rgba(200, 170, 110, 0.15);
+}
+.lobby-title-heading {
+  font-family: var(--font-title, 'Cinzel', serif);
+  font-size: 20px;
+  font-weight: 900;
+  color: #f0e6d2;
+  letter-spacing: 2px;
+}
+
+/* 5v5 PvP Lobby Boards */
+.pvp-lobby-container {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  width: 100%;
+  max-width: 1300px;
+  margin: 0 auto;
+}
+.pvp-controls-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: rgba(9, 20, 40, 0.85);
+  border: 1px solid #785a28;
+  border-radius: 6px;
+  padding: 10px 18px;
+}
+.pvp-team-switch-group {
+  display: flex;
+  gap: 8px;
+}
+.btn-team-switch {
+  font-family: var(--font-title, 'Cinzel', serif);
+  font-size: 12px;
+  font-weight: 900;
+  letter-spacing: 1px;
+  padding: 8px 16px;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.btn-switch-blue {
+  background: rgba(0, 136, 255, 0.15);
+  border: 1px solid #0088ff;
+  color: #00f0ff;
+}
+.btn-switch-blue.active, .btn-switch-blue:hover {
+  background: #0088ff;
+  color: #ffffff;
+  box-shadow: 0 0 15px rgba(0, 240, 255, 0.6);
+}
+.btn-switch-red {
+  background: rgba(255, 0, 84, 0.15);
+  border: 1px solid #ff0054;
+  color: #ff3377;
+}
+.btn-switch-red.active, .btn-switch-red:hover {
+  background: #ff0054;
+  color: #ffffff;
+  box-shadow: 0 0 15px rgba(255, 0, 84, 0.6);
+}
+
+.pvp-teams-split {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  gap: 20px;
+  align-items: stretch;
+}
+.pvp-team-column {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.pvp-team-header {
+  font-family: var(--font-title, 'Cinzel', serif);
+  font-size: 15px;
+  font-weight: 900;
+  letter-spacing: 2px;
+  padding: 8px 12px;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.team-blue-header { background: rgba(0, 136, 255, 0.2); border: 1px solid #0088ff; color: #00f0ff; }
+.team-red-header { background: rgba(255, 0, 84, 0.2); border: 1px solid #ff0054; color: #ff3377; }
+
+.pvp-slots-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.pvp-slot-card {
+  height: 52px;
+  background: rgba(1, 10, 19, 0.9);
+  border: 1px solid #785a28;
+  border-radius: 6px;
+  padding: 0 14px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  transition: all 0.15s;
+}
+.pvp-slot-card.filled.team-blue { border-left: 4px solid #00f0ff; }
+.pvp-slot-card.filled.team-red { border-left: 4px solid #ff0054; }
+.pvp-slot-card.empty { border-style: dashed; opacity: 0.65; }
+
+.pvp-slot-avatar { font-size: 20px; }
+.pvp-slot-info { display: flex; flex-direction: column; gap: 2px; flex: 1; }
+.pvp-slot-name { font-weight: 800; font-size: 13px; color: #f0e6d2; }
+.pvp-slot-class { font-size: 10px; color: #c8aa6e; letter-spacing: 0.5px; }
+.pvp-slot-badge { font-size: 10px; font-weight: 900; color: #00f5d4; }
+.btn-slot-invite {
+  background: none;
+  border: 1px solid #785a28;
+  color: #c8aa6e;
+  font-size: 11px;
+  padding: 4px 10px;
+  border-radius: 4px;
+  cursor: pointer;
+}
+.btn-slot-invite:hover { border-color: #c8aa6e; color: #f0e6d2; }
+
+.pvp-versus-crest {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 0 10px;
+}
+.crest-circle {
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  border: 2px solid #785a28;
+  background: #010a13;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--font-title, 'Cinzel', serif);
+  font-size: 18px;
+  font-weight: 900;
+  color: #ffb703;
+  box-shadow: 0 0 20px rgba(0, 0, 0, 0.8);
+}
+
+/* Solo & Co-Op Lobby Panels */
+.solo-lobby-card, .coop-lobby-card {
+  background: linear-gradient(180deg, rgba(9, 20, 40, 0.95) 0%, rgba(2, 10, 20, 0.98) 100%);
+  border: 2px solid #785a28;
+  border-radius: 8px;
+  padding: 24px;
+  max-width: 900px;
+  margin: 0 auto;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+/* ==========================================================================
+   PHASE 3: AUTHENTIC LoL CHAMPION SELECT VIEW
+   ========================================================================== */
+.view-champ-select {
+  width: 100%;
+  height: 100%;
+  display: grid;
+  grid-template-columns: 340px 1fr 280px;
+  gap: 20px;
+  padding: 20px 30px;
+  overflow-y: auto;
+  animation: fadeInClient 0.25s ease-out;
+}
+@media (max-width: 1100px) {
+  .view-champ-select {
+    grid-template-columns: 1fr;
+  }
+}
+
+.champ-select-col {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.champ-archetype-card {
+  background: rgba(9, 20, 40, 0.9);
+  border: 2px solid #785a28;
+  border-radius: 6px;
+  padding: 16px;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.champ-archetype-card:hover {
+  border-color: #c8aa6e;
+  transform: translateX(4px);
+}
+.champ-archetype-card.selected {
+  border-color: #00f0ff;
+  background: linear-gradient(90deg, rgba(0, 40, 70, 0.9) 0%, rgba(9, 20, 40, 0.9) 100%);
+  box-shadow: 0 0 15px rgba(0, 240, 255, 0.4);
+}
+
+.champ-showcase-center {
+  background: radial-gradient(circle at center, rgba(14, 30, 56, 0.8) 0%, rgba(1, 10, 19, 0.95) 85%);
+  border: 2px solid #785a28;
+  border-radius: 8px;
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  box-shadow: inset 0 0 30px rgba(0, 0, 0, 0.8);
+}
+.champ-ability-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 10px;
+  margin-top: 14px;
+}
+.champ-ability-box {
+  background: rgba(1, 10, 19, 0.85);
+  border: 1px solid #785a28;
+  border-radius: 6px;
+  padding: 10px;
+  text-align: center;
+}
+.champ-ability-key {
+  font-family: var(--font-mono, monospace);
+  font-size: 10px;
+  color: #ffb703;
+  font-weight: 900;
+}
+.champ-ability-name {
+  font-size: 12px;
+  font-weight: 800;
+  color: #f0e6d2;
+  margin-top: 4px;
+}
+
+.btn-lock-in {
+  background: linear-gradient(135deg, #c8aa6e 0%, #785a28 100%);
+  border: 2px solid #f0e6d2;
+  color: #010a13;
+  font-family: var(--font-title, 'Cinzel', serif);
+  font-size: 16px;
+  font-weight: 900;
+  letter-spacing: 3px;
+  padding: 18px 0;
+  width: 100%;
+  border-radius: 6px;
+  cursor: pointer;
+  box-shadow: 0 0 25px rgba(200, 170, 110, 0.6);
+  transition: all 0.2s;
+  text-align: center;
+}
+.btn-lock-in:hover {
+  filter: brightness(1.2);
+  transform: scale(1.02);
+}
+.btn-lock-in.locked {
+  background: #0ac8b9;
+  border-color: #00f0ff;
+  color: #ffffff;
+  cursor: default;
+}
+
+/* ==========================================================================
+   PROFILE MODAL
+   ========================================================================== */
+.profile-modal-card {
+  width: 90%;
+  max-width: 780px;
+  background: linear-gradient(180deg, #091428 0%, #010a13 100%);
+  border: 2px solid #c8aa6e;
+  border-radius: 10px;
+  padding: 28px;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.9), 0 0 25px rgba(200, 170, 110, 0.3);
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+.profile-header-banner {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  border-bottom: 1px solid rgba(200, 170, 110, 0.3);
+  padding-bottom: 18px;
+}
+.profile-avatar-circle {
+  width: 72px;
+  height: 72px;
+  border-radius: 50%;
+  border: 3px solid #00f0ff;
+  background: #010a13;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 32px;
+}
+.profile-name-title {
+  font-family: var(--font-title, 'Cinzel', serif);
+  font-size: 22px;
+  font-weight: 900;
+  color: #f0e6d2;
+  letter-spacing: 2px;
+}
+.profile-tier-crest {
+  font-size: 13px;
+  font-weight: 800;
+  color: #ffb703;
+  letter-spacing: 1px;
+}
+
+.profile-stats-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+}
+.profile-stat-box {
+  background: rgba(9, 20, 40, 0.85);
+  border: 1px solid #785a28;
+  border-radius: 6px;
+  padding: 12px;
+  text-align: center;
+}
+.profile-stat-val {
+  font-family: var(--font-mono, monospace);
+  font-size: 20px;
+  font-weight: 900;
+  color: #00f0ff;
+}
+.profile-stat-lbl {
+  font-size: 10.5px;
+  color: #c8aa6e;
+  letter-spacing: 0.5px;
+  margin-top: 4px;
+}
+
+/* ==========================================================================
+   FRIENDS SIDEBAR & PRIVATE MESSAGING DOCK
+   ========================================================================== */
+.friends-sidebar {
+  position: fixed;
+  top: 60px;
+  right: -340px;
+  width: 320px;
+  bottom: 0;
+  background: rgba(1, 10, 19, 0.97);
+  border-left: 2px solid #785a28;
+  display: flex;
+  flex-direction: column;
+  z-index: 600;
+  transition: right 0.28s cubic-bezier(0.16, 1, 0.3, 1);
+  box-shadow: -6px 0 25px rgba(0, 0, 0, 0.85);
+}
+.friends-sidebar.open {
+  right: 0;
+}
+.friends-sidebar-header {
+  padding: 14px 18px;
+  border-bottom: 1px solid #785a28;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.friends-sidebar-title {
+  font-family: var(--font-title, 'Cinzel', serif);
+  font-size: 14px;
+  font-weight: 900;
+  letter-spacing: 1.5px;
+  color: #f0e6d2;
+}
+.friends-add-input-group {
+  padding: 12px 16px;
+  display: flex;
+  gap: 6px;
+  border-bottom: 1px solid rgba(120, 90, 40, 0.3);
+}
+.friends-add-input {
+  flex: 1;
+  background: rgba(9, 20, 40, 0.9);
+  border: 1px solid #785a28;
+  border-radius: 4px;
+  padding: 6px 10px;
+  color: #f0e6d2;
+  font-size: 12px;
+  outline: none;
+}
+.friends-add-btn {
+  background: #785a28;
+  border: none;
+  color: #f0e6d2;
+  font-weight: 900;
+  padding: 0 12px;
+  border-radius: 4px;
+  cursor: pointer;
+}
+.friends-list-container {
+  flex: 1;
+  overflow-y: auto;
+  padding: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.friend-card {
+  background: rgba(9, 20, 40, 0.7);
+  border: 1px solid rgba(120, 90, 40, 0.3);
+  border-radius: 6px;
+  padding: 8px 12px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.friend-card:hover {
+  background: rgba(200, 170, 110, 0.12);
+  border-color: #c8aa6e;
+}
+.friend-card-left {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex: 1;
+}
+.friend-avatar { font-size: 20px; }
+.friend-info { display: flex; flex-direction: column; gap: 2px; }
+.friend-name-row { display: flex; align-items: center; gap: 6px; }
+.friend-name { font-weight: 800; font-size: 12px; color: #f0e6d2; }
+.friend-lvl { font-size: 9px; color: #ffb703; font-weight: 900; }
+.friend-status { font-size: 10px; }
+.status-online { color: #00f5d4; }
+.status-in_lobby { color: #ffb703; }
+.status-in_match { color: #ff0054; }
+.status-offline { color: #666666; }
+
+.friend-actions { display: flex; gap: 4px; }
+.btn-friend-action {
+  background: none;
+  border: 1px solid #785a28;
+  color: #c8aa6e;
+  padding: 4px 6px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 12px;
+}
+.btn-friend-action:hover { border-color: #c8aa6e; color: #f0e6d2; }
+
+/* Private Chat Dock Window */
+.private-chat-dock {
+  position: fixed;
+  bottom: 16px;
+  right: 340px;
+  width: 320px;
+  height: 380px;
+  background: rgba(1, 10, 19, 0.98);
+  border: 2px solid #785a28;
+  border-radius: 8px;
+  display: flex;
+  flex-direction: column;
+  z-index: 700;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.9);
+}
+@media (max-width: 768px) {
+  .private-chat-dock {
+    right: 16px;
+    width: 290px;
+    height: 320px;
+  }
+}
+.chat-dock-header {
+  padding: 10px 14px;
+  background: rgba(9, 20, 40, 0.9);
+  border-bottom: 1px solid #785a28;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.chat-dock-user {
+  font-family: var(--font-title, 'Cinzel', serif);
+  font-size: 12px;
+  font-weight: 900;
+  color: #00f0ff;
+  letter-spacing: 1px;
+}
+.chat-dock-messages {
+  flex: 1;
+  overflow-y: auto;
+  padding: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.chat-bubble {
+  max-width: 80%;
+  padding: 6px 10px;
+  border-radius: 6px;
+  font-size: 11.5px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.chat-me {
+  align-self: flex-end;
+  background: rgba(0, 136, 255, 0.35);
+  border: 1px solid #0088ff;
+  color: #f0e6d2;
+}
+.chat-friend {
+  align-self: flex-start;
+  background: rgba(9, 20, 40, 0.85);
+  border: 1px solid #785a28;
+  color: #f0e6d2;
+}
+.chat-bubble-time { font-size: 9px; opacity: 0.6; align-self: flex-end; }
+.chat-dock-footer {
+  padding: 8px;
+  border-top: 1px solid #785a28;
+  display: flex;
+  gap: 6px;
+}
+.chat-dock-input {
+  flex: 1;
+  background: rgba(9, 20, 40, 0.9);
+  border: 1px solid #785a28;
+  border-radius: 4px;
+  padding: 6px 10px;
+  color: #f0e6d2;
+  font-size: 12px;
+  outline: none;
+}
+.btn-chat-send {
+  background: #785a28;
+  border: none;
+  color: #f0e6d2;
+  padding: 0 12px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-weight: 900;
+}
+
+/* Match Invite Toasts */
+.invite-toast-container {
+  position: fixed;
+  top: 70px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  z-index: 1000;
+  pointer-events: none;
+}
+.hextech-toast {
+  pointer-events: auto;
+  background: rgba(1, 10, 19, 0.95);
+  border: 2px solid #ffb703;
+  border-radius: 8px;
+  padding: 12px 20px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.9), 0 0 20px rgba(255, 183, 3, 0.4);
+  color: #f0e6d2;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  animation: slideDownToast 0.25s ease-out;
+}
+.toast-invite.interactive {
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 6px;
+  min-width: 280px;
+}
+.btn-toast-accept {
+  background: #0ac8b9;
+  border: none;
+  color: #010a13;
+  font-weight: 900;
+  font-size: 11px;
+  padding: 6px 14px;
+  border-radius: 4px;
+  cursor: pointer;
+}
+.btn-toast-decline {
+  background: rgba(255, 0, 84, 0.2);
+  border: 1px solid #ff0054;
+  color: #ff3377;
+  font-weight: 900;
+  font-size: 11px;
+  padding: 6px 14px;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+/* ==========================================================================
+   PVP IN-GAME SCOREBOARD OVERLAY
+   ========================================================================== */
+.pvp-scoreboard-overlay {
+  position: fixed;
+  top: 14px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(1, 10, 19, 0.92);
+  border: 2px solid #785a28;
+  border-radius: 24px;
+  padding: 6px 24px;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.8), 0 0 15px rgba(200, 170, 110, 0.3);
+  z-index: 250;
+  pointer-events: none;
+}
+.pvp-score-team {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.pvp-score-team.blue-side { color: #00f0ff; }
+.pvp-score-team.red-side { color: #ff0054; }
+.pvp-team-badge { font-family: var(--font-title, 'Cinzel', serif); font-size: 12px; font-weight: 900; }
+.pvp-score-val { font-family: var(--font-mono, monospace); font-size: 22px; font-weight: 900; }
+.pvp-score-vs { font-family: var(--font-title, 'Cinzel', serif); font-size: 13px; color: #ffb703; font-weight: 900; }
+.pvp-target-pill {
+  font-size: 10px;
+  color: #c8aa6e;
+  background: rgba(200, 170, 110, 0.15);
+  border: 1px solid rgba(200, 170, 110, 0.4);
+  padding: 2px 8px;
+  border-radius: 10px;
+  font-weight: 800;
+}
+
+@keyframes fadeInClient {
+  from { opacity: 0; transform: scale(0.985); }
+  to { opacity: 1; transform: scale(1); }
+}
+@keyframes slideDownToast {
+  from { opacity: 0; transform: translateY(-15px); }
+  to { opacity: 1; transform: translateY(0); }
+}

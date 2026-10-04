@@ -19,6 +19,9 @@ import './net/multiplayer.js';
 import './net/poll.js';
 import './ui/controls.js';
 import './ui/hud.js';
+import './game/pvp.js';
+import './services/friends.js';
+import './ui/clientNav.js';
 
 
 /* ==========================================================================
@@ -40,6 +43,7 @@ import './ui/hud.js';
       updateKeyboardMovement();
       hero.update(dt);
       remoteHeroes.forEach(rh => rh.update(dt));
+      if (window.pvpEngine) window.pvpEngine.update(dt);
 
       // Camera Tracking (Follow squad center in multiplayer)
       let camTargetX = hero.position.x;
@@ -149,6 +153,17 @@ import './ui/hud.js';
               broadcastLocalEnemyHit(enemy, dmg, false, { x: wave.dir.x * 0.4, z: wave.dir.z * 0.4 });
             }
           });
+
+          // PvP bot hits from slash waves
+          if (state.gameMode === 'pvp' && window.pvpEngine && window.pvpEngine.botEntities) {
+            window.pvpEngine.botEntities.forEach(bot => {
+              if (!bot.dead && bot.team !== state.hero.team && bot.position.distanceTo(wave.mesh.position) < 2.2) {
+                const dmg = wave.damage * 0.7;
+                bot.takeDamage(dmg, false, state.username);
+                bot.position.addScaledVector(wave.dir, 0.4);
+              }
+            });
+          }
         }
 
         if (wave.lifetime <= 0) {
@@ -177,6 +192,20 @@ import './ui/hud.js';
                 proj.lifetime = 0;
               }
             });
+
+            // Hits PvP enemy bots
+            if (state.gameMode === 'pvp' && window.pvpEngine && window.pvpEngine.botEntities && proj.lifetime > 0) {
+              window.pvpEngine.botEntities.forEach(bot => {
+                if (!bot.dead && bot.team !== state.hero.team && bot.position.distanceTo(proj.mesh.position) < 1.5) {
+                  const isCrit = Math.random() < state.hero.critChance;
+                  let dmg = proj.damage;
+                  if (isCrit) dmg *= state.hero.critMult;
+                  bot.takeDamage(dmg, isCrit, state.username);
+                  spawnExplosion(proj.mesh.position, activeTheme.primaryHex);
+                  proj.lifetime = 0;
+                }
+              });
+            }
           }
         } else {
           // Hits local hero
@@ -284,3 +313,7 @@ import './ui/hud.js';
     }
 
     requestAnimationFrame(animate);
+
+    if (window.clientNav) {
+      window.clientNav.init();
+    }

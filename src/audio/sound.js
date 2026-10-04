@@ -259,6 +259,56 @@
           });
         } catch(e) {}
       }
+
+      playVictory() {
+        if (this.muted || !this.ctx) return;
+        try {
+          const now = this.ctx.currentTime;
+          const notes = [
+            { freq: 523.25, time: 0, dur: 0.22, vol: 0.3 },
+            { freq: 659.25, time: 0.18, dur: 0.22, vol: 0.32 },
+            { freq: 783.99, time: 0.36, dur: 0.28, vol: 0.35 },
+            { freq: 1046.5, time: 0.6, dur: 0.75, vol: 0.4 }
+          ];
+          notes.forEach(n => {
+            const osc = this.ctx.createOscillator();
+            const gain = this.ctx.createGain();
+            osc.type = 'triangle';
+            osc.frequency.setValueAtTime(n.freq, now + n.time);
+            gain.gain.setValueAtTime(n.vol, now + n.time);
+            gain.gain.exponentialRampToValueAtTime(0.001, now + n.time + n.dur);
+            osc.connect(gain);
+            gain.connect(this.ctx.destination);
+            osc.start(now + n.time);
+            osc.stop(now + n.time + n.dur + 0.05);
+          });
+        } catch(e) {}
+      }
+
+      playDefeat() {
+        if (this.muted || !this.ctx) return;
+        try {
+          const now = this.ctx.currentTime;
+          const notes = [
+            { freq: 311.13, time: 0, dur: 0.35, vol: 0.3 },
+            { freq: 261.63, time: 0.28, dur: 0.4, vol: 0.28 },
+            { freq: 196.0, time: 0.58, dur: 0.55, vol: 0.25 },
+            { freq: 130.81, time: 0.9, dur: 0.8, vol: 0.22 }
+          ];
+          notes.forEach(n => {
+            const osc = this.ctx.createOscillator();
+            const gain = this.ctx.createGain();
+            osc.type = 'sawtooth';
+            osc.frequency.setValueAtTime(n.freq, now + n.time);
+            gain.gain.setValueAtTime(n.vol, now + n.time);
+            gain.gain.exponentialRampToValueAtTime(0.001, now + n.time + n.dur);
+            osc.connect(gain);
+            gain.connect(this.ctx.destination);
+            osc.start(now + n.time);
+            osc.stop(now + n.time + n.dur + 0.05);
+          });
+        } catch(e) {}
+      }
     }
 
     const sound = new SoundEngine();

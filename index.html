@@ -842,15 +842,17 @@
       </div>
 
       <div class="lol-client-nav">
-        <button class="btn-client-tab active" id="btn-client-nav-play">⚔️ ARENA</button>
-        <button class="btn-client-tab" id="btn-client-nav-wiki">📜 GAME WIKI</button>
+        <button class="btn-client-tab active" id="btn-client-nav-play">⚔️ PLAY</button>
+        <button class="btn-client-tab" id="btn-client-nav-profile">👤 PROFILE</button>
+        <button class="btn-client-tab" id="btn-friends-dock-toggle">👥 FRIENDS (<span id="friends-online-count">3</span>)</button>
+        <button class="btn-client-tab" id="btn-client-nav-wiki">📜 CODEX</button>
       </div>
 
       <div style="display: flex; align-items: center; gap: 8px;">
         <button class="btn-client-tab btn-auth-pill" id="btn-lobby-auth" title="Account & Progress (NeonDB)">🔐 SIGN IN</button>
-        <div class="lol-client-profile-capsule">
+        <div class="lol-client-profile-capsule" id="header-profile-capsule" title="Click to view Summoner Profile">
           <div class="client-avatar-circle" id="client-avatar-badge">🛡️</div>
-          <input type="text" id="input-username" class="client-name-input" placeholder="Commander Name" maxlength="15" autocomplete="off" spellcheck="false">
+          <span class="client-name-display" id="client-username-display">COMMANDER</span>
           <div class="client-tier-badge" id="client-level-badge">LV. 1</div>
         </div>
         <button class="btn-client-tab" id="btn-lobby-home" title="Return to Landing Page">🏠 HOME</button>
@@ -859,103 +861,255 @@
 
     <div id="username-error-alert" class="username-error-alert" style="display: none; margin: 10px auto 0 auto; width: 90%; max-width: 600px;">⚠️ Commander username is required (min 2 characters)</div>
 
-    <!-- Main Client Stage -->
-    <div class="lol-client-body">
-      <!-- Left Stage: Champion Showcase & Roster -->
-      <div class="lol-stage-left">
-        <div class="champion-showcase-card">
+    <!-- PHASE 1: GAME MODE SELECTION VIEW -->
+    <div class="view-mode-select" id="view-mode-select">
+      <div class="mode-select-header">
+        <h2 class="mode-select-title">SELECT GAME MODE</h2>
+        <div class="mode-select-subtitle">CHOOSE YOUR COMBAT ARENA OBJECTIVE</div>
+      </div>
+
+      <div class="mode-cards-grid">
+        <!-- 1. 5v5 PvP Battleground -->
+        <div class="mode-card-tile selected" data-mode="pvp">
+          <span class="mode-badge-tag badge-pvp">NEW 5v5</span>
+          <div class="mode-card-icon">⚔️</div>
+          <div class="mode-card-title">5v5 PvP ARENA</div>
+          <div class="mode-card-desc">Red vs Blue tactical warfare on an expanded arena. Pick side, command bots or friends, fight to 15 kills!</div>
+          <div class="mode-card-players">👥 Up to 10 Combatants</div>
+        </div>
+
+        <!-- 2. Squad Co-op Survival -->
+        <div class="mode-card-tile" data-mode="coop">
+          <span class="mode-badge-tag badge-coop">CO-OP</span>
+          <div class="mode-card-icon">🌐</div>
+          <div class="mode-card-title">ONLINE CO-OP</div>
+          <div class="mode-card-desc">Team up via peer-to-peer room codes. Survive scaling waves & forge refinery masterworks together.</div>
+          <div class="mode-card-players">👥 1 - 4 Players</div>
+        </div>
+
+        <!-- 3. 1,000 Dungeons: The Crucible -->
+        <div class="mode-card-tile" data-mode="dungeon">
+          <span class="mode-badge-tag badge-dungeon">CAMPAIGN</span>
+          <div class="mode-card-icon">🏰</div>
+          <div class="mode-card-title">1,000 DUNGEONS</div>
+          <div class="mode-card-desc">Conquer 1,000 ascending floors. Level up to Lv. 100 with permanent stat augmentations every 10 floors.</div>
+          <div class="mode-card-players">👤 Solo Ascendant</div>
+        </div>
+
+        <!-- 4. Classic Survival -->
+        <div class="mode-card-tile" data-mode="classic">
+          <span class="mode-badge-tag badge-solo">SOLO</span>
+          <div class="mode-card-icon">🏆</div>
+          <div class="mode-card-title">CLASSIC SURVIVAL</div>
+          <div class="mode-card-desc">5 High-octane assault waves culminating in the Forge Overlord Ignis Rex boss showdown.</div>
+          <div class="mode-card-players">👤 Solo Combatant</div>
+        </div>
+
+        <!-- 5. Endless Horde -->
+        <div class="mode-card-tile" data-mode="endless">
+          <span class="mode-badge-tag badge-solo">ENDLESS</span>
+          <div class="mode-card-icon">♾️</div>
+          <div class="mode-card-title">ENDLESS HORDE</div>
+          <div class="mode-card-desc">Infinite scaling waves with recurring bosses. Test the absolute limits of your refinery gear loadout.</div>
+          <div class="mode-card-players">👤 Solo Survivor</div>
+        </div>
+      </div>
+
+      <div class="mode-select-footer">
+        <div class="mode-summary-info">
+          <div class="mode-summary-title" id="mode-select-summary-title">⚔️ 5v5 PvP BATTLEGROUND</div>
+          <div class="mode-summary-text" id="mode-select-summary-text">Tactical team warfare on an expanded arena. Blue Team vs Red Team with team bases, minimap & 15 kill objective.</div>
+        </div>
+        <button class="btn-hextech-cta" id="btn-confirm-game-mode">
+          <span>CONFIRM MODE & ENTER LOBBY</span>
+          <span>➔</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- PHASE 2: GAME LOBBY VIEW -->
+    <div class="view-lobby" id="view-lobby" style="display: none;">
+      <div class="lobby-top-bar">
+        <button class="btn-back-to-modes">⬅ CHANGE MODE</button>
+        <div class="lobby-title-heading" id="lobby-heading-title">TACTICAL MATCH LOBBY</div>
+        <div style="width: 120px;"></div>
+      </div>
+
+      <!-- PvP 5v5 Lobby Panel -->
+      <div class="pvp-lobby-container" id="lobby-pvp-panel">
+        <div class="pvp-controls-bar">
+          <div style="display: flex; align-items: center; gap: 12px;">
+            <span style="font-size: 12px; color: var(--text-muted); font-weight: 800;">SELECT YOUR FACTION:</span>
+            <div class="pvp-team-switch-group">
+              <button class="btn-team-switch btn-switch-blue active" id="btn-pvp-join-blue">🔵 JOIN BLUE TEAM</button>
+              <button class="btn-team-switch btn-switch-red" id="btn-pvp-join-red">🔴 JOIN RED TEAM</button>
+            </div>
+          </div>
+          <button class="btn-back-to-modes" id="btn-pvp-fill-bots" style="border-color: #00f0ff; color: #00f0ff;">🤖 AUTO-FILL AI BOTS</button>
+        </div>
+
+        <div class="pvp-teams-split">
+          <!-- Blue Team Side (Max 5) -->
+          <div class="pvp-team-column">
+            <div class="pvp-team-header team-blue-header">
+              <span>🔵 BLUE TEAM (DEFENDERS)</span>
+              <span style="font-size: 11px;">BASE: WEST (-27)</span>
+            </div>
+            <div class="pvp-slots-list" id="pvp-blue-slots">
+              <!-- Rendered dynamically -->
+            </div>
+          </div>
+
+          <div class="pvp-versus-crest">
+            <div class="crest-circle">VS</div>
+            <div style="font-size: 10px; color: var(--text-muted); margin-top: 8px; font-weight: 800;">FIRST TO 15</div>
+          </div>
+
+          <!-- Red Team Side (Max 5) -->
+          <div class="pvp-team-column">
+            <div class="pvp-team-header team-red-header">
+              <span>🔴 RED TEAM (INVADERS)</span>
+              <span style="font-size: 11px;">BASE: EAST (+27)</span>
+            </div>
+            <div class="pvp-slots-list" id="pvp-red-slots">
+              <!-- Rendered dynamically -->
+            </div>
+          </div>
+        </div>
+
+        <div style="display: flex; justify-content: flex-end; margin-top: 10px;">
+          <button class="btn-hextech-cta" id="btn-pvp-proceed-champ">
+            <span>PROCEED TO CHAMPION SELECT</span>
+            <span>➔</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Co-op Lobby Panel -->
+      <div class="coop-lobby-card" id="lobby-coop-panel" style="display: none;">
+        <div class="mp-actions-row">
+          <button class="btn-mp-sub active" id="btn-host-room">Create Room (Host)</button>
+          <button class="btn-mp-sub" id="btn-join-room-tab">Join Room (Guest)</button>
+        </div>
+
+        <!-- Host View -->
+        <div id="host-view">
+          <div style="font-size: 11px; color: var(--text-muted); margin-bottom: 4px;">SHARE ROOM NUMBER (UP TO 4 PLAYERS):</div>
+          <div class="room-code-box" id="display-room-code">
+            <span id="room-code-text">#......</span>
+            <button id="btn-copy-code" style="background: none; border: 1px solid var(--neon-cyan); color: var(--neon-cyan); border-radius: 6px; padding: 2px 8px; font-size: 11px; cursor: pointer;">COPY</button>
+          </div>
+          <div class="lobby-roster" id="host-lobby-roster"></div>
+          <div class="lobby-status-pill" id="host-status-pill" style="margin-top: 8px;">🟢 Room Live (1/4 Players). Ready to deploy!</div>
+        </div>
+
+        <!-- Join View -->
+        <div id="join-view" style="display: none;">
+          <div style="font-size: 11px; color: var(--text-muted); margin-bottom: 4px;">ENTER ROOM NUMBER:</div>
+          <div class="join-input-group">
+            <input type="tel" inputmode="numeric" class="join-input" id="input-room-code" placeholder="e.g. 748201" pattern="[0-9]*" style="letter-spacing: 4px; font-weight: 900;">
+            <button class="btn-mp-sub" id="btn-connect-peer" style="flex: 0 0 100px;">CONNECT</button>
+          </div>
+          <div class="lobby-roster" id="guest-lobby-roster" style="margin-top: 8px;"></div>
+          <div class="lobby-status-pill" id="guest-status-pill" style="margin-top: 8px;">Enter room number above and click Ready</div>
+          <button class="btn-lobby-action btn-ready-toggle" id="btn-guest-ready">🔴 CLICK TO READY UP</button>
+        </div>
+
+        <div style="display: flex; justify-content: flex-end; margin-top: 14px;">
+          <button class="btn-hextech-cta" id="btn-coop-proceed-champ">
+            <span>PROCEED TO CHAMPION SELECT</span>
+            <span>➔</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Solo Lobby Panel -->
+      <div class="solo-lobby-card" id="lobby-solo-panel" style="display: none;">
+        <div style="display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid #785a28; padding-bottom: 12px;">
+          <h3 style="font-family: var(--font-title); font-size: 18px; color: #f0e6d2; margin: 0;" id="solo-lobby-mode-name">🏆 CLASSIC SURVIVAL</h3>
+          <span style="font-size: 11px; color: #00f0ff; font-weight: 800;">SINGLE PLAYER ARENA</span>
+        </div>
+        <p style="font-size: 13px; color: var(--text-muted); line-height: 1.5; margin: 0;" id="solo-lobby-desc">
+          Survive 5 escalating assault waves culminating in the confrontation against Ignis Rex, the Anvil Overlord.
+        </p>
+
+        <div class="dungeon-badge-row" id="solo-lobby-dungeon-badges" style="display: none; margin-top: 6px;">
+          <span class="dungeon-pill-floor" id="solo-lobby-floor">FLOOR: 1 / 1000</span>
+          <span class="dungeon-pill-lvl" id="solo-lobby-level">LEVEL: 1 / 100</span>
+        </div>
+
+        <div style="display: flex; justify-content: flex-end; margin-top: 18px;">
+          <button class="btn-hextech-cta" id="btn-solo-proceed-champ">
+            <span>PROCEED TO CHAMPION SELECT</span>
+            <span>➔</span>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- PHASE 3: AUTHENTIC LoL CHAMPION SELECT VIEW -->
+    <div class="view-champ-select" id="view-champ-select" style="display: none;">
+      <!-- Left: Champion Roster -->
+      <div class="champ-select-col">
+        <button class="btn-back-to-modes" id="btn-back-to-lobby">⬅ BACK TO LOBBY</button>
+        <div class="class-selection-title">SEASON CHAMPIONS</div>
+        <div class="class-grid" id="class-selection-grid" style="display: flex; flex-direction: column; gap: 8px;">
+          <!-- Dynamically populated based on current theme -->
+        </div>
+      </div>
+
+      <!-- Center: Champion Focus Showcase & Lock-in -->
+      <div class="champ-showcase-center">
+        <div class="champion-showcase-card" style="background: none; border: none; padding: 0;">
           <div class="showcase-banner-top">
             <div class="showcase-avatar-pod" id="showcase-champ-avatar">🛡️</div>
             <div class="showcase-info-col">
-              <h3 id="showcase-champ-name">CRYPT REAPER</h3>
+              <h3 id="showcase-champ-name" style="font-size: 22px;">CRYPT REAPER</h3>
               <div class="showcase-role-pill" id="showcase-champ-role">MELEE VANGUARD / BRUISER</div>
             </div>
           </div>
-          <div class="showcase-desc-text" id="showcase-champ-desc">
+          <div class="showcase-desc-text" id="showcase-champ-desc" style="font-size: 13px; margin: 12px 0;">
             Heavy Bone Scythe & Tombstone Shield. Cursed sweeping harvests and high resistance to physical trauma.
           </div>
-          <div class="showcase-special-box">
+          <div class="showcase-special-box" style="margin-bottom: 14px;">
             <div class="showcase-special-lbl">SIGNATURE ULTIMATE</div>
             <div class="showcase-special-name" id="showcase-champ-special">Reaper Cataclysm • Radial soul rupture tearing the lifeforce of surrounding horrors.</div>
           </div>
         </div>
 
+        <!-- Ability Overview -->
         <div>
-          <div class="class-selection-title" id="class-selection-title">CHOOSE HERO CLASS & PLAYSTYLE</div>
-          <div class="class-grid" id="class-selection-grid">
-            <!-- Populated dynamically based on Season Theme -->
+          <div style="font-family: var(--font-title); font-size: 11px; color: #c8aa6e; letter-spacing: 1px; margin-bottom: 6px;">COMBAT ABILITIES OVERVIEW</div>
+          <div class="champ-ability-grid">
+            <div class="champ-ability-box">
+              <div class="champ-ability-key">[SPACE / CLICK]</div>
+              <div class="champ-ability-name">Primary Strike</div>
+            </div>
+            <div class="champ-ability-box">
+              <div class="champ-ability-key">[H / SHIFT]</div>
+              <div class="champ-ability-name">Dash Evasion</div>
+            </div>
+            <div class="champ-ability-box">
+              <div class="champ-ability-key">[J]</div>
+              <div class="champ-ability-name">Special Nova</div>
+            </div>
+            <div class="champ-ability-box">
+              <div class="champ-ability-key">[K]</div>
+              <div class="champ-ability-name">Overcharge Ult</div>
+            </div>
           </div>
         </div>
+
+        <button class="btn-lock-in" id="btn-lock-in-champion">
+          🔒 LOCK IN CHAMPION
+        </button>
       </div>
 
-      <!-- Right Stage: Match Finder & Squad Hub -->
-      <div class="lol-stage-right">
-        <div class="match-finder-card">
-          <!-- Mode Selector Tabs -->
-          <div class="mode-tabs">
-            <button class="tab-btn active" id="tab-solo">⚔️ SINGLE PLAYER</button>
-            <button class="tab-btn" id="tab-mp">🌐 ONLINE CO-OP (UP TO 4 PLAYERS)</button>
-          </div>
-
-          <!-- Single Player Sub-Modes -->
-          <div class="tab-content" id="solo-panel">
-            <div class="mode-sub-grid">
-              <div class="sub-mode-card selected" id="sub-mode-classic" data-sub="classic">
-                <div class="sub-mode-title">🏆 Classic Survival</div>
-                <div class="sub-mode-desc">Survive 5 intense waves culminating in the Forge Overlord boss showdown.</div>
-              </div>
-              <div class="sub-mode-card" id="sub-mode-endless" data-sub="endless">
-                <div class="sub-mode-title">♾️ Endless Horde</div>
-                <div class="sub-mode-desc">Infinite scaling waves with recurring bosses. Test your ultimate refinery build!</div>
-              </div>
-              <div class="sub-mode-card" id="sub-mode-dungeon" data-sub="dungeon">
-                <div class="sub-mode-title">🏰 1,000 Dungeons: The Crucible</div>
-                <div class="sub-mode-desc">Conquer 1,000 dungeon floors to unlock full potential! 10 Floors = +1 Level (Cap: Lv.100). Boss encounters every 10 floors.</div>
-                <div class="dungeon-badge-row">
-                  <span class="dungeon-pill-floor" id="dungeon-lobby-floor">FLOOR: 1 / 1000</span>
-                  <span class="dungeon-pill-lvl" id="dungeon-lobby-lvl">LEVEL: 1 / 100</span>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <!-- Multiplayer WebRTC Panel (Up to 4 Players) -->
-          <div class="tab-content" id="mp-panel" style="display: none;">
-            <div class="mp-panel">
-              <div class="mp-actions-row">
-                <button class="btn-mp-sub active" id="btn-host-room">Create Room (Host)</button>
-                <button class="btn-mp-sub" id="btn-join-room-tab">Join Room (Guest)</button>
-              </div>
-
-              <!-- Host View -->
-              <div id="host-view">
-                <div style="font-size: 11px; color: var(--text-muted); margin-bottom: 4px;">SHARE ROOM NUMBER (UP TO 4 PLAYERS):</div>
-                <div class="room-code-box" id="display-room-code">
-                  <span id="room-code-text">#......</span>
-                  <button id="btn-copy-code" style="background: none; border: 1px solid var(--neon-cyan); color: var(--neon-cyan); border-radius: 6px; padding: 2px 8px; font-size: 11px; cursor: pointer;">COPY</button>
-                </div>
-                <!-- 4-Player Roster Slots -->
-                <div class="lobby-roster" id="host-lobby-roster"></div>
-                <div class="lobby-status-pill" id="host-status-pill" style="margin-top: 8px;">🟢 Room Live (1/4 Players). Ready to deploy!</div>
-                <button class="btn-lobby-action btn-host-launch" id="btn-host-launch">🚀 LAUNCH SQUAD BATTLE</button>
-              </div>
-
-              <!-- Join View -->
-              <div id="join-view" style="display: none;">
-                <div style="font-size: 11px; color: var(--text-muted); margin-bottom: 4px;">ENTER ROOM NUMBER:</div>
-                <div class="join-input-group">
-                  <input type="tel" inputmode="numeric" class="join-input" id="input-room-code" placeholder="e.g. 748201" pattern="[0-9]*" style="letter-spacing: 4px; font-weight: 900;">
-                  <button class="btn-mp-sub" id="btn-connect-peer" style="flex: 0 0 100px;">CONNECT</button>
-                </div>
-                <!-- Guest Roster Slots -->
-                <div class="lobby-roster" id="guest-lobby-roster" style="margin-top: 8px;"></div>
-                <div class="lobby-status-pill" id="guest-status-pill" style="margin-top: 8px;">Enter room number above and click Ready</div>
-                <button class="btn-lobby-action btn-ready-toggle" id="btn-guest-ready">🔴 CLICK TO READY UP</button>
-              </div>
-            </div>
-          </div>
-
-          <button class="btn-launch-arena" id="btn-start-game">⚔️ ENTER ARENA</button>
+      <!-- Right: Team Roster Picks -->
+      <div class="champ-select-col">
+        <div style="font-family: var(--font-title); font-size: 13px; color: #00f0ff; letter-spacing: 1.5px; font-weight: 900;">TEAM ROSTER</div>
+        <div style="display: flex; flex-direction: column; gap: 8px;" id="champ-select-team-roster">
+          <!-- Filled with team members & lock-in badges -->
         </div>
       </div>
     </div>
@@ -1185,6 +1339,98 @@
       <button class="btn-ascension-claim" id="btn-ascension-close">🌟 CLAIM CELESTIAL TITLE & RETURN TO LOBBY</button>
     </div>
   </div>
+
+  <!-- SUMMONER PROFILE MODAL -->
+  <div class="modal-overlay" id="profile-modal" style="display: none;">
+    <div class="profile-modal-card">
+      <div class="profile-header-banner">
+        <div class="profile-avatar-circle" id="profile-display-avatar">🛡️</div>
+        <div style="display: flex; flex-direction: column; gap: 4px; flex: 1;">
+          <div class="profile-name-title" id="profile-display-name">COMMANDER</div>
+          <div class="profile-tier-crest" id="profile-display-rank">GOLD II</div>
+          <div style="font-size: 11px; color: var(--text-muted);" id="profile-display-lvl">LEVEL 1 / 100</div>
+        </div>
+        <button class="btn-close-wiki" id="btn-profile-close" title="Close Profile">✕</button>
+      </div>
+
+      <div class="profile-stats-grid">
+        <div class="profile-stat-box">
+          <div class="profile-stat-val" id="profile-stat-floor">1</div>
+          <div class="profile-stat-lbl">MAX DUNGEON FLOOR</div>
+        </div>
+        <div class="profile-stat-box">
+          <div class="profile-stat-val" id="profile-stat-dungeons">0</div>
+          <div class="profile-stat-lbl">DUNGEONS CONQUERED</div>
+        </div>
+        <div class="profile-stat-box">
+          <div class="profile-stat-val" id="profile-stat-pvp-wins">0</div>
+          <div class="profile-stat-lbl">5v5 PvP VICTORIES</div>
+        </div>
+        <div class="profile-stat-box">
+          <div class="profile-stat-val" id="profile-stat-pvp-kills">0</div>
+          <div class="profile-stat-lbl">PvP COMBAT KILLS</div>
+        </div>
+        <div class="profile-stat-box">
+          <div class="profile-stat-val" id="profile-stat-winrate">100%</div>
+          <div class="profile-stat-lbl">PvP WIN RATIO</div>
+        </div>
+        <div class="profile-stat-box">
+          <div class="profile-stat-val" id="profile-stat-refined">0</div>
+          <div class="profile-stat-lbl">GEAR SYNTHESIZED</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SUMMONER FRIENDS SIDEBAR -->
+  <aside class="friends-sidebar" id="friends-sidebar">
+    <div class="friends-sidebar-header">
+      <span class="friends-sidebar-title">👥 SUMMONER FRIENDS</span>
+      <button class="btn-close-wiki" id="btn-friends-close" style="font-size: 14px; padding: 2px 6px;">✕</button>
+    </div>
+    <div class="friends-add-input-group">
+      <input type="text" class="friends-add-input" id="input-add-friend" placeholder="Add friend by name..." maxlength="15">
+      <button class="friends-add-btn" id="btn-add-friend-submit">+ ADD</button>
+    </div>
+    <div class="friends-list-container" id="friends-list-container">
+      <!-- Populated by friendsManager -->
+    </div>
+  </aside>
+
+  <!-- PRIVATE CHAT DOCK (WHISPERS) -->
+  <div class="private-chat-dock" id="private-chat-dock" style="display: none;">
+    <div class="chat-dock-header">
+      <div style="display: flex; align-items: center; gap: 6px;">
+        <span>💬</span>
+        <span class="chat-dock-user" id="chat-dock-username">FRIEND</span>
+      </div>
+      <button class="btn-close-wiki" id="btn-chat-dock-close" style="font-size: 12px; padding: 2px 6px;">✕</button>
+    </div>
+    <div class="chat-dock-messages" id="chat-dock-messages">
+      <!-- Chat bubbles -->
+    </div>
+    <div class="chat-dock-footer">
+      <input type="text" class="chat-dock-input" id="chat-dock-input" placeholder="Type whisper..." maxlength="120">
+      <button class="btn-chat-send" id="btn-chat-dock-send">SEND</button>
+    </div>
+  </div>
+
+  <!-- IN-GAME 5v5 PvP SCOREBOARD OVERLAY -->
+  <div class="pvp-scoreboard-overlay" id="pvp-scoreboard-overlay" style="display: none;">
+    <div class="pvp-score-team blue-side">
+      <span class="pvp-team-badge">BLUE TEAM</span>
+      <span class="pvp-score-val" id="pvp-score-blue">0</span>
+    </div>
+    <div class="pvp-score-vs">VS</div>
+    <div class="pvp-score-team red-side">
+      <span class="pvp-score-val" id="pvp-score-red">0</span>
+      <span class="pvp-team-badge">RED TEAM</span>
+    </div>
+    <div class="pvp-target-pill">FIRST TO 15</div>
+  </div>
+
+  <!-- MATCH INVITE TOAST CONTAINER -->
+  <div class="invite-toast-container" id="invite-toast-container"></div>
 
   <!-- GAME ENGINE & MULTIPLAYER LOGIC -->
   <!-- Modular BROADROADS Game Engine Entrypoint -->

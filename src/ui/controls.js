@@ -385,74 +385,59 @@
       startMatchWithLoadingScreen(() => resetGame());
     }
 
-    // Username Requirement & Real-time Validation
-    const usernameInput = document.getElementById('input-username');
+    // Username Requirement & Fixed Summoner Identity (Locked - No Editing Allowed)
     const usernameAlert = document.getElementById('username-error-alert');
 
     function validateUsername() {
-      const val = (usernameInput ? usernameInput.value : '').trim();
-      if (val.length < 2) {
-        if (usernameAlert) {
-          usernameAlert.style.display = 'block';
-          usernameAlert.textContent = '⚠️ Commander username is required (min 2 characters)!';
-        }
-        if (usernameInput) usernameInput.focus();
-        return false;
+      if (!state.username || state.username.trim().length < 2) {
+        state.username = localStorage.getItem('broadroads_username') || ('Commander_' + Math.floor(100 + Math.random() * 900));
+        localStorage.setItem('broadroads_username', state.username);
       }
-      if (usernameAlert) usernameAlert.style.display = 'none';
-      state.username = val;
-      localStorage.setItem('broadroads_username', val);
-      const nameEl = document.getElementById('local-hero-name');
-      if (nameEl) nameEl.textContent = val.toUpperCase();
+      const nameEl = document.getElementById('client-username-display');
+      if (nameEl) nameEl.textContent = state.username.toUpperCase();
+      const localNameEl = document.getElementById('local-hero-name');
+      if (localNameEl) localNameEl.textContent = state.username.toUpperCase();
       if (hero && hero.nameplate) {
-        hero.nameplate.update(val, state.hero.hp / state.hero.maxHp, state.hero.isDowned, net.isHost);
+        hero.nameplate.update(state.username, state.hero.hp / state.hero.maxHp, state.hero.isDowned, net.isHost);
       }
       return true;
     }
 
-    if (usernameInput) {
-      usernameInput.value = state.username;
-      const nameEl = document.getElementById('local-hero-name');
-      if (nameEl) nameEl.textContent = state.username.toUpperCase();
+    validateUsername();
 
-      usernameInput.addEventListener('input', (e) => {
-        const val = e.target.value.trim().slice(0, 16);
-        state.username = val || 'Commander';
-        localStorage.setItem('broadroads_username', state.username);
-        const nameHeader = document.getElementById('local-hero-name');
-        if (nameHeader) nameHeader.textContent = state.username.toUpperCase();
-        if (val.length >= 2 && usernameAlert) {
-          usernameAlert.style.display = 'none';
-        }
-        if (hero && hero.nameplate) {
-          hero.nameplate.update(state.username, 1.0, false, net.isHost);
-        }
-        if (net.isHost) net.updateLobbyUI();
+    // Menu Mode & Class Selector Tabs (Safeguarded for Phased Client)
+    const tabSolo = document.getElementById('tab-solo');
+    if (tabSolo) {
+      tabSolo.addEventListener('click', () => {
+        sound.playPickup();
+        state.gameMode = 'solo';
+        tabSolo.classList.add('active');
+        const tabMp = document.getElementById('tab-mp');
+        if (tabMp) tabMp.classList.remove('active');
+        const soloPanel = document.getElementById('solo-panel');
+        if (soloPanel) soloPanel.style.display = 'flex';
+        const mpPanel = document.getElementById('mp-panel');
+        if (mpPanel) mpPanel.style.display = 'none';
+        updateStartModalButtons();
       });
     }
 
-    // Menu Mode & Class Selector Tabs
-    document.getElementById('tab-solo').addEventListener('click', () => {
-      sound.playPickup();
-      state.gameMode = 'solo';
-      document.getElementById('tab-solo').classList.add('active');
-      document.getElementById('tab-mp').classList.remove('active');
-      document.getElementById('solo-panel').style.display = 'flex';
-      document.getElementById('mp-panel').style.display = 'none';
-      updateStartModalButtons();
-    });
-
-    document.getElementById('tab-mp').addEventListener('click', () => {
-      if (!validateUsername()) return;
-      sound.playPickup();
-      state.gameMode = 'multiplayer';
-      document.getElementById('tab-mp').classList.add('active');
-      document.getElementById('tab-solo').classList.remove('active');
-      document.getElementById('solo-panel').style.display = 'none';
-      document.getElementById('mp-panel').style.display = 'flex';
-      if (!net.roomNumber) net.initHost();
-      updateStartModalButtons();
-    });
+    const tabMp = document.getElementById('tab-mp');
+    if (tabMp) {
+      tabMp.addEventListener('click', () => {
+        if (!validateUsername()) return;
+        sound.playPickup();
+        state.gameMode = 'multiplayer';
+        tabMp.classList.add('active');
+        if (tabSolo) tabSolo.classList.remove('active');
+        const soloPanel = document.getElementById('solo-panel');
+        if (soloPanel) soloPanel.style.display = 'none';
+        const mpPanel = document.getElementById('mp-panel');
+        if (mpPanel) mpPanel.style.display = 'flex';
+        if (!net.roomNumber) net.initHost();
+        updateStartModalButtons();
+      });
+    }
 
     // Sub-mode toggle
     document.querySelectorAll('.sub-mode-card').forEach(card => {

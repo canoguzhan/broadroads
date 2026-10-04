@@ -25,6 +25,7 @@ const authManager = {
     const levelBadge = document.getElementById('client-level-badge');
     const floorBadge = document.getElementById('dungeon-lobby-floor');
     const lvlBadge = document.getElementById('dungeon-lobby-lvl');
+    const nameDisplay = document.getElementById('client-username-display');
     const nameInput = document.getElementById('input-username');
 
     // Sanitize any corrupted cleared counts from previous loop bug
@@ -43,14 +44,15 @@ const authManager = {
     if (state.accountUser) {
       if (landingAuthBtn) landingAuthBtn.textContent = `👤 ${state.accountUser.username.toUpperCase()} (LV.${currentLvl})`;
       if (lobbyAuthBtn) lobbyAuthBtn.textContent = `🚪 LOGOUT (${state.accountUser.username.toUpperCase()})`;
-      if (nameInput) {
-        nameInput.value = state.accountUser.username;
-        state.username = state.accountUser.username;
-      }
+      state.username = state.accountUser.username;
+      if (nameInput) nameInput.value = state.accountUser.username;
+      if (nameDisplay) nameDisplay.textContent = state.accountUser.username.toUpperCase();
     } else {
       if (landingAuthBtn) landingAuthBtn.textContent = `👤 LOGIN / REGISTER`;
       if (lobbyAuthBtn) lobbyAuthBtn.textContent = `🔐 SIGN IN`;
+      if (nameDisplay) nameDisplay.textContent = state.username.toUpperCase();
     }
+    if (window.clientNav) window.clientNav.updateUserDisplay();
   },
 
   handleLocalAuthFallback(cleanUser, password, mode) {

@@ -51,6 +51,19 @@
     }
 
     function drawMinimap() {
+      const container = document.getElementById('lol-minimap-container');
+      // Rule 6: Hide minimap for single player and online co-op, ONLY show for PvP
+      if (state.gameMode !== 'pvp') {
+        if (container && container.style.display !== 'none') {
+          container.style.display = 'none';
+        }
+        return;
+      }
+
+      if (container && container.style.display !== 'block') {
+        container.style.display = 'block';
+      }
+
       const canvas = document.getElementById('lol-minimap-canvas');
       if (!canvas) return;
       const ctx = canvas.getContext('2d');
@@ -59,7 +72,8 @@
       const cx = w / 2;
       const cy = h / 2;
       const mapR = w * 0.42;
-      const scale = mapR / GAME_CONFIG.ARENA_RADIUS;
+      const arenaRadius = (window.GAME_CONFIG && window.GAME_CONFIG.ARENA_RADIUS) ? window.GAME_CONFIG.ARENA_RADIUS : 37.0;
+      const scale = mapR / arenaRadius;
 
       ctx.clearRect(0, 0, w, h);
 
@@ -82,57 +96,41 @@
       ctx.moveTo(cx - mapR, cy); ctx.lineTo(cx + mapR, cy);
       ctx.stroke();
 
-      // Central Crucible Anvil
-      ctx.fillStyle = '#ffb703';
+      // Blue Team Fountain Base (-27)
+      const blueBaseX = cx + (-27) * scale;
+      ctx.fillStyle = 'rgba(0, 136, 255, 0.35)';
       ctx.beginPath();
-      ctx.arc(cx, cy, 3.5, 0, Math.PI * 2);
+      ctx.arc(blueBaseX, cy, 6 * scale, 0, Math.PI * 2);
       ctx.fill();
+      ctx.strokeStyle = '#00f0ff';
+      ctx.lineWidth = 1.5;
+      ctx.stroke();
 
-      // Dropped Minerals
-      droppedMaterials.forEach(m => {
-        if (!m.mesh) return;
-        const mx = cx + m.mesh.position.x * scale;
-        const my = cy + m.mesh.position.z * scale;
-        ctx.fillStyle = '#00f5d4';
-        ctx.beginPath();
-        ctx.arc(mx, my, 2.5, 0, Math.PI * 2);
-        ctx.fill();
-      });
+      // Red Team Fountain Base (+27)
+      const redBaseX = cx + (27) * scale;
+      ctx.fillStyle = 'rgba(255, 0, 84, 0.35)';
+      ctx.beginPath();
+      ctx.arc(redBaseX, cy, 6 * scale, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.strokeStyle = '#ff0054';
+      ctx.lineWidth = 1.5;
+      ctx.stroke();
 
-      // Enemies
-      enemies.forEach(e => {
-        if (e.dead) return;
-        const ex = cx + e.position.x * scale;
-        const ey = cy + e.position.z * scale;
-        if (e.type === 'boss') {
-          ctx.fillStyle = '#ff0054';
+      // PvP AI Bots
+      if (window.pvpEngine && window.pvpEngine.botEntities) {
+        window.pvpEngine.botEntities.forEach(bot => {
+          if (bot.dead) return;
+          const bx = cx + bot.position.x * scale;
+          const by = cy + bot.position.z * scale;
+          ctx.fillStyle = bot.team === 'blue' ? '#00f0ff' : '#ff0054';
           ctx.beginPath();
-          ctx.arc(ex, ey, 6.5, 0, Math.PI * 2);
+          ctx.arc(bx, by, 3.5, 0, Math.PI * 2);
           ctx.fill();
-          ctx.strokeStyle = '#ffb703';
-          ctx.lineWidth = 1.5;
+          ctx.strokeStyle = '#ffffff';
+          ctx.lineWidth = 1;
           ctx.stroke();
-        } else {
-          ctx.fillStyle = '#ff0054';
-          ctx.beginPath();
-          ctx.arc(ex, ey, 3, 0, Math.PI * 2);
-          ctx.fill();
-        }
-      });
-
-      // Teammates
-      remoteHeroes.forEach(rh => {
-        if (!rh.group || !rh.group.visible) return;
-        const tx = cx + rh.position.x * scale;
-        const ty = cy + rh.position.z * scale;
-        ctx.fillStyle = '#00bbf9';
-        ctx.beginPath();
-        ctx.arc(tx, ty, 4.5, 0, Math.PI * 2);
-        ctx.fill();
-        ctx.strokeStyle = '#fff';
-        ctx.lineWidth = 1;
-        ctx.stroke();
-      });
+        });
+      }
 
       // Local Player
       if (hero && hero.position) {
@@ -141,20 +139,20 @@
         const rot = hero.targetRotation || hero.group.rotation.y || 0;
 
         // Vision Cone
-        ctx.fillStyle = 'rgba(46, 204, 113, 0.25)';
+        ctx.fillStyle = (state.hero.team === 'red') ? 'rgba(255, 0, 84, 0.25)' : 'rgba(0, 240, 255, 0.25)';
         ctx.beginPath();
         ctx.moveTo(px, py);
-        ctx.arc(px, py, 20, rot - Math.PI / 4, rot + Math.PI / 4);
+        ctx.arc(px, py, 22, rot - Math.PI / 4, rot + Math.PI / 4);
         ctx.closePath();
         ctx.fill();
 
         // Player Dot
-        ctx.fillStyle = '#2ecc71';
+        ctx.fillStyle = (state.hero.team === 'red') ? '#ff3377' : '#00f0ff';
         ctx.beginPath();
-        ctx.arc(px, py, 5, 0, Math.PI * 2);
+        ctx.arc(px, py, 5.5, 0, Math.PI * 2);
         ctx.fill();
-        ctx.strokeStyle = '#f0e6d2';
-        ctx.lineWidth = 1.5;
+        ctx.strokeStyle = '#ffffff';
+        ctx.lineWidth = 2;
         ctx.stroke();
       }
 
@@ -360,7 +358,7 @@
       const lolBottom = document.getElementById('lol-bottom-console');
       if (lolBottom) lolBottom.style.display = 'flex';
       const lolMinimap = document.getElementById('lol-minimap-container');
-      if (lolMinimap) lolMinimap.style.display = 'block';
+      if (lolMinimap) lolMinimap.style.display = (state.gameMode === 'pvp') ? 'block' : 'none';
       if (state.platform === 'mobile' || isMobileDevice() || window.innerWidth <= 950 || window.innerHeight <= 520) {
         document.querySelectorAll('.mobile-controls').forEach(el => el.style.display = 'block');
       }

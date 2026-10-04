@@ -68,6 +68,26 @@
             }
           }
         });
+
+        // PvP Mode Bot Combat Hit Check
+        if (state.gameMode === 'pvp' && window.pvpEngine && window.pvpEngine.botEntities) {
+          window.pvpEngine.botEntities.forEach(bot => {
+            if (bot.dead || bot.team === state.hero.team) return;
+            const toBot = new THREE.Vector3().subVectors(bot.position, hero.position);
+            toBot.y = 0;
+            const dist = toBot.length();
+            if (dist <= attackRange) {
+              toBot.normalize();
+              if (facingDir.dot(toBot) >= arcThreshold) {
+                hitAny = true;
+                const isCrit = Math.random() < state.hero.critChance;
+                let dmg = state.hero.attackDamage * (combo === 2 ? 1.6 : 1.0);
+                if (isCrit) dmg *= state.hero.critMult;
+                bot.takeDamage(dmg, isCrit, state.username);
+              }
+            }
+          });
+        }
         if (hitAny) sound.playHit();
 
       } else if (classType === 'ranged') {
@@ -134,6 +154,16 @@
             broadcastLocalEnemyHit(enemy, dmg, true, null);
           }
         });
+
+        // PvP Mode Nova hit
+        if (state.gameMode === 'pvp' && window.pvpEngine && window.pvpEngine.botEntities) {
+          window.pvpEngine.botEntities.forEach(bot => {
+            if (!bot.dead && bot.team !== state.hero.team && bot.position.distanceTo(hero.position) < 13.5) {
+              const dmg = state.hero.attackDamage * 3.8;
+              bot.takeDamage(dmg, true, state.username);
+            }
+          });
+        }
 
       } else if (classType === 'ranged') {
         sound.playNova();
