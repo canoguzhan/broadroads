@@ -100,12 +100,15 @@ The client (`client/audio/sfx.js`):
 ## 🧍 3D champion models (Tripo3D)
 
 `scripts/generate-champions.mjs` creates rigged, animated champions with the [Tripo3D](https://developers.tripo3d.ai) v3 API.
-For each champion it runs text-to-model, then rig-check, rig (biped), and one batch retarget with idle, run, attack, cast, hurt and fall animations.
-That costs about 125 credits per champion. The script saves its progress, so reruns resume without paying twice.
+For each champion it runs text-to-model, rig-check and rig (biped), then one retarget per clip: idle, run, attack, cast and death.
+That costs about 95 credits per champion. The script saves its progress, so reruns resume without paying twice.
+`scripts/build-models.mjs` then merges the clips into one ~1 MB GLB per champion in `public/models/`, with WebP textures and meshopt compression.
+In game, champions without a model keep their procedural look.
 
 ```bash
 TRIPO_API_KEY=your_key node scripts/generate-champions.mjs --dry-run   # show balance and cost
 TRIPO_API_KEY=your_key node scripts/generate-champions.mjs garrok      # one champion
+node scripts/build-models.mjs                                         # merge + compress into public/models
 ```
 
 API credits are bought in the Tripo platform console. They are separate from Tripo Studio subscriptions.
