@@ -449,39 +449,229 @@
       });
     });
 
-    // Multiplayer Host / Join sub-tabs
-    document.getElementById('btn-host-room').addEventListener('click', () => {
-      if (!validateUsername()) return;
-      sound.playPickup();
-      document.getElementById('btn-host-room').classList.add('active');
-      document.getElementById('btn-join-room-tab').classList.remove('active');
-      document.getElementById('host-view').style.display = 'block';
-      document.getElementById('join-view').style.display = 'none';
-      if (!net.roomNumber) net.initHost();
-      updateStartModalButtons();
-    });
+    // Co-op Multiplayer Host / Join sub-tabs
+    const btnHostRoom = document.getElementById('btn-host-room');
+    if (btnHostRoom) {
+      btnHostRoom.addEventListener('click', () => {
+        if (!validateUsername()) return;
+        sound.playPickup();
+        btnHostRoom.classList.add('active');
+        const joinTab = document.getElementById('btn-join-room-tab');
+        if (joinTab) joinTab.classList.remove('active');
+        const hostView = document.getElementById('host-view');
+        if (hostView) hostView.style.display = 'block';
+        const joinView = document.getElementById('join-view');
+        if (joinView) joinView.style.display = 'none';
+        if (!net.roomNumber) net.initHost('coop');
+        updateStartModalButtons();
+      });
+    }
 
-    document.getElementById('btn-join-room-tab').addEventListener('click', () => {
-      sound.playPickup();
-      document.getElementById('btn-join-room-tab').classList.add('active');
-      document.getElementById('btn-host-room').classList.remove('active');
-      document.getElementById('host-view').style.display = 'none';
-      document.getElementById('join-view').style.display = 'block';
-      updateStartModalButtons();
-    });
+    const btnJoinRoomTab = document.getElementById('btn-join-room-tab');
+    if (btnJoinRoomTab) {
+      btnJoinRoomTab.addEventListener('click', () => {
+        sound.playPickup();
+        btnJoinRoomTab.classList.add('active');
+        if (btnHostRoom) btnHostRoom.classList.remove('active');
+        const hostView = document.getElementById('host-view');
+        if (hostView) hostView.style.display = 'none';
+        const joinView = document.getElementById('join-view');
+        if (joinView) joinView.style.display = 'block';
+        updateStartModalButtons();
+      });
+    }
 
-    document.getElementById('btn-copy-code').addEventListener('click', () => {
-      const code = net.roomNumber;
-      if (code) {
-        if (navigator.clipboard && navigator.clipboard.writeText) {
+    const btnCopyCode = document.getElementById('btn-copy-code');
+    if (btnCopyCode) {
+      btnCopyCode.addEventListener('click', () => {
+        const code = net.roomNumber;
+        if (code) {
+          if (navigator.clipboard && navigator.clipboard.writeText) {
+            navigator.clipboard.writeText(code).catch(() => {});
+          }
+          btnCopyCode.textContent = 'COPIED!';
+          setTimeout(() => btnCopyCode.textContent = 'COPY', 1500);
+        }
+      });
+    }
+
+    // PvP Host / Join Sub-Tabs
+    const btnPvPHostTab = document.getElementById('btn-pvp-host-tab');
+    const btnPvPJoinTab = document.getElementById('btn-pvp-join-tab');
+    const pvpHostView = document.getElementById('pvp-host-code-view');
+    const pvpJoinView = document.getElementById('pvp-join-code-view');
+
+    if (btnPvPHostTab && btnPvPJoinTab) {
+      btnPvPHostTab.addEventListener('click', () => {
+        sound.playPickup();
+        btnPvPHostTab.classList.add('active');
+        btnPvPJoinTab.classList.remove('active');
+        if (pvpHostView) pvpHostView.style.display = 'block';
+        if (pvpJoinView) pvpJoinView.style.display = 'none';
+        if (!net.roomNumber) net.initHost('pvp');
+      });
+
+      btnPvPJoinTab.addEventListener('click', () => {
+        sound.playPickup();
+        btnPvPJoinTab.classList.add('active');
+        btnPvPHostTab.classList.remove('active');
+        if (pvpHostView) pvpHostView.style.display = 'none';
+        if (pvpJoinView) pvpJoinView.style.display = 'block';
+      });
+    }
+
+    // PvP Room Code Copy Button
+    const btnPvPCopyCode = document.getElementById('btn-pvp-copy-code');
+    if (btnPvPCopyCode) {
+      btnPvPCopyCode.addEventListener('click', () => {
+        sound.playPickup();
+        if (!net.roomNumber) net.initHost('pvp');
+        const code = net.roomNumber;
+        if (code && navigator.clipboard && navigator.clipboard.writeText) {
           navigator.clipboard.writeText(code).catch(() => {});
         }
-        document.getElementById('btn-copy-code').textContent = 'COPIED!';
-        setTimeout(() => document.getElementById('btn-copy-code').textContent = 'COPY', 1500);
-      }
-    });
+        btnPvPCopyCode.textContent = '✅ COPIED!';
+        btnPvPCopyCode.classList.add('copied');
+        setTimeout(() => {
+          btnPvPCopyCode.textContent = '📋 COPY CODE';
+          btnPvPCopyCode.classList.remove('copied');
+        }, 1500);
+      });
+    }
 
-    // Numeric Room Code Input (No 4-digit limit)
+    // PvP Direct Invite Link Copy Button
+    const btnPvPCopyLink = document.getElementById('btn-pvp-copy-link');
+    if (btnPvPCopyLink) {
+      btnPvPCopyLink.addEventListener('click', () => {
+        sound.playPickup();
+        if (!net.roomNumber) net.initHost('pvp');
+        const code = net.roomNumber;
+        const link = `${window.location.origin}${window.location.pathname}?mode=pvp&room=${code}`;
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+          navigator.clipboard.writeText(link).catch(() => {});
+        }
+        btnPvPCopyLink.textContent = '✅ LINK COPIED!';
+        btnPvPCopyLink.classList.add('copied');
+        setTimeout(() => {
+          btnPvPCopyLink.textContent = '🔗 COPY LINK';
+          btnPvPCopyLink.classList.remove('copied');
+        }, 1500);
+      });
+    }
+
+    // PvP Open Invite Modal Button
+    const btnOpenPvPInviteModal = document.getElementById('btn-pvp-open-invite-modal');
+    if (btnOpenPvPInviteModal) {
+      btnOpenPvPInviteModal.addEventListener('click', () => {
+        if (typeof window.openPvPInviteModal === 'function') {
+          window.openPvPInviteModal(state.pvp.playerTeam || 'blue', 0);
+        }
+      });
+    }
+
+    // PvP Modal Close Button
+    const btnClosePvPInviteModal = document.getElementById('btn-close-pvp-invite-modal');
+    const pvpInviteModal = document.getElementById('pvp-invite-code-modal');
+    if (btnClosePvPInviteModal && pvpInviteModal) {
+      btnClosePvPInviteModal.addEventListener('click', () => {
+        sound.playPickup();
+        pvpInviteModal.style.display = 'none';
+      });
+      pvpInviteModal.addEventListener('click', (e) => {
+        if (e.target === pvpInviteModal) {
+          pvpInviteModal.style.display = 'none';
+        }
+      });
+    }
+
+    // PvP Modal Copy Code & Copy Link Buttons
+    const btnPvPModalCopyCode = document.getElementById('btn-pvp-modal-copy-code');
+    if (btnPvPModalCopyCode) {
+      btnPvPModalCopyCode.addEventListener('click', () => {
+        sound.playPickup();
+        const code = net.roomNumber;
+        if (code && navigator.clipboard && navigator.clipboard.writeText) {
+          navigator.clipboard.writeText(code).catch(() => {});
+        }
+        btnPvPModalCopyCode.textContent = '✅ COPIED!';
+        setTimeout(() => btnPvPModalCopyCode.textContent = '📋 COPY CODE', 1500);
+      });
+    }
+
+    const btnPvPModalCopyLink = document.getElementById('btn-pvp-modal-copy-link');
+    if (btnPvPModalCopyLink) {
+      btnPvPModalCopyLink.addEventListener('click', () => {
+        sound.playPickup();
+        const code = net.roomNumber;
+        const link = `${window.location.origin}${window.location.pathname}?mode=pvp&room=${code}`;
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+          navigator.clipboard.writeText(link).catch(() => {});
+        }
+        btnPvPModalCopyLink.textContent = '✅ LINK COPIED!';
+        setTimeout(() => btnPvPModalCopyLink.textContent = '🔗 COPY INVITE LINK', 1500);
+      });
+    }
+
+    // PvP Quick Join Connect Button
+    const pvpInputRoomCode = document.getElementById('pvp-input-room-code');
+    if (pvpInputRoomCode) {
+      pvpInputRoomCode.addEventListener('input', () => {
+        pvpInputRoomCode.value = pvpInputRoomCode.value.replace(/[^0-9]/g, '');
+      });
+      pvpInputRoomCode.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') {
+          const btn = document.getElementById('btn-pvp-connect-peer');
+          if (btn) btn.click();
+        }
+      });
+    }
+
+    const btnPvPConnectPeer = document.getElementById('btn-pvp-connect-peer');
+    if (btnPvPConnectPeer) {
+      btnPvPConnectPeer.addEventListener('click', () => {
+        if (!validateUsername()) return;
+        const code = pvpInputRoomCode ? pvpInputRoomCode.value.trim() : '';
+        if (code.length >= 1) {
+          sound.init();
+          net.joinRoom(code);
+        } else {
+          const pill = document.getElementById('pvp-guest-status-pill');
+          if (pill) pill.textContent = '⚠️ Please enter a PvP room number (e.g. 748201)';
+        }
+      });
+    }
+
+    // PvP Modal Direct Join Button
+    const pvpModalInputCode = document.getElementById('pvp-modal-input-code');
+    if (pvpModalInputCode) {
+      pvpModalInputCode.addEventListener('input', () => {
+        pvpModalInputCode.value = pvpModalInputCode.value.replace(/[^0-9]/g, '');
+      });
+      pvpModalInputCode.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') {
+          const btn = document.getElementById('btn-pvp-modal-join-direct');
+          if (btn) btn.click();
+        }
+      });
+    }
+
+    const btnPvPModalJoinDirect = document.getElementById('btn-pvp-modal-join-direct');
+    if (btnPvPModalJoinDirect) {
+      btnPvPModalJoinDirect.addEventListener('click', () => {
+        if (!validateUsername()) return;
+        const code = pvpModalInputCode ? pvpModalInputCode.value.trim() : '';
+        if (code.length >= 1) {
+          sound.init();
+          net.joinRoom(code);
+          if (pvpInviteModal) pvpInviteModal.style.display = 'none';
+        } else {
+          const pill = document.getElementById('pvp-modal-status-pill');
+          if (pill) pill.textContent = '⚠️ Please enter a room number (e.g. 748201)';
+        }
+      });
+    }
+
+    // Numeric Room Code Input (Co-op)
     const roomInputEl = document.getElementById('input-room-code');
     if (roomInputEl) {
       roomInputEl.addEventListener('input', () => {
@@ -490,22 +680,27 @@
 
       roomInputEl.addEventListener('keydown', (e) => {
         if (e.key === 'Enter') {
-          document.getElementById('btn-connect-peer').click();
+          const btn = document.getElementById('btn-connect-peer');
+          if (btn) btn.click();
         }
       });
     }
 
-    document.getElementById('btn-connect-peer').addEventListener('click', () => {
-      if (!validateUsername()) return;
-      const code = roomInputEl ? roomInputEl.value.trim() : '';
-      if (code.length >= 1) {
-        sound.init();
-        net.joinRoom(code);
-      } else {
-        document.getElementById('guest-status-pill').textContent = '⚠️ Please enter a room number (e.g. 748201)';
-      }
-      updateStartModalButtons();
-    });
+    const btnConnectPeer = document.getElementById('btn-connect-peer');
+    if (btnConnectPeer) {
+      btnConnectPeer.addEventListener('click', () => {
+        if (!validateUsername()) return;
+        const code = roomInputEl ? roomInputEl.value.trim() : '';
+        if (code.length >= 1) {
+          sound.init();
+          net.joinRoom(code);
+        } else {
+          const pill = document.getElementById('guest-status-pill');
+          if (pill) pill.textContent = '⚠️ Please enter a room number (e.g. 748201)';
+        }
+        updateStartModalButtons();
+      });
+    }
 
     // Guest Ready Toggle Button
     const btnGuestReady = document.getElementById('btn-guest-ready');
@@ -519,17 +714,23 @@
       btnHostLaunch.addEventListener('click', handleHostLaunchClick);
     }
 
-    // Auto-fill from URL param ?room=123456
+    // Auto-fill and connect from URL param ?room=123456 or ?mode=pvp&room=123456
     const urlParams = new URLSearchParams(window.location.search);
     const roomParam = urlParams.get('room');
+    const modeParam = urlParams.get('mode') || 'pvp';
     if (roomParam) {
       const cleanParam = roomParam.replace(/[^0-9]/g, '');
       if (cleanParam.length >= 1) {
-        document.getElementById('tab-mp').click();
-        document.getElementById('btn-join-room-tab').click();
-        if (roomInputEl) roomInputEl.value = cleanParam;
+        if (window.clientNav) {
+          window.clientNav.selectMode(modeParam === 'coop' ? 'coop' : 'pvp');
+          window.clientNav.showLobby();
+        }
+        const targetInput = document.getElementById(modeParam === 'coop' ? 'input-room-code' : 'pvp-input-room-code');
+        if (targetInput) targetInput.value = cleanParam;
         setTimeout(() => {
-          if (validateUsername()) net.joinRoom(cleanParam);
+          if (validateUsername() && window.net) {
+            window.net.joinRoom(cleanParam);
+          }
         }, 500);
       }
     }

@@ -922,7 +922,7 @@
           <div class="mode-summary-text" id="mode-select-summary-text">Tactical team warfare on an expanded arena. Blue Team vs Red Team with team bases, minimap & 15 kill objective.</div>
         </div>
         <button class="btn-hextech-cta" id="btn-confirm-game-mode">
-          <span>CONFIRM MODE & SELECT CHAMPION</span>
+          <span>CONFIRM MODE & ENTER LOBBY</span>
           <span>➔</span>
         </button>
       </div>
@@ -938,6 +938,47 @@
 
       <!-- PvP 5v5 Lobby Panel -->
       <div class="pvp-lobby-container" id="lobby-pvp-panel">
+        <!-- 5v5 PvP Room & Match Invitation Code Hub -->
+        <div class="pvp-invite-hub-card">
+          <div class="mp-actions-row" style="margin-bottom: 8px;">
+            <button class="btn-mp-sub active" id="btn-pvp-host-tab">Host Arena (Share Code)</button>
+            <button class="btn-mp-sub" id="btn-pvp-join-tab">Join Arena (Enter Code)</button>
+          </div>
+
+          <!-- Host View: Share PvP Room Code -->
+          <div id="pvp-host-code-view">
+            <div class="pvp-invite-header-row">
+              <div style="font-size: 11px; color: var(--text-muted); font-weight: 700; letter-spacing: 1px;">
+                5v5 PVP MATCH INVITATION CODE (SHARE WITH COMBATANTS):
+              </div>
+              <div class="lobby-status-pill" id="pvp-host-status-pill">🟢 Live Room (1/10 Combatants)</div>
+            </div>
+            <div class="room-code-box pvp-room-code-box" id="pvp-display-room-code">
+              <div class="pvp-code-val-wrap">
+                <span class="pvp-code-icon">⚔️</span>
+                <span id="pvp-room-code-text" class="pvp-code-text">#......</span>
+              </div>
+              <div class="pvp-code-btns">
+                <button class="btn-code-copy" id="btn-pvp-copy-code" title="Copy Numeric Room Code">📋 COPY CODE</button>
+                <button class="btn-code-copy btn-code-link" id="btn-pvp-copy-link" title="Copy Direct Invite Link">🔗 COPY LINK</button>
+                <button class="btn-code-copy btn-code-invite-modal" id="btn-pvp-open-invite-modal" title="Open Interactive Invitation Dialog">📩 INVITE PLAYERS</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Join View: Enter PvP Room Code -->
+          <div id="pvp-join-code-view" style="display: none;">
+            <div style="font-size: 11px; color: var(--text-muted); margin-bottom: 6px; font-weight: 700; letter-spacing: 1px;">
+              ENTER 5v5 ARENA ROOM NUMBER:
+            </div>
+            <div class="join-input-group">
+              <input type="tel" inputmode="numeric" class="join-input" id="pvp-input-room-code" placeholder="e.g. 748201" pattern="[0-9]*" style="letter-spacing: 4px; font-weight: 900;">
+              <button class="btn-mp-sub" id="btn-pvp-connect-peer" style="flex: 0 0 120px;">CONNECT</button>
+            </div>
+            <div class="lobby-status-pill" id="pvp-guest-status-pill" style="margin-top: 8px;">Enter room number above and click Connect to join battleground</div>
+          </div>
+        </div>
+
         <div class="pvp-controls-bar">
           <div style="display: flex; align-items: center; gap: 12px;">
             <span style="font-size: 12px; color: var(--text-muted); font-weight: 800;">SELECT YOUR FACTION:</span>
@@ -1428,6 +1469,52 @@
       <span class="pvp-team-badge">RED TEAM</span>
     </div>
     <div class="pvp-target-pill">FIRST TO 15</div>
+  </div>
+
+  <!-- DEDICATED 5v5 PVP ARENA INVITATION CODE MODAL -->
+  <div class="modal-overlay" id="pvp-invite-code-modal" style="display: none;">
+    <div class="hextech-modal-card pvp-invite-dialog">
+      <div class="hextech-modal-header">
+        <div class="hextech-modal-title">⚔️ 5v5 PVP ARENA INVITATION</div>
+        <button class="btn-close-wiki" id="btn-close-pvp-invite-modal" title="Close">✕</button>
+      </div>
+
+      <div class="pvp-invite-modal-body">
+        <div class="pvp-invite-subtitle">INVITE SQUADMATES OR OPPONENTS TO YOUR BATTLEGROUND</div>
+
+        <!-- Room Code Display Card -->
+        <div class="pvp-modal-code-banner">
+          <div class="pvp-modal-code-tag">ACTIVE MATCH ROOM NUMBER</div>
+          <div class="pvp-modal-code-number" id="pvp-modal-room-code">#......</div>
+          <div class="pvp-modal-actions-row">
+            <button class="btn-hextech-sub" id="btn-pvp-modal-copy-code">📋 COPY CODE</button>
+            <button class="btn-hextech-sub" id="btn-pvp-modal-copy-link">🔗 COPY INVITE LINK</button>
+          </div>
+        </div>
+
+        <div class="pvp-modal-section-title">
+          <span>👥 INVITE ONLINE ALLIES</span>
+          <span class="pvp-modal-target-team" id="pvp-modal-target-team-badge">TARGET: 🔵 BLUE TEAM</span>
+        </div>
+
+        <!-- Online Friends List for Instant Team Invitation -->
+        <div class="pvp-modal-friends-list" id="pvp-modal-friends-list">
+          <!-- Populated dynamically -->
+        </div>
+
+        <!-- Direct Join Code Input -->
+        <div class="pvp-modal-join-fallback">
+          <div style="font-size: 11px; color: var(--text-muted); margin-bottom: 6px; font-weight: 700;">
+            JOIN ANOTHER COMMANDER'S ARENA:
+          </div>
+          <div class="join-input-group">
+            <input type="tel" inputmode="numeric" class="join-input" id="pvp-modal-input-code" placeholder="e.g. 748201" pattern="[0-9]*" style="letter-spacing: 4px; font-weight: 900;">
+            <button class="btn-mp-sub" id="btn-pvp-modal-join-direct" style="flex: 0 0 120px;">CONNECT</button>
+          </div>
+          <div class="lobby-status-pill" id="pvp-modal-status-pill" style="margin-top: 6px; font-size: 11px;">Share code with your squad or enter host code above</div>
+        </div>
+      </div>
+    </div>
   </div>
 
   <!-- MATCH INVITE TOAST CONTAINER -->

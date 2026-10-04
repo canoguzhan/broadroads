@@ -48,19 +48,40 @@
         this.enemySyncInterval = null;
       }
 
-      initHostRoom() {
-        return this.initHost();
+      initHostRoom(mode = 'coop') {
+        this.gameMode = mode;
+        return this.initHost(mode);
       }
 
-      initHost() {
+      initHost(mode = 'coop') {
         this.isHost = true;
+        this.gameMode = mode || (state.gameMode === 'pvp' ? 'pvp' : 'coop');
+
+        const updateElements = (code, live = false) => {
+          const roomEl = document.getElementById('room-code-text');
+          if (roomEl) roomEl.textContent = '#' + code;
+          const pvpRoomEl = document.getElementById('pvp-room-code-text');
+          if (pvpRoomEl) pvpRoomEl.textContent = '#' + code;
+          const pvpModalRoomEl = document.getElementById('pvp-modal-room-code');
+          if (pvpModalRoomEl) pvpModalRoomEl.textContent = '#' + code;
+
+          const coopStatusEl = document.getElementById('host-status-pill');
+          if (coopStatusEl) {
+            coopStatusEl.textContent = live 
+              ? `🟢 Room #${code} Live (${this.connections.size + 1}/4 Players). Ready to deploy!`
+              : '⏳ Registering room number...';
+          }
+          const pvpStatusEl = document.getElementById('pvp-host-status-pill');
+          if (pvpStatusEl) {
+            pvpStatusEl.textContent = live
+              ? `🟢 Live Room #${code} (${this.connections.size + 1}/10 Combatants). Ready!`
+              : '⏳ Registering PvP arena room...';
+          }
+        };
 
         // If existing peer is active and connected, reuse it
         if (this.peer && !this.peer.destroyed && this.roomNumber) {
-          const roomEl = document.getElementById('room-code-text');
-          if (roomEl) roomEl.textContent = '#' + this.roomNumber;
-          const statusEl = document.getElementById('host-status-pill');
-          if (statusEl) statusEl.textContent = `🟢 Room #${this.roomNumber} Live (${this.connections.size + 1}/4 Players). Ready to deploy!`;
+          updateElements(this.roomNumber, true);
           this.updateLobbyUI();
           return;
         }
@@ -73,10 +94,7 @@
         this.roomNumber = roomNum;
         const peerId = 'broadroads-room-' + roomNum;
 
-        const roomEl = document.getElementById('room-code-text');
-        if (roomEl) roomEl.textContent = '#' + roomNum;
-        const statusEl = document.getElementById('host-status-pill');
-        if (statusEl) statusEl.textContent = '⏳ Registering room number...';
+        updateElements(roomNum, false);
         this.updateLobbyUI();
 
         try {
@@ -91,15 +109,15 @@
 
           this.peer.on('open', (id) => {
             this.myId = id;
-            const status = document.getElementById('host-status-pill');
-            if (status) status.textContent = `🟢 Room #${roomNum} Live (1/4 Players). Ready to deploy!`;
+            updateElements(roomNum, true);
             this.updateLobbyUI();
           });
 
           this.peer.on('connection', (conn) => {
-            if (this.connections.size >= 3) {
+            const maxConnections = (this.gameMode === 'pvp' || state.gameMode === 'pvp') ? 9 : 3;
+            if (this.connections.size >= maxConnections) {
               conn.on('open', () => {
-                conn.send({ type: 'LOBBY_FULL', message: 'Room is full (maximum 4 players).' });
+                conn.send({ type: 'LOBBY_FULL', message: `Room is full (maximum ${maxConnections + 1} players).` });
                 setTimeout(() => conn.close(), 600);
               });
               return;
@@ -145,6 +163,10 @@
         if (!cleanNum) {
           const status = document.getElementById('guest-status-pill');
           if (status) status.textContent = '⚠️ Please enter a room number';
+          const pvpStatus = document.getElementById('pvp-guest-status-pill');
+          if (pvpStatus) pvpStatus.textContent = '⚠️ Please enter a room number';
+          const pvpModalStatus = document.getElementById('pvp-modal-status-pill');
+          if (pvpModalStatus) pvpModalStatus.textContent = '⚠️ Please enter a room number';
           return;
         }
 
@@ -152,6 +174,10 @@
         const hostPeerId = 'broadroads-room-' + cleanNum;
         const guestStatus = document.getElementById('guest-status-pill');
         if (guestStatus) guestStatus.textContent = `🔄 Connecting to room #${cleanNum}...`;
+        const pvpStatus = document.getElementById('pvp-guest-status-pill');
+        if (pvpStatus) pvpStatus.textContent = `🔄 Connecting to arena #${cleanNum}...`;
+        const pvpModalStatus = document.getElementById('pvp-modal-status-pill');
+        if (pvpModalStatus) pvpModalStatus.textContent = `🔄 Connecting to arena #${cleanNum}...`;
 
         try {
           if (this.peer) {
@@ -180,6 +206,10 @@
             console.warn('Guest Peer notification:', errType);
             const status = document.getElementById('guest-status-pill');
             if (status) status.textContent = '❌ Failed to connect. Check room number.';
+            const pvpStatus = document.getElementById('pvp-guest-status-pill');
+            if (pvpStatus) pvpStatus.textContent = '❌ Failed to connect. Check room number.';
+            const pvpModalStatus = document.getElementById('pvp-modal-status-pill');
+            if (pvpModalStatus) pvpModalStatus.textContent = '❌ Failed to connect. Check room number.';
           });
         } catch (e) {
           console.error('Join error:', e);
@@ -223,8 +253,21 @@
               month: state.currentMonth,
               hostUsername: state.username,
               hostClass: state.heroClass,
-              hostClassData: state.activeClassData
+              hostClassData: state.activeClassData,
+              gameMode: state.gameMode,
+              roomNumber: this.roomNumber
             });
+
+            if (state.gameMode === 'pvp' && window.pvpEngine) {
+              const assignedTeam = (window.pvpEngine.redTeam.length <= window.pvpEngine.blueTeam.length) ? 'red' : 'blue';
+              conn.send({
+                type: 'PVP_INIT_SYNC',
+                roomNumber: this.roomNumber,
+                assignedTeam: assignedTeam,
+                blueTeam: window.pvpEngine.blueTeam,
+                redTeam: window.pvpEngine.redTeam
+              });
+            }
 
             this.updateLobbyUI();
             this.startSync();
@@ -237,10 +280,18 @@
               classData: state.activeClassData
             });
 
-            document.getElementById('guest-status-pill').textContent = state.guestIsReady 
-              ? '✅ Connected & Ready! Waiting for host to launch...' 
-              : '✅ Connected to squad! Click Ready below.';
-            document.getElementById('guest-lobby-roster').style.display = 'flex';
+            const guestPill = document.getElementById('guest-status-pill');
+            if (guestPill) {
+              guestPill.textContent = state.guestIsReady 
+                ? '✅ Connected & Ready! Waiting for host to launch...' 
+                : '✅ Connected to squad! Click Ready below.';
+            }
+            const pvpGuestPill = document.getElementById('pvp-guest-status-pill');
+            if (pvpGuestPill) {
+              pvpGuestPill.textContent = '✅ Connected to PvP Battleground! Ready to fight!';
+            }
+            const guestRoster = document.getElementById('guest-lobby-roster');
+            if (guestRoster) guestRoster.style.display = 'flex';
             const guestReadyBtn = document.getElementById('btn-guest-ready');
             if (guestReadyBtn) {
               guestReadyBtn.style.display = 'block';
@@ -410,6 +461,15 @@
               guest.classData = packet.classData;
               guest.isReady = false;
             }
+            if (state.gameMode === 'pvp' && window.pvpEngine) {
+              const guestTeam = packet.team || ((window.pvpEngine.redTeam.length <= window.pvpEngine.blueTeam.length) ? 'red' : 'blue');
+              window.pvpEngine.addPlayerToTeam(packet.username || 'Commander', guestTeam);
+              this.broadcast({
+                type: 'PVP_LOBBY_SYNC',
+                blueTeam: window.pvpEngine.blueTeam,
+                redTeam: window.pvpEngine.redTeam
+              });
+            }
             this.updateLobbyUI();
 
             // Broadcast complete roster to all guests
@@ -419,6 +479,38 @@
               month: state.currentMonth
             });
           }
+          return;
+        }
+
+        if (packet.type === 'PVP_INIT_SYNC') {
+          if (window.clientNav) {
+            window.clientNav.selectMode('pvp');
+            window.clientNav.showLobby();
+          }
+          if (window.pvpEngine) {
+            state.pvp.playerTeam = packet.assignedTeam || 'red';
+            state.hero.team = state.pvp.playerTeam;
+            if (packet.blueTeam) window.pvpEngine.blueTeam = packet.blueTeam;
+            if (packet.redTeam) window.pvpEngine.redTeam = packet.redTeam;
+            window.pvpEngine.renderPvPLobbyUI();
+          }
+          const pvpGuestStatus = document.getElementById('pvp-guest-status-pill');
+          if (pvpGuestStatus) pvpGuestStatus.textContent = `🟢 Connected to PvP Battleground (#${packet.roomNumber || this.roomNumber})! Team: ${state.pvp.playerTeam.toUpperCase()}`;
+          const pvpModalStatus = document.getElementById('pvp-modal-status-pill');
+          if (pvpModalStatus) pvpModalStatus.textContent = `🟢 Connected to PvP Battleground (#${packet.roomNumber || this.roomNumber})!`;
+          return;
+        }
+
+        if (packet.type === 'PVP_LOBBY_SYNC') {
+          if (window.pvpEngine) {
+            if (packet.blueTeam) window.pvpEngine.blueTeam = packet.blueTeam;
+            if (packet.redTeam) window.pvpEngine.redTeam = packet.redTeam;
+            window.pvpEngine.renderPvPLobbyUI();
+          }
+          const pvpGuestStatus = document.getElementById('pvp-guest-status-pill');
+          if (pvpGuestStatus) pvpGuestStatus.textContent = `🟢 Connected to PvP Battleground (#${this.roomNumber})!`;
+          const pvpModalStatus = document.getElementById('pvp-modal-status-pill');
+          if (pvpModalStatus) pvpModalStatus.textContent = `🟢 Connected to PvP Battleground (#${this.roomNumber})!`;
           return;
         }
 
@@ -680,6 +772,16 @@
         if (pill) {
           pill.textContent = `🟢 Room #${this.roomNumber} Live (${roster.length}/4 Players).`;
         }
+
+        const pvpPill = document.getElementById('pvp-host-status-pill');
+        if (pvpPill) {
+          const totalCombatants = this.connections.size + 1;
+          pvpPill.textContent = `🟢 Live Room #${this.roomNumber} (${totalCombatants}/10 Combatants). Ready!`;
+        }
+        const pvpRoomEl = document.getElementById('pvp-room-code-text');
+        if (pvpRoomEl && this.roomNumber) pvpRoomEl.textContent = '#' + this.roomNumber;
+        const pvpModalRoomEl = document.getElementById('pvp-modal-room-code');
+        if (pvpModalRoomEl && this.roomNumber) pvpModalRoomEl.textContent = '#' + this.roomNumber;
 
         // Host launch button state: only allow host to start, and only once everyone is ready
         let allGuestsReady = true;

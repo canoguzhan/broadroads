@@ -1101,3 +1101,220 @@
   from { opacity: 0; transform: translateY(-15px); }
   to { opacity: 1; transform: translateY(0); }
 }
+
+/* ==========================================================================
+   PVP ARENA INVITATION CODE HUB & MODAL
+   ========================================================================== */
+.pvp-invite-hub-card {
+  background: rgba(9, 20, 40, 0.95);
+  border: 1px solid #785a28;
+  border-radius: 6px;
+  padding: 12px 18px;
+  box-shadow: 0 4px 18px rgba(0, 0, 0, 0.6);
+}
+.pvp-invite-header-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.pvp-room-code-box {
+  background: rgba(1, 10, 19, 0.85);
+  border: 1px dashed #c8aa6e;
+  border-radius: 8px;
+  padding: 8px 16px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+.pvp-code-val-wrap {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.pvp-code-icon {
+  font-size: 20px;
+}
+.pvp-code-text {
+  font-family: var(--font-mono, monospace);
+  font-size: 22px;
+  font-weight: 900;
+  color: #ffb703;
+  letter-spacing: 4px;
+  text-shadow: 0 0 12px rgba(255, 183, 3, 0.4);
+}
+.pvp-code-btns {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.btn-code-copy {
+  background: rgba(200, 170, 110, 0.15);
+  border: 1px solid #c8aa6e;
+  color: #f0e6d2;
+  border-radius: 4px;
+  padding: 6px 12px;
+  font-family: var(--font-title, 'Cinzel', serif);
+  font-size: 11px;
+  font-weight: 800;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.btn-code-copy:hover {
+  background: #c8aa6e;
+  color: #010a13;
+  box-shadow: 0 0 10px rgba(200, 170, 110, 0.5);
+}
+.btn-code-copy.copied {
+  background: #00f5d4;
+  border-color: #00f5d4;
+  color: #010a13;
+}
+.btn-code-link {
+  border-color: #00f0ff;
+  color: #00f0ff;
+  background: rgba(0, 240, 255, 0.1);
+}
+.btn-code-link:hover {
+  background: #00f0ff;
+  color: #010a13;
+  box-shadow: 0 0 10px rgba(0, 240, 255, 0.5);
+}
+.btn-code-invite-modal {
+  border-color: #ffb703;
+  color: #ffb703;
+  background: rgba(255, 183, 3, 0.12);
+}
+.btn-code-invite-modal:hover {
+  background: #ffb703;
+  color: #010a13;
+  box-shadow: 0 0 10px rgba(255, 183, 3, 0.5);
+}
+
+/* PvP Invitation Code Modal */
+.pvp-invite-dialog {
+  max-width: 580px;
+  width: 92%;
+  background: #010a13;
+  border: 2px solid #c8aa6e;
+  border-radius: 10px;
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.95), 0 0 25px rgba(200, 170, 110, 0.3);
+  overflow: hidden;
+  animation: fadeInClient 0.25s ease-out;
+}
+.pvp-invite-modal-body {
+  padding: 18px 22px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+.pvp-invite-subtitle {
+  font-size: 11px;
+  letter-spacing: 1px;
+  color: #a09b8c;
+  font-weight: 700;
+}
+.pvp-modal-code-banner {
+  background: rgba(9, 20, 40, 0.9);
+  border: 1px solid #785a28;
+  border-radius: 8px;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+}
+.pvp-modal-code-tag {
+  font-size: 10px;
+  letter-spacing: 2px;
+  color: #c8aa6e;
+  font-weight: 800;
+}
+.pvp-modal-code-number {
+  font-family: var(--font-mono, monospace);
+  font-size: 32px;
+  font-weight: 900;
+  color: #ffb703;
+  letter-spacing: 6px;
+  text-shadow: 0 0 16px rgba(255, 183, 3, 0.6);
+}
+.pvp-modal-actions-row {
+  display: flex;
+  gap: 10px;
+  width: 100%;
+  margin-top: 4px;
+}
+.pvp-modal-actions-row button {
+  flex: 1;
+  padding: 8px 12px;
+  font-family: var(--font-title, 'Cinzel', serif);
+  font-size: 11px;
+  font-weight: 800;
+}
+.pvp-modal-section-title {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-family: var(--font-title, 'Cinzel', serif);
+  font-size: 12px;
+  color: #f0e6d2;
+  font-weight: 900;
+  border-bottom: 1px solid rgba(120, 90, 40, 0.5);
+  padding-bottom: 6px;
+}
+.pvp-modal-target-team {
+  font-size: 10px;
+  font-weight: 900;
+  padding: 2px 8px;
+  border-radius: 4px;
+  background: rgba(0, 136, 255, 0.15);
+  border: 1px solid #0088ff;
+  color: #00f0ff;
+}
+.pvp-modal-friends-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  max-height: 180px;
+  overflow-y: auto;
+}
+.pvp-friend-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: rgba(9, 20, 40, 0.7);
+  border: 1px solid #785a28;
+  border-radius: 6px;
+  padding: 8px 12px;
+}
+.pvp-friend-info {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.btn-pvp-invite-friend {
+  background: rgba(0, 245, 212, 0.15);
+  border: 1px solid #00f5d4;
+  color: #00f5d4;
+  font-size: 10px;
+  font-weight: 900;
+  padding: 4px 10px;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.btn-pvp-invite-friend:hover {
+  background: #00f5d4;
+  color: #010a13;
+}
+.pvp-modal-join-fallback {
+  background: rgba(9, 20, 40, 0.6);
+  border: 1px solid #785a28;
+  border-radius: 6px;
+  padding: 10px 14px;
+}
+

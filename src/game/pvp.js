@@ -134,6 +134,8 @@ class PvPEngine {
   }
 
   addPlayerToTeam(username, team = 'blue') {
+    this.blueTeam = this.blueTeam.filter(p => p.name !== username);
+    this.redTeam = this.redTeam.filter(p => p.name !== username);
     const targetTeam = team === 'blue' ? this.blueTeam : this.redTeam;
     if (targetTeam.length >= 5) return false;
     targetTeam.push({
@@ -193,8 +195,13 @@ class PvPEngine {
             </div>
             <button class="btn-slot-invite" data-team="${teamColor}" data-slot="${i}">+ INVITE</button>
           `;
-          slotEl.querySelector('.btn-slot-invite').addEventListener('click', () => {
-            if (window.clientNav) window.clientNav.toggleFriendsList(true);
+          slotEl.querySelector('.btn-slot-invite').addEventListener('click', (e) => {
+            e.stopPropagation();
+            if (typeof window.openPvPInviteModal === 'function') {
+              window.openPvPInviteModal(teamColor, i);
+            } else if (window.clientNav) {
+              window.clientNav.toggleFriendsList(true);
+            }
           });
         }
         container.appendChild(slotEl);
@@ -744,6 +751,70 @@ function escapeHtml(str) {
     '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;'
   }[tag] || tag));
 }
+
+export function openPvPInviteModal(targetTeam = 'blue', slotIdx = 0) {
+  sound.playPickup();
+  const modal = document.getElementById('pvp-invite-code-modal');
+  if (!modal) return;
+  modal.style.display = 'flex';
+
+  if (window.net) {
+    if (!window.net.roomNumber) {
+      window.net.initHostRoom('pvp');
+    }
+    const code = window.net.roomNumber;
+    const codeEl = document.getElementById('pvp-modal-room-code');
+    if (codeEl) codeEl.textContent = '#' + (code || '......');
+    const pvpCodeEl = document.getElementById('pvp-room-code-text');
+    if (pvpCodeEl) pvpCodeEl.textContent = '#' + (code || '......');
+  }
+
+  const badge = document.getElementById('pvp-modal-target-team-badge');
+  if (badge) {
+    badge.textContent = targetTeam === 'blue' ? 'TARGET: 🔵 BLUE TEAM' : 'TARGET: 🔴 RED TEAM';
+    badge.style.color = targetTeam === 'blue' ? '#00f0ff' : '#ff3377';
+    badge.style.borderColor = targetTeam === 'blue' ? '#0088ff' : '#ff0054';
+  }
+
+  const list = document.getElementById('pvp-modal-friends-list');
+  if (list) {
+    list.innerHTML = '';
+    const friends = (window.friendsManager && window.friendsManager.friends) ? window.friendsManager.friends : [
+      { username: 'Arcane_Sniper', level: 12, rank: 'Platinum II', classId: 'gunner', online: true },
+      { username: 'Valkyrie_99', level: 18, rank: 'Diamond IV', classId: 'paladin', online: true },
+      { username: 'Hextech_Forge', level: 7, rank: 'Gold I', classId: 'arcanist', online: true }
+    ];
+    friends.forEach(f => {
+      const row = document.createElement('div');
+      row.className = 'pvp-friend-row';
+      const icons = { paladin: '🛡️', gunner: '🏹', arcanist: '🔮' };
+      row.innerHTML = `
+        <div class="pvp-friend-info">
+          <span style="font-size: 16px;">${icons[f.classId] || '🛡️'}</span>
+          <div>
+            <div style="font-size: 12px; font-weight: 800; color: #f0e6d2;">${f.username}</div>
+            <div style="font-size: 10px; color: #c8aa6e;">${f.rank || 'Gold II'} • LV. ${f.level || 1}</div>
+          </div>
+        </div>
+        <button class="btn-pvp-invite-friend" data-user="${f.username}">📩 INVITE TO ${targetTeam.toUpperCase()}</button>
+      `;
+      row.querySelector('.btn-pvp-invite-friend').addEventListener('click', (e) => {
+        e.stopPropagation();
+        if (window.friendsManager) {
+          window.friendsManager.inviteFriend(f.username, 'pvp');
+        }
+        const btn = row.querySelector('.btn-pvp-invite-friend');
+        if (btn) {
+          btn.textContent = 'INVITED! ✨';
+          btn.disabled = true;
+          btn.style.opacity = '0.7';
+        }
+      });
+      list.appendChild(row);
+    });
+  }
+}
+window.openPvPInviteModal = openPvPInviteModal;
 
 const pvpEngine = new PvPEngine();
 export { pvpEngine, PvPEngine };

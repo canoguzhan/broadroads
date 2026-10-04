@@ -130,12 +130,15 @@ class ClientNavigationController {
       if (coopPanel) coopPanel.style.display = 'none';
       if (soloPanel) soloPanel.style.display = 'none';
       pvpEngine.initLobby();
+      if (window.net) {
+        window.net.initHostRoom('pvp');
+      }
     } else if (this.selectedMode === 'coop') {
       if (pvpPanel) pvpPanel.style.display = 'none';
       if (coopPanel) coopPanel.style.display = 'flex';
       if (soloPanel) soloPanel.style.display = 'none';
       if (window.net) {
-        window.net.initHostRoom();
+        window.net.initHostRoom('coop');
       }
     } else {
       if (pvpPanel) pvpPanel.style.display = 'none';
@@ -381,15 +384,10 @@ class ClientNavigationController {
   }
 
   acceptInviteAndJoin(mode, roomCode) {
-    if (mode === 'pvp') {
-      this.selectMode('pvp');
-      this.showLobby();
-    } else {
-      this.selectMode('coop');
-      this.showLobby();
-      if (window.net) {
-        window.net.joinRoom(roomCode);
-      }
+    this.selectMode(mode || 'pvp');
+    this.showLobby();
+    if (window.net && roomCode) {
+      window.net.joinRoom(roomCode);
     }
   }
 
@@ -420,11 +418,7 @@ class ClientNavigationController {
 
     const btnConfirmMode = document.getElementById('btn-confirm-game-mode');
     if (btnConfirmMode) btnConfirmMode.addEventListener('click', () => {
-      if (this.selectedMode === 'pvp') {
-        pvpEngine.initLobby();
-        pvpEngine.fillWithAIBots();
-      }
-      this.showChampSelect();
+      this.showLobby();
     });
   }
 
