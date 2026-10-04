@@ -8,6 +8,105 @@
    "attack",
    "cast"
   ],
-  "v": "muub4nmy"
+  "v": "muuc5gyi"
+ },
+ "lyra": {
+  "file": "lyra.glb",
+  "clips": [
+   "idle",
+   "run",
+   "attack",
+   "cast",
+   "death"
+  ],
+  "v": "muuc4x2e"
+ },
+ "kaelen": {
+  "file": "kaelen.glb",
+  "clips": [
+   "idle",
+   "run",
+   "attack",
+   "cast",
+   "death"
+  ],
+  "v": "muuc4xv3"
+ },
+ "hale": {
+  "file": "hale.glb",
+  "clips": [
+   "idle",
+   "run",
+   "cast",
+   "death",
+   "attack"
+  ],
+  "v": "muuc4ynf"
+ },
+ "thorne": {
+  "file": "thorne.glb",
+  "clips": [
+   "idle",
+   "run",
+   "attack",
+   "cast",
+   "death"
+  ],
+  "v": "muuc4ze8"
+ },
+ "mira": {
+  "file": "mira.glb",
+  "clips": [
+   "idle",
+   "run",
+   "attack",
+   "cast",
+   "death"
+  ],
+  "v": "muuc5060"
+ },
+ "zarak": {
+  "file": "zarak.glb",
+  "clips": [
+   "idle",
+   "run",
+   "attack",
+   "cast",
+   "death"
+  ],
+  "v": "muuc50vl"
+ },
+ "nyra": {
+  "file": "nyra.glb",
+  "clips": [
+   "idle",
+   "run",
+   "cast",
+   "death",
+   "attack"
+  ],
+  "v": "muuc51l1"
+ },
+ "brakka": {
+  "file": "brakka.glb",
+  "clips": [
+   "idle",
+   "run",
+   "attack",
+   "cast",
+   "death"
+  ],
+  "v": "muuc5hsp"
+ },
+ "rook": {
+  "file": "rook.glb",
+  "clips": [
+   "idle",
+   "run",
+   "attack",
+   "cast",
+   "death"
+  ],
+  "v": "muuc532j"
  }
 }

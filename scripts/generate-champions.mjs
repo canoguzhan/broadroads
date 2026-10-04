@@ -23,7 +23,7 @@ const force = args.includes('--force');
 const only = args.filter(a => !a.startsWith('--'));
 
 const STYLE = 'stylized fantasy MOBA game character, full body, standing in a T-pose, arms out, clean hand-painted textures, single character, no base, no weapon on the ground';
-const ATTACK = { punch: 'preset:biped:box_01', slash: 'preset:biped:slash', shoot: 'preset:biped:shoot', cast: 'preset:biped:cast_a_spell', chop: 'preset:biped:chop' };
+const ATTACK = { punch: 'preset:biped:box_01', slash: 'preset:biped:slash', shoot: 'preset:biped:fire', cast: 'preset:biped:cast_a_spell', chop: 'preset:biped:chop' };
 // [id, description, attack style]
 const CHAMPIONS = [
   ['garrok', 'massive stone-skinned golem warrior with glowing amber cracks, rocky shoulders and huge stone fists', 'punch'],
@@ -47,7 +47,7 @@ async function api(method, url, body) {
   for (let attempt = 1; ; attempt++) {
     const res = await fetch(API + url, { method, headers: { Authorization: `Bearer ${KEY}`, 'Content-Type': 'application/json' }, body: body ? JSON.stringify(body) : undefined });
     const json = await res.json().catch(() => ({}));
-    if (res.status === 429 && attempt < 6) { await sleep(3000 * attempt); continue; }
+    if (res.status === 429 && attempt < 10) { await sleep(5000 * attempt); continue; }
     if (json.code !== 0) throw new Error(`${url}: ${json.code} ${json.message || res.status}${json.suggestion ? ` (${json.suggestion})` : ''}`);
     return json.data;
   }
@@ -119,10 +119,15 @@ const estimate = todo.length * (40 + 25 + 10 * 5); // H-series pricing is lower 
 console.log(`Balance: ${balance} credits (${frozen} frozen). ${todo.length} champion(s) to generate, estimated ≤ ${estimate} credits.`);
 if (dryRun) process.exit(0);
 if (todo.length && balance < 50) { console.error('Not enough API credits. Top up at https://platform.tripo3d.ai (API billing is separate from Tripo Studio plans).'); process.exit(2); }
-let failed = 0;
-for (const c of todo) {
-  try { await generate(c); } catch (err) { failed++; console.error(`✗ ${c[0]}: ${err.message}`); if (/2010|credit/i.test(err.message)) break; }
-}
+// The account runs up to 10 tasks per category at once; 5 workers leave headroom.
+let failed = 0, outOfCredits = false;
+const queue = [...todo];
+await Promise.all(Array.from({ length: Math.min(5, queue.length) }, async () => {
+  while (queue.length && !outOfCredits) {
+    const c = queue.shift();
+    try { await generate(c); } catch (err) { failed++; console.error(`✗ ${c[0]}: ${err.message}`); if (/2010|credit/i.test(err.message)) outOfCredits = true; }
+  }
+}));
 const after = await api('GET', '/account/balance');
 console.log(`\nDone. Balance now ${after.balance} credits. ${failed ? `${failed} failed — rerun to resume.` : 'All good.'}`);
 process.exit(failed ? 1 : 0);

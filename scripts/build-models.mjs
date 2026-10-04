@@ -22,6 +22,20 @@ await MeshoptEncoder.ready;
 await MeshoptDecoder.ready;
 const io = new NodeIO().registerExtensions(ALL_EXTENSIONS).registerDependencies({ 'meshopt.encoder': MeshoptEncoder, 'meshopt.decoder': MeshoptDecoder });
 
+// Tripo's slash/chop/cast presets are multi-second combos; keep one strike.
+// Keyed by Tripo's clip name, in seconds (picked from rendered filmstrips).
+const WINDOWS = { box_01: [0, 1.3], slash: [1.1, 2.4], chop: [1.1, 2.4], cast_a_spell: [0.4, 2.5] };
+
+function trim(doc, input, output, [t0, t1]) {
+  const t = input.getArray(), size = output.getElementSize(), v = output.getArray();
+  const keep = [];
+  for (let i = 0; i < t.length; i++) if (t[i] >= t0 - 1e-4 && t[i] <= t1 + 1e-4) keep.push(i);
+  if (!keep.length) keep.push(0);
+  const nt = new Float32Array(keep.length), nv = new Float32Array(keep.length * size);
+  keep.forEach((k, j) => { nt[j] = Math.max(0, t[k] - t0); for (let c = 0; c < size; c++) nv[j * size + c] = v[k * size + c]; });
+  return [doc.createAccessor().setType(input.getType()).setArray(nt), doc.createAccessor().setType(output.getType()).setArray(nv)];
+}
+
 function copyClip(doc, from, name) {
   const nodes = new Map(doc.getRoot().listNodes().map(n => [n.getName(), n]));
   for (const src of from.getRoot().listAnimations()) {
@@ -30,8 +44,10 @@ function copyClip(doc, from, name) {
       const target = nodes.get(ch.getTargetNode()?.getName());
       if (!target) continue;
       const s = ch.getSampler();
+      const win = WINDOWS[src.getName()];
       const copy = acc => doc.createAccessor().setType(acc.getType()).setArray(acc.getArray().slice());
-      const sampler = doc.createAnimationSampler().setInput(copy(s.getInput())).setOutput(copy(s.getOutput())).setInterpolation(s.getInterpolation());
+      const [input, output] = win ? trim(doc, s.getInput(), s.getOutput(), win) : [copy(s.getInput()), copy(s.getOutput())];
+      const sampler = doc.createAnimationSampler().setInput(input).setOutput(output).setInterpolation(s.getInterpolation());
       anim.addSampler(sampler).addChannel(doc.createAnimationChannel().setTargetNode(target).setTargetPath(ch.getTargetPath()).setSampler(sampler));
     }
   }
