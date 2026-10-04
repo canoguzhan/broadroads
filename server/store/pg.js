@@ -3,12 +3,10 @@
 import pg from 'pg';
 
 const LB_EXPR = {
-  level: "(data->>'level')::int * 10000000 + COALESCE((data->>'xp')::int, 0)",
-  floor: "COALESCE((data->'stats'->>'deepestFloor')::int, 0)",
-  duel: "COALESCE((data->'rating'->>'duel')::int, 1000)",
-  team: "COALESCE((data->'rating'->>'team')::int, 1000)",
-  ffa: "COALESCE((data->'rating'->>'ffa')::int, 1000)",
-  kills: "COALESCE((data->'stats'->>'kills')::int, 0)",
+  rating: "COALESCE((data->>'rating')::int, 1000)",
+  wins: "COALESCE((data->>'wins')::int, 0)",
+  level: "COALESCE((data->>'level')::int, 1) * 1000000 + COALESCE((data->>'xp')::int, 0)",
+  kills: "COALESCE((data->>'kills')::int, 0)",
 };
 
 export class PgStore {
@@ -87,10 +85,11 @@ export class PgStore {
   }
 
   async leaderboard(kind, limit = 50) {
-    const expr = LB_EXPR[kind] || LB_EXPR.level;
+    const expr = LB_EXPR[kind] || LB_EXPR.rating;
     const { rows } = await this.pool.query(
-      `SELECT data->>'name' AS name, data->>'cls' AS cls, (data->>'level')::int AS level, ${expr} AS value
-       FROM br_characters ORDER BY value DESC LIMIT $1`, [limit]);
+      `SELECT data->>'name' AS name, COALESCE((data->>'level')::int, 1) AS level, COALESCE((data->>'rating')::int, 1000) AS rating,
+              COALESCE((data->>'wins')::int, 0) AS wins, COALESCE((data->>'losses')::int, 0) AS losses, ${expr} AS value
+       FROM br_characters WHERE (data->>'v')::int = 3 ORDER BY value DESC LIMIT $1`, [limit]);
     return rows.map(r => ({ ...r, value: Number(r.value) }));
   }
 

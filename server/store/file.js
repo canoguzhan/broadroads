@@ -2,7 +2,7 @@
    Writes are debounced and atomic (write to temp file, then rename). */
 import fs from 'node:fs';
 import path from 'node:path';
-import { leaderboardRow } from '../../shared/hub.js';
+import { leaderboardRow } from '../../shared/moba/profile.js';
 
 export class FileStore {
   constructor(dir) {

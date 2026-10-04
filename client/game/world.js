@@ -1,29 +1,27 @@
-/* Client-side mirror of the current instance, built from server snapshots. */
-import { TileMap } from '../../shared/tiles.js';
+/* Client-side mirror of the match, built from server snapshots. */
 import { F } from '../../shared/constants.js';
 
 export class ClientWorld {
   constructor() {
-    this.zone = null;
-    this.map = null;
     this.entities = new Map();
     this.youId = null;
+    this.team = null;
     this.me = null;
-    this.meta = {};
+    this.score = null;
     this.time = 0;
     this.listeners = { add: [], remove: [], fx: [] };
   }
 
   on(type, fn) { this.listeners[type].push(fn); }
 
-  setZone(zone, youId) {
+  setMatch(rift, youId, team) {
     for (const e of this.entities.values()) this.listeners.remove.forEach(fn => fn(e));
     this.entities.clear();
-    this.zone = zone;
-    this.map = TileMap.fromJSON(zone.map);
+    this.rift = rift;
+    this.map = rift.map;
     this.youId = youId;
+    this.team = team;
     this.me = null;
-    this.meta = zone.meta || {};
   }
 
   you() { return this.entities.get(this.youId); }
@@ -32,30 +30,20 @@ export class ClientWorld {
     if (s.a) {
       for (const d of s.a) {
         const prev = this.entities.get(d.i);
-        const e = {
-          ...d,
-          id: d.i,
-          kind: d.k,
-          tx: d.x, ty: d.y, tf: d.f,
-          x: prev ? prev.x : d.x, y: prev ? prev.y : d.y, f: prev ? prev.f : d.f,
-          hp: d.hp, fl: d.fl,
-          born: performance.now(),
-          moving: 0,
-          view: prev ? prev.view : null,
-        };
+        const e = { ...d, id: d.i, kind: d.k, tx: d.x, ty: d.y, tf: d.f, x: prev ? prev.x : d.x, y: prev ? prev.y : d.y, f: prev ? prev.f : d.f, moving: 0 };
         if (prev) this.listeners.remove.forEach(fn => fn(prev, true));
-        e.view = null;
         this.entities.set(d.i, e);
         this.listeners.add.forEach(fn => fn(e));
       }
     }
     if (s.u) {
-      for (const [id, x, y, f, hp, fl] of s.u) {
-        const e = this.entities.get(id);
+      for (const u of s.u) {
+        const e = this.entities.get(u[0]);
         if (!e) continue;
-        e.tx = x; e.ty = y; e.tf = f;
-        if (hp < e.hp && e.kind !== 'loot') e.hitT = performance.now();
-        e.hp = hp; e.fl = fl;
+        e.tx = u[1]; e.ty = u[2]; e.tf = u[3];
+        if (u[4] < e.hp && e.kind !== 'proj') e.hitT = performance.now();
+        e.hp = u[4]; e.fl = u[5];
+        if (u.length > 6) e.mp = u[6];
       }
     }
     if (s.r) {
@@ -71,27 +59,27 @@ export class ClientWorld {
     this.time = s.time;
   }
 
-  update(dt, predictedSelf) {
-    const k = 1 - Math.exp(-dt * 14);
+  update(dt) {
+    const k = 1 - Math.exp(-dt * 15);
     for (const e of this.entities.values()) {
       if (e.kind === 'proj') {
-        e.x += e.vx * dt; e.y += e.vy * dt;
+        if (e.h) {
+          const t = this.entities.get(e.tg);
+          if (t) {
+            const dx = t.x - e.x, dy = t.y - e.y, d = Math.hypot(dx, dy);
+            if (d > 0.05) { const step = Math.min(d, e.sp * dt); e.x += dx / d * step; e.y += dy / d * step; e.f = Math.atan2(dy, dx); }
+          }
+        } else { e.x += e.vx * dt; e.y += e.vy * dt; }
         continue;
       }
-      if (e.kind === 'aoe') {
+      if (e.kind === 'area') {
         e.life -= dt;
-        if (e.s === 'ring') e.rad = Math.min(e.mr, e.rad + e.sp * dt);
-        continue;
-      }
-      if (e.id === this.youId && predictedSelf) {
-        e.x = predictedSelf.x; e.y = predictedSelf.y;
-        e.f = e.tf;
-        e.moving = predictedSelf.moving;
+        if (e.fo) { const t = this.entities.get(e.fo); if (t) { e.x = t.x; e.y = t.y; } }
         continue;
       }
       const dx = e.tx - e.x, dy = e.ty - e.y;
       const d2 = dx * dx + dy * dy;
-      if (d2 > 36) { e.x = e.tx; e.y = e.ty; } else { e.x += dx * k; e.y += dy * k; }
+      if (d2 > 49) { e.x = e.tx; e.y = e.ty; } else { e.x += dx * k; e.y += dy * k; }
       e.moving = Math.min(1, Math.sqrt(d2) * 6);
       let df = e.tf - e.f;
       while (df > Math.PI) df -= Math.PI * 2;
@@ -100,7 +88,5 @@ export class ClientWorld {
     }
   }
 
-  is(e, flag) { return (e.fl & flag) !== 0; }
   dead(e) { return (e.fl & F.DEAD) !== 0; }
-  hostile(e) { return (e.fl & F.HOSTILE) !== 0; }
 }

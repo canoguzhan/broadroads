@@ -3,11 +3,11 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-  <title>BroadRoads — Online Action RPG</title>
-  <meta name="description" content="BroadRoads is a free online action RPG: explore a shared MMO world, delve solo or party dungeons, and climb the ranked PvP arena. Play in your browser.">
+  <title>BroadRoads — 5v5 Browser MOBA</title>
+  <meta name="description" content="BroadRoads is a free 5v5 MOBA in your browser. Pick a champion, push three lanes, slay the Drake and the Void Lord, and destroy the enemy Nexus. Ranked matchmaking, custom games and practice vs AI.">
   <meta name="theme-color" content="#0b0a10">
-  <meta property="og:title" content="BroadRoads — Online Action RPG">
-  <meta property="og:description" content="Shared MMO world, solo & party dungeons, ranked PvP arenas. Free in your browser.">
+  <meta property="og:title" content="BroadRoads — 5v5 Browser MOBA">
+  <meta property="og:description" content="Free 5v5 MOBA in your browser: ranked matchmaking, custom games, practice vs AI.">
   <meta property="og:url" content="https://broadroads.com">
   <meta property="og:type" content="website">
   <link rel="canonical" href="https://broadroads.com/">
@@ -28,8 +28,7 @@
       <header class="brand">
         <div class="brand-mark">⚔️</div>
         <h1 class="brand-title">BROADROADS</h1>
-        <p class="brand-tag">An online action RPG · MMO World · Dungeons · PvP Arena</p>
-        <div class="season-badge" id="season-badge"></div>
+        <p class="brand-tag">5v5 browser MOBA · 10 champions · Ranked · Custom games · Practice vs AI</p>
       </header>
       <div class="auth-card">
         <div class="server-status" id="server-status"><span class="dot"></span><span class="label">Checking servers…</span></div>
@@ -39,7 +38,7 @@
           <button class="tab" data-tab="offline" role="tab">Play Offline</button>
         </div>
         <form id="auth-form" autocomplete="on">
-          <label class="field"><span>Hero name</span>
+          <label class="field"><span>Summoner name</span>
             <input id="auth-user" name="username" autocomplete="username" maxlength="16" required pattern="[A-Za-z][A-Za-z0-9_]{2,15}" title="3-16 letters, numbers or _ starting with a letter">
           </label>
           <label class="field" id="pass-field"><span>Password</span>
@@ -47,26 +46,20 @@
           </label>
           <p class="auth-hint" id="auth-hint"></p>
           <p class="auth-error" id="auth-error" role="alert"></p>
-          <button class="btn btn-primary btn-lg" id="auth-submit" type="submit">Enter the Broadroads</button>
+          <button class="btn btn-primary btn-lg" id="auth-submit" type="submit">Enter the Rift</button>
         </form>
       </div>
       <ul class="features">
-        <li><b>🌍 Shared World</b><span>Meet players in town, hunt in the wilds, topple the world boss together.</span></li>
-        <li><b>🌀 Dungeons</b><span>Endless procedural floors, solo or with a party of four. Bosses every 5 floors.</span></li>
-        <li><b>⚔️ PvP Arena</b><span>Ranked duels, 3v3 team battles and free-for-all with Elo ratings.</span></li>
+        <li><b>⚔️ 5v5 on the Rift</b><span>Three lanes, a jungle, towers, inhibitors and the Nexus. Last-hit, build items, out-play.</span></li>
+        <li><b>🧙 10 Champions</b><span>Tanks, fighters, assassins, mages, marksmen and supports — each with a passive and four abilities.</span></li>
+        <li><b>🏆 Ranked & Custom</b><span>Elo matchmaking with parties, custom rooms with friends, or practice against smart bots.</span></li>
       </ul>
       <footer class="site-foot">© BroadRoads · <a href="https://broadroads.com">broadroads.com</a></footer>
     </div>
   </section>
 
-  <section id="screen-create" class="screen" hidden>
-    <div class="auth-bg"></div>
-    <div class="create-wrap">
-      <h2 class="screen-title">Choose Your Calling</h2>
-      <p class="screen-sub" id="create-sub"></p>
-      <div class="class-cards" id="class-cards"></div>
-    </div>
-  </section>
+  <section id="screen-lobby" class="screen" hidden></section>
+  <section id="screen-select" class="screen" hidden></section>
 
   <section id="screen-loading" class="screen" hidden>
     <div class="loading-inner">

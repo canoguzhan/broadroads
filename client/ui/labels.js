@@ -1,9 +1,9 @@
-/* DOM overlay for nameplates, health bars and floating combat text. */
+/* Overhead health bars, names, floating combat text and chat bubbles. */
 import { h } from './dom.js';
 import { F } from '../../shared/constants.js';
 
-const HEIGHT = { player: 2.3, npc: 4.2, portal: 2.6, chest: 1.3, loot: 1.1 };
-const MONSTER_HEIGHT = { slime: 1.4, bat: 2.0, wolf: 1.6, skeleton: 2.0, archer: 2.0, brute: 2.6, shaman: 2.2, golem: 3.0, colossus: 4.8, overlord: 4.6, lich: 4.4, behemoth: 5.2 };
+const HEIGHT = { hero: 2.7, minion: 1.5, tower: 6.2, inhib: 3.2, nexus: 5.6, ward: 1.5 };
+const MONSTER_H = { golem: 3, brute: 2.8, wolf: 1.8, bat: 2.2, slime: 1.6, dragon: 4.2, overlord: 5.2 };
 
 export class Labels {
   constructor(root) {
@@ -12,23 +12,21 @@ export class Labels {
     this.floaters = [];
   }
 
-  add(e, youId) {
-    if (!['player', 'monster', 'npc', 'portal', 'loot'].includes(e.kind)) return;
+  add(e, world) {
+    if (!['hero', 'minion', 'tower', 'inhib', 'nexus', 'monster', 'ward'].includes(e.kind)) return;
+    const rel = e.id === world.youId ? 'self' : e.tm === world.team ? 'ally' : e.tm === 'neutral' ? 'neutral' : 'enemy';
+    const fill = h('div.lb-fill');
     let el;
-    if (e.kind === 'npc') {
-      el = h('div.nameplate.np-npc', {}, h('div.np-icon', { text: e.ic }), h('div.np-name', { text: e.n }), h('div.np-title', { text: e.ti }));
-    } else if (e.kind === 'portal') {
-      el = h('div.nameplate.np-portal', {}, h('div.np-name', { text: e.n }));
-    } else if (e.kind === 'loot') {
-      el = h(`div.nameplate.np-loot.r-${e.ra}`, {}, h('div.np-name', { text: e.lt === 'mat' ? `${e.n} ore` : e.n }));
+    if (e.kind === 'hero') {
+      const mp = h('div.lb-mp-fill');
+      el = h(`div.label.l-hero.${rel}`, {}, h('div.l-name', {}, h('span.l-lvl', { text: e.l }), ` ${e.n}`), h('div.lb', {}, fill, h('div.lb-ticks')), h('div.lb-mp', {}, mp));
+      el._mp = mp;
+    } else if (e.kind === 'monster') {
+      el = h(`div.label.l-monster${e.ep ? '.epic' : ''}`, {}, e.ep ? h('div.l-name', { text: e.n }) : null, h('div.lb', {}, fill));
     } else {
-      const bar = h('div.np-fill');
-      const isBoss = e.kind === 'monster' && e.b;
-      el = h(`div.nameplate.np-${e.kind}${e.id === youId ? '.np-self' : ''}${e.el ? '.np-elite' : ''}${isBoss ? '.np-boss' : ''}`, {},
-        h('div.np-name', {}, e.kind === 'player' ? `${e.n}` : e.n, h('span.np-lvl', { text: ` ${e.l}` })),
-        h('div.np-bar', {}, bar));
-      el._fill = bar;
+      el = h(`div.label.l-${e.kind}.${rel}`, {}, h('div.lb', {}, fill));
     }
+    el._fill = fill;
     el.style.display = 'none';
     this.root.append(el);
     this.items.set(e.id, { el, e });
@@ -50,50 +48,49 @@ export class Labels {
 
   update(world, renderer, dt) {
     for (const { el, e } of this.items.values()) {
-      const height = e.kind === 'monster' ? (MONSTER_HEIGHT[e.t] || 2) * (e.el ? 1.25 : 1) : HEIGHT[e.kind] || 2;
-      const p = renderer.project(e.x, e.y, height);
-      const onScreen = p.visible && p.x > -80 && p.y > -40 && p.x < renderer.width + 80 && p.y < renderer.height + 40;
       const dead = (e.fl & F.DEAD) !== 0;
-      if (!onScreen || (dead && e.kind === 'monster')) { if (el.style.display !== 'none') el.style.display = 'none'; continue; }
+      const hgt = e.kind === 'monster' ? (MONSTER_H[e.md] || 2) * (e.sm ? 0.65 : e.ep ? 1.2 : 1) : HEIGHT[e.kind] || 2;
+      const p = renderer.project(e.x, e.y, hgt);
+      const show = !dead && p.visible && p.x > -60 && p.y > -30 && p.x < renderer.width + 60 && p.y < renderer.height + 30 && (e.kind !== 'minion' || e.hp < e.mh || true);
+      if (!show) { if (el.style.display !== 'none') el.style.display = 'none'; continue; }
       if (el.style.display === 'none') el.style.display = '';
       el.style.transform = `translate(${p.x | 0}px, ${p.y | 0}px) translate(-50%, -100%)`;
-      if (el._fill) {
-        const pct = Math.max(0, Math.min(1, e.hp / (e.mh || 1)));
-        if (el._pct !== pct) { el._pct = pct; el._fill.style.width = `${pct * 100}%`; }
-        const cls = e.id === world.youId ? 'self' : (e.fl & F.HOSTILE) ? 'hostile' : (e.fl & F.PARTY) ? 'party' : 'friend';
-        if (el._cls !== cls) { el.classList.remove('hostile', 'party', 'friend', 'self'); el.classList.add(cls); el._cls = cls; }
-        el.classList.toggle('dead', dead);
-      }
+      const pct = Math.max(0, Math.min(1, e.hp / (e.mh || 1)));
+      if (el._pct !== pct) { el._pct = pct; el._fill.style.width = `${pct * 100}%`; }
+      if (el._mp && e.mm) { const mp = Math.max(0, Math.min(1, (e.mp ?? e.mm) / e.mm)); if (el._mpv !== mp) { el._mpv = mp; el._mp.style.width = `${mp * 100}%`; } }
+      el.classList.toggle('protected', (e.fl & F.PROTECTED) !== 0);
+      el.classList.toggle('recall', (e.fl & F.RECALL) !== 0);
     }
     for (let i = this.floaters.length - 1; i >= 0; i--) {
       const f = this.floaters[i];
       f.t += dt;
-      const p = renderer.project(f.x, f.y, 2 + f.t * 1.6);
+      const p = renderer.project(f.x, f.y, 2.4 + f.t * 1.6);
       f.el.style.transform = `translate(${p.x | 0}px, ${p.y | 0}px) translate(-50%, -50%) scale(${f.scale * (f.t < 0.12 ? 1.4 - f.t * 3 : 1)})`;
       f.el.style.opacity = String(Math.max(0, 1 - Math.max(0, f.t - 0.6) / 0.5));
       if (f.t > 1.1) { f.el.remove(); this.floaters.splice(i, 1); }
     }
   }
 
-  /** Speech bubble above a player's nameplate. */
-  bubble(id, text, channel = 'say') {
+  levelChanged(e) {
+    const it = this.items.get(e.id);
+    if (it) { const l = it.el.querySelector('.l-lvl'); if (l) l.textContent = e.l; }
+  }
+
+  floatText(x, y, text, kind = 'dmg', scale = 1) {
+    if (this.floaters.length > 70) { const old = this.floaters.shift(); old.el.remove(); }
+    const el = h(`div.floater.f-${kind}`, { text });
+    this.root.append(el);
+    this.floaters.push({ el, x: x + (Math.random() - 0.5) * 0.8, y, t: 0, scale });
+  }
+
+  bubble(id, text, channel = 'all') {
     const it = this.items.get(id);
     if (!it) return;
     if (it.bubble) { clearTimeout(it.bubble.timer); it.bubble.el.remove(); }
     const clipped = text.length > 90 ? text.slice(0, 87) + '…' : text;
     const el = h(`div.chat-bubble.cb-${channel}`, { text: clipped });
     it.el.prepend(el);
-    const timer = setTimeout(() => {
-      el.classList.add('out');
-      setTimeout(() => { el.remove(); if (it.bubble && it.bubble.el === el) it.bubble = null; }, 400);
-    }, 4500 + clipped.length * 40);
+    const timer = setTimeout(() => { el.classList.add('out'); setTimeout(() => el.remove(), 400); }, 4500 + clipped.length * 40);
     it.bubble = { el, timer };
-  }
-
-  floatText(x, y, text, kind = 'dmg', scale = 1) {
-    if (this.floaters.length > 80) { const old = this.floaters.shift(); old.el.remove(); }
-    const el = h(`div.floater.f-${kind}`, { text });
-    this.root.append(el);
-    this.floaters.push({ el, x: x + (Math.random() - 0.5) * 0.8, y, t: 0, scale });
   }
 }

@@ -16,9 +16,11 @@ export const TILE = {
   PILLAR: 10,
   SAND: 11,
   RUG: 12,
+  RIVER: 13,
+  BUSH: 14,
 };
 
-const WALKABLE = new Set([TILE.FLOOR, TILE.ROAD, TILE.GRASS, TILE.PLAZA, TILE.BRIDGE, TILE.SAND, TILE.RUG]);
+const WALKABLE = new Set([TILE.FLOOR, TILE.ROAD, TILE.GRASS, TILE.PLAZA, TILE.BRIDGE, TILE.SAND, TILE.RUG, TILE.RIVER, TILE.BUSH]);
 // Water does not stop projectiles; walls, trees, rocks and pillars do.
 const SHOOT_THROUGH = new Set([...WALKABLE, TILE.WATER]);
 

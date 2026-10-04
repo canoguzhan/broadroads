@@ -1,5 +1,5 @@
 /* In-memory character store (tests, and the base for the browser offline store). */
-import { leaderboardRow } from './hub.js';
+import { leaderboardRow } from './moba/profile.js';
 
 export class MemoryStore {
   constructor() { this.chars = new Map(); }

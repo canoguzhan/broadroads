@@ -1,169 +1,76 @@
-/* Game client controller: wires the connection, world model, renderer, input and UI. */
+/* In-match client controller. */
 import { ClientWorld } from './world.js';
-import { Predictor } from './predict.js';
 import { Labels } from '../ui/labels.js';
 import { Hud } from '../ui/hud.js';
-import { Chat } from '../ui/chat.js';
 import { Panels } from '../ui/panels.js';
+import { Chat } from '../ui/chat.js';
 import { Input } from '../input.js';
 import { sound } from '../audio/sound.js';
 import { $ } from '../ui/dom.js';
-import { ABILITIES, ARCHETYPES, SLOTS } from '../../shared/classes.js';
-import { MONTHLY_THEMES } from '../../shared/themes.js';
-import { TICK, F, INTERACT_RANGE } from '../../shared/constants.js';
+import { getRift } from '../../shared/moba/map.js';
+import { F } from '../../shared/constants.js';
 import { dist } from '../../shared/math.js';
-import { RARITIES } from '../../shared/items.js';
 
-const INTERACT_TEXT = {
-  npc: e => `Talk to ${e.n} — ${e.ti}`,
-  portal: e => (e.t === 'exit' ? 'Return to Town' : (e.fl & F.OPEN) ? e.n : 'Sealed — defeat the guardian'),
-  chest: () => 'Open chest',
-};
+const PING_COLORS = { go: '#22c55e', danger: '#ef4444', help: '#3b82f6', omw: '#facc15' };
 
 export class Game {
-  constructor({ conn, name, offline, renderer, settings, ui, onExit, onNeedChar }) {
-    this.conn = conn;
-    this.name = name;
-    this.offline = offline;
+  constructor({ app, renderer, settings, ui, data, match }) {
+    this.app = app;
     this.renderer = renderer;
     this.settings = settings;
     this.ui = ui;
-    this.onExit = onExit;
-    this.onNeedChar = onNeedChar;
+    this.data = data;
+    this.match = match;
+    this.champInfo = Object.fromEntries(data.champions.map(c => [c.id, c]));
+    this.players = new Map(match.players.map(p => [p.id, p]));
     this.world = new ClientWorld();
-    this.predictor = new Predictor();
-    this.char = null;
-    this.party = null;
-    this.queue = null;
-    this.theme = MONTHLY_THEMES[new Date().getMonth()];
-    this.cooldownMax = {};
-    this.acc = 0;
+    this.world.setMatch(getRift(), match.you, match.team);
+    this.renderer.setMatch(this.world.rift, match.team, this.champInfo);
+    this.renderer.youId = match.you;
+    this.renderer.locked = settings.cameraLock !== false;
+    this.pings = [];
+    this.hover = null;
+    this.lastDir = { mx: 0, my: 0, at: false };
+    this.dirT = 0;
+    this.rmbT = 0;
+    this.fps = 60;
     this.running = false;
-    this.ping = 0;
-    this.fps = 0;
-    this.walkTarget = null;
-    this.lastHitSound = 0;
-    this.unsub = [];
+    this.endResult = null;
 
     this.input = new Input(renderer.canvas, (a, ev) => this.action(a, ev));
     this.labels = new Labels($('#labels'));
     this.hud = new Hud(this);
-    this.chat = new Chat(this, this.hud.chatRoot);
     this.panels = new Panels(this);
+    this.chat = new Chat(this, this.hud.chatRoot, 'match');
     this.fpsEl = document.createElement('div');
     this.fpsEl.className = 'fps';
     this.hud.root.append(this.fpsEl);
+    const mine = this.players.get(match.you);
+    if (mine) this.hud.setChampion(this.champInfo[mine.champ]);
 
-    this.world.on('add', e => { this.renderer.addEntity(e, this.world.youId); this.labels.add(e, this.world.youId); });
+    this.world.on('add', e => { this.renderer.addEntity(e); this.labels.add(e, this.world); });
     this.world.on('remove', (e, replaced) => { this.renderer.removeEntity(e, replaced); this.labels.remove(e); });
     this.world.on('fx', ev => this.onFx(ev));
-    this.bind();
   }
 
-  send(msg) { this.conn.send(msg); }
+  get name() { return this.app.name; }
+  send(msg) { this.app.send(msg); }
+  myChampId() { return this.players.get(this.world.youId)?.champ; }
+  myChamp() { return this.champInfo[this.myChampId()]; }
 
-  bind() {
-    const c = this.conn;
-    const on = (t, fn) => this.unsub.push(c.on(t, fn));
-    on('hello', m => {
-      this.theme = MONTHLY_THEMES.find(t => t.id === m.theme) || this.theme;
-      applyThemeCss(this.theme);
-    });
-    on('needChar', () => this.onNeedChar(this));
-    on('char', m => this.setChar(m.char));
-    on('zone', m => this.setZone(m.zone, m.you));
-    on('s', m => {
-      this.world.applySnapshot(m);
-      if (m.me && this.world.map) {
-        const you = this.world.you();
-        this.predictor.reconcile(this.world.map, m.me, you ? you.r : 0.5);
-      }
-    });
-    on('meta', m => { this.world.meta = m.meta; this.hud.setMeta(m.meta); if (this.panels.isOpen('scoreboard')) this.panels.render(); });
-    on('notice', m => {
-      if (m.quiet) this.ui.toast(m.text, m.kind, 1500);
-      else { this.ui.toast(m.text, m.kind); this.chat.system(m.text, m.kind); }
-    });
-    on('chat', m => {
-      this.chat.add(m);
-      // Public and party messages also pop up above the speaker's head if they are nearby.
-      if (m.from && (m.ch === 'say' || m.ch === 'party' || m.ch === 'world')) {
-        for (const e of this.world.entities.values()) {
-          if (e.kind === 'player' && e.n === m.from) { this.labels.bubble(e.id, m.text, m.ch); break; }
-        }
-      }
-    });
-    on('party', m => {
-      this.party = m.party;
-      this.hud.setParty(m.party, this.name);
-      this.panels.refresh(['social', 'dungeon']);
-    });
-    on('invite', m => this.ui.prompt(`${m.from} invites you to join their party.`,
-      () => this.send({ t: 'party', op: 'accept', party: m.party }), () => this.send({ t: 'party', op: 'decline', party: m.party })));
-    on('duelReq', m => this.ui.prompt(`⚔️ ${m.from} challenges you to a duel!`,
-      () => this.send({ t: 'duel', op: 'accept' }), () => this.send({ t: 'duel', op: 'decline' })));
-    on('npc', m => {
-      if (m.type === 'board') return;
-      if (m.refresh && !this.panels.isOpen(m.type)) { this.panels.data[m.type] = m.data; return; }
-      this.panels.open(m.type, m.data);
-      sound.playPickup();
-    });
-    on('lb', m => { this.panels.data.leaderboard = m; if (this.panels.isOpen('leaderboard')) this.panels.render(); else this.panels.open('leaderboard'); });
-    on('who', m => { this.panels.data.social = m; this.panels.refresh(['social']); });
-    on('queue', m => {
-      const prev = this.queue;
-      this.queue = m.state === 'idle' ? null : m;
-      if (m.state === 'found') { this.ui.banner('MATCH FOUND', 'Entering the arena…'); sound.playFanfare(); this.panels.close(); }
-      if (!prev && m.state === 'searching') this.ui.toast('Searching for a match…', 'info');
-      this.hud.setMeta(this.world.meta || {});
-      this.panels.refresh(['arena']);
-    });
-    on('result', m => {
-      this.panels.open('result', m);
-      if (m.kind === 'arena') (m.won ? sound.playVictory() : sound.playDefeat());
-      else sound.playDefeat();
-    });
-    on('feed', m => this.hud.feed(m.k, m.v));
-    on('tp', m => this.predictor.teleport(m.x, m.y));
-    on('crafted', m => {
-      sound.playAnvilStrike();
-      const r = RARITIES[m.item.rarity];
-      this.ui.banner(`${m.item.icon} ${m.item.name}`, `${r.name} item forged!`);
-    });
-    on('kicked', m => { this.kickedReason = m.reason; });
-    on('pong', m => { this.ping = Math.round(performance.now() - m.c); });
-    on('disconnect', m => {
-      if (m.byUs) return;
-      this.stop();
-      this.onExit(this.kickedReason || 'Disconnected from the server.');
-    });
-  }
-
-  setChar(c) {
-    const first = !this.char;
-    const prev = this.char;
-    this.char = c;
-    this.cooldownMax = {};
-    const cdr = Math.min(0.4, Object.values(c.equipment).reduce((s, it) => s + ((it && it.stats.cdr) || 0), 0) / 100);
-    for (const slot of SLOTS) this.cooldownMax[slot] = ABILITIES[c.cls][slot].cd * (slot === 'primary' ? 1 : 1 - cdr);
-    this.hud.setCharacter(c);
-    this.panels.refresh(['inventory', 'character', 'merchant', 'blacksmith', 'arena', 'trainer']);
-    if (!first && prev && c.level > prev.level) { this.ui.banner('LEVEL UP!', `You reached level ${c.level}`); sound.playFanfare(); }
-  }
-
-  setZone(zone, you) {
-    this.world.setZone(zone, you);
-    this.labels.clear();
-    this.renderer.setZone(zone, this.world.map, MONTHLY_THEMES.find(t => t.id === zone.theme) || this.theme);
-    this.hud.setZone(zone);
-    this.predictor.reset();
-    this.walkTarget = null;
-    if (zone.kind !== 'world') this.panels.close();
-    $('#screen-loading').hidden = true;
-    this.hud.root.hidden = false;
-    if (zone.kind === 'dungeon') this.ui.banner(zone.name.split('·')[1]?.trim() || 'Dungeon', zone.name.split('·')[0].trim());
-    else if (zone.kind === 'arena') this.ui.banner(zone.name, 'Prepare for battle');
-    sound.playReviveChime();
+  /* ---------------- server messages ---------------- */
+  onMessage(m) {
+    switch (m.t) {
+      case 's': this.world.applySnapshot(m); break;
+      case 'score': this.world.score = m.score; this.hud.setScore(m.score); this.panels.refresh(['score']); break;
+      case 'end': this.endResult = m; this.panels.open('end'); (m.result.winner === this.world.team ? sound.playVictory() : sound.playDefeat()); break;
+      case 'chat':
+        this.chat.add(m);
+        if (m.from) for (const e of this.world.entities.values()) if (e.kind === 'hero' && e.n === m.from) { this.labels.bubble(e.id, m.text, m.ch); break; }
+        break;
+      case 'notice': this.ui.toast(m.text, m.kind); break;
+      default:
+    }
   }
 
   start() {
@@ -177,229 +84,193 @@ export class Game {
       this.frame(dt);
     };
     this.frameId = requestAnimationFrame(loop);
-    this.pingTimer = setInterval(() => this.send({ t: 'ping', c: performance.now() }), 3000);
   }
 
   stop() {
     this.running = false;
     cancelAnimationFrame(this.frameId);
-    clearInterval(this.pingTimer);
-    this.unsub.forEach(u => u());
     this.input.destroy();
-  }
-
-  aimPoint() {
-    const pos = this.predictor.render;
-    if (this.input.isTouch || !this.input.mouse.inside) {
-      // Auto-aim at the nearest hostile on touch screens.
-      let best = null, bd = 14;
-      for (const e of this.world.entities.values()) {
-        if ((e.kind !== 'monster' && e.kind !== 'player') || !(e.fl & F.HOSTILE) || (e.fl & F.DEAD)) continue;
-        const d = dist(pos.x, pos.y, e.x, e.y);
-        if (d < bd) { bd = d; best = e; }
-      }
-      if (best) return { x: best.x, y: best.y };
-      const you = this.world.you();
-      const f = you ? you.f : 0;
-      const mv = this.input.move();
-      const a = mv.mx || mv.my ? Math.atan2(mv.my, mv.mx) : f;
-      return { x: pos.x + Math.cos(a) * 5, y: pos.y + Math.sin(a) * 5 };
-    }
-    return this.renderer.pick(this.input.mouse.x, this.input.mouse.y) || { x: pos.x + 1, y: pos.y };
-  }
-
-  frame(dt) {
-    const world = this.world;
-    if (!world.map) { this.renderer.frame(dt, world, null); return; }
-    // Fixed-rate input ticks matching the server simulation.
-    this.acc += dt;
-    let steps = 0;
-    while (this.acc >= TICK && steps < 10) {
-      this.acc -= TICK;
-      steps++;
-      let mv = this.input.move();
-      if (this.walkTarget) mv = this.autoWalk(mv);
-      const aim = this.aimPoint();
-      const inp = this.predictor.step(world.map, mv, world.me);
-      this.send({ t: 'in', s: inp.s, mx: mv.mx, my: mv.my, ax: round2(aim.x), ay: round2(aim.y), at: this.input.attacking() && !this.input.typing() });
-    }
-    if (this.acc > TICK * 10) this.acc = 0;
-    const self = this.predictor.update(dt);
-    world.update(dt, this.predictor.ready ? self : null);
-    const focus = this.predictor.ready ? self : world.you();
-    this.renderer.frame(dt, world, focus);
-    this.labels.update(world, this.renderer, dt);
-    if (world.me) this.hud.updateSelf(world.me);
-    this.hud.drawMinimap(world, focus, dt);
-    this.hud.updateZoneBanner(focus, world.me);
-    this.updatePrompt(focus);
-    this.fps = this.fps * 0.95 + (1 / Math.max(dt, 0.001)) * 0.05;
-    if (this.settings.showFps) this.fpsEl.textContent = `${Math.round(this.fps)} fps · ${this.offline ? 'offline' : `${this.ping} ms`}`;
-    else if (this.fpsEl.textContent) this.fpsEl.textContent = '';
-  }
-
-  nearestInteractable(pos) {
-    let best = null, bd = Infinity;
-    for (const e of this.world.entities.values()) {
-      if (e.kind !== 'npc' && e.kind !== 'portal' && !(e.kind === 'chest' && !(e.fl & F.OPEN))) continue;
-      const d = dist(pos.x, pos.y, e.x, e.y);
-      if (d <= INTERACT_RANGE + e.r && d < bd) { bd = d; best = e; }
-    }
-    return best;
-  }
-
-  updatePrompt(pos) {
-    if (!pos || (this.world.me && this.world.me.dead)) return this.hud.setPrompt(null);
-    const e = this.nearestInteractable(pos);
-    this.hud.setPrompt(e ? `[F]  ${INTERACT_TEXT[e.kind](e)}` : null);
-  }
-
-  interactNearest() {
-    const e = this.nearestInteractable(this.predictor.render);
-    if (e) this.send({ t: 'interact', id: e.id });
-  }
-
-  autoWalk(mv) {
-    const t = this.world.entities.get(this.walkTarget);
-    const pos = this.predictor.render;
-    if (!t || mv.mx || mv.my) { this.walkTarget = null; return mv; }
-    const d = dist(pos.x, pos.y, t.x, t.y);
-    if (d <= INTERACT_RANGE + t.r - 0.6) {
-      this.send({ t: 'interact', id: t.id });
-      this.walkTarget = null;
-      return { mx: 0, my: 0 };
-    }
-    return { mx: (t.x - pos.x) / d, my: (t.y - pos.y) / d };
-  }
-
-  clickEntity(ev) {
-    // Screen-space hit test against interactable objects.
-    let best = null, bd = 48;
-    for (const e of this.world.entities.values()) {
-      if (e.kind !== 'npc' && e.kind !== 'portal' && e.kind !== 'chest') continue;
-      const p = this.renderer.project(e.x, e.y, 1);
-      const d = Math.hypot(p.x - ev.clientX, p.y - ev.clientY);
-      if (d < bd) { bd = d; best = e; }
-    }
-    return best;
-  }
-
-  cast(slot) {
-    if (!this.char || this.input.typing()) return;
-    sound.init();
-    const aim = this.aimPoint();
-    this.send({ t: 'cast', sl: slot, ax: round2(aim.x), ay: round2(aim.y) });
-  }
-
-  potion(k) { this.send({ t: 'pot', k }); }
-
-  action(a, ev) {
-    sound.init();
-    switch (a) {
-      case 'q': case 'e': case 'r': case 'dash': return this.cast(a);
-      case 'potHp': return this.potion('hp');
-      case 'potMp': return this.potion('mp');
-      case 'interact': return this.interactNearest();
-      case 'click': {
-        const e = this.clickEntity(ev);
-        if (e) {
-          const pos = this.predictor.render;
-          if (dist(pos.x, pos.y, e.x, e.y) <= INTERACT_RANGE + e.r) this.send({ t: 'interact', id: e.id });
-          else this.walkTarget = e.id;
-          this.input.mouse.left = false; // do not swing at an NPC we clicked
-        }
-        return;
-      }
-      case 'inventory': case 'character': case 'social': case 'leaderboard': case 'help': return this.panels.toggle(a);
-      case 'map': return this.hud.toggleMap();
-      case 'scoreboard': return this.world.zone && this.world.zone.kind === 'arena' ? this.panels.toggle('scoreboard') : null;
-      case 'chat': return this.chat.focus();
-      case 'chatCommand': return this.chat.focus('/');
-      case 'zoom': this.renderer.zoom = Math.max(0.6, Math.min(1.6, this.renderer.zoom + ev * 0.08)); return;
-      case 'escape':
-        if (this.panels.current) return this.panels.close();
-        return this.panels.open('settings');
-      default:
-    }
-  }
-
-  onFx(ev) {
-    const youId = this.world.youId;
-    const now = performance.now();
-    this.renderer.handleFx(ev, this.world);
-    switch (ev.e) {
-      case 'dmg': {
-        const mine = ev.s === youId;
-        const onMe = ev.id === youId;
-        if (onMe) {
-          this.labels.floatText(ev.x, ev.y, `-${ev.v}`, 'hurt');
-          if (now - this.lastHitSound > 120) { sound.playHit(); this.lastHitSound = now; }
-          if (ev.v > (this.world.me ? this.world.me.mhp * 0.12 : 50)) this.renderer.shake(0.25);
-        } else if (mine) {
-          this.labels.floatText(ev.x, ev.y, ev.c ? `${ev.v}!` : `${ev.v}`, ev.c ? 'crit' : 'dmg', ev.c ? 1.3 : 1);
-        } else {
-          this.labels.floatText(ev.x, ev.y, `${ev.v}`, 'other', 0.8);
-        }
-        break;
-      }
-      case 'heal': if (ev.v >= 3) this.labels.floatText(ev.x, ev.y, `+${ev.v}`, 'heal'); break;
-      case 'reward':
-        if (ev.xp) this.labels.floatText(ev.x, ev.y, `+${ev.xp} XP`, 'xp', 0.9);
-        if (ev.gold) setTimeout(() => this.labels.floatText(ev.x, ev.y, `+${ev.gold} 🪙`, 'gold', 0.9), 150);
-        break;
-      case 'pickup':
-        this.labels.floatText(ev.x, ev.y, ev.n, `loot-${ev.ra}`, 0.9);
-        sound.playPickup();
-        if (ev.ra === 'legendary' || ev.ra === 'epic') this.ui.toast(`You found ${ev.n}!`, 'good');
-        break;
-      case 'slash': if (ev.id === youId || this.near(ev)) sound.playSlash(); break;
-      case 'shoot': if (ev.id === youId) (ev.c === 'arcanist' ? sound.playMagicSpark() : sound.playLaserShot()); break;
-      case 'dash': case 'blink': if (ev.id === youId) sound.playDash(); break;
-      case 'shock': case 'nova': case 'boom': if (this.near(ev)) sound.playNova(); break;
-      case 'levelup': if (ev.id !== youId) this.labels.floatText(ev.x, ev.y, 'LEVEL UP!', 'xp', 1.2); break;
-      case 'revive': if (ev.id === youId) sound.playReviveChime(); break;
-      case 'chest': sound.playFanfare(); break;
-      case 'anvil': break;
-      case 'fight': this.ui.banner('FIGHT!'); sound.playFanfare(); break;
-      default:
-    }
-  }
-
-  near(ev) {
-    const p = this.predictor.render;
-    return ev.x === undefined || dist(p.x, p.y, ev.x, ev.y) < 16;
-  }
-
-  setSetting(k, v) {
-    this.settings[k] = v;
-    try { localStorage.setItem('broadroads_settings', JSON.stringify(this.settings)); } catch { /* ignore */ }
-    if (k === 'quality') this.renderer.setQuality(v);
-    if (k === 'volume') sound.setVolume(v);
-  }
-
-  logout() {
-    this.stop();
-    this.conn.close();
-    this.onExit(null, true);
   }
 
   destroy() {
     this.stop();
     this.labels.clear();
-    this.renderer.clearViews();
+    this.renderer.clear();
     this.panels.close();
+    this.chat.destroy();
     this.hud.root.hidden = true;
     this.hud.root.replaceChildren();
+    document.body.classList.remove('is-dead');
+  }
+
+  /* ---------------- frame ---------------- */
+  cursorWorld() { return this.renderer.pick(this.input.mouse.x, this.input.mouse.y) || { x: 0, y: 0 }; }
+
+  updateHover() {
+    const mx = this.input.mouse.x, my = this.input.mouse.y;
+    let best = null, bd = 42;
+    for (const e of this.world.entities.values()) {
+      if (!['hero', 'minion', 'monster', 'tower', 'inhib', 'nexus', 'ward'].includes(e.kind) || (e.fl & F.DEAD)) continue;
+      const p = this.renderer.project(e.x, e.y, e.kind === 'tower' || e.kind === 'nexus' ? 2.5 : 1);
+      const d = Math.hypot(p.x - mx, p.y - my) - (e.kind === 'nexus' ? 30 : e.kind === 'tower' ? 18 : 0);
+      if (d < bd) { bd = d; best = e; }
+    }
+    this.hover = best;
+    const enemy = best && best.tm !== this.world.team;
+    this.renderer.canvas.classList.toggle('cursor-attack', !!enemy);
+  }
+
+  frame(dt) {
+    const w = this.world;
+    // Direct movement (arrow keys / joystick) and basic-attack button.
+    const dir = this.input.arrows();
+    const at = this.input.touch.attack;
+    this.dirT -= dt;
+    if (dir.mx !== this.lastDir.mx || dir.my !== this.lastDir.my || at !== this.lastDir.at || ((dir.mx || dir.my || at) && this.dirT <= 0)) {
+      this.dirT = 0.2;
+      this.lastDir = { ...dir, at };
+      this.send({ t: 'dir', mx: dir.mx, my: dir.my, at });
+    }
+    // Holding the right mouse button keeps moving toward the cursor.
+    if (this.input.mouse.right) {
+      this.rmbT -= dt;
+      if (this.rmbT <= 0) { this.rmbT = 0.15; this.issueMove(false, true); }
+    }
+    w.update(dt);
+    this.updateHover();
+    const you = w.you();
+    const focus = this.input.keys.has('Space') && you ? you : you;
+    const pan = this.renderer.locked ? null : this.input.edgePan(this.renderer.width, this.renderer.height);
+    if (this.input.keys.has('Space') && you) { this.renderer.camTarget.x = you.x; this.renderer.camTarget.z = you.y; }
+    this.renderer.frame(dt, w, focus, pan);
+    this.labels.update(w, this.renderer, dt);
+    if (w.me) this.hud.updateSelf(w.me);
+    for (const p of this.pings) p.t -= dt;
+    this.pings = this.pings.filter(p => p.t > 0);
+    this.hud.drawMinimap(dt);
+    if (this.rangeT > 0) { this.rangeT -= dt; if (this.rangeT <= 0) this.renderer.showRange(0, 0, 0); else if (you && w.me) this.renderer.showRange(you.x, you.y, w.me.st.rg + 0.6); }
+    this.fps = this.fps * 0.95 + (1 / Math.max(dt, 0.001)) * 0.05;
+    if (this.settings.showFps) this.fpsEl.textContent = `${Math.round(this.fps)} fps · ${this.app.offline ? 'offline' : `${this.app.ping} ms`}`;
+    else if (this.fpsEl.textContent) this.fpsEl.textContent = '';
+  }
+
+  issueMove(attackMove = false, quiet = false) {
+    const p = this.cursorWorld();
+    const target = this.hover && this.hover.tm !== this.world.team ? this.hover : null;
+    this.send({ t: 'mv', x: round2(p.x), y: round2(p.y), id: target ? target.id : undefined, a: attackMove ? 1 : 0 });
+    if (!quiet) this.renderer.showMoveMarker(p.x, p.y, !!target || attackMove);
+  }
+
+  /** Target for touch casting: nearest visible enemy (champions first). */
+  autoTarget(range) {
+    const you = this.world.you();
+    if (!you) return null;
+    let best = null, bs = Infinity;
+    for (const e of this.world.entities.values()) {
+      if (e.tm === this.world.team || (e.fl & F.DEAD) || !['hero', 'minion', 'monster'].includes(e.kind)) continue;
+      const d = dist(you.x, you.y, e.x, e.y);
+      if (d > range) continue;
+      const s = (e.kind === 'hero' ? 0 : 100) + d;
+      if (s < bs) { bs = s; best = e; }
+    }
+    return best;
+  }
+
+  castKey(slot) {
+    sound.init();
+    const you = this.world.you();
+    let p, id;
+    if (this.input.isTouch && you) {
+      const info = this.myChamp();
+      const range = slot === 'd' || slot === 'f' ? 6 : (info?.abilities[slot]?.range || 6) + 2;
+      const t = this.autoTarget(Math.max(6, range));
+      if (t) { p = { x: t.x, y: t.y }; id = t.id; }
+      else { const d = this.input.touch; const a = d.mx || d.my ? Math.atan2(d.my, d.mx) : you.f; p = { x: you.x + Math.cos(a) * 5, y: you.y + Math.sin(a) * 5 }; }
+    } else {
+      p = this.cursorWorld();
+      id = this.hover ? this.hover.id : undefined;
+    }
+    if (slot === 'ward') return this.send({ t: 'ward', x: round2(p.x), y: round2(p.y) });
+    if (slot === 'd' || slot === 'f') return this.send({ t: 'summ', k: slot, x: round2(p.x), y: round2(p.y), id });
+    const me = this.world.me;
+    if (me && me.rk[slot] === 0) return this.ui.toast('Level this ability first (Ctrl + key or the + button).', 'warn', 1500);
+    this.send({ t: 'cast', sl: slot, x: round2(p.x), y: round2(p.y), id });
+  }
+
+  toggleLock(v) {
+    this.renderer.locked = v === undefined ? !this.renderer.locked : v;
+    this.settings.cameraLock = this.renderer.locked;
+    this.app.saveSettings();
+    this.ui.toast(this.renderer.locked ? 'Camera locked' : 'Camera unlocked — edge-pan or click the minimap', 'info', 1500);
+  }
+
+  action(a, ev) {
+    sound.init();
+    switch (a) {
+      case 'rclick': this.rmbT = 0.15; return this.issueMove(false);
+      case 'lclick': if (this.amovePending) { this.amovePending = false; this.issueMove(true); } return;
+      case 'amove': this.issueMove(true); this.rangeT = 1.2; return;
+      case 'stop': return this.send({ t: 'stop' });
+      case 'q': case 'w': case 'e': case 'r': case 'd': case 'f': case 'ward': return this.castKey(a);
+      case 'level': return this.send({ t: 'lvl', sl: ev });
+      case 'recall': return this.send({ t: 'recall' });
+      case 'item0': case 'item1': case 'item2': case 'item3': case 'item4': case 'item5': return this.send({ t: 'use', slot: Number(a.slice(4)) });
+      case 'shop': return this.panels.toggle('shop');
+      case 'score': return this.panels.open('score');
+      case 'scoreUp': if (this.panels.isOpen('score')) this.panels.close(); return;
+      case 'lock': return this.toggleLock();
+      case 'chat': return this.chat.focus();
+      case 'help': return this.panels.toggle('help');
+      case 'ping': { const p = this.cursorWorld(); const k = ev.ctrlKey ? 'danger' : ev.shiftKey ? 'help' : 'go'; return this.send({ t: 'mping', x: round2(p.x), y: round2(p.y), k }); }
+      case 'zoom': this.renderer.zoom = Math.max(0.65, Math.min(1.5, this.renderer.zoom + ev * 0.07)); return;
+      case 'escape': if (this.panels.current && this.panels.current !== 'end') return this.panels.close(); return this.panels.open('settings');
+      default:
+    }
+  }
+
+  onFx(ev) {
+    const w = this.world;
+    this.renderer.handleFx(ev, w);
+    const you = w.youId;
+    switch (ev.e) {
+      case 'dmg': {
+        const mine = ev.s === you, onMe = ev.id === you;
+        const e = w.entities.get(ev.id);
+        if (onMe) { this.labels.floatText(ev.x, ev.y, `-${ev.v}`, 'hurt'); if (ev.v > 60) sound.playHit(); }
+        else if (mine) this.labels.floatText(ev.x, ev.y, ev.c ? `${ev.v}!` : `${ev.v}`, ev.c ? 'crit' : ev.t === 'm' ? 'magic' : ev.t === 't' ? 'true' : 'dmg', ev.c ? 1.3 : 1);
+        else if (e && e.kind === 'hero') this.labels.floatText(ev.x, ev.y, `${ev.v}`, 'other', 0.8);
+        break;
+      }
+      case 'heal': if (ev.v >= 10) this.labels.floatText(ev.x, ev.y, `+${ev.v}`, 'heal'); break;
+      case 'gold': this.labels.floatText(ev.x, ev.y, `+${ev.v}`, 'gold', 0.85); sound.playPickup(); break;
+      case 'levelup': if (ev.id === you) { sound.playFanfare(); } { const e = w.entities.get(ev.id); if (e) { e.l = ev.l; this.labels.levelChanged(e); } } break;
+      case 'atk': if (ev.id === you) sound.playSlash(); break;
+      case 'cast': if (ev.id === you) sound.playMagicSpark(); break;
+      case 'shock': case 'boom': case 'nova': if (this.near(ev)) sound.playNova(); break;
+      case 'buy': sound.playAnvilStrike(); this.panels.refresh(['shop']); break;
+      case 'nomana': this.ui.toast('Not enough mana', 'warn', 900); break;
+      case 'kill': this.hud.feed(ev.k, ev.v, ev.a); if (ev.k === you) sound.playVictory(); else if (ev.v === you) sound.playDefeat(); break;
+      case 'ann': this.hud.announce(ev.text, ev.k); if (['kill', 'multi', 'ace', 'tower', 'inhib', 'epic', 'victory'].includes(ev.k)) sound.playFanfare(); this.chat.system(ev.text, 'event'); break;
+      case 'ping': this.pings.push({ x: ev.x, y: ev.y, t: 3, color: PING_COLORS[ev.k] || '#22c55e' }); sound.playPickup(); break;
+      case 'respawn': if (ev.id === you) sound.playReviveChime(); break;
+      case 'recall': if (ev.id === you) sound.playReviveChime(); break;
+      default:
+    }
+  }
+
+  near(ev) { const y = this.world.you(); return !y || ev.x === undefined || dist(y.x, y.y, ev.x, ev.y) < 18; }
+
+  setSetting(k, v) {
+    this.settings[k] = v;
+    this.app.saveSettings();
+    if (k === 'quality') this.renderer.setQuality(v);
+    if (k === 'volume') sound.setVolume(v);
+  }
+
+  quit() {
+    if (this.endResult) this.send({ t: 'leave' });
+    else this.send({ t: 'abandon' });
   }
 }
 
 function round2(v) { return Math.round(v * 100) / 100; }
-
-export function applyThemeCss(theme) {
-  const r = document.documentElement.style;
-  r.setProperty('--accent', theme.primary);
-  r.setProperty('--accent-2', theme.secondary);
-  r.setProperty('--accent-3', theme.accent);
-}
-
-export { ARCHETYPES };

@@ -1,17 +1,17 @@
 /* Procedural low-poly models. Every model returns { root, parts } where
    parts holds the pieces the animator moves. */
 import * as THREE from 'three';
-import { makeGlowTexture } from './terrain.js';
+import { makeGlowTexture } from './glow.js';
 
 const geoCache = new Map();
-function geo(key, make) {
+export function geo(key, make) {
   if (!geoCache.has(key)) geoCache.set(key, make());
   return geoCache.get(key);
 }
-const std = (color, extra = {}) => new THREE.MeshStandardMaterial({ color, roughness: 0.7, metalness: 0.1, ...extra });
-const basic = (color, extra = {}) => new THREE.MeshBasicMaterial({ color, ...extra });
+export const std = (color, extra = {}) => new THREE.MeshStandardMaterial({ color, roughness: 0.7, metalness: 0.1, ...extra });
+export const basic = (color, extra = {}) => new THREE.MeshBasicMaterial({ color, ...extra });
 
-function mesh(g, m, x = 0, y = 0, z = 0) {
+export function mesh(g, m, x = 0, y = 0, z = 0) {
   const o = new THREE.Mesh(g, m);
   o.position.set(x, y, z);
   o.castShadow = true;
@@ -24,17 +24,17 @@ export const CLASS_COLORS = {
   arcanist: { body: 0x4b3a78, trim: 0x7dd3fc, cloth: 0x2a1f4f },
 };
 
-export const RARITY_HEX = { common: 0xcbd5e1, uncommon: 0x4ade80, rare: 0x60a5fa, epic: 0xc084fc, legendary: 0xfb923c, mat: 0xfacc15, potion: 0xf43f5e };
+const RARITY_HEX = { common: 0xcbd5e1, uncommon: 0x4ade80, rare: 0x60a5fa, epic: 0xc084fc, legendary: 0xfb923c };
 
-function glowSprite(color, size) {
+export function glowSprite(color, size) {
   const s = new THREE.Sprite(new THREE.SpriteMaterial({ map: makeGlowTexture(), color, transparent: true, depthWrite: false, blending: THREE.AdditiveBlending }));
   s.scale.set(size, size, 1);
   return s;
 }
 
 /* ---------------- heroes ---------------- */
-export function buildHero(cls, theme, gear = {}) {
-  const c = CLASS_COLORS[cls] || CLASS_COLORS.paladin;
+export function buildHero(cls, theme, gear = {}, colors = null) {
+  const c = colors || CLASS_COLORS[cls] || CLASS_COLORS.paladin;
   const root = new THREE.Group();
   const body = new THREE.Group();
   root.add(body);
@@ -300,133 +300,4 @@ export function buildMonster(type, elite) {
     built.aura = aura;
   }
   return { root, parts: built };
-}
-
-/* ---------------- NPCs, loot, objects ---------------- */
-export function buildNpc(type, color) {
-  const root = new THREE.Group();
-  const hero = buildHero(type === 'blacksmith' || type === 'arena' ? 'paladin' : type === 'merchant' ? 'gunner' : 'arcanist', { primaryHex: new THREE.Color(color).getHex() });
-  hero.parts.ring.material.color.set(color);
-  root.add(hero.root);
-  // Market counter in front and a banner pole behind.
-  const counter = mesh(geo('counter', () => new THREE.BoxGeometry(2.2, 0.7, 0.5)), std(0x6b4423, { roughness: 0.9 }), 0, 0.35, 1.1);
-  const cloth = mesh(geo('counterCloth', () => new THREE.BoxGeometry(2.25, 0.12, 0.55)), std(color, { roughness: 0.8 }), 0, 0.72, 1.1);
-  const pole = mesh(geo('pole', () => new THREE.CylinderGeometry(0.06, 0.06, 3.6, 6)), std(0x5b3a1f), -1.1, 1.8, -0.9);
-  const flag = mesh(geo('flag', () => new THREE.BoxGeometry(0.9, 1.3, 0.04)), std(color, { emissive: color, emissiveIntensity: 0.25 }), -0.6, 2.9, -0.9);
-  root.add(counter, cloth, pole, flag);
-  const marker = glowSprite(color, 1.6);
-  marker.position.y = 3.6;
-  root.add(marker);
-  return { root, parts: { ...hero.parts, marker } };
-}
-
-export function buildLoot(rarity, lootType) {
-  const root = new THREE.Group();
-  const color = RARITY_HEX[rarity] || 0xffffff;
-  let gem;
-  if (lootType === 'potion') {
-    gem = mesh(geo('potion', () => new THREE.SphereGeometry(0.2, 10, 8)), std(color, { emissive: color, emissiveIntensity: 0.5, transparent: true, opacity: 0.9 }), 0, 0.45, 0);
-  } else if (lootType === 'mat') {
-    gem = mesh(geo('ore', () => new THREE.OctahedronGeometry(0.22, 0)), std(color, { emissive: color, emissiveIntensity: 0.6, flatShading: true }), 0, 0.45, 0);
-  } else {
-    gem = mesh(geo('lootBag', () => new THREE.BoxGeometry(0.35, 0.35, 0.35)), std(color, { emissive: color, emissiveIntensity: 0.45, metalness: 0.5 }), 0, 0.45, 0);
-    gem.rotation.set(0.6, 0, 0.6);
-  }
-  const glow = glowSprite(color, rarity === 'legendary' || rarity === 'epic' ? 2.2 : 1.2);
-  glow.position.y = 0.45;
-  root.add(gem, glow);
-  if (['rare', 'epic', 'legendary'].includes(rarity)) {
-    const beam = new THREE.Mesh(geo('beam', () => new THREE.CylinderGeometry(0.08, 0.15, 6, 8, 1, true)), basic(color, { transparent: true, opacity: 0.35, blending: THREE.AdditiveBlending, depthWrite: false, side: THREE.DoubleSide }));
-    beam.position.y = 3;
-    root.add(beam);
-  }
-  return { root, parts: { gem } };
-}
-
-export function buildPortal(type, open) {
-  const root = new THREE.Group();
-  const color = type === 'exit' ? 0x38bdf8 : open ? 0xfacc15 : 0x64748b;
-  const ring = mesh(geo('portalRing', () => new THREE.TorusGeometry(0.9, 0.12, 8, 28)), std(color, { emissive: color, emissiveIntensity: 0.7 }), 0, 1.1, 0);
-  const disc = new THREE.Mesh(geo('portalDisc', () => new THREE.CircleGeometry(0.85, 28)), basic(color, { transparent: true, opacity: open ? 0.45 : 0.15, side: THREE.DoubleSide, blending: THREE.AdditiveBlending, depthWrite: false }));
-  disc.position.y = 1.1;
-  const base = new THREE.Mesh(geo('portalBase', () => new THREE.RingGeometry(0.6, 1.2, 32)), basic(color, { transparent: true, opacity: 0.5, side: THREE.DoubleSide, depthWrite: false }));
-  base.rotation.x = -Math.PI / 2;
-  base.position.y = 0.04;
-  const glow = glowSprite(color, 3);
-  glow.position.y = 1.1;
-  root.add(ring, disc, base, glow);
-  if (type === 'stairs') {
-    for (let i = 0; i < 4; i++) {
-      const step = mesh(geo('step', () => new THREE.BoxGeometry(1.6, 0.12, 0.4)), std(0x3f3a46), 0, 0.06 - i * 0.01, -0.6 + i * 0.4);
-      step.scale.x = 1 - i * 0.12;
-      root.add(step);
-    }
-  }
-  return { root, parts: { ring, disc, base, glow, color } };
-}
-
-export function buildChest(open) {
-  const root = new THREE.Group();
-  const wood = std(0x7a4b22, { roughness: 0.8 });
-  const gold = std(0xd4af37, { metalness: 0.9, roughness: 0.3 });
-  const box = mesh(geo('chestBox', () => new THREE.BoxGeometry(0.9, 0.5, 0.6)), wood, 0, 0.25, 0);
-  const band = mesh(geo('chestBand', () => new THREE.BoxGeometry(0.92, 0.08, 0.62)), gold, 0, 0.35, 0);
-  const lidPivot = new THREE.Group(); lidPivot.position.set(0, 0.5, -0.3);
-  const lid = mesh(geo('chestLid', () => new THREE.CylinderGeometry(0.3, 0.3, 0.9, 10, 1, false, 0, Math.PI)), wood, 0, 0, 0.3);
-  lid.rotation.z = Math.PI / 2;
-  lidPivot.add(lid);
-  if (open) lidPivot.rotation.x = -1.9;
-  const glow = glowSprite(0xfacc15, open ? 0.01 : 1.6);
-  glow.position.y = 0.6;
-  root.add(box, band, lidPivot, glow);
-  return { root, parts: { lidPivot, glow } };
-}
-
-const PROJ_COLORS = { bolt: 0xfde047, lance: 0x67e8f9, spark: 0xc084fc, arrow: 0xf97316, orb: 0xa855f7, rocket: 0xfb923c };
-
-export function buildProjectile(style, themeColor) {
-  const root = new THREE.Group();
-  const color = style === 'bolt' || style === 'spark' || style === 'lance' ? themeColor : PROJ_COLORS[style] || 0xffffff;
-  const size = style === 'lance' ? 0.24 : style === 'orb' ? 0.22 : 0.14;
-  const core = new THREE.Mesh(geo(`proj${size}`, () => new THREE.SphereGeometry(size, 10, 8)), basic(0xffffff));
-  if (style === 'lance' || style === 'arrow' || style === 'bolt') core.scale.set(1, 1, 3);
-  const glow = glowSprite(color, size * 9);
-  root.add(core, glow);
-  root.position.y = 1.0;
-  return { root, parts: { core, glow } };
-}
-
-export function buildAoe(style, radius, hostile, themeColor) {
-  const root = new THREE.Group();
-  const color = hostile ? 0xef4444 : style === 'vortex' ? 0x9333ea : style === 'barrage' ? 0xfb923c : themeColor;
-  const parts = {};
-  if (style === 'ring') {
-    const ring = new THREE.Mesh(geo('aoeRingWave', () => new THREE.RingGeometry(0.85, 1.0, 64)), basic(color, { transparent: true, opacity: 0.8, side: THREE.DoubleSide, depthWrite: false, blending: THREE.AdditiveBlending }));
-    ring.rotation.x = -Math.PI / 2;
-    ring.position.y = 0.08;
-    root.add(ring);
-    parts.ring = ring;
-  } else {
-    const edge = new THREE.Mesh(geo('aoeEdge', () => new THREE.RingGeometry(0.94, 1.0, 64)), basic(color, { transparent: true, opacity: 0.9, side: THREE.DoubleSide, depthWrite: false }));
-    edge.rotation.x = -Math.PI / 2;
-    edge.position.y = 0.06;
-    edge.scale.setScalar(radius);
-    const fill = new THREE.Mesh(geo('aoeFill', () => new THREE.CircleGeometry(1, 48)), basic(color, { transparent: true, opacity: 0.18, side: THREE.DoubleSide, depthWrite: false }));
-    fill.rotation.x = -Math.PI / 2;
-    fill.position.y = 0.05;
-    fill.scale.setScalar(style === 'telegraph' ? 0.01 : radius);
-    root.add(edge, fill);
-    parts.edge = edge; parts.fill = fill;
-    if (style === 'vortex') {
-      const swirl = new THREE.Mesh(geo('swirl', () => new THREE.TorusKnotGeometry(0.5, 0.06, 64, 6, 2, 5)), basic(0xd8b4fe, { transparent: true, opacity: 0.7, blending: THREE.AdditiveBlending }));
-      swirl.position.y = 0.6;
-      swirl.rotation.x = Math.PI / 2;
-      swirl.scale.setScalar(radius * 0.6);
-      const glow = glowSprite(0x9333ea, radius * 2.2);
-      glow.position.y = 0.6;
-      root.add(swirl, glow);
-      parts.swirl = swirl;
-    }
-  }
-  return { root, parts };
 }

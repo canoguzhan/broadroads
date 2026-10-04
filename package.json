@@ -1,6 +1,6 @@
 {
   "name": "broadroads",
-  "version": "2.0.0",
+  "version": "3.0.0",
   "description": "BroadRoads — an online action-RPG: shared MMO world, solo & party dungeons, and ranked PvP arenas.",
   "private": true,
   "type": "module",

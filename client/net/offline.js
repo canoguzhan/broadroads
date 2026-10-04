@@ -29,7 +29,7 @@ export class OfflineConnection extends Emitter {
     super();
     this.name = name;
     this.offline = true;
-    this.hub = new Hub({ store: new LocalStore(), offline: true, config: { worldBossFirst: 180, worldBossInterval: 600 } });
+    this.hub = new Hub({ store: new LocalStore(), offline: true, config: { selectTime: 25 } });
     this.session = null;
     this.bytesIn = 0;
   }

@@ -1,107 +1,96 @@
-/* Heads-up display. */
-import { h, $, clear, fmt, timeStr } from './dom.js';
-import { abilityInfo, seasonalClass, xpToNext, MAX_LEVEL, SLOTS } from '../../shared/classes.js';
+/* MOBA heads-up display. */
+import { h, $, clear, timeStr } from './dom.js';
 import { TILE } from '../../shared/tiles.js';
-import { zoneAt } from '../../shared/worldmap.js';
 import { F } from '../../shared/constants.js';
-import { ARENA_MODES } from '../../shared/sim/arena.js';
+import { canRankUp, MAX_RANK } from '../../shared/moba/champions.js';
 
-const KEY_LABELS = { primary: 'LMB', dash: 'SPC', q: 'Q', e: 'E', r: 'R' };
-export const CLASS_ICON = { paladin: '🛡️', gunner: '🏹', arcanist: '🔮' };
-
-const MINI_COLORS = {
-  [TILE.WALL]: '#5d564d', [TILE.FLOOR]: '#3d3846', [TILE.ROAD]: '#a08865', [TILE.GRASS]: '#3c6a2d', [TILE.WATER]: '#2d6aa0',
-  [TILE.PLAZA]: '#9d9484', [TILE.BRIDGE]: '#7a5a38', [TILE.TREE]: '#1f3d19', [TILE.ROCK]: '#555', [TILE.PILLAR]: '#555', [TILE.SAND]: '#b9a06a', [TILE.RUG]: '#7a2a35',
-};
+const SLOT_KEYS = { q: 'Q', w: 'W', e: 'E', r: 'R' };
+const MINI = { [TILE.TREE]: '#14200f', [TILE.ROAD]: '#8a7756', [TILE.GRASS]: '#33502a', [TILE.RIVER]: '#2a6a8a', [TILE.PLAZA]: '#5f6370', [TILE.RUG]: '#808594', [TILE.BUSH]: '#2c5a22' };
+export const TEAM_CSS = { blue: '#3b82f6', red: '#ef4444', neutral: '#d4d4d4' };
 
 export class Hud {
   constructor(game) {
     this.game = game;
     this.root = $('#hud');
-    this.build();
     this.miniT = 0;
-    this.explored = null;
-    this.bigMap = false;
+    this.build();
   }
 
   build() {
     const g = this.game;
     clear(this.root);
-    // Player frame.
-    this.pf = {
-      portrait: h('div.pf-portrait'),
-      name: h('div.pf-name'),
-      level: h('div.pf-level'),
-      hp: h('div.bar-fill.hp'), hpText: h('span.bar-text'),
-      mp: h('div.bar-fill.mp'), mpText: h('span.bar-text'),
-      xp: h('div.bar-fill.xp'), xpText: h('span.bar-text'),
-      buffs: h('div.pf-buffs'),
-      gold: h('div.pf-gold'),
-    };
-    const frame = h('div.player-frame', {},
-      this.pf.portrait,
-      h('div.pf-main', {},
-        h('div.pf-head', {}, this.pf.name, this.pf.level),
-        h('div.bar.bar-hp', {}, this.pf.hp, this.pf.hpText),
-        h('div.bar.bar-mp', {}, this.pf.mp, this.pf.mpText),
-        h('div.bar.bar-xp', {}, this.pf.xp, this.pf.xpText),
-        h('div.pf-row', {}, this.pf.gold, this.pf.buffs)));
-    this.partyEl = h('div.party-frames');
-    this.root.append(h('div.hud-tl', {}, frame, this.partyEl));
+    this.root.hidden = false;
+    // Top: score.
+    this.scoreEl = h('div.m-score', {}, h('span.ms-blue'), h('span.ms-time'), h('span.ms-red'));
+    this.objEl = h('div.m-obj');
+    this.root.append(h('div.m-top', {}, this.scoreEl, this.objEl));
+    // Top-left: ally frames.
+    this.teamEl = h('div.m-team');
+    this.root.append(this.teamEl);
+    // Top-right: personal stats.
+    this.kdaEl = h('div.m-kda');
+    this.root.append(h('div.m-tr', {}, this.kdaEl, h('div.m-menu', {},
+      h('button.icon-btn', { title: 'Shop (P)', onclick: () => g.panels.toggle('shop') }, '🛒'),
+      h('button.icon-btn', { title: 'Scoreboard (Tab)', onclick: () => g.panels.toggle('score') }, '📊'),
+      h('button.icon-btn', { title: 'Camera lock (Y)', onclick: () => g.toggleLock() }, '🎥'),
+      h('button.icon-btn', { title: 'Settings (Esc)', onclick: () => g.panels.toggle('settings') }, '⚙️'))));
+    this.feedEl = h('div.m-feed');
+    this.root.append(this.feedEl);
 
-    // Top centre: zone + bars.
-    this.zoneName = h('div.zone-name');
-    this.zoneSub = h('div.zone-sub');
-    this.bossBar = h('div.boss-bar', { hidden: true }, h('div.boss-name'), h('div.boss-track', {}, h('div.boss-fill')), h('div.boss-text'));
-    this.arenaBar = h('div.arena-bar', { hidden: true });
-    this.root.append(h('div.hud-tc', {}, h('div.zone-banner', {}, this.zoneName, this.zoneSub), this.arenaBar, this.bossBar));
-
-    // Top right: minimap + menu.
-    this.mini = h('canvas.minimap', { width: 200, height: 200 });
-    this.mini.addEventListener('click', () => this.toggleMap());
-    const menu = h('div.menu-buttons', {},
-      ...[['inventory', '🎒', 'Inventory (I)'], ['character', '👤', 'Character (C)'], ['social', '👥', 'Social & Party (P)'], ['leaderboard', '🏆', 'Leaderboards (L)'], ['help', '❔', 'Controls (H)'], ['settings', '⚙️', 'Settings (Esc)']]
-        .map(([id, icon, title]) => h('button.icon-btn', { title, 'aria-label': title, onclick: () => g.panels.toggle(id) }, icon)));
-    this.feedEl = h('div.kill-feed');
-    this.root.append(h('div.hud-tr', {}, h('div.minimap-wrap', {}, this.mini, h('div.minimap-hint', { text: 'M: map' })), menu, this.feedEl));
-
-    // Right: tracker.
-    this.tracker = h('div.tracker');
-    this.root.append(h('div.hud-r', {}, this.tracker));
-
-    // Bottom centre: action bar.
-    this.slots = {};
-    const bar = h('div.action-bar');
-    for (const slot of SLOTS) {
-      const cd = h('div.slot-cd');
-      const cdText = h('div.slot-cd-text');
-      const el = h('button.slot', { 'data-slot': slot, onclick: () => g.cast(slot), onmouseenter: ev => this.slotTip(ev, slot), onmouseleave: () => g.ui.hideTip() },
-        h('div.slot-icon'), cd, cdText, h('div.slot-key', { text: KEY_LABELS[slot] }), h('div.slot-mana'));
-      this.slots[slot] = { el, cd, cdText };
-      bar.append(el);
+    // Bottom: champion bar.
+    this.portrait = h('div.mb-portrait', {}, h('div.mb-icon'), h('div.mb-level'));
+    this.xpRing = h('div.mb-xp');
+    this.statsEl = h('div.mb-stats');
+    this.abil = {};
+    const abilRow = h('div.mb-abils');
+    this.passiveEl = h('div.mb-passive');
+    abilRow.append(this.passiveEl);
+    for (const s of ['q', 'w', 'e', 'r']) {
+      const up = h('button.mb-up', { title: `Level up (Ctrl+${SLOT_KEYS[s]})`, onclick: ev => { ev.stopPropagation(); g.send({ t: 'lvl', sl: s }); } }, '+');
+      const el = h('div.mb-slot', { onclick: () => g.castKey(s), onmouseenter: ev => this.abilityTip(ev, s), onmouseleave: () => g.ui.hideTip() },
+        h('div.mb-ic'), h('div.mb-cd'), h('div.mb-cdt'), h('div.mb-key', { text: SLOT_KEYS[s] }), h('div.mb-mana'), h('div.mb-pips'), up);
+      this.abil[s] = { el, up, cd: el.querySelector('.mb-cd'), cdt: el.querySelector('.mb-cdt'), pips: el.querySelector('.mb-pips'), mana: el.querySelector('.mb-mana') };
+      abilRow.append(el);
     }
-    bar.append(h('div.bar-sep'));
-    this.potEls = {};
-    for (const [k, key, icon] of [['hp', '1', '❤️'], ['mp', '2', '💧']]) {
-      const count = h('div.slot-count');
-      const cd = h('div.slot-cd');
-      const el = h('button.slot.slot-pot', { onclick: () => g.potion(k), title: k === 'hp' ? 'Health Potion (1)' : 'Mana Potion (2)' }, h('div.slot-icon', { text: icon }), cd, count, h('div.slot-key', { text: key }));
-      this.potEls[k] = { el, count, cd };
-      bar.append(el);
+    this.summ = {};
+    const summRow = h('div.mb-summs');
+    for (const k of ['d', 'f']) {
+      const el = h('div.mb-slot.small', { onclick: () => g.castKey(k), onmouseenter: ev => this.summTip(ev, k), onmouseleave: () => g.ui.hideTip() }, h('div.mb-ic'), h('div.mb-cd'), h('div.mb-cdt'), h('div.mb-key', { text: k.toUpperCase() }));
+      this.summ[k] = { el, cd: el.querySelector('.mb-cd'), cdt: el.querySelector('.mb-cdt') };
+      summRow.append(el);
     }
-    this.root.append(h('div.hud-bc', {}, bar));
+    this.hpBar = h('div.mb-bar.hp', {}, h('div.mb-fill'), h('div.mb-shield'), h('span.mb-text'));
+    this.mpBar = h('div.mb-bar.mp', {}, h('div.mb-fill'), h('span.mb-text'));
+    this.itemEls = [];
+    const items = h('div.mb-items');
+    for (let i = 0; i < 6; i++) {
+      const el = h('div.mb-item', { onclick: () => g.send({ t: 'use', slot: i }), onmouseenter: ev => this.itemTip(ev, i), onmouseleave: () => g.ui.hideTip() }, h('span.mb-iic'), h('span.mb-ik', { text: i + 1 }), h('span.mb-in'));
+      this.itemEls.push(el);
+      items.append(el);
+    }
+    this.wardEl = h('div.mb-item.ward', { title: 'Ward (T)', onclick: () => g.castKey('ward') }, h('span.mb-iic', { text: '👁️' }), h('span.mb-ik', { text: 'T' }), h('span.mb-in'));
+    items.append(this.wardEl);
+    this.goldEl = h('button.mb-gold', { onclick: () => g.panels.toggle('shop'), title: 'Shop (P)' });
+    this.recallBtn = h('button.mb-recall', { onclick: () => g.send({ t: 'recall' }), title: 'Recall (B)' }, '🏠');
+    this.root.append(h('div.m-bottom', {},
+      this.statsEl,
+      h('div.mb-left', {}, this.portrait, this.xpRing),
+      h('div.mb-center', {}, h('div.mb-row', {}, abilRow, summRow), this.hpBar, this.mpBar),
+      h('div.mb-right', {}, items, h('div.mb-goldrow', {}, this.goldEl, this.recallBtn))));
 
-    // Interaction prompt, death overlay, countdown.
-    this.prompt = h('div.interact-prompt', { hidden: true });
-    this.death = h('div.death-overlay', { hidden: true });
-    this.countdown = h('div.countdown', { hidden: true });
-    this.root.append(this.prompt, this.death, this.countdown);
+    // Minimap.
+    this.mini = h('canvas.m-mini', { width: 220, height: 220 });
+    this.mini.addEventListener('mousedown', e => this.miniClick(e));
+    this.mini.addEventListener('mousemove', e => { if (e.buttons === 1) this.miniClick(e); });
+    this.mini.addEventListener('contextmenu', e => e.preventDefault());
+    this.root.append(h('div.m-minimap', {}, this.mini));
 
-    // Chat container (filled by Chat).
-    this.chatRoot = h('div.hud-bl');
+    this.annEl = h('div.m-ann');
+    this.deathEl = h('div.m-death', { hidden: true });
+    this.recallEl = h('div.m-recall', { hidden: true }, h('div.mr-fill'), h('span', { text: 'Recalling…' }));
+    this.root.append(this.annEl, this.deathEl, this.recallEl);
+    this.chatRoot = h('div.m-chat');
     this.root.append(this.chatRoot);
-
-    // Touch controls.
     if (g.input.isTouch) this.buildTouch();
   }
 
@@ -110,341 +99,244 @@ export class Hud {
     const knob = h('div.joy-knob');
     const base = h('div.joy-base', {}, knob);
     g.input.bindJoystick(base, knob);
-    const btn = (label, cls, onDown, onUp) => {
+    const btn = (label, cls, down, up) => {
       const b = h(`button.touch-btn.${cls}`, { text: label });
-      b.addEventListener('touchstart', e => { e.preventDefault(); onDown(); }, { passive: false });
-      if (onUp) b.addEventListener('touchend', e => { e.preventDefault(); onUp(); });
+      b.addEventListener('touchstart', e => { e.preventDefault(); down(); }, { passive: false });
+      if (up) b.addEventListener('touchend', e => { e.preventDefault(); up(); });
       return b;
     };
-    const atk = btn('⚔️', 'tb-attack', () => { g.input.touch.attack = true; }, () => { g.input.touch.attack = false; });
-    this.root.append(h('div.touch-controls', {}, base,
-      h('div.touch-cluster', {}, atk, btn('💨', 'tb-dash', () => g.cast('dash')), btn('Q', 'tb-q', () => g.cast('q')), btn('E', 'tb-e', () => g.cast('e')), btn('R', 'tb-r', () => g.cast('r')), btn('✋', 'tb-use', () => g.interactNearest()))));
+    this.root.append(h('div.touch-controls', {}, base, h('div.touch-cluster.moba', {},
+      btn('⚔️', 'tb-attack', () => { g.input.touch.attack = true; }, () => { g.input.touch.attack = false; }),
+      btn('Q', 'tb-q', () => g.castKey('q')), btn('W', 'tb-w', () => g.castKey('w')), btn('E', 'tb-e', () => g.castKey('e')), btn('R', 'tb-r', () => g.castKey('r')),
+      btn('D', 'tb-d', () => g.castKey('d')), btn('F', 'tb-f', () => g.castKey('f')))));
     this.root.classList.add('touch');
   }
 
-  slotTip(ev, slot) {
-    const c = this.game.char;
-    if (!c) return;
-    const a = abilityInfo(c.cls, slot, this.game.theme);
+  /* ---------------- tooltips ---------------- */
+  abilityTip(ev, s) {
+    const info = this.game.myChamp();
+    if (!info) return;
+    const a = info.abilities[s];
+    const rank = this.game.world.me?.rk[s] || 0;
     this.game.ui.showTip(ev.currentTarget, h('div', {},
       h('div.tip-title', { text: `${a.icon} ${a.name}` }),
-      h('div.tip-sub', { text: `${KEY_LABELS[slot]} · ${a.cd}s cooldown${a.mana ? ` · ${a.mana} mana` : ''}` }),
+      h('div.tip-sub', { text: `Rank ${rank}/${MAX_RANK[s]} · Cooldown ${a.cd.join('/')}s${a.mana.some(Boolean) ? ` · Mana ${a.mana.join('/')}` : ''}${a.range ? ` · Range ${a.range}` : ''}` }),
       h('div.tip-desc', { text: a.desc })));
   }
 
-  setCharacter(c) {
-    const sc = seasonalClass(c.cls, this.game.theme);
-    this.pf.portrait.textContent = CLASS_ICON[c.cls];
-    this.pf.name.textContent = c.name;
-    this.pf.level.textContent = `Lv ${c.level} ${sc.name}`;
-    const need = xpToNext(c.level);
-    const pct = c.level >= MAX_LEVEL ? 100 : (c.xp / need) * 100;
-    this.pf.xp.style.width = `${pct}%`;
-    this.pf.xpText.textContent = c.level >= MAX_LEVEL ? 'MAX LEVEL' : `${fmt(c.xp)} / ${fmt(need)} XP`;
-    this.pf.gold.textContent = `🪙 ${fmt(c.gold)}`;
-    for (const slot of SLOTS) {
-      const a = abilityInfo(c.cls, slot, this.game.theme);
-      const s = this.slots[slot];
-      s.el.querySelector('.slot-icon').textContent = a.icon;
-      s.el.querySelector('.slot-mana').textContent = a.mana ? a.mana : '';
-      s.mana = a.mana;
-    }
-    this.potEls.hp.count.textContent = c.potions.hp;
-    this.potEls.mp.count.textContent = c.potions.mp;
+  summTip(ev, k) {
+    const sp = this.game.world.me?.sm?.[k];
+    const d = this.game.data.summoners[sp];
+    if (!d) return;
+    this.game.ui.showTip(ev.currentTarget, h('div', {}, h('div.tip-title', { text: `${d.icon} ${d.name}` }), h('div.tip-sub', { text: `Cooldown ${d.cd}s` }), h('div.tip-desc', { text: d.desc })));
+  }
+
+  itemTip(ev, i) {
+    const it = this.game.world.me?.it?.[i];
+    if (!it) return;
+    this.game.ui.showTip(ev.currentTarget, this.game.panels.itemTooltip(it.id, true));
+  }
+
+  /* ---------------- per-frame ---------------- */
+  setChampion(info) {
+    this.portrait.querySelector('.mb-icon').textContent = info.icon;
+    this.passiveEl.textContent = '◆';
+    this.passiveEl.title = `${info.passive.name}: ${info.passive.desc}`;
+    for (const s of ['q', 'w', 'e', 'r']) this.abil[s].el.querySelector('.mb-ic').textContent = info.abilities[s].icon;
   }
 
   updateSelf(me) {
+    const g = this.game;
     if (!me) return;
-    const hpPct = Math.max(0, me.hp / me.mhp) * 100;
-    this.pf.hp.style.width = `${hpPct}%`;
-    this.pf.hpText.textContent = `${Math.max(0, me.hp)} / ${me.mhp}`;
-    this.pf.mp.style.width = `${(me.mp / me.mmp) * 100}%`;
-    this.pf.mpText.textContent = `${me.mp} / ${me.mmp}`;
-    this.pf.hp.classList.toggle('low', hpPct < 30);
-    const cdMax = this.game.cooldownMax || {};
-    SLOTS.forEach((slot, i) => {
-      const s = this.slots[slot];
-      const left = me.cd[i];
-      const max = cdMax[slot] || 1;
-      if (left > 0.05) {
-        s.cd.style.background = `conic-gradient(rgba(0,0,0,0.72) ${(left / max) * 360}deg, transparent 0deg)`;
-        s.cdText.textContent = left >= 1 ? Math.ceil(left) : left.toFixed(1);
-      } else if (s.cdText.textContent) {
-        s.cd.style.background = '';
-        s.cdText.textContent = '';
-      }
-      s.el.classList.toggle('no-mana', me.mp < (s.mana || 0));
-    });
-    for (const k of ['hp', 'mp']) {
-      const p = this.potEls[k];
-      p.cd.style.background = me.pot > 0 ? `conic-gradient(rgba(0,0,0,0.72) ${(me.pot / 8) * 360}deg, transparent 0deg)` : '';
+    const info = g.myChamp();
+    this.portrait.querySelector('.mb-level').textContent = me.lv;
+    this.xpRing.style.setProperty('--xp', `${me.xpn ? (me.xp / me.xpn) * 360 : 360}deg`);
+    const hpPct = Math.max(0, me.hp / me.mhp);
+    const total = me.mhp + me.sh;
+    this.hpBar.querySelector('.mb-fill').style.width = `${(me.hp / total) * 100}%`;
+    this.hpBar.querySelector('.mb-shield').style.left = `${(me.hp / total) * 100}%`;
+    this.hpBar.querySelector('.mb-shield').style.width = `${(me.sh / total) * 100}%`;
+    this.hpBar.querySelector('.mb-text').textContent = `${me.hp} / ${me.mhp}${me.sh ? ` (+${me.sh})` : ''}`;
+    this.hpBar.classList.toggle('low', hpPct < 0.3);
+    this.mpBar.querySelector('.mb-fill').style.width = `${me.mmp ? (me.mp / me.mmp) * 100 : 0}%`;
+    this.mpBar.querySelector('.mb-text').textContent = `${me.mp} / ${me.mmp}`;
+    const st = me.st;
+    const statsHtml = `⚔️${st.ad} 🔮${st.ap} 🛡️${st.ar} 🌀${st.mr} ⚡${st.as} 👟${Math.round(st.ms * 70)} 🎯${st.cr}% ⏳${st.ha}`;
+    if (this.statsEl.textContent !== statsHtml) this.statsEl.textContent = statsHtml;
+    for (const s of ['q', 'w', 'e', 'r']) {
+      const a = this.abil[s];
+      const rank = me.rk[s];
+      const left = me.cd[s];
+      const max = me.cdm[s] || 1;
+      a.el.classList.toggle('locked', rank === 0);
+      if (left > 0.05) { a.cd.style.background = `conic-gradient(rgba(0,0,0,0.75) ${(left / max) * 360}deg, transparent 0deg)`; a.cdt.textContent = left >= 1 ? Math.ceil(left) : left.toFixed(1); }
+      else if (a.cdt.textContent) { a.cd.style.background = ''; a.cdt.textContent = ''; }
+      const cost = info && rank ? info.abilities[s].mana[Math.min(info.abilities[s].mana.length - 1, rank - 1)] : 0;
+      a.mana.textContent = cost ? cost : '';
+      a.el.classList.toggle('nomana', rank > 0 && me.mp < cost);
+      const pipKey = `${rank}/${MAX_RANK[s]}`;
+      if (a.pips._k !== pipKey) { a.pips._k = pipKey; a.pips.innerHTML = ''; for (let i = 0; i < MAX_RANK[s]; i++) a.pips.append(h(`i${i < rank ? '.on' : ''}`)); }
+      a.up.hidden = !canRankUp({ points: me.pts, ranks: me.rk, level: me.lv }, s);
     }
-    const buffs = me.b.filter(([k]) => k !== 'invuln').map(([k, t]) => `${BUFF_ICONS[k] || '✨'}${Math.ceil(t)}`).join(' ');
-    if (this.pf.buffs.textContent !== buffs) this.pf.buffs.textContent = buffs;
-    this.updateDeath(me);
+    for (const k of ['d', 'f']) {
+      const sm = this.summ[k];
+      const sp = g.data.summoners[me.sm[k]];
+      sm.el.querySelector('.mb-ic').textContent = sp ? sp.icon : '?';
+      const left = me.cd[k], max = me.cdm[k] || (sp ? sp.cd : 1);
+      if (left > 0.05) { sm.cd.style.background = `conic-gradient(rgba(0,0,0,0.75) ${(left / max) * 360}deg, transparent 0deg)`; sm.cdt.textContent = Math.ceil(left); }
+      else if (sm.cdt.textContent) { sm.cd.style.background = ''; sm.cdt.textContent = ''; }
+    }
+    const itemsKey = JSON.stringify(me.it);
+    if (this._items !== itemsKey) {
+      this._items = itemsKey;
+      me.it.forEach((it, i) => {
+        const el = this.itemEls[i];
+        el.querySelector('.mb-iic').textContent = it ? g.data.items[it.id].icon : '';
+        el.querySelector('.mb-in').textContent = it && it.n > 1 ? it.n : '';
+        el.classList.toggle('empty', !it);
+      });
+    }
+    this.wardEl.querySelector('.mb-in').textContent = me.wd;
+    this.wardEl.classList.toggle('empty', me.wd <= 0);
+    const gold = `🪙 ${me.g}`;
+    if (this.goldEl.textContent !== gold) this.goldEl.textContent = gold;
+    this.goldEl.classList.toggle('canshop', !!me.shop);
+    const kda = `⚔️ ${me.k} / ${me.d} / ${me.a}   🗡️ ${me.cs} CS`;
+    if (this.kdaEl.textContent !== kda) this.kdaEl.textContent = kda;
+    // Death & recall.
+    this.deathEl.hidden = !me.dead;
+    if (me.dead) this.deathEl.textContent = `Respawning in ${Math.ceil(me.rs)}`;
+    document.body.classList.toggle('is-dead', !!me.dead);
+    this.recallEl.hidden = !me.rc;
+    if (me.rc) this.recallEl.querySelector('.mr-fill').style.width = `${me.rc * 100}%`;
   }
 
-  updateDeath(me) {
+  setScore(sc) {
     const g = this.game;
-    const kind = g.world.zone?.kind;
-    if (!me.dead) { if (!this.death.hidden) this.death.hidden = true; return; }
-    this.death.hidden = false;
-    const key = `${kind}|${Math.ceil(me.rt)}|${Math.round(me.rv * 10)}|${g.world.meta?.phase}`;
-    if (this.death._key === key) return;
-    this.death._key = key;
-    clear(this.death);
-    if (kind === 'world') {
-      this.death.append(h('h2', { text: 'You have fallen' }), h('p', { text: 'An ally can revive you by standing beside you.' }),
-        h('button.btn.btn-primary', { disabled: me.rt > 0, onclick: () => g.send({ t: 'respawn' }) }, me.rt > 0 ? `Respawn in ${Math.ceil(me.rt)}` : 'Respawn in Town'));
-    } else if (kind === 'dungeon') {
-      this.death.append(h('h2', { text: 'You are down!' }),
-        h('p', { text: g.world.meta?.mode === 'party' ? 'Stand-by allies can revive you — they need to stand next to you.' : 'Your solo run has ended.' }),
-        me.rv > 0 ? h('div.revive-track', {}, h('div.revive-fill', { style: { width: `${(me.rv / 3) * 100}%` } })) : null,
-        g.world.meta?.mode === 'party' ? h('button.btn', { onclick: () => g.send({ t: 'respawn' }) }, 'Return to Town') : h('p.muted', { text: 'Returning to town…' }));
-    } else {
-      this.death.append(h('h2', { text: 'Defeated' }), h('p', { text: me.rt > 0 ? `Respawning in ${Math.ceil(me.rt)}…` : 'Waiting for the next round…' }));
+    this.scoreEl.querySelector('.ms-blue').textContent = `${sc.kills.blue}`;
+    this.scoreEl.querySelector('.ms-red').textContent = `${sc.kills.red}`;
+    this.scoreEl.querySelector('.ms-time').textContent = timeStr(sc.time);
+    this.objEl.textContent = `🏰 ${sc.towers.blue}–${sc.towers.red}   🐉 ${sc.dragons.blue}–${sc.dragons.red}${sc.dragonIn ? ` (${timeStr(sc.dragonIn)})` : ' (up)'}   👾 ${sc.baronIn ? timeStr(sc.baronIn) : 'up'}`;
+    clear(this.teamEl);
+    for (const p of sc.players.filter(p => p.tm === g.world.team && p.id !== g.world.youId)) {
+      const e = g.world.entities.get(p.id);
+      const pct = e && !p.dead ? Math.max(0, e.hp / e.mh) * 100 : 0;
+      const info = g.champInfo[p.c];
+      this.teamEl.append(h(`div.m-ally${p.dead ? '.dead' : ''}`, { title: p.name },
+        h('div.ma-icon', { text: info ? info.icon : '?' }, h('span.ma-lvl', { text: p.l })),
+        h('div.ma-bar', {}, h('div.ma-fill', { style: { width: `${pct}%` } })),
+        p.dead ? h('div.ma-rs', { text: p.rs }) : null));
     }
   }
 
-  setZone(zone) {
-    this.explored = zone.kind === 'dungeon' ? new Uint8Array(zone.map.w * zone.map.h) : null;
-    this.miniBase = null;
-    this.zoneKind = zone.kind;
-    this.zoneName.textContent = zone.name;
-    this.zoneSub.textContent = '';
-    this.bossBar.hidden = true;
-    this.arenaBar.hidden = zone.kind !== 'arena';
-    clear(this.feedEl);
-  }
-
-  updateZoneBanner(pos, me) {
-    const z = this.game.world.zone;
-    if (!z || z.kind !== 'world' || !pos) return;
-    const zone = zoneAt(pos.x, pos.y);
-    const name = zone.name;
-    const sub = me && me.safe ? '🛡️ Safe Zone' : zone.levels ? `Monsters Lv ${zone.levels[0]}–${zone.levels[1]}` : '';
-    if (this.zoneName.textContent !== name) {
-      this.zoneName.textContent = name;
-      this.zoneName.classList.remove('flash'); void this.zoneName.offsetWidth; this.zoneName.classList.add('flash');
-    }
-    if (this.zoneSub.textContent !== sub) this.zoneSub.textContent = sub;
-  }
-
-  setMeta(meta) {
+  feed(killer, victim, assists) {
     const g = this.game;
-    const kind = g.world.zone?.kind;
-    clear(this.tracker);
-    if (kind === 'world') {
-      const title = h('div.tr-title', { text: `🌍 Shard ${meta.shard} · ${meta.players} online here` });
-      this.tracker.append(title);
-      if (meta.boss) {
-        this.showBoss('Broadroad Behemoth', meta.boss.hp, meta.boss.mhp);
-        this.tracker.append(h('div.tr-line.tr-alert', { text: '🔥 World Boss active in the south-east wastes!' }));
-      } else {
-        this.bossBar.hidden = true;
-        this.tracker.append(h('div.tr-line', { text: `🔥 World boss in ${timeStr(meta.bossIn)}` }));
-      }
-    } else if (kind === 'dungeon') {
-      this.zoneName.textContent = `${meta.mode === 'solo' ? 'Solo' : 'Party'} Dungeon`;
-      this.zoneSub.textContent = `Floor ${meta.floor}${meta.bossFloor ? ' · Guardian Floor' : ''}`;
-      this.tracker.append(
-        h('div.tr-title', { text: `🌀 Floor ${meta.floor}` }),
-        h('div.tr-line', { text: `☠️ ${meta.left} monsters remain · ${meta.kills} slain` }),
-        h('div.tr-line', { text: meta.stairsOpen ? '🪜 Stairs are open — find them to descend' : '🔒 Defeat the guardian to unseal the stairs' }),
-        h('button.btn.btn-sm', { onclick: () => g.send({ t: 'dungeon', op: 'leave' }) }, 'Leave Dungeon'));
-      if (meta.boss) this.showBoss(meta.boss.name, meta.boss.hp, meta.boss.mhp); else this.bossBar.hidden = true;
-    } else if (kind === 'arena') {
-      this.renderArena(meta);
-    }
-    if (g.queue && g.queue.state === 'searching') {
-      this.tracker.append(h('div.tr-queue', {},
-        h('span', { text: `⚔️ Searching: ${ARENA_MODES[g.queue.mode]?.name || g.queue.mode} · ${timeStr(g.queue.since || 0)}` }),
-        h('button.btn.btn-sm', { onclick: () => g.send({ t: 'arena', op: 'cancel' }) }, 'Cancel')));
-    }
-  }
-
-  renderArena(meta) {
-    const g = this.game;
-    clear(this.arenaBar);
-    const cfg = ARENA_MODES[meta.mode];
-    let score;
-    if (meta.mode === 'duel') score = `${meta.roundWins.A} – ${meta.roundWins.B}`;
-    else if (meta.mode === 'team') score = `${meta.scores.A} – ${meta.scores.B}`;
-    else {
-      const me = meta.board.find(r => r.id === g.world.youId);
-      score = `${me ? me.kills : 0} / ${meta.killTarget} kills`;
-    }
-    this.arenaBar.append(
-      h('div.ab-mode', { text: `${cfg.name}${meta.ranked ? ' · Ranked' : ''}` }),
-      h('div.ab-score', {}, meta.mode !== 'ffa' ? h('span.team-a', { text: 'BLUE' }) : null, h('b', { text: score }), meta.mode !== 'ffa' ? h('span.team-b', { text: 'RED' }) : null),
-      h('div.ab-time', { text: meta.mode === 'duel' ? `Round ${meta.round} · ${timeStr(meta.timeLeft)}` : timeStr(meta.timeLeft) }));
-    this.countdown.hidden = !(meta.phase === 'prep' || meta.phase === 'roundEnd');
-    if (!this.countdown.hidden) this.countdown.textContent = meta.phase === 'prep' ? (meta.phaseT > 0 ? meta.phaseT : 'FIGHT!') : `Round ${meta.round} over`;
-    this.tracker.append(h('div.tr-title', { text: '⚔️ Scoreboard (Tab)' }), this.scoreTable(meta, false));
-    if (meta.phase === 'end' || meta.result) this.countdown.hidden = true;
-  }
-
-  scoreTable(meta, full) {
-    const g = this.game;
-    const rows = [...meta.board].sort((a, b) => (a.team > b.team ? 1 : a.team < b.team ? -1 : 0) || b.kills - a.kills);
-    return h(`table.score-table${full ? '.full' : ''}`, {},
-      h('tr', {}, h('th', { text: 'Player' }), h('th', { text: 'K' }), h('th', { text: 'D' })),
-      ...rows.map(r => h(`tr${r.id === g.world.youId ? '.me' : ''}${meta.mode !== 'ffa' ? `.t-${r.team}` : ''}`, {},
-        h('td', { text: `${CLASS_ICON[r.cls] || ''} ${r.name}${r.bot ? ' 🤖' : ''}` }), h('td', { text: r.kills }), h('td', { text: r.deaths }))));
-  }
-
-  showBoss(name, hp, mhp) {
-    this.bossBar.hidden = false;
-    this.bossBar.querySelector('.boss-name').textContent = name;
-    this.bossBar.querySelector('.boss-fill').style.width = `${Math.max(0, hp / mhp) * 100}%`;
-    this.bossBar.querySelector('.boss-text').textContent = `${fmt(hp)} / ${fmt(mhp)}`;
-  }
-
-  setParty(party, youName) {
-    clear(this.partyEl);
-    if (!party) return;
-    for (const m of party.members) {
-      if (m.name === youName) continue;
-      const pct = m.online ? Math.max(0, m.hp / m.mhp) * 100 : 0;
-      this.partyEl.append(h(`div.party-member${m.online ? '' : '.offline'}${m.dead ? '.dead' : ''}`, { title: m.zone },
-        h('div.pm-name', {}, party.leader === m.name ? '👑 ' : '', `${CLASS_ICON[m.cls] || ''} ${m.name}`, h('span.pm-lvl', { text: m.level ? ` ${m.level}` : '' })),
-        h('div.bar.bar-hp.bar-sm', {}, h('div.bar-fill.hp', { style: { width: `${pct}%` } })),
-        h('div.pm-zone', { text: m.online ? (m.dead ? '💀 Down' : m.zone) : 'Offline' })));
-    }
-  }
-
-  setPrompt(text) {
-    if (!text) { if (!this.prompt.hidden) this.prompt.hidden = true; return; }
-    this.prompt.hidden = false;
-    if (this.prompt.textContent !== text) this.prompt.textContent = text;
-  }
-
-  feed(k, v) {
-    const row = h('div.feed-row', {}, h('b', { text: k }), ' ⚔️ ', h('span', { text: v }));
+    const ci = id => { const p = g.players.get(id); return p ? (g.champInfo[p.champ]?.icon || '?') : '☠️'; };
+    const team = id => g.players.get(id)?.team;
+    const row = h(`div.feed-row.${team(killer) === g.world.team ? 'ally' : team(killer) ? 'enemy' : 'neutral'}`, {},
+      h('span.fr-c', { text: killer ? ci(killer) : '🏰' }), h('span.fr-x', { text: assists && assists.length ? `+${assists.length} ⚔️` : '⚔️' }), h('span.fr-c', { text: ci(victim) }));
     this.feedEl.prepend(row);
-    while (this.feedEl.children.length > 5) this.feedEl.lastChild.remove();
-    setTimeout(() => row.remove(), 8000);
+    while (this.feedEl.children.length > 6) this.feedEl.lastChild.remove();
+    setTimeout(() => row.remove(), 9000);
   }
 
-  toggleMap() {
-    this.bigMap = !this.bigMap;
-    this.mini.classList.toggle('big', this.bigMap);
-    this.mini.width = this.mini.height = this.bigMap ? 520 : 200;
-    this.miniT = 0;
+  announce(text, kind) {
+    const el = h(`div.ann.k-${kind}`, { text });
+    this.annEl.append(el);
+    while (this.annEl.children.length > 3) this.annEl.firstChild.remove();
+    setTimeout(() => el.classList.add('out'), 3200);
+    setTimeout(() => el.remove(), 3800);
   }
 
   /* ---------------- minimap ---------------- */
-  buildMiniBase(map) {
+  buildMiniBase(rift) {
     const c = document.createElement('canvas');
-    c.width = map.w; c.height = map.h;
+    c.width = rift.size; c.height = rift.size;
     const ctx = c.getContext('2d');
-    const img = ctx.createImageData(map.w, map.h);
+    const img = ctx.createImageData(rift.size, rift.size);
     const cache = {};
-    for (let y = 0; y < map.h; y++) {
-      for (let x = 0; x < map.w; x++) {
-        const t = map.get(x, y);
-        const col = cache[t] || (cache[t] = hexToRgb(MINI_COLORS[t] || '#000'));
-        const i = (y * map.w + x) * 4;
-        img.data[i] = col[0]; img.data[i + 1] = col[1]; img.data[i + 2] = col[2];
-        img.data[i + 3] = t === TILE.VOID ? 0 : 255;
-      }
+    for (let y = 0; y < rift.size; y++) for (let x = 0; x < rift.size; x++) {
+      const t = rift.map.get(x, y);
+      const hex = MINI[t] || '#000';
+      const col = cache[hex] || (cache[hex] = [parseInt(hex.slice(1, 3), 16), parseInt(hex.slice(3, 5), 16), parseInt(hex.slice(5, 7), 16)]);
+      const i = (y * rift.size + x) * 4;
+      img.data[i] = col[0]; img.data[i + 1] = col[1]; img.data[i + 2] = col[2]; img.data[i + 3] = 255;
     }
     ctx.putImageData(img, 0, 0);
     this.miniBase = c;
-    this.miniFog = this.explored ? document.createElement('canvas') : null;
-    if (this.miniFog) {
-      this.miniFog.width = map.w; this.miniFog.height = map.h;
-      const f = this.miniFog.getContext('2d');
-      f.fillStyle = '#000';
-      f.fillRect(0, 0, map.w, map.h);
-    }
   }
 
-  revealAround(map, px, py) {
-    if (!this.explored || !this.miniFog) return;
-    const R = 9;
-    const f = this.miniFog.getContext('2d');
-    f.globalCompositeOperation = 'destination-out';
-    for (let y = Math.floor(py - R); y <= py + R; y++) {
-      for (let x = Math.floor(px - R); x <= px + R; x++) {
-        if (!map.inBounds(x, y)) continue;
-        const i = y * map.w + x;
-        if (this.explored[i]) continue;
-        if ((x - px) ** 2 + (y - py) ** 2 > R * R) continue;
-        this.explored[i] = 1;
-        f.fillRect(x, y, 1, 1);
-      }
-    }
-    f.globalCompositeOperation = 'source-over';
+  miniClick(e) {
+    const g = this.game;
+    const r = this.mini.getBoundingClientRect();
+    const S = g.world.rift.size;
+    const x = (e.clientX - r.left) / r.width * S, y = (e.clientY - r.top) / r.height * S;
+    if (e.button === 2) { g.send({ t: 'mv', x, y }); g.renderer.showMoveMarker(x, y); return; }
+    if (e.altKey) { g.send({ t: 'mping', x, y, k: 'go' }); return; }
+    g.renderer.locked = false;
+    g.renderer.camTarget.x = x; g.renderer.camTarget.z = y;
   }
 
-  drawMinimap(world, pos, dt) {
+  drawMinimap(dt) {
     this.miniT -= dt;
-    if (this.miniT > 0 || !world.map || !pos) return;
-    this.miniT = 0.15;
-    const map = world.map;
-    if (!this.miniBase) this.buildMiniBase(map);
-    this.revealAround(map, pos.x, pos.y);
+    if (this.miniT > 0) return;
+    this.miniT = 0.12;
+    const g = this.game, w = g.world;
+    if (!w.rift) return;
+    if (!this.miniBase) this.buildMiniBase(w.rift);
     const ctx = this.mini.getContext('2d');
-    const W = this.mini.width;
-    const zoneKind = world.zone.kind;
-    // Tiles per minimap: the whole map when enlarged or small maps, a window otherwise.
-    const span = this.bigMap || zoneKind === 'arena' ? Math.max(map.w, map.h) : zoneKind === 'dungeon' ? 56 : 64;
-    const scale = W / span;
-    const ox = this.bigMap || zoneKind === 'arena' ? 0 : pos.x - span / 2;
-    const oy = this.bigMap || zoneKind === 'arena' ? 0 : pos.y - span / 2;
-    ctx.fillStyle = '#07060a';
-    ctx.fillRect(0, 0, W, W);
-    ctx.imageSmoothingEnabled = false;
-    ctx.drawImage(this.miniBase, ox, oy, span, span, 0, 0, W, W);
-    if (this.miniFog) ctx.drawImage(this.miniFog, ox, oy, span, span, 0, 0, W, W);
-    const dot = (x, y, r, color, stroke) => {
-      const sx = (x - ox) * scale, sy = (y - oy) * scale;
-      if (sx < -5 || sy < -5 || sx > W + 5 || sy > W + 5) return;
-      if (this.explored && !this.explored[Math.floor(y) * map.w + Math.floor(x)]) return;
-      ctx.beginPath();
-      ctx.arc(sx, sy, r, 0, Math.PI * 2);
-      ctx.fillStyle = color;
-      ctx.fill();
-      if (stroke) { ctx.strokeStyle = stroke; ctx.lineWidth = 1.5; ctx.stroke(); }
-    };
-    for (const e of world.entities.values()) {
-      if (e.id === world.youId) continue;
+    const W = this.mini.width, S = w.rift.size, k = W / S;
+    ctx.drawImage(this.miniBase, 0, 0, W, W);
+    // Fog of war.
+    if (g.renderer.fogCanvas) { ctx.globalAlpha = 0.45; ctx.globalCompositeOperation = 'multiply'; ctx.drawImage(invertFog(g.renderer.fogCanvas), 0, 0, W, W); ctx.globalCompositeOperation = 'source-over'; ctx.globalAlpha = 1; }
+    for (const e of w.entities.values()) {
+      if (e.fl & F.DEAD) continue;
+      const x = e.x * k, y = e.y * k;
+      ctx.fillStyle = TEAM_CSS[e.tm] || '#ccc';
       switch (e.kind) {
-        case 'monster': if (!(e.fl & F.DEAD)) dot(e.x, e.y, e.b ? 6 : e.el ? 3.5 : 2.2, e.b ? '#ff2d55' : '#ef4444'); break;
-        case 'player': dot(e.x, e.y, 3.5, e.fl & F.HOSTILE ? '#f43f5e' : e.fl & F.PARTY ? '#22c55e' : '#60a5fa', '#000'); break;
-        case 'npc': dot(e.x, e.y, 4, '#facc15', '#000'); break;
-        case 'portal': dot(e.x, e.y, 5, e.t === 'exit' ? '#38bdf8' : '#facc15', '#000'); break;
-        case 'chest': if (!(e.fl & F.OPEN)) dot(e.x, e.y, 3, '#f59e0b'); break;
-        case 'loot': dot(e.x, e.y, 2, '#fff'); break;
+        case 'tower': ctx.fillRect(x - 3.5, y - 3.5, 7, 7); ctx.strokeStyle = '#000'; ctx.strokeRect(x - 3.5, y - 3.5, 7, 7); break;
+        case 'inhib': ctx.beginPath(); ctx.arc(x, y, 4, 0, Math.PI * 2); ctx.fill(); break;
+        case 'nexus': ctx.beginPath(); ctx.arc(x, y, 6.5, 0, Math.PI * 2); ctx.fill(); ctx.strokeStyle = '#fff'; ctx.stroke(); break;
+        case 'minion': ctx.fillRect(x - 1, y - 1, 2.5, 2.5); break;
+        case 'monster': ctx.fillStyle = e.ep ? '#c084fc' : '#facc15'; ctx.beginPath(); ctx.arc(x, y, e.ep ? 5 : 2.5, 0, Math.PI * 2); ctx.fill(); break;
+        case 'ward': ctx.fillStyle = '#fde047'; ctx.fillRect(x - 1.5, y - 1.5, 3, 3); break;
         default:
       }
     }
-    if (zoneKind === 'world' && world.meta?.boss) dot(world.meta.boss.x, world.meta.boss.y, 7, '#ff2d55', '#fff');
-    if (zoneKind === 'dungeon' && world.meta?.stairs) {
-      const s = world.meta.stairs;
-      if (this.explored[Math.floor(s.y) * map.w + Math.floor(s.x)]) dot(s.x, s.y, 5, '#facc15', '#000');
+    for (const e of w.entities.values()) {
+      if (e.kind !== 'hero' || (e.fl & F.DEAD)) continue;
+      const x = e.x * k, y = e.y * k;
+      ctx.beginPath(); ctx.arc(x, y, e.id === w.youId ? 6.5 : 5.5, 0, Math.PI * 2);
+      ctx.fillStyle = TEAM_CSS[e.tm];
+      ctx.fill();
+      ctx.lineWidth = 2;
+      ctx.strokeStyle = e.id === w.youId ? '#facc15' : '#000';
+      ctx.stroke();
+      ctx.font = '9px sans-serif';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText(g.champInfo[e.c]?.icon || '', x, y + 0.5);
     }
-    // Self arrow.
-    const sx = (pos.x - ox) * scale, sy = (pos.y - oy) * scale;
-    const you = world.you();
-    const a = you ? you.f : 0;
-    ctx.save();
-    ctx.translate(sx, sy);
-    ctx.rotate(a);
-    ctx.beginPath();
-    ctx.moveTo(7, 0); ctx.lineTo(-5, -4.5); ctx.lineTo(-3, 0); ctx.lineTo(-5, 4.5); ctx.closePath();
-    ctx.fillStyle = '#facc15';
-    ctx.fill();
-    ctx.strokeStyle = '#000';
-    ctx.stroke();
-    ctx.restore();
+    for (const p of g.pings) { ctx.strokeStyle = p.color; ctx.lineWidth = 2; ctx.beginPath(); ctx.arc(p.x * k, p.y * k, 4 + (1 - p.t / 3) * 8, 0, Math.PI * 2); ctx.stroke(); }
+    // Camera frustum.
+    const vb = g.renderer.viewBounds();
+    if (vb.length === 4) {
+      ctx.strokeStyle = 'rgba(255,255,255,0.8)'; ctx.lineWidth = 1;
+      ctx.beginPath(); vb.forEach((p, i) => (i ? ctx.lineTo(p.x * k, p.y * k) : ctx.moveTo(p.x * k, p.y * k))); ctx.closePath(); ctx.stroke();
+    }
   }
 }
 
-const BUFF_ICONS = { stun: '💫', slow: '❄️', guard: '🛡️', haste: '⚡' };
-
-function hexToRgb(hex) {
-  const n = parseInt(hex.slice(1), 16);
-  return [(n >> 16) & 255, (n >> 8) & 255, n & 255];
+let invCanvas = null;
+function invertFog(src) {
+  // Fog canvas is white where fogged; turn it into a darkening mask for the minimap.
+  if (!invCanvas) { invCanvas = document.createElement('canvas'); invCanvas.width = src.width; invCanvas.height = src.height; }
+  const ctx = invCanvas.getContext('2d');
+  ctx.globalCompositeOperation = 'source-over';
+  ctx.fillStyle = '#fff';
+  ctx.fillRect(0, 0, src.width, src.height);
+  ctx.globalCompositeOperation = 'difference';
+  ctx.drawImage(src, 0, 0);
+  ctx.globalCompositeOperation = 'source-over';
+  return invCanvas;
 }

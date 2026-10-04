@@ -33,8 +33,7 @@ export function loadConfig(env = process.env) {
     tokenSecret: env.TOKEN_SECRET || '',
     allowedOrigins: (env.ALLOWED_ORIGINS || 'https://broadroads.com,https://www.broadroads.com,http://localhost:5173,http://localhost:8080,http://127.0.0.1:5173,http://127.0.0.1:8080')
       .split(',').map(s => s.trim()).filter(Boolean),
-    worldBossInterval: env.WORLD_BOSS_INTERVAL ? Number(env.WORLD_BOSS_INTERVAL) : undefined,
-    worldBossFirst: env.WORLD_BOSS_FIRST ? Number(env.WORLD_BOSS_FIRST) : undefined,
+    selectTime: env.SELECT_TIME ? Number(env.SELECT_TIME) : undefined,
     queueBotWait: env.QUEUE_BOT_WAIT ? Number(env.QUEUE_BOT_WAIT) : undefined,
     quiet: env.QUIET === '1',
   };
@@ -101,7 +100,7 @@ export async function startServer(overrides = {}) {
   const store = overrides.store || await createStore(cfg);
   const secret = loadSecret(cfg);
   const hubConfig = {};
-  for (const k of ['worldBossInterval', 'worldBossFirst', 'queueBotWait']) if (cfg[k] !== undefined) hubConfig[k] = cfg[k];
+  for (const k of ['queueBotWait', 'selectTime']) if (cfg[k] !== undefined) hubConfig[k] = cfg[k];
   const hub = new Hub({ store, config: hubConfig, log });
   hub.start();
 
@@ -179,13 +178,13 @@ export async function startServer(overrides = {}) {
         if (p === '/api/health') {
           return json(res, 200, {
             ok: true, game: 'broadroads', protocol: PROTOCOL_VERSION, online: hub.sessions.size,
-            instances: hub.instances.size, tickMs: Math.round(hub.stats.tickMs * 100) / 100, uptime: Math.round((Date.now() - startedAt) / 1000),
+            matches: hub.matches.size, tickMs: Math.round(hub.stats.tickMs * 100) / 100, uptime: Math.round((Date.now() - startedAt) / 1000),
           }, cors);
         }
         if (p === '/api/auth/register' && req.method === 'POST') return await handleAuth(req, res, 'register');
         if (p === '/api/auth/login' && req.method === 'POST') return await handleAuth(req, res, 'login');
-        if (p === '/api/leaderboard') return json(res, 200, { kind: url.searchParams.get('kind') || 'level', rows: await hub.leaderboard(url.searchParams.get('kind') || 'level') }, cors);
-        if (p === '/api/stats') return json(res, 200, { online: hub.sessions.size, worlds: hub.worlds.length, ...(await store.counts()) }, cors);
+        if (p === '/api/leaderboard') return json(res, 200, { kind: url.searchParams.get('kind') || 'rating', rows: await hub.leaderboard(url.searchParams.get('kind') || 'rating') }, cors);
+        if (p === '/api/stats') return json(res, 200, { online: hub.sessions.size, matches: hub.matches.size, ...(await store.counts()) }, cors);
         return json(res, 404, { error: 'Not found' }, cors);
       }
       if (req.method !== 'GET' && req.method !== 'HEAD') { res.writeHead(405); return res.end(); }

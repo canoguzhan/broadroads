@@ -1,6 +1,6 @@
 /* Short-lived visual effects. Each effect owns its meshes and disposes them. */
 import * as THREE from 'three';
-import { makeGlowTexture } from './terrain.js';
+import { makeGlowTexture } from './glow.js';
 
 const ringGeo = new THREE.RingGeometry(0.9, 1.0, 64);
 const discGeo = new THREE.CircleGeometry(1, 48);

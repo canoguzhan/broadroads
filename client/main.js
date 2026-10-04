@@ -1,167 +1,181 @@
-/* BroadRoads client entry: title screen, auth, class creation and game start. */
+/* BroadRoads client entry: auth → lobby → champion select → match. */
 import { api, checkServer, OnlineConnection } from './net/connection.js';
 import { OfflineConnection, offlineProfileName } from './net/offline.js';
-import { GameRenderer } from './render/renderer.js';
-import { Game, applyThemeCss } from './game/game.js';
+import { MobaRenderer } from './render/mobaRenderer.js';
+import { Game } from './game/game.js';
+import { Lobby } from './ui/lobby.js';
+import { Select } from './ui/select.js';
 import { UI } from './ui/ui.js';
-import { classCard } from './ui/panels.js';
-import { $, $$, clear } from './ui/dom.js';
-import { CLASS_IDS, currentTheme } from '../shared/classes.js';
+import { $, $$ } from './ui/dom.js';
 import { NAME_RE } from '../shared/constants.js';
 import { sound } from './audio/sound.js';
 
 const TOKEN_KEY = 'broadroads_token';
-const theme = currentTheme();
-applyThemeCss(theme);
 
-const settings = loadSettings();
-sound.setVolume(settings.volume);
-const ui = new UI();
-let renderer = null;
-let game = null;
-let serverInfo = null;
-let tab = 'login';
-
-function loadSettings() {
-  const defaults = { quality: matchMedia('(pointer: coarse)').matches ? 'low' : 'medium', volume: 0.6, showFps: false };
-  try { return { ...defaults, ...JSON.parse(localStorage.getItem('broadroads_settings') || '{}') }; } catch { return defaults; }
-}
-
-function show(id) {
-  for (const s of $$('.screen')) s.hidden = s.id !== id;
-}
-
-function setError(msg) { $('#auth-error').textContent = msg || ''; }
-
-function setTab(t) {
-  tab = t;
-  for (const b of $$('.auth-card .tab')) b.classList.toggle('active', b.dataset.tab === t);
-  $('#pass-field').hidden = t === 'offline';
-  $('#auth-pass').required = t !== 'offline';
-  $('#auth-pass').autocomplete = t === 'register' ? 'new-password' : 'current-password';
-  $('#auth-submit').textContent = t === 'register' ? 'Create Hero Account' : t === 'offline' ? 'Play Offline' : 'Enter the Broadroads';
-  $('#auth-hint').textContent = t === 'offline'
-    ? 'Offline mode runs the full game in your browser. Your hero is saved on this device; arena opponents are bots.'
-    : t === 'register' ? 'Your account name is your hero name. 3–16 letters, numbers or _.' : '';
-  if (t === 'offline' && !$('#auth-user').value) $('#auth-user').value = offlineProfileName();
-  setError('');
-}
-
-function updateServerStatus() {
-  const el = $('#server-status');
-  el.classList.toggle('online', !!serverInfo);
-  el.classList.toggle('offline', !serverInfo);
-  el.querySelector('.label').textContent = serverInfo
-    ? `Servers online · ${serverInfo.online} hero${serverInfo.online === 1 ? '' : 'es'} in the realm`
-    : 'Servers unreachable · offline play available';
-  for (const b of $$('.auth-card .tab')) if (b.dataset.tab !== 'offline') b.disabled = !serverInfo;
-  if (!serverInfo && tab !== 'offline') setTab('offline');
-}
-
-function ensureRenderer() {
-  if (renderer) return renderer;
-  try {
-    renderer = new GameRenderer($('#game-canvas'), settings.quality);
-  } catch (err) {
-    console.error(err);
-    throw new Error('Your browser could not start WebGL. Try enabling hardware acceleration.');
+class App {
+  constructor() {
+    this.settings = this.loadSettings();
+    sound.setVolume(this.settings.volume);
+    this.ui = new UI();
+    this.conn = null;
+    this.game = null;
+    this.renderer = null;
+    this.data = null;
+    this.champInfo = {};
+    this.ping = 0;
+    this.tab = 'login';
+    this.serverInfo = null;
   }
-  window.addEventListener('resize', () => renderer.resize());
-  return renderer;
-}
 
-async function startGame(conn, name, offline) {
-  show('screen-loading');
-  $('#loading-text').textContent = offline ? 'Preparing your offline realm…' : 'Connecting to the Broadroads…';
-  ensureRenderer();
-  game = new Game({
-    conn, name, offline, renderer, settings, ui,
-    onExit: (reason, voluntary) => exitToTitle(reason, voluntary),
-    onNeedChar: g => showCreate(g),
-  });
-  conn.on('authFail', m => {
-    try { localStorage.removeItem(TOKEN_KEY); } catch { /* ignore */ }
-    exitToTitle(m.error);
-  });
-  game.start();
-  $('#orientation-lock').classList.add('active');
-  try {
-    await conn.connect();
-  } catch (err) {
-    exitToTitle(err.message);
+  loadSettings() {
+    const d = { quality: matchMedia('(pointer: coarse)').matches ? 'low' : 'medium', volume: 0.6, showFps: false, cameraLock: true, difficulty: 'normal' };
+    try { return { ...d, ...JSON.parse(localStorage.getItem('broadroads_settings') || '{}') }; } catch { return d; }
   }
-}
+  saveSettings() { try { localStorage.setItem('broadroads_settings', JSON.stringify(this.settings)); } catch { /* ignore */ } }
 
-function showCreate(g) {
-  show('screen-create');
-  $('#create-sub').textContent = `Welcome, ${g.name}. Season of ${theme.monthName}: ${theme.icon} ${theme.name}. Your class can be changed later at the trainer.`;
-  const cards = clear($('#class-cards'));
-  for (const cls of CLASS_IDS) {
-    cards.append(classCard(cls, theme, 'Choose', false, () => {
-      show('screen-loading');
-      $('#loading-text').textContent = 'Forging your hero…';
-      g.send({ t: 'create', cls });
-    }));
+  show(id) { for (const s of $$('.screen')) s.hidden = s.id !== id; $('#hud').hidden = id !== 'game'; if (id === 'game') for (const s of $$('.screen')) s.hidden = true; }
+
+  send(msg) { if (this.conn) this.conn.send(msg); }
+
+  /* ---------------- auth screen ---------------- */
+  setTab(t) {
+    this.tab = t;
+    for (const b of $$('.auth-card .tab')) b.classList.toggle('active', b.dataset.tab === t);
+    $('#pass-field').hidden = t === 'offline';
+    $('#auth-pass').required = t !== 'offline';
+    $('#auth-submit').textContent = t === 'register' ? 'Create Account' : t === 'offline' ? 'Play Offline vs AI' : 'Enter the Rift';
+    $('#auth-hint').textContent = t === 'offline' ? 'Offline mode runs the full game in your browser against bots. Your profile is saved on this device.' : t === 'register' ? 'Your account name is your summoner name. 3–16 letters, numbers or _.' : '';
+    if (t === 'offline' && !$('#auth-user').value) $('#auth-user').value = offlineProfileName();
+    $('#auth-error').textContent = '';
   }
-}
 
-function exitToTitle(reason, voluntary = false) {
-  if (game) { game.destroy(); game = null; }
-  $('#orientation-lock').classList.remove('active');
-  show('screen-auth');
-  $('#hud').hidden = true;
-  if (voluntary && tab !== 'offline') { try { localStorage.removeItem(TOKEN_KEY); } catch { /* ignore */ } }
-  if (reason) setError(reason);
-  refreshServer();
-}
+  async refreshServer() {
+    this.serverInfo = await checkServer();
+    const el = $('#server-status');
+    el.classList.toggle('online', !!this.serverInfo);
+    el.classList.toggle('offline', !this.serverInfo);
+    el.querySelector('.label').textContent = this.serverInfo ? `Servers online · ${this.serverInfo.online} player${this.serverInfo.online === 1 ? '' : 's'} · ${this.serverInfo.matches ?? 0} live match${this.serverInfo.matches === 1 ? '' : 'es'}` : 'Servers unreachable · offline play vs AI available';
+    for (const b of $$('.auth-card .tab')) if (b.dataset.tab !== 'offline') b.disabled = !this.serverInfo;
+    if (!this.serverInfo && this.tab !== 'offline') this.setTab('offline');
+  }
 
-async function refreshServer() {
-  serverInfo = await checkServer();
-  updateServerStatus();
-}
+  async submit(ev) {
+    ev.preventDefault();
+    sound.init();
+    $('#auth-error').textContent = '';
+    const name = $('#auth-user').value.trim();
+    const pass = $('#auth-pass').value;
+    if (!NAME_RE.test(name)) { $('#auth-error').textContent = 'Names are 3–16 letters, numbers or _, starting with a letter.'; return; }
+    const btn = $('#auth-submit');
+    btn.disabled = true;
+    try {
+      if (this.tab === 'offline') return await this.startSession(new OfflineConnection(name), name, true);
+      const res = await api(this.tab === 'register' ? '/api/auth/register' : '/api/auth/login', { username: name, password: pass });
+      try { localStorage.setItem(TOKEN_KEY, JSON.stringify({ token: res.token, username: res.username })); } catch { /* ignore */ }
+      $('#auth-pass').value = '';
+      await this.startSession(new OnlineConnection(res.token), res.username, false);
+    } catch (err) {
+      $('#auth-error').textContent = err.message;
+    } finally {
+      btn.disabled = false;
+    }
+  }
 
-async function submit(ev) {
-  ev.preventDefault();
-  sound.init();
-  setError('');
-  const name = $('#auth-user').value.trim();
-  const pass = $('#auth-pass').value;
-  if (!NAME_RE.test(name)) return setError('Names are 3–16 letters, numbers or _, starting with a letter.');
-  const btn = $('#auth-submit');
-  btn.disabled = true;
-  try {
-    if (tab === 'offline') {
-      await startGame(new OfflineConnection(name), name, true);
+  /* ---------------- session ---------------- */
+  async startSession(conn, name, offline) {
+    this.show('screen-loading');
+    $('#loading-text').textContent = offline ? 'Preparing your offline Rift…' : 'Connecting…';
+    this.conn = conn;
+    this.name = name;
+    this.offline = offline;
+    conn.on('*', m => this.route(m));
+    conn.on('disconnect', m => { if (!m.byUs) this.exit(this.kickedReason || 'Disconnected from the server.'); });
+    try {
+      await conn.connect();
+    } catch (err) {
+      this.exit(err.message);
       return;
     }
-    const res = await api(tab === 'register' ? '/api/auth/register' : '/api/auth/login', { username: name, password: pass });
-    try { localStorage.setItem(TOKEN_KEY, JSON.stringify({ token: res.token, username: res.username })); } catch { /* ignore */ }
-    $('#auth-pass').value = '';
-    await startGame(new OnlineConnection(res.token), res.username, false);
-  } catch (err) {
-    setError(err.message);
-  } finally {
-    btn.disabled = false;
+    this.pingTimer = setInterval(() => this.send({ t: 'ping', c: performance.now() }), 3000);
+  }
+
+  route(m) {
+    if (this.game && ['s', 'score', 'end'].includes(m.t)) return this.game.onMessage(m);
+    switch (m.t) {
+      case 'hello':
+        this.data = { champions: m.champions, items: m.items, summoners: m.summoners, second: m.second };
+        this.champInfo = Object.fromEntries(m.champions.map(c => [c.id, c]));
+        this.lobby = new Lobby(this);
+        this.select = new Select(this);
+        break;
+      case 'profile': this.lobby?.setProfile(m.profile); break;
+      case 'lobby':
+        if (this.game) { this.game.destroy(); this.game = null; }
+        this.lobby.setState(m);
+        this.show('screen-lobby');
+        if (!this.offline) this.send({ t: 'who' });
+        break;
+      case 'select': this.select.update(m.select); this.show('screen-select'); break;
+      case 'match': this.startGame(m); break;
+      case 'party': this.lobby?.setParty(m.party); break;
+      case 'invite': this.ui.prompt(`${m.from} invites you to their party.`, () => this.send({ t: 'party', op: 'accept', party: m.party }), () => this.send({ t: 'party', op: 'decline', party: m.party })); break;
+      case 'who': this.lobby?.setWho(m); break;
+      case 'lb': this.lobby?.setLeaderboard(m); break;
+      case 'chat': if (this.game) this.game.onMessage(m); else this.lobby?.chat.add(m); break;
+      case 'notice': this.ui.toast(m.text, m.kind); break;
+      case 'kicked': this.kickedReason = m.reason; break;
+      case 'authFail': try { localStorage.removeItem(TOKEN_KEY); } catch { /* ignore */ } this.exit(m.error); break;
+      case 'pong': this.ping = Math.round(performance.now() - m.c); break;
+      default:
+    }
+  }
+
+  startGame(m) {
+    if (this.game) { this.game.destroy(); this.game = null; }
+    if (!this.renderer) {
+      try { this.renderer = new MobaRenderer($('#game-canvas'), this.settings.quality); } catch (err) { console.error(err); this.ui.toast('WebGL is not available in this browser.', 'bad'); return; }
+      window.addEventListener('resize', () => this.renderer.resize());
+    }
+    this.show('game');
+    this.game = new Game({ app: this, renderer: this.renderer, settings: this.settings, ui: this.ui, data: this.data, match: m });
+    this.game.start();
+    $('#orientation-lock').classList.add('active');
+    this.ui.banner(m.mode === 'practice' ? 'PRACTICE VS AI' : m.ranked ? 'RANKED MATCH' : '5V5 MATCH', `You are on the ${m.team === 'blue' ? 'Blue' : 'Red'} team`);
+  }
+
+  exit(reason) {
+    clearInterval(this.pingTimer);
+    if (this.game) { this.game.destroy(); this.game = null; }
+    if (this.conn) { const c = this.conn; this.conn = null; c.close(); }
+    $('#orientation-lock').classList.remove('active');
+    this.show('screen-auth');
+    if (reason) $('#auth-error').textContent = reason;
+    this.refreshServer();
+  }
+
+  logout() {
+    try { localStorage.removeItem(TOKEN_KEY); } catch { /* ignore */ }
+    this.exit(null);
+  }
+
+  async boot() {
+    for (const b of $$('.auth-card .tab')) b.addEventListener('click', () => this.setTab(b.dataset.tab));
+    $('#auth-form').addEventListener('submit', e => this.submit(e));
+    this.setTab('login');
+    await this.refreshServer();
+    let saved = null;
+    try { saved = JSON.parse(localStorage.getItem(TOKEN_KEY) || 'null'); } catch { /* ignore */ }
+    if (saved && saved.token && this.serverInfo) {
+      $('#auth-user').value = saved.username;
+      this.startSession(new OnlineConnection(saved.token), saved.username, false);
+    }
+    setInterval(() => { if (!this.conn) this.refreshServer(); }, 15000);
   }
 }
 
-async function boot() {
-  $('#season-badge').textContent = `${theme.icon} Season of ${theme.monthName}: ${theme.name}`;
-  for (const b of $$('.auth-card .tab')) b.addEventListener('click', () => setTab(b.dataset.tab));
-  $('#auth-form').addEventListener('submit', submit);
-  setTab('login');
-  await refreshServer();
-  // Resume a saved session.
-  let saved = null;
-  try { saved = JSON.parse(localStorage.getItem(TOKEN_KEY) || 'null'); } catch { /* ignore */ }
-  if (saved && saved.token && serverInfo) {
-    $('#auth-user').value = saved.username;
-    startGame(new OnlineConnection(saved.token), saved.username, false);
-  }
-  setInterval(() => { if (!game) refreshServer(); }, 15000);
-}
+const app = new App();
+app.boot();
 
-boot();
-
-// Read-only hook used by the end-to-end browser tests.
-Object.defineProperty(window, '__broadroads', { get: () => game });
+// Read-only hooks used by the end-to-end browser tests.
+Object.defineProperty(window, '__broadroads', { get: () => app.game });
+Object.defineProperty(window, '__app', { get: () => app });

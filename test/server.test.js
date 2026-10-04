@@ -12,7 +12,7 @@ let app, base, dataDir;
 
 before(async () => {
   dataDir = fs.mkdtempSync(path.join(os.tmpdir(), 'br-test-'));
-  app = await startServer({ port: 0, host: '127.0.0.1', dataDir, staticDir: path.join(dataDir, 'nodist'), quiet: true, databaseUrl: '' });
+  app = await startServer({ port: 0, host: '127.0.0.1', dataDir, staticDir: path.join(dataDir, 'nodist'), quiet: true, databaseUrl: '', selectTime: 3 });
   base = `http://127.0.0.1:${app.port}`;
 });
 
@@ -101,63 +101,59 @@ test('websocket: foreign origins are rejected', async () => {
   assert.ok(err, 'connection refused');
 });
 
-test('two players meet in the world, chat, party up and enter a dungeon together', async () => {
+test('two players chat in the lobby, make a custom room and play the same match', async () => {
   const tA = (await (await post('/api/auth/register', { username: 'Ayla', password: 'secret123' })).json()).token;
   const tB = (await (await post('/api/auth/register', { username: 'Brom', password: 'secret123' })).json()).token;
   const a = await client(tA);
   const b = await client(tB);
-  await a.wait(m => m.t === 'needChar');
-  a.send({ t: 'create', cls: 'gunner' });
-  await b.wait(m => m.t === 'needChar');
-  b.send({ t: 'create', cls: 'arcanist' });
-  await a.wait(m => m.t === 'zone' && m.zone.kind === 'world');
-  await b.wait(m => m.t === 'zone');
-  await a.wait(m => m.t === 's' && (m.a || []).some(e => e.k === 'player' && e.n === 'Brom'));
+  const hello = await a.wait(m => m.t === 'hello');
+  assert.equal(hello.champions.length, 10);
+  await a.wait(m => m.t === 'lobby');
+  await b.wait(m => m.t === 'lobby');
 
-  // Movement is authoritative and acknowledged.
-  const start = (await a.wait(m => m.t === 's' && m.me)).me;
-  for (let i = 1; i <= 10; i++) a.send({ t: 'in', s: i, mx: 0, my: 1, ax: 0, ay: 0, at: false });
-  const moved = await a.wait(m => m.t === 's' && m.me && m.me.ack === 10);
-  assert.ok(moved.me.y > start.y + 1, `moved from ${start.y} to ${moved.me.y}`);
-
-  a.send({ t: 'chat', ch: 'say', text: 'well met' });
-  const said = await b.wait(m => m.t === 'chat' && m.text === 'well met');
+  a.send({ t: 'chat', ch: 'global', text: 'anyone up for a game?' });
+  const said = await b.wait(m => m.t === 'chat' && m.text === 'anyone up for a game?');
   assert.equal(said.from, 'Ayla');
 
-  a.send({ t: 'party', op: 'invite', name: 'Brom' });
-  const inv = await b.wait(m => m.t === 'invite');
-  b.send({ t: 'party', op: 'accept', party: inv.party });
-  await a.wait(m => m.t === 'party' && m.party && m.party.members.length === 2);
-  a.send({ t: 'dungeon', op: 'enter', mode: 'party' });
-  const za = await a.wait(m => m.t === 'zone' && m.zone.kind === 'dungeon');
-  const zb = await b.wait(m => m.t === 'zone' && m.zone.kind === 'dungeon');
-  assert.equal(za.zone.id, zb.zone.id);
+  a.send({ t: 'room', op: 'create' });
+  const room = await a.wait(m => m.t === 'lobby' && m.state === 'room');
+  b.send({ t: 'room', op: 'join', code: room.room.code });
+  await a.wait(m => m.t === 'lobby' && m.room && m.room.blue.filter(Boolean).length + m.room.red.filter(Boolean).length === 2);
+  a.send({ t: 'room', op: 'start' });
+  await a.wait(m => m.t === 'select');
+  a.send({ t: 'pick', champ: 'lyra' });
+  b.send({ t: 'pick', champ: 'vex' });
+  a.send({ t: 'lock' });
+  b.send({ t: 'lock' });
+  const ma = await a.wait(m => m.t === 'match', 15000);
+  const mb = await b.wait(m => m.t === 'match', 15000);
+  assert.equal(ma.id, mb.id);
+  assert.equal(ma.players.find(p => p.id === ma.you).champ, 'lyra');
+  const snap = await a.wait(m => m.t === 's' && m.me);
+  assert.equal(snap.me.lv, 1);
+  a.send({ t: 'lvl', sl: 'q' });
+  await a.wait(m => m.t === 's' && m.me && m.me.rk.q === 1);
 
-  // Leaderboard API includes online players.
-  const lb = await (await fetch(base + '/api/leaderboard?kind=level')).json();
+  const lb = await (await fetch(base + '/api/leaderboard?kind=rating')).json();
   assert.ok(lb.rows.some(r => r.name === 'Ayla'));
-
   await a.close();
   await b.close();
 });
 
-test('characters are saved and survive a server restart', async () => {
+test('profiles are saved and survive a server restart', async () => {
   const token = (await (await post('/api/auth/register', { username: 'Persist', password: 'secret123' })).json()).token;
   let c = await client(token);
-  await c.wait(m => m.t === 'needChar');
-  c.send({ t: 'create', cls: 'paladin' });
-  await c.wait(m => m.t === 'char');
-  c.send({ t: 'pot', k: 'hp' }); // no-op in town at full health, but exercises the path
+  const p1 = await c.wait(m => m.t === 'profile');
+  assert.equal(p1.profile.name, 'Persist');
   await c.close();
   await new Promise(r => setTimeout(r, 200));
   await app.stop();
   app = await startServer({ port: 0, host: '127.0.0.1', dataDir, staticDir: path.join(dataDir, 'nodist'), quiet: true, databaseUrl: '' });
   base = `http://127.0.0.1:${app.port}`;
   c = await client(token);
-  const ch = await c.wait(m => m.t === 'char');
-  assert.equal(ch.char.name, 'Persist');
-  assert.equal(ch.char.cls, 'paladin');
-  assert.ok(!c.inbox.some(m => m.t === 'needChar'));
+  const p2 = await c.wait(m => m.t === 'profile');
+  assert.equal(p2.profile.name, 'Persist');
+  assert.equal(p2.profile.v, 3);
   await c.close();
 });
 
