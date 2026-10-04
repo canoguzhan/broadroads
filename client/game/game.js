@@ -84,7 +84,15 @@ export class Game {
       if (m.quiet) this.ui.toast(m.text, m.kind, 1500);
       else { this.ui.toast(m.text, m.kind); this.chat.system(m.text, m.kind); }
     });
-    on('chat', m => this.chat.add(m));
+    on('chat', m => {
+      this.chat.add(m);
+      // Public and party messages also pop up above the speaker's head if they are nearby.
+      if (m.from && (m.ch === 'say' || m.ch === 'party' || m.ch === 'world')) {
+        for (const e of this.world.entities.values()) {
+          if (e.kind === 'player' && e.n === m.from) { this.labels.bubble(e.id, m.text, m.ch); break; }
+        }
+      }
+    });
     on('party', m => {
       this.party = m.party;
       this.hud.setParty(m.party, this.name);

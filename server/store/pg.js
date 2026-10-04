@@ -13,8 +13,11 @@ const LB_EXPR = {
 
 export class PgStore {
   constructor(url) {
-    const ssl = /sslmode=require|neon\.tech|supabase/.test(url) ? { rejectUnauthorized: false } : undefined;
-    this.pool = new pg.Pool({ connectionString: url, ssl, max: 5 });
+    // SSL is configured explicitly; libpq-only URL parameters are stripped so pg does not warn about them.
+    const u = new URL(url);
+    const wantSsl = /^(require|verify-ca|verify-full)$/.test(u.searchParams.get('sslmode') || '') || /neon\.tech|supabase/.test(u.hostname);
+    for (const k of ['sslmode', 'channel_binding', 'uselibpqcompat']) u.searchParams.delete(k);
+    this.pool = new pg.Pool({ connectionString: u.toString(), ssl: wantSsl ? { rejectUnauthorized: true } : undefined, max: 5 });
   }
 
   async init() {

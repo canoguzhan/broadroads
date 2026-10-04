@@ -62,6 +62,9 @@ try {
   await a.keyboard.press('Enter');
   await b.waitForFunction(() => document.querySelector('.chat-log').textContent.includes('Hello from Ayla!'), null, { timeout: 15000 });
   log('chat message delivered through the UI');
+  await b.waitForFunction(() => [...document.querySelectorAll('.chat-bubble')].some(el => el.textContent === 'Hello from Ayla!'), null, { timeout: 15000 });
+  await shot(b, 'chat-bubble');
+  log('chat bubble shown above the speaker');
 
   // Party invite via slash command, accepted through the prompt card.
   await a.keyboard.press('Enter');

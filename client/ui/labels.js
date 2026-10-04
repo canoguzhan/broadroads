@@ -75,6 +75,21 @@ export class Labels {
     }
   }
 
+  /** Speech bubble above a player's nameplate. */
+  bubble(id, text, channel = 'say') {
+    const it = this.items.get(id);
+    if (!it) return;
+    if (it.bubble) { clearTimeout(it.bubble.timer); it.bubble.el.remove(); }
+    const clipped = text.length > 90 ? text.slice(0, 87) + '…' : text;
+    const el = h(`div.chat-bubble.cb-${channel}`, { text: clipped });
+    it.el.prepend(el);
+    const timer = setTimeout(() => {
+      el.classList.add('out');
+      setTimeout(() => { el.remove(); if (it.bubble && it.bubble.el === el) it.bubble = null; }, 400);
+    }, 4500 + clipped.length * 40);
+    it.bubble = { el, timer };
+  }
+
   floatText(x, y, text, kind = 'dmg', scale = 1) {
     if (this.floaters.length > 80) { const old = this.floaters.shift(); old.el.remove(); }
     const el = h(`div.floater.f-${kind}`, { text });

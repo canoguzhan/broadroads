@@ -484,3 +484,18 @@ kbd { background: #2a2434; border: 1px solid #4a4058; border-bottom-width: 2px; 
   #orientation-lock.active { display: flex; position: fixed; inset: 0; z-index: 100; background: #07060a; flex-direction: column; align-items: center; justify-content: center; gap: 10px; font-size: 1.1rem; color: var(--muted); }
   #orientation-lock.active div { font-size: 3rem; animation: spin 2s ease-in-out infinite; }
 }
+
+/* ---------- chat bubbles ---------- */
+.chat-bubble {
+  position: relative; margin: 0 auto 7px; max-width: 220px; width: max-content; white-space: normal; word-wrap: break-word;
+  background: rgba(250, 247, 240, .96); color: #1b1722; text-shadow: none; font-size: 12px; font-weight: 600; line-height: 1.3;
+  padding: 5px 10px; border-radius: 12px; box-shadow: 0 4px 14px rgba(0, 0, 0, .45); animation: bubblein .18s ease-out;
+  transition: opacity .4s, transform .4s;
+}
+.chat-bubble::after { content: ''; position: absolute; left: 50%; bottom: -6px; transform: translateX(-50%); border: 6px solid transparent; border-bottom: 0; border-top-color: rgba(250, 247, 240, .96); }
+.chat-bubble.cb-party { background: #dcfce7; }
+.chat-bubble.cb-party::after { border-top-color: #dcfce7; }
+.chat-bubble.cb-world { background: #ffedd5; }
+.chat-bubble.cb-world::after { border-top-color: #ffedd5; }
+.chat-bubble.out { opacity: 0; transform: translateY(-6px); }
+@keyframes bubblein { from { transform: translateY(6px) scale(.9); opacity: 0; } }
