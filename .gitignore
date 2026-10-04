@@ -5,3 +5,4 @@ e2e-screenshots
 .env
 *.log
 .DS_Store
+models-src/

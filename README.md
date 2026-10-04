@@ -97,6 +97,19 @@ The client (`client/audio/sfx.js`):
 - crossfades music and ambience;
 - has master and music volume controls in Settings.
 
+## 🧍 3D champion models (Tripo3D)
+
+`scripts/generate-champions.mjs` creates rigged, animated champions with the [Tripo3D](https://developers.tripo3d.ai) v3 API.
+For each champion it runs text-to-model, then rig-check, rig (biped), and one batch retarget with idle, run, attack, cast, hurt and fall animations.
+That costs about 125 credits per champion. The script saves its progress, so reruns resume without paying twice.
+
+```bash
+TRIPO_API_KEY=your_key node scripts/generate-champions.mjs --dry-run   # show balance and cost
+TRIPO_API_KEY=your_key node scripts/generate-champions.mjs garrok      # one champion
+```
+
+API credits are bought in the Tripo platform console. They are separate from Tripo Studio subscriptions.
+
 ## 🤖 Bots
 
 Bots play with the same commands a player has. They:
