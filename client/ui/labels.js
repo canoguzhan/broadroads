@@ -2,8 +2,8 @@
 import { h } from './dom.js';
 import { F } from '../../shared/constants.js';
 
-const HEIGHT = { hero: 2.7, minion: 1.5, tower: 6.2, inhib: 3.2, nexus: 5.6, ward: 1.5 };
-const MONSTER_H = { golem: 3, brute: 2.8, wolf: 1.8, bat: 2.2, slime: 1.6, dragon: 4.2, overlord: 5.2 };
+const HEIGHT = { hero: 2.7, minion: 1.5, tower: 6.2, spire: 3.2, core: 5.6, ward: 1.5 };
+const MONSTER_H = { golem: 3, brute: 2.8, wolf: 1.8, bat: 2.2, slime: 1.6, wyrm: 4.2, overlord: 5.2 };
 
 export class Labels {
   constructor(root) {
@@ -13,7 +13,7 @@ export class Labels {
   }
 
   add(e, world) {
-    if (!['hero', 'minion', 'tower', 'inhib', 'nexus', 'monster', 'ward'].includes(e.kind)) return;
+    if (!['hero', 'minion', 'tower', 'spire', 'core', 'monster', 'ward'].includes(e.kind)) return;
     const rel = e.id === world.youId ? 'self' : e.tm === world.team ? 'ally' : e.tm === 'neutral' ? 'neutral' : 'enemy';
     const fill = h('div.lb-fill');
     let el;

@@ -43,8 +43,8 @@ class App {
     for (const b of $$('.auth-card .tab')) b.classList.toggle('active', b.dataset.tab === t);
     $('#pass-field').hidden = t === 'offline';
     $('#auth-pass').required = t !== 'offline';
-    $('#auth-submit').textContent = t === 'register' ? 'Create Account' : t === 'offline' ? 'Play Offline vs AI' : 'Enter the Rift';
-    $('#auth-hint').textContent = t === 'offline' ? 'Offline mode runs the full game in your browser against bots. Your profile is saved on this device.' : t === 'register' ? 'Your account name is your summoner name. 3–16 letters, numbers or _.' : '';
+    $('#auth-submit').textContent = t === 'register' ? 'Create Account' : t === 'offline' ? 'Play Offline vs AI' : 'Enter the Valley';
+    $('#auth-hint').textContent = t === 'offline' ? 'Offline mode runs the full game in your browser against bots. Your profile is saved on this device.' : t === 'register' ? 'Your account name is your player name. 3–16 letters, numbers or _.' : '';
     if (t === 'offline' && !$('#auth-user').value) $('#auth-user').value = offlineProfileName();
     $('#auth-error').textContent = '';
   }
@@ -84,7 +84,7 @@ class App {
   /* ---------------- session ---------------- */
   async startSession(conn, name, offline) {
     this.show('screen-loading');
-    $('#loading-text').textContent = offline ? 'Preparing your offline Rift…' : 'Connecting…';
+    $('#loading-text').textContent = offline ? 'Preparing your offline Valley…' : 'Connecting…';
     this.conn = conn;
     this.name = name;
     this.offline = offline;
@@ -103,7 +103,7 @@ class App {
     if (this.game && ['s', 'score', 'end'].includes(m.t)) return this.game.onMessage(m);
     switch (m.t) {
       case 'hello':
-        this.data = { champions: m.champions, items: m.items, summoners: m.summoners, second: m.second };
+        this.data = { champions: m.champions, items: m.items, spells: m.spells, second: m.second };
         this.champInfo = Object.fromEntries(m.champions.map(c => [c.id, c]));
         this.lobby = new Lobby(this);
         this.select = new Select(this);

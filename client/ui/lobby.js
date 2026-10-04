@@ -108,8 +108,8 @@ export class Lobby {
         h('div.card', {}, h('h4', { text: 'How to play' }), h('ul.howto', {},
           h('li', { text: 'Right-click to move and attack. Q W E R cast abilities at your cursor.' }),
           h('li', { text: 'Last-hit minions for gold, buy items at your base (P), level abilities (Ctrl+Q/W/E/R).' }),
-          h('li', { text: 'Destroy towers lane by lane, then inhibitors, then the enemy Nexus.' }),
-          h('li', { text: 'Slay the Drake and the Void Lord for team-wide power.' }))),
+          h('li', { text: 'Destroy towers lane by lane, then spires, then the enemy Core.' }),
+          h('li', { text: 'Slay the Ember Wyrm and the Abyss Titan for team-wide power.' }))),
         h('div.card', {}, h('h4', { text: 'Recent matches' }), p && p.history.length ? h('div.history', {}, ...p.history.slice(0, 8).map(m => this.historyRow(m))) : h('p.muted', { text: 'No matches yet — start a practice game!' }))));
   }
 

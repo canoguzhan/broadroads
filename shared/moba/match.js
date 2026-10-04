@@ -1,7 +1,7 @@
 /* Authoritative 5v5 MOBA match simulation. */
-import { getRift, enemyOf, LANES, bushAt } from './map.js';
+import { getValley, enemyOf, LANES, bushAt } from './map.js';
 import { CHAMPIONS, SLOTS, MAX_LEVEL, XP_TO_LEVEL, canRankUp, bonusAd } from './champions.js';
-import { ITEMS, INV_SLOTS, START_GOLD, SELL_RATIO, SUMMONERS, priceFor } from './items.js';
+import { ITEMS, INV_SLOTS, START_GOLD, SELL_RATIO, SPELLS, priceFor } from './items.js';
 import { Pathfinder } from './pathfind.js';
 import { moveCircle, findFreeSpot, castWalk, circleBlocked } from '../tiles.js';
 import { dist, dist2, normalize, angleDiff } from '../math.js';
@@ -16,11 +16,11 @@ export const CFG = {
   passiveXp: 1.2,
   recallTime: 6,
   campFirst: 75,
-  dragonFirst: 150,
-  dragonRespawn: 240,
-  baronFirst: 540,
-  baronRespawn: 300,
-  inhibRespawn: 240,
+  wyrmFirst: 150,
+  wyrmRespawn: 240,
+  titanFirst: 540,
+  titanRespawn: 300,
+  spireRespawn: 240,
   fountainRadius: 7.5,
   shopRadius: 9,
   heroSight: 11,
@@ -39,29 +39,29 @@ const MINIONS = {
 };
 
 const MONSTERS = {
-  ancient: { name: 'Ancient Golem', hp: 1400, ad: 40, as: 0.6, range: 1.8, armor: 20, mr: 20, r: 1.0, gold: 90, xp: 120, model: 'golem', buff: 'blue' },
-  brute: { name: 'Crimson Brute', hp: 1400, ad: 44, as: 0.6, range: 1.8, armor: 20, mr: 20, r: 1.0, gold: 90, xp: 120, model: 'brute', buff: 'red' },
-  wolf: { name: 'Greater Wolf', hp: 900, ad: 28, as: 0.8, range: 1.5, armor: 10, mr: 0, r: 0.7, gold: 55, xp: 70, model: 'wolf' },
-  pup: { name: 'Wolf Pup', hp: 300, ad: 12, as: 0.8, range: 1.2, armor: 0, mr: 0, r: 0.5, gold: 15, xp: 25, model: 'wolf', small: true },
-  raptor: { name: 'Crimson Raptor', hp: 700, ad: 22, as: 0.9, range: 1.4, armor: 15, mr: 0, r: 0.6, gold: 45, xp: 50, model: 'bat' },
-  chick: { name: 'Raptor', hp: 180, ad: 8, as: 0.9, range: 1.1, armor: 0, mr: 0, r: 0.4, gold: 12, xp: 15, model: 'bat', small: true },
-  gromp: { name: 'Gromp', hp: 1100, ad: 42, as: 0.7, range: 4, armor: 0, mr: -10, r: 0.9, gold: 75, xp: 95, model: 'slime', ranged: true },
-  krug: { name: 'Ancient Krug', hp: 900, ad: 38, as: 0.6, range: 1.6, armor: 25, mr: 0, r: 0.9, gold: 60, xp: 80, model: 'golem' },
-  krugling: { name: 'Krug', hp: 400, ad: 16, as: 0.6, range: 1.3, armor: 10, mr: 0, r: 0.6, gold: 20, xp: 25, model: 'golem', small: true },
-  dragon: { name: 'Elder Drake', hp: 3500, ad: 100, as: 0.5, range: 3, armor: 30, mr: 30, r: 1.6, gold: 25, xp: 200, model: 'dragon', epic: true },
-  baron: { name: 'Void Lord', hp: 9000, ad: 160, as: 0.4, range: 4, armor: 60, mr: 60, r: 2.2, gold: 300, xp: 600, model: 'overlord', epic: true },
+  mossback: { name: 'Mossback Golem', hp: 1400, ad: 40, as: 0.6, range: 1.8, armor: 20, mr: 20, r: 1.0, gold: 90, xp: 120, model: 'golem', buff: 'blue' },
+  brute: { name: 'Ironhide Brute', hp: 1400, ad: 44, as: 0.6, range: 1.8, armor: 20, mr: 20, r: 1.0, gold: 90, xp: 120, model: 'brute', buff: 'red' },
+  wolf: { name: 'Alpha Howler', hp: 900, ad: 28, as: 0.8, range: 1.5, armor: 10, mr: 0, r: 0.7, gold: 55, xp: 70, model: 'wolf' },
+  pup: { name: 'Howler Pup', hp: 300, ad: 12, as: 0.8, range: 1.2, armor: 0, mr: 0, r: 0.5, gold: 15, xp: 25, model: 'wolf', small: true },
+  duskwing: { name: 'Duskwing Matriarch', hp: 700, ad: 22, as: 0.9, range: 1.4, armor: 15, mr: 0, r: 0.6, gold: 45, xp: 50, model: 'bat' },
+  duskling: { name: 'Duskwing', hp: 180, ad: 8, as: 0.9, range: 1.1, armor: 0, mr: 0, r: 0.4, gold: 12, xp: 15, model: 'bat', small: true },
+  bogtoad: { name: 'Bogtoad', hp: 1100, ad: 42, as: 0.7, range: 4, armor: 0, mr: -10, r: 0.9, gold: 75, xp: 95, model: 'slime', ranged: true },
+  stonehulk: { name: 'Stonehulk', hp: 900, ad: 38, as: 0.6, range: 1.6, armor: 25, mr: 0, r: 0.9, gold: 60, xp: 80, model: 'golem' },
+  pebblet: { name: 'Pebblet', hp: 400, ad: 16, as: 0.6, range: 1.3, armor: 10, mr: 0, r: 0.6, gold: 20, xp: 25, model: 'golem', small: true },
+  wyrm: { name: 'Ember Wyrm', hp: 3500, ad: 100, as: 0.5, range: 3, armor: 30, mr: 30, r: 1.6, gold: 25, xp: 200, model: 'wyrm', epic: true },
+  titan: { name: 'Abyss Titan', hp: 9000, ad: 160, as: 0.4, range: 4, armor: 60, mr: 60, r: 2.2, gold: 300, xp: 600, model: 'overlord', epic: true },
 };
 const CAMP_UNITS = {
-  ancient: ['ancient'], brute: ['brute'], wolves: ['wolf', 'pup', 'pup'], raptors: ['raptor', 'chick', 'chick', 'chick'],
-  gromp: ['gromp'], krugs: ['krug', 'krugling'],
+  mossback: ['mossback'], brute: ['brute'], wolves: ['wolf', 'pup', 'pup'], duskwings: ['duskwing', 'duskling', 'duskling', 'duskling'],
+  bogtoad: ['bogtoad'], stonehulks: ['stonehulk', 'pebblet'],
 };
 
 const TOWER = {
   1: { hp: 3000, ad: 155, armor: 50 }, 2: { hp: 3300, ad: 170, armor: 55 }, 3: { hp: 3500, ad: 180, armor: 55 }, 4: { hp: 2700, ad: 170, armor: 55 },
 };
 
-const SPREE = { 3: 'is on a Killing Spree!', 4: 'is on a Rampage!', 5: 'is Unstoppable!', 6: 'is Dominating!', 7: 'is Godlike!', 8: 'is Legendary!' };
-const MULTI = { 2: 'Double Kill', 3: 'Triple Kill', 4: 'Quadra Kill', 5: 'PENTAKILL' };
+const SPREE = { 3: 'is heating up!', 4: 'is on fire!', 5: 'is relentless!', 6: 'is overwhelming!', 7: 'is mythic!', 8: 'is beyond legend!' };
+const MULTI = { 2: 'Double Takedown', 3: 'Triple Takedown', 4: 'Quad Takedown', 5: 'TOTAL TAKEDOWN' };
 
 const r2 = v => Math.round(v * 100) / 100;
 
@@ -71,8 +71,8 @@ export class Match {
     this.mode = mode;
     this.ranked = ranked;
     this.hooks = hooks;
-    this.rift = getRift();
-    this.map = this.rift.map;
+    this.valley = getValley();
+    this.map = this.valley.map;
     this.pf = new Pathfinder(this.map);
     this.rng = new RNG(seed ?? (Math.random() * 2 ** 31) | 0);
     this.entities = new Map();
@@ -85,8 +85,8 @@ export class Match {
     this.spawnQueue = [];
     this.kills = { blue: 0, red: 0 };
     this.towersDown = { blue: 0, red: 0 };
-    this.dragons = { blue: 0, red: 0 };
-    this.barons = { blue: 0, red: 0 };
+    this.wyrms = { blue: 0, red: 0 };
+    this.titans = { blue: 0, red: 0 };
     this.firstBlood = false;
     this.ended = false;
     this.winner = null;
@@ -94,10 +94,10 @@ export class Match {
     this.visT = 0;
     this.buildStructures();
     this.camps = [];
-    for (const team of ['blue', 'red']) for (const c of this.rift.teams[team].camps) this.camps.push({ ...c, side: team, units: [], respawnAt: CFG.campFirst });
+    for (const team of ['blue', 'red']) for (const c of this.valley.teams[team].camps) this.camps.push({ ...c, side: team, units: [], respawnAt: CFG.campFirst });
     this.epics = {
-      dragon: { pos: this.rift.epic.dragon, unit: null, respawnAt: CFG.dragonFirst },
-      baron: { pos: this.rift.epic.baron, unit: null, respawnAt: CFG.baronFirst },
+      wyrm: { pos: this.valley.epic.wyrm, unit: null, respawnAt: CFG.wyrmFirst },
+      titan: { pos: this.valley.epic.titan, unit: null, respawnAt: CFG.titanFirst },
     };
     for (const p of players) this.addHero(p);
   }
@@ -112,21 +112,21 @@ export class Match {
   buildStructures() {
     this.structures = { blue: [], red: [] };
     for (const team of ['blue', 'red']) {
-      const T = this.rift.teams[team];
+      const T = this.valley.teams[team];
       for (const t of T.towers) {
         const st = TOWER[t.tier];
         this.structures[team].push(this.add({ kind: 'tower', team, lane: t.lane, tier: t.tier, x: t.x, y: t.y, r: 1.0, facing: 0, hp: st.hp, maxHp: st.hp, armor: st.armor, mr: st.armor, ad: st.ad, as: 0.83, range: 7.5, atkT: 0, target: null, ramp: 0, sight: CFG.towerSight }));
       }
-      for (const i of T.inhibitors) {
-        this.structures[team].push(this.add({ kind: 'inhib', team, lane: i.lane, x: i.x, y: i.y, r: 1.3, facing: 0, hp: 2200, maxHp: 2200, armor: 20, mr: 20, respawnAt: 0, sight: 7 }));
+      for (const i of T.spires) {
+        this.structures[team].push(this.add({ kind: 'spire', team, lane: i.lane, x: i.x, y: i.y, r: 1.3, facing: 0, hp: 2200, maxHp: 2200, armor: 20, mr: 20, respawnAt: 0, sight: 7 }));
       }
-      this.structures[team].push(this.add({ kind: 'nexus', team, x: T.nexus.x, y: T.nexus.y, r: 2.2, facing: 0, hp: 4500, maxHp: 4500, armor: 0, mr: 0, sight: 8 }));
+      this.structures[team].push(this.add({ kind: 'core', team, x: T.core.x, y: T.core.y, r: 2.2, facing: 0, hp: 4500, maxHp: 4500, armor: 0, mr: 0, sight: 8 }));
     }
   }
 
   addHero(p) {
     const c = CHAMPIONS[p.champ];
-    const T = this.rift.teams[p.team];
+    const T = this.valley.teams[p.team];
     const idx = this.heroes.filter(h => h.team === p.team).length;
     const a = (idx / 5) * Math.PI * 0.6 + (p.team === 'blue' ? -Math.PI / 2 : Math.PI / 2) + 0.2;
     const sx = T.fountain.x + Math.cos(a) * 3, sy = T.fountain.y + Math.sin(a) * 3;
@@ -136,7 +136,7 @@ export class Match {
       level: 1, xp: 0, gold: START_GOLD, goldEarned: START_GOLD, points: 1,
       ranks: { q: 0, w: 0, e: 0, r: 0 },
       cd: { q: 0, w: 0, e: 0, r: 0, d: 0, f: 0 },
-      summoners: { d: 'flash', f: SUMMONERS[p.summoner] ? p.summoner : 'heal' },
+      spells: { d: 'blink', f: SPELLS[p.spell] ? p.spell : 'mend' },
       items: Array(INV_SLOTS).fill(null),
       wards: 2, wardT: 0,
       order: { type: 'idle' }, path: [], pathT: 0, dir: { mx: 0, my: 0 }, atkKey: false,
@@ -190,7 +190,7 @@ export class Match {
       s.dmgReduce = Math.max(s.dmgReduce, st.dmgReduce || 0);
       if (st.slow) s.slow = Math.max(s.slow, st.slow);
     }
-    const dr = this.dragons[h.team] || 0;
+    const dr = this.wyrms[h.team] || 0;
     s.ad *= 1 + dr * 0.06; s.ap *= 1 + dr * 0.06;
     s.ap *= 1 + s.apMult;
     s.as = Math.min(2.5, h.c.base.as * (1 + s.asBonus / 100));
@@ -229,7 +229,7 @@ export class Match {
     const out = [];
     for (const e of this.entities.values()) {
       if (e.dead || e.removed || e.team === team) continue;
-      if (e.kind !== 'hero' && e.kind !== 'minion' && e.kind !== 'monster') { if (!(opts.structures && (e.kind === 'tower' || e.kind === 'inhib' || e.kind === 'nexus'))) continue; }
+      if (e.kind !== 'hero' && e.kind !== 'minion' && e.kind !== 'monster') { if (!(opts.structures && (e.kind === 'tower' || e.kind === 'spire' || e.kind === 'core'))) continue; }
       if (opts.heroes && e.kind !== 'hero') continue;
       if (this.hasFlag(e, 'untargetable')) continue;
       if (dist2(x, y, e.x, e.y) <= (r + e.r) * (r + e.r)) out.push(e);
@@ -273,7 +273,7 @@ export class Match {
   hasFlag(u, f) { return u.buffs.some(b => b.flags && b.flags[f]); }
 
   cc(u, kind, dur, val, src) {
-    if (!u || u.dead || u.kind === 'tower' || u.kind === 'inhib' || u.kind === 'nexus' || u.kind === 'ward') return;
+    if (!u || u.dead || u.kind === 'tower' || u.kind === 'spire' || u.kind === 'core' || u.kind === 'ward') return;
     if (u.kind === 'monster' && u.def.epic && kind !== 'slow') return;
     if (this.hasFlag(u, 'unstoppable') || this.hasFlag(u, 'untargetable')) return;
     const ten = u.kind === 'hero' ? u.stats.tenacity / 100 : 0;
@@ -317,11 +317,11 @@ export class Match {
     const own = this.structures[s.team];
     if (s.kind === 'tower') {
       if (s.tier === 1) return false;
-      if (s.tier === 4) return !own.some(o => o.kind === 'inhib' && o.dead);
+      if (s.tier === 4) return !own.some(o => o.kind === 'spire' && o.dead);
       return own.some(o => o.kind === 'tower' && o.lane === s.lane && o.tier < s.tier && !o.dead);
     }
-    if (s.kind === 'inhib') return own.some(o => o.kind === 'tower' && o.lane === s.lane && !o.dead);
-    if (s.kind === 'nexus') return own.some(o => o.kind === 'tower' && o.tier === 4 && !o.dead);
+    if (s.kind === 'spire') return own.some(o => o.kind === 'tower' && o.lane === s.lane && !o.dead);
+    if (s.kind === 'core') return own.some(o => o.kind === 'tower' && o.tier === 4 && !o.dead);
     return false;
   }
 
@@ -335,11 +335,11 @@ export class Match {
   damage(src, tgt, amount, type = 'physical', opts = {}) {
     if (!tgt || tgt.dead || tgt.removed || this.ended) return 0;
     if (this.hasFlag(tgt, 'untargetable') || this.hasFlag(tgt, 'invulnerable')) return 0;
-    const isStructure = tgt.kind === 'tower' || tgt.kind === 'inhib' || tgt.kind === 'nexus';
+    const isStructure = tgt.kind === 'tower' || tgt.kind === 'spire' || tgt.kind === 'core';
     if (isStructure) {
       if (opts.ability || this.structureProtected(tgt)) return 0;
       // Structures take less damage when the attacker has no minion escort (anti-backdoor).
-      if (src && src.kind === 'hero' && tgt.kind !== 'nexus' && !this.alliesNear(src.team, tgt.x, tgt.y, 9).some(m => m.kind === 'minion')) amount *= 0.66;
+      if (src && src.kind === 'hero' && tgt.kind !== 'core' && !this.alliesNear(src.team, tgt.x, tgt.y, 9).some(m => m.kind === 'minion')) amount *= 0.66;
     }
     if (src && src.team === tgt.team) return 0;
     let res = 0;
@@ -353,9 +353,9 @@ export class Match {
     let dmg = type === 'true' ? amount : amount * (res >= 0 ? 100 / (100 + res) : 2 - 100 / (100 - res));
     if (tgt.kind === 'hero' && tgt.stats.dmgReduce) dmg *= 1 - tgt.stats.dmgReduce / 100;
     if (tgt.kind === 'minion' && tgt.empowered) dmg *= 0.5;
-    // Junglers (smite carriers) deal more to monsters and take less from them.
-    if (tgt.kind === 'monster' && src && src.kind === 'hero' && (src.summoners.d === 'smite' || src.summoners.f === 'smite')) dmg *= 1.5;
-    if (src && src.kind === 'monster' && tgt.kind === 'hero' && (tgt.summoners.d === 'smite' || tgt.summoners.f === 'smite')) dmg *= 0.7;
+    // Junglers (Hunter's Strike carriers) deal more to monsters and take less from them.
+    if (tgt.kind === 'monster' && src && src.kind === 'hero' && (src.spells.d === 'strike' || src.spells.f === 'strike')) dmg *= 1.5;
+    if (src && src.kind === 'monster' && tgt.kind === 'hero' && (tgt.spells.d === 'strike' || tgt.spells.f === 'strike')) dmg *= 0.7;
     if (src && src.kind === 'minion' && src.empowered) dmg *= 1.5;
     dmg = Math.max(0, dmg);
     // Shields absorb first.
@@ -383,7 +383,7 @@ export class Match {
       if (opts.attack && hero.stats.lifesteal && src === hero) this.heal(hero, hero, total * hero.stats.lifesteal / 100, { quiet: true });
       if (opts.ability && hero.stats.abilitySlow && !opts.reflect) this.cc(tgt, 'slow', 1, 0.2, hero);
       if (opts.ability && hero.c.onAbilityHit && !opts.noPassive) hero.c.onAbilityHit(this, hero, tgt);
-      if (bushAt(this.rift, hero.x, hero.y) >= 0) this.reveal(hero, 1);
+      if (bushAt(this.valley, hero.x, hero.y) >= 0) this.reveal(hero, 1);
     }
     if (tgt.kind === 'monster' && src) this.monsterAggro(tgt, src);
     if (total >= 1) this.emit({ e: 'dmg', id: tgt.id, v: Math.round(total), t: type[0], c: opts.crit ? 1 : 0, s: src ? src.id : 0, x: tgt.x, y: tgt.y });
@@ -461,7 +461,7 @@ export class Match {
       }
       case 'monster': return this.monsterKilled(tgt, killer);
       case 'ward': return;
-      case 'tower': case 'inhib': case 'nexus': return this.structureKilled(tgt, killer, src);
+      case 'tower': case 'spire': case 'core': return this.structureKilled(tgt, killer, src);
       default:
     }
   }
@@ -478,8 +478,8 @@ export class Match {
     this.kills[team]++;
     const assisters = this.heroes.filter(h => h.team === team && h !== killer && [...v.lastHitBy].some(([id, t]) => id === h.id && this.time - t <= CFG.assistWindow));
     let bounty = 300;
-    if (!this.firstBlood) { bounty += 100; this.firstBlood = true; this.announce('First Blood!', 'kill', { killer, victim: v }); }
-    if (v.streak >= 3) { const sd = Math.min(500, 100 * (v.streak - 2)); bounty += sd; this.announce(`${killer ? killer.name : 'The enemy'} shut down ${v.name}!`, 'kill'); }
+    if (!this.firstBlood) { bounty += 100; this.firstBlood = true; this.announce('First Strike!', 'kill', { killer, victim: v }); }
+    if (v.streak >= 3) { const sd = Math.min(500, 100 * (v.streak - 2)); bounty += sd; this.announce(`${killer ? killer.name : 'The enemy'} ended ${v.name}'s streak!`, 'kill'); }
     if (killer && killer.kind === 'hero') {
       killer.kills++;
       killer.streak++;
@@ -499,7 +499,7 @@ export class Match {
     v.lastHitBy.clear();
     this.emit({ e: 'kill', k: killer ? killer.id : 0, v: v.id, a: assisters.map(a => a.id) });
     if (this.hooks.feed) this.hooks.feed(this, killer, v, assisters);
-    if (this.heroes.filter(h => h.team === v.team).every(h => h.dead)) this.announce(`ACE! ${team === 'blue' ? 'Blue' : 'Red'} team wiped out the enemy!`, 'ace');
+    if (this.heroes.filter(h => h.team === v.team).every(h => h.dead)) this.announce(`TEAM WIPE! ${team === 'blue' ? 'Blue' : 'Red'} team defeated every enemy!`, 'ace');
     v.x = v.spawn.x; v.y = v.spawn.y;
   }
 
@@ -508,13 +508,13 @@ export class Match {
     if (s.kind === 'tower') {
       this.towersDown[team]++;
       for (const h of this.heroes) if (h.team === team) { this.addGold(h, 150); this.addXp(h, 50); }
-      this.announce(`${team === 'blue' ? 'Blue' : 'Red'} team destroyed a ${s.lane === 'base' ? 'nexus' : s.lane} tower!`, 'tower', { team });
-    } else if (s.kind === 'inhib') {
-      s.respawnAt = this.time + CFG.inhibRespawn;
+      this.announce(`${team === 'blue' ? 'Blue' : 'Red'} team destroyed a ${s.lane === 'base' ? 'core' : s.lane} tower!`, 'tower', { team });
+    } else if (s.kind === 'spire') {
+      s.respawnAt = this.time + CFG.spireRespawn;
       for (const h of this.heroes) if (h.team === team) this.addGold(h, 50);
-      this.announce(`${team === 'blue' ? 'Blue' : 'Red'} team destroyed the ${s.lane} inhibitor! Super minions incoming.`, 'inhib', { team });
-    } else if (s.kind === 'nexus') {
-      this.end(team, 'nexus');
+      this.announce(`${team === 'blue' ? 'Blue' : 'Red'} team destroyed the ${s.lane} spire! Juggernaut minions incoming.`, 'spire', { team });
+    } else if (s.kind === 'core') {
+      this.end(team, 'core');
     }
     s.ver++;
     void killer;
@@ -572,11 +572,11 @@ export class Match {
         const types = ['melee', 'melee', 'melee'];
         if (this.wave % 3 === 0) types.push('siege');
         types.push('caster', 'caster', 'caster');
-        const enemyInhibsDown = this.structures[enemyOf(team)].filter(s => s.kind === 'inhib' && s.dead);
-        if (enemyInhibsDown.some(s => s.lane === lane)) {
+        const enemySpiresDown = this.structures[enemyOf(team)].filter(s => s.kind === 'spire' && s.dead);
+        if (enemySpiresDown.some(s => s.lane === lane)) {
           const si = types.indexOf('siege');
           if (si >= 0) types[si] = 'super'; else types.splice(3, 0, 'super');
-          if (enemyInhibsDown.length === 3) types.push('super');
+          if (enemySpiresDown.length === 3) types.push('super');
         }
         types.forEach((mtype, i) => this.spawnQueue.push({ at: this.time + i * 0.7, team, lane, mtype, scale }));
       }
@@ -586,7 +586,7 @@ export class Match {
 
   spawnMinion({ team, lane, mtype, scale }) {
     const d = MINIONS[mtype];
-    const path = this.rift.teams[team].paths[lane];
+    const path = this.valley.teams[team].paths[lane];
     const p0 = path[0];
     const hp = d.hp + scale * (mtype === 'caster' ? 12 : 22);
     return this.add({
@@ -599,11 +599,11 @@ export class Match {
   updateMinion(m, dt) {
     m.atkT -= dt;
     m.thinkT -= dt;
-    const baron = this.heroes.some(h => h.team === m.team && !h.dead && this.hasBuff(h, 'baron') && dist(h.x, h.y, m.x, m.y) < 10);
-    m.empowered = baron;
+    const titan = this.heroes.some(h => h.team === m.team && !h.dead && this.hasBuff(h, 'titan') && dist(h.x, h.y, m.x, m.y) < 10);
+    m.empowered = titan;
     if (this.hasFlag(m, 'stun')) return this.applyDisp(m, dt);
     let tgt = m.target ? this.get(m.target) : null;
-    const valid = u => u && !u.dead && !u.removed && u.team !== m.team && this.targetable(u) && (u.kind === 'tower' || u.kind === 'inhib' || u.kind === 'nexus' ? !this.structureProtected(u) || u.kind === 'tower' : true) && this.visibleTo(u, m.team);
+    const valid = u => u && !u.dead && !u.removed && u.team !== m.team && this.targetable(u) && (u.kind === 'tower' || u.kind === 'spire' || u.kind === 'core' ? !this.structureProtected(u) || u.kind === 'tower' : true) && this.visibleTo(u, m.team);
     if (!valid(tgt) || dist(m.x, m.y, tgt.x, tgt.y) > 8) tgt = null;
     if (m.thinkT <= 0) {
       m.thinkT = 0.3;
@@ -611,7 +611,7 @@ export class Match {
       let best = null, bs = Infinity;
       for (const e of this.entities.values()) {
         if (e.team === m.team || e.dead || e.removed) continue;
-        if (!['hero', 'minion', 'tower', 'inhib', 'nexus', 'ward'].includes(e.kind)) continue;
+        if (!['hero', 'minion', 'tower', 'spire', 'core', 'ward'].includes(e.kind)) continue;
         if (!valid(e)) continue;
         const d = dist(m.x, m.y, e.x, e.y) - e.r;
         if (d > acq) continue;
@@ -716,15 +716,15 @@ export class Match {
     }
     const d = dist(m.x, m.y, t.x, t.y);
     if (m.def.epic && m.specialT <= 0) {
-      m.specialT = m.mtype === 'baron' ? 7 : 6;
-      const radius = m.mtype === 'baron' ? 5 : 4.5;
+      m.specialT = m.mtype === 'titan' ? 7 : 6;
+      const radius = m.mtype === 'titan' ? 5 : 4.5;
       this.area(m, { x: m.x, y: m.y, radius, dur: 1.0, style: 'telegraph', hostileTo: 'all', onEnd: a => {
         for (const e of this.entities.values()) {
           if ((e.kind !== 'hero' && e.kind !== 'minion') || e.dead || dist(e.x, e.y, a.x, a.y) > a.radius + e.r) continue;
           this.damage(m, e, m.ad * 1.4, 'magic');
-          if (m.mtype === 'baron') this.cc(e, 'knockback', 0.3, 3, m);
+          if (m.mtype === 'titan') this.cc(e, 'knockback', 0.3, 3, m);
         }
-        this.emit({ e: 'boom', x: a.x, y: a.y, r: a.radius, c: m.mtype === 'baron' ? 'void' : 'fire' });
+        this.emit({ e: 'boom', x: a.x, y: a.y, r: a.radius, c: m.mtype === 'titan' ? 'void' : 'fire' });
       } });
     }
     if (d <= m.range + m.r + t.r) {
@@ -745,23 +745,23 @@ export class Match {
     this.emit({ e: 'gold', to: killer.id, v: m.gold, x: m.x, y: m.y });
     this.shareXp(team, m.x, m.y, m.xp, killer);
     if (m.def.buff === 'blue') {
-      this.addBuff(killer, { id: 'blueBuff', dur: 90, stats: { haste: 15, mpRegen: 6 } });
-      this.announce(`${killer.name} took the Blue Sentinel buff`, 'buff', { team, private: true });
+      this.addBuff(killer, { id: 'sageBuff', dur: 90, stats: { haste: 15, mpRegen: 6 } });
+      this.announce(`${killer.name} took the Sage's Insight buff`, 'buff', { team, private: true });
     } else if (m.def.buff === 'red') {
-      this.addBuff(killer, { id: 'redBuff', dur: 90, stats: { hpRegen: 3 }, onAttack: u => { this.addBuff(u, { id: 'redBurn', dur: 3, tickEvery: 1, onTick: () => this.damage(killer, u, 6 + 2 * killer.level, 'true'), stats: u.kind === 'hero' ? { slow: 0.1 } : undefined }); } });
+      this.addBuff(killer, { id: 'brandBuff', dur: 90, stats: { hpRegen: 3 }, onAttack: u => { this.addBuff(u, { id: 'brandBurn', dur: 3, tickEvery: 1, onTick: () => this.damage(killer, u, 6 + 2 * killer.level, 'true'), stats: u.kind === 'hero' ? { slow: 0.1 } : undefined }); } });
     }
-    if (m.mtype === 'dragon') {
-      this.dragons[team] = Math.min(4, this.dragons[team] + 1);
+    if (m.mtype === 'wyrm') {
+      this.wyrms[team] = Math.min(4, this.wyrms[team] + 1);
       for (const h of this.heroes) if (h.team === team) { this.addGold(h, 25); this.recompute(h); }
-      this.epics.dragon.unit = null;
-      this.epics.dragon.respawnAt = this.time + CFG.dragonRespawn;
-      this.announce(`${team === 'blue' ? 'Blue' : 'Red'} team slew the Elder Drake! (+${this.dragons[team] * 6}% damage)`, 'epic', { team });
-    } else if (m.mtype === 'baron') {
-      for (const h of this.heroes) if (h.team === team && !h.dead) { this.addGold(h, 300); this.addBuff(h, { id: 'baron', dur: 150, stats: { ad: 30, ap: 50 } }); }
-      this.barons[team]++;
-      this.epics.baron.unit = null;
-      this.epics.baron.respawnAt = this.time + CFG.baronRespawn;
-      this.announce(`${team === 'blue' ? 'Blue' : 'Red'} team slew the Void Lord! Minions empowered.`, 'epic', { team });
+      this.epics.wyrm.unit = null;
+      this.epics.wyrm.respawnAt = this.time + CFG.wyrmRespawn;
+      this.announce(`${team === 'blue' ? 'Blue' : 'Red'} team slew the Ember Wyrm! (+${this.wyrms[team] * 6}% damage)`, 'epic', { team });
+    } else if (m.mtype === 'titan') {
+      for (const h of this.heroes) if (h.team === team && !h.dead) { this.addGold(h, 300); this.addBuff(h, { id: 'titan', dur: 150, stats: { ad: 30, ap: 50 } }); }
+      this.titans[team]++;
+      this.epics.titan.unit = null;
+      this.epics.titan.respawnAt = this.time + CFG.titanRespawn;
+      this.announce(`${team === 'blue' ? 'Blue' : 'Red'} team slew the Abyss Titan! Minions empowered.`, 'epic', { team });
     }
     if (m.camp && m.camp.units.every(u => u.dead)) m.camp.respawnAt = this.time + (m.camp.buff ? 150 : 110);
   }
@@ -894,8 +894,8 @@ export class Match {
   }
 
   /* ================= heroes ================= */
-  inFountain(h) { const f = this.rift.teams[h.team].fountain; return dist(h.x, h.y, f.x, f.y) <= CFG.fountainRadius; }
-  canShop(h) { const f = this.rift.teams[h.team].fountain; return h.dead || dist(h.x, h.y, f.x, f.y) <= CFG.shopRadius; }
+  inFountain(h) { const f = this.valley.teams[h.team].fountain; return dist(h.x, h.y, f.x, f.y) <= CFG.fountainRadius; }
+  canShop(h) { const f = this.valley.teams[h.team].fountain; return h.dead || dist(h.x, h.y, f.x, f.y) <= CFG.shopRadius; }
 
   setOrder(h, order) {
     if (h.dead) return;
@@ -930,7 +930,7 @@ export class Match {
     h.recall = null;
     const crit = this.rng.float() * 100 < h.stats.crit;
     let amount = h.stats.ad * (crit ? 1.75 + h.stats.critBonus : 1);
-    const isStructure = t.kind === 'tower' || t.kind === 'inhib' || t.kind === 'nexus';
+    const isStructure = t.kind === 'tower' || t.kind === 'spire' || t.kind === 'core';
     const hit = () => {
       if (t.dead || t.removed) return;
       this.damage(h, t, amount, 'physical', { attack: true, crit });
@@ -967,7 +967,7 @@ export class Match {
     // Burn aura.
     if (h.stats.burnAura) { h.burnT = (h.burnT || 0) - dt; if (h.burnT <= 0) { h.burnT = 1; for (const e of this.enemiesNear(h.team, h.x, h.y, 3)) this.damage(h, e, 12 + h.level * 1.5, 'magic'); } }
     // Enemy fountain laser.
-    const ef = this.rift.teams[enemyOf(h.team)].fountain;
+    const ef = this.valley.teams[enemyOf(h.team)].fountain;
     if (dist(h.x, h.y, ef.x, ef.y) < CFG.fountainRadius + 1.5) this.damage(null, h, 900 * dt, 'true');
 
     h.atkT -= dt;
@@ -990,13 +990,13 @@ export class Match {
       }
       return;
     }
-    // Recall channel.
+    // Return-home channel.
     if (h.recall) {
       h.recall.t -= dt;
       if (h.recall.t <= 0) {
         h.recall = null;
         this.emit({ e: 'recall', id: h.id, x: h.x, y: h.y });
-        const f = this.rift.teams[h.team].fountain;
+        const f = this.valley.teams[h.team].fountain;
         h.x = f.x + this.rng.range(-1.5, 1.5); h.y = f.y + this.rng.range(-1.5, 1.5);
         h.path = []; h.order = { type: 'idle' };
       }
@@ -1019,7 +1019,7 @@ export class Match {
       const pc = h.pendingCast;
       const u = this.get(pc.unit);
       if (!u || u.dead || !this.visibleTo(u, h.team)) h.pendingCast = null;
-      else if (dist(h.x, h.y, u.x, u.y) <= pc.range + u.r + h.r) { h.pendingCast = null; this.castNow(h, pc.slot, { x: u.x, y: u.y, unit: u }, pc.summoner); }
+      else if (dist(h.x, h.y, u.x, u.y) <= pc.range + u.r + h.r) { h.pendingCast = null; this.castNow(h, pc.slot, { x: u.x, y: u.y, unit: u }, pc.spell); }
       else { this.moveToward(h, u.x, u.y, dt); return; }
     }
 
@@ -1035,7 +1035,7 @@ export class Match {
       return;
     }
     if (h.atkKey) {
-      // Basic-attack button (MLBB style): attack the best nearby target.
+      // Basic-attack button (touch controls): attack the best nearby target.
       const t = this.autoTarget(h, this.attackRange(h, { r: 0.6 }) + 2.5);
       if (t) { h.order = { type: 'attack', target: t.id }; }
     }
@@ -1097,9 +1097,9 @@ export class Match {
     let best = null, bs = Infinity;
     for (const e of this.entities.values()) {
       if (e.team === h.team || e.dead || e.removed) continue;
-      if (!['hero', 'minion', 'monster', 'tower', 'inhib', 'nexus', 'ward'].includes(e.kind)) continue;
+      if (!['hero', 'minion', 'monster', 'tower', 'spire', 'core', 'ward'].includes(e.kind)) continue;
       if (!this.targetable(e) || !this.visibleTo(e, h.team)) continue;
-      if ((e.kind === 'tower' || e.kind === 'inhib' || e.kind === 'nexus') && this.structureProtected(e)) continue;
+      if ((e.kind === 'tower' || e.kind === 'spire' || e.kind === 'core') && this.structureProtected(e)) continue;
       const d = dist(h.x, h.y, e.x, e.y) - e.r;
       if (d > range) continue;
       const pri = e.kind === 'hero' ? 0 : e.kind === 'minion' || e.kind === 'monster' ? 10 : 20;
@@ -1140,7 +1140,7 @@ export class Match {
       case 'use': return this.useItem(h, num(msg.slot, -1) | 0);
       case 'recall':
         if (h.dead || h.recall || this.inFountain(h)) return;
-        h.recall = { t: this.hasBuff(h, 'baron') ? 3 : CFG.recallTime, max: this.hasBuff(h, 'baron') ? 3 : CFG.recallTime };
+        h.recall = { t: this.hasBuff(h, 'titan') ? 3 : CFG.recallTime, max: this.hasBuff(h, 'titan') ? 3 : CFG.recallTime };
         h.order = { type: 'idle' }; h.path = []; h.dir = { mx: 0, my: 0 };
         this.emit({ e: 'recallStart', id: h.id, x: h.x, y: h.y });
         return;
@@ -1159,22 +1159,22 @@ export class Match {
     }
   }
 
-  cast(h, slot, t, summoner = false) {
+  cast(h, slot, t, spell = false) {
     if (h.dead || !this.canCast(h)) return;
-    if (summoner) {
-      const spell = h.summoners[slot];
+    if (spell) {
+      const spell = h.spells[slot];
       if (!spell || h.cd[slot] > 0) return;
       const target = t.id ? this.get(t.id) : null;
-      if ((spell === 'ignite' || spell === 'smite')) {
-        const range = spell === 'ignite' ? 6 : 5;
-        const valid = u => u && !u.dead && u.team !== h.team && (spell === 'ignite' ? u.kind === 'hero' : u.kind === 'monster' || u.kind === 'minion');
+      if ((spell === 'scorch' || spell === 'strike')) {
+        const range = spell === 'scorch' ? 6 : 5;
+        const valid = u => u && !u.dead && u.team !== h.team && (spell === 'scorch' ? u.kind === 'hero' : u.kind === 'monster' || u.kind === 'minion');
         let u = valid(target) ? target : null;
         if (!u) {
           let bd = range + 3;
           for (const e of this.entities.values()) if (valid(e) && this.visibleTo(e, h.team)) { const d = dist(t.x, t.y, e.x, e.y); if (d < bd) { bd = d; u = e; } }
         }
         if (!u) return;
-        if (dist(h.x, h.y, u.x, u.y) > range + u.r + h.r) { h.pendingCast = { slot, unit: u.id, range, summoner: true }; return; }
+        if (dist(h.x, h.y, u.x, u.y) > range + u.r + h.r) { h.pendingCast = { slot, unit: u.id, range, spell: true }; return; }
         return this.castNow(h, slot, { x: u.x, y: u.y, unit: u }, true);
       }
       return this.castNow(h, slot, t, true);
@@ -1201,9 +1201,9 @@ export class Match {
     return this.castNow(h, slot, t);
   }
 
-  castNow(h, slot, t, summoner = false) {
+  castNow(h, slot, t, spell = false) {
     h.recall = null;
-    if (summoner) return this.castSummoner(h, slot, t);
+    if (spell) return this.castSpell(h, slot, t);
     const a = h.c.abilities[slot];
     const rank = h.ranks[slot];
     const mana = a.mana[Math.min(a.mana.length - 1, rank - 1)];
@@ -1223,21 +1223,21 @@ export class Match {
     this.emit({ e: 'cast', id: h.id, sl: slot, x: h.x, y: h.y, c: h.champ });
   }
 
-  castSummoner(h, slot, t) {
-    const spell = h.summoners[slot];
-    const def = SUMMONERS[spell];
+  castSpell(h, slot, t) {
+    const spell = h.spells[slot];
+    const def = SPELLS[spell];
     h.cd[slot] = def.cd;
     h.cdMax = h.cdMax || {};
     h.cdMax[slot] = def.cd;
     switch (spell) {
-      case 'flash': {
+      case 'blink': {
         const a = Math.atan2(t.y - h.y, t.x - h.x);
         const d = Math.min(4.5, dist(h.x, h.y, t.x, t.y)) || 4.5;
         const [nx, ny] = castWalk(this.map, h.x, h.y, a, d, h.r);
         this.blink(h, nx, ny);
         break;
       }
-      case 'heal': {
+      case 'mend': {
         const amt = 80 + 20 * h.level;
         this.heal(h, h, amt);
         const ally = this.alliesNear(h.team, h.x, h.y, 8, { heroes: true }).filter(a => a !== h).sort((a, b) => a.hp / a.maxHp - b.hp / b.maxHp)[0];
@@ -1245,15 +1245,15 @@ export class Match {
         this.addBuff(h, { id: 'healHaste', dur: 1, stats: { msPct: 30 } });
         break;
       }
-      case 'ignite': {
+      case 'scorch': {
         const u = t.unit;
-        this.addBuff(u, { id: 'ignite', dur: 5, tickEvery: 1, onTick: () => this.damage(h, u, (50 + 20 * h.level) / 5, 'true') });
+        this.addBuff(u, { id: 'scorch', dur: 5, tickEvery: 1, onTick: () => this.damage(h, u, (50 + 20 * h.level) / 5, 'true') });
         this.addBuff(u, { id: 'grievous', dur: 5 });
         break;
       }
-      case 'smite': this.damage(h, t.unit, 450 + 30 * h.level, 'true'); this.emit({ e: 'smite', x: t.unit.x, y: t.unit.y }); break;
-      case 'ghost': this.addBuff(h, { id: 'ghost', dur: 8, stats: { msPct: 40 } }); break;
-      case 'barrier': this.shield(h, 100 + 25 * h.level, 2.5); break;
+      case 'strike': this.damage(h, t.unit, 450 + 30 * h.level, 'true'); this.emit({ e: 'strike', x: t.unit.x, y: t.unit.y }); break;
+      case 'haste': this.addBuff(h, { id: 'haste', dur: 8, stats: { msPct: 40 } }); break;
+      case 'bulwark': this.shield(h, 100 + 25 * h.level, 2.5); break;
       default:
     }
     this.emit({ e: 'summ', id: h.id, k: spell, x: h.x, y: h.y });
@@ -1317,14 +1317,14 @@ export class Match {
       sources[e.team].push(e);
     }
     for (const team of ['blue', 'red']) {
-      const f = this.rift.teams[team].fountain;
+      const f = this.valley.teams[team].fountain;
       sources[team].push({ x: f.x, y: f.y, sight: 12 });
     }
     for (const e of this.entities.values()) {
-      if (e.kind === 'tower' || e.kind === 'inhib' || e.kind === 'nexus') { e.vis = { blue: true, red: true }; continue; }
+      if (e.kind === 'tower' || e.kind === 'spire' || e.kind === 'core') { e.vis = { blue: true, red: true }; continue; }
       const vis = { blue: e.team === 'blue', red: e.team === 'red' };
       const revealed = this.hasFlag(e, 'revealed');
-      const bush = bushAt(this.rift, e.x, e.y);
+      const bush = bushAt(this.valley, e.x, e.y);
       for (const team of ['blue', 'red']) {
         if (vis[team]) continue;
         if (e.kind === 'trap') continue; // traps are invisible to enemies
@@ -1332,7 +1332,7 @@ export class Match {
         for (const s of sources[team]) {
           const d2 = (s.x - e.x) ** 2 + (s.y - e.y) ** 2;
           if (d2 > s.sight * s.sight) continue;
-          if (bush >= 0 && d2 > 2.2 * 2.2 && bushAt(this.rift, s.x, s.y) !== bush) continue;
+          if (bush >= 0 && d2 > 2.2 * 2.2 && bushAt(this.valley, s.x, s.y) !== bush) continue;
           vis[team] = true;
           break;
         }
@@ -1362,14 +1362,14 @@ export class Match {
       if (!ep.unit && ep.respawnAt && this.time >= ep.respawnAt) {
         ep.respawnAt = 0;
         ep.unit = this.spawnMonster(k, ep.pos.x, ep.pos.y, this.time / 60);
-        this.announce(k === 'dragon' ? 'The Elder Drake has spawned in the bottom river!' : 'The Void Lord has awoken in the top river!', 'epicSpawn');
+        this.announce(k === 'wyrm' ? 'The Ember Wyrm has spawned in the bottom river!' : 'The Abyss Titan has awoken in the top river!', 'epicSpawn');
       }
     }
-    // Inhibitor respawns.
+    // Spire respawns.
     for (const team of ['blue', 'red']) for (const s of this.structures[team]) {
-      if (s.kind === 'inhib' && s.dead && s.respawnAt && this.time >= s.respawnAt) {
+      if (s.kind === 'spire' && s.dead && s.respawnAt && this.time >= s.respawnAt) {
         s.dead = false; s.hp = s.maxHp; s.respawnAt = 0; s.ver++;
-        this.announce(`The ${team} ${s.lane} inhibitor has respawned.`, 'inhib');
+        this.announce(`The ${team} ${s.lane} spire has respawned.`, 'spire');
       }
     }
     this.visT -= dt;
@@ -1454,10 +1454,10 @@ export class Match {
     }
     if (e.shields && e.shields.some(s => !s.passive)) f |= 256;
     if (e.recall) f |= 512;
-    if ((e.kind === 'tower' || e.kind === 'inhib' || e.kind === 'nexus') && this.structureProtected(e)) f |= 1024;
-    if (e.kind === 'hero' && bushAt(this.rift, e.x, e.y) >= 0) f |= 2048;
+    if ((e.kind === 'tower' || e.kind === 'spire' || e.kind === 'core') && this.structureProtected(e)) f |= 1024;
+    if (e.kind === 'hero' && bushAt(this.valley, e.x, e.y) >= 0) f |= 2048;
     if (e.kind === 'hero' && (e.bot || !e.session)) f |= 4096;
-    if (this.hasBuff(e, 'baron')) f |= 8192;
+    if (this.hasBuff(e, 'titan')) f |= 8192;
     if (e.windup) f |= 16384;
     if (e.dash || e.disp) f |= 32768;
     void team;
@@ -1471,7 +1471,7 @@ export class Match {
       case 'minion': return { ...base, t: e.mtype, mh: e.maxHp };
       case 'monster': return { ...base, t: e.mtype, md: e.def.model, n: e.name, mh: e.maxHp, ep: e.def.epic ? 1 : 0, sm: e.def.small ? 1 : 0 };
       case 'tower': return { ...base, t: e.tier, ln: e.lane, mh: e.maxHp };
-      case 'inhib': case 'nexus': return { ...base, mh: e.maxHp };
+      case 'spire': case 'core': return { ...base, mh: e.maxHp };
       case 'ward': return { ...base, mh: 3 };
       case 'trap': return { ...base };
       case 'proj': return { ...base, s: e.style, h: e.homing ? 1 : 0, vx: e.homing ? 0 : r2(e.vx), vy: e.homing ? 0 : r2(e.vy), tg: e.homing ? e.target : 0, sp: e.speed };
@@ -1484,7 +1484,7 @@ export class Match {
     const { team, heroId, known } = view;
     const add = [], upd = [], seen = new Set();
     for (const e of this.entities.values()) {
-      const structure = e.kind === 'tower' || e.kind === 'inhib' || e.kind === 'nexus';
+      const structure = e.kind === 'tower' || e.kind === 'spire' || e.kind === 'core';
       if (!structure && e.team !== team && e.vis && !e.vis[team]) continue;
       if (e.kind === 'trap' && e.team !== team) continue;
       if (e.kind === 'hero' && e.dead && e.id !== heroId) continue;
@@ -1538,7 +1538,7 @@ export class Match {
       g: Math.floor(h.gold), pts: h.points, rk: h.ranks,
       cd: { q: r2(h.cd.q), w: r2(h.cd.w), e: r2(h.cd.e), r: r2(h.cd.r), d: r2(h.cd.d), f: r2(h.cd.f) },
       cdm: h.cdMax || {},
-      it: h.items, wd: h.wards, wdt: r2(h.wardT), sm: h.summoners,
+      it: h.items, wd: h.wards, wdt: r2(h.wardT), sm: h.spells,
       st: { ad: Math.round(st.ad), ap: Math.round(st.ap), ar: Math.round(st.armor), mr: Math.round(st.mr), as: r2(st.as), ms: r2(st.ms), cr: Math.round(st.crit), ha: Math.round(st.haste), rg: st.range },
       k: h.kills, d: h.deaths, a: h.assists, cs: h.cs,
       dead: h.dead ? 1 : 0, rs: h.dead ? r2(h.respawnAt - this.time) : 0,
@@ -1552,13 +1552,13 @@ export class Match {
 
   scoreboard() {
     return {
-      time: Math.floor(this.time), kills: this.kills, towers: this.towersDown, dragons: this.dragons, barons: this.barons,
-      dragonIn: this.epics.dragon.unit ? 0 : Math.max(0, Math.ceil(this.epics.dragon.respawnAt - this.time)),
-      baronIn: this.epics.baron.unit ? 0 : Math.max(0, Math.ceil(this.epics.baron.respawnAt - this.time)),
+      time: Math.floor(this.time), kills: this.kills, towers: this.towersDown, wyrms: this.wyrms, titans: this.titans,
+      wyrmIn: this.epics.wyrm.unit ? 0 : Math.max(0, Math.ceil(this.epics.wyrm.respawnAt - this.time)),
+      titanIn: this.epics.titan.unit ? 0 : Math.max(0, Math.ceil(this.epics.titan.respawnAt - this.time)),
       players: this.heroes.map(h => ({
         id: h.id, name: h.name, c: h.champ, tm: h.team, l: h.level, k: h.kills, d: h.deaths, a: h.assists, cs: h.cs,
         it: h.items.map(it => (it ? it.id : null)), dead: h.dead ? 1 : 0, rs: h.dead ? Math.ceil(h.respawnAt - this.time) : 0,
-        bot: h.session ? 0 : 1, sm: h.summoners,
+        bot: h.session ? 0 : 1, sm: h.spells,
       })),
       winner: this.winner,
     };

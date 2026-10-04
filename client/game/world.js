@@ -14,11 +14,11 @@ export class ClientWorld {
 
   on(type, fn) { this.listeners[type].push(fn); }
 
-  setMatch(rift, youId, team) {
+  setMatch(valley, youId, team) {
     for (const e of this.entities.values()) this.listeners.remove.forEach(fn => fn(e));
     this.entities.clear();
-    this.rift = rift;
-    this.map = rift.map;
+    this.valley = valley;
+    this.map = valley.map;
     this.youId = youId;
     this.team = team;
     this.me = null;

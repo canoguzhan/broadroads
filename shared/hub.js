@@ -3,7 +3,7 @@
 import { TICK, CHAT_MAX, PROTOCOL_VERSION } from './constants.js';
 import { Match, CFG } from './moba/match.js';
 import { CHAMPIONS, CHAMPION_IDS, championInfo } from './moba/champions.js';
-import { ITEMS, SUMMONERS, SECOND_SUMMONERS } from './moba/items.js';
+import { ITEMS, SPELLS, SECOND_SPELLS } from './moba/items.js';
 import { makeBrain } from './moba/bot.js';
 import { newProfile, normalizeProfile, profileXpNeeded, leaderboardRow } from './moba/profile.js';
 import { RNG } from './rng.js';
@@ -73,7 +73,7 @@ export class Hub {
     session.profile = normalizeProfile(name, data);
     send({
       t: 'hello', v: PROTOCOL_VERSION, name, offline: this.offline,
-      champions: CHAMPION_IDS.map(championInfo), items: ITEMS, summoners: SUMMONERS, second: SECOND_SUMMONERS,
+      champions: CHAMPION_IDS.map(championInfo), items: ITEMS, spells: SPELLS, second: SECOND_SPELLS,
     });
     send({ t: 'profile', profile: session.profile });
     // Rejoin a running match.
@@ -496,13 +496,13 @@ export class Hub {
     const players = [];
     const used = new Set();
     for (const team of ['blue', 'red']) {
-      for (const s of sides[team]) { s.state = 'select'; players.push({ key: s.accountId, name: s.name, team, session: s, champ: null, summ: 'heal', locked: false, bot: false }); used.add(s.name); }
+      for (const s of sides[team]) { s.state = 'select'; players.push({ key: s.accountId, name: s.name, team, session: s, champ: null, summ: 'mend', locked: false, bot: false }); used.add(s.name); }
       const botCount = opts.bots ? opts.bots[team] : 5 - sides[team].length;
       for (let i = 0; i < botCount; i++) {
         let name;
         do { name = `${this.rng.pick(BOT_NAMES)}Bot`; } while (used.has(name));
         used.add(name);
-        players.push({ key: `bot:${id}:${team}${i}`, name, team, session: null, champ: null, summ: 'heal', locked: false, bot: true });
+        players.push({ key: `bot:${id}:${team}${i}`, name, team, session: null, champ: null, summ: 'mend', locked: false, bot: true });
       }
     }
     const sel = { id, players, opts, endsAt: this.time + (this.config.selectTime ?? SELECT_TIME), started: false };
@@ -532,7 +532,7 @@ export class Hub {
       if (sel.players.some(o => o !== p && o.team === p.team && o.champ === msg.champ)) return this.notice(session, 'A teammate already picked that champion.', 'warn');
       p.champ = msg.champ;
     } else if (msg.t === 'csumm') {
-      if (SECOND_SUMMONERS.includes(msg.spell)) p.summ = msg.spell;
+      if (SECOND_SPELLS.includes(msg.spell)) p.summ = msg.spell;
     } else if (msg.t === 'lock') {
       if (!p.champ) return this.notice(session, 'Pick a champion first.', 'warn');
       p.locked = true;
@@ -564,7 +564,7 @@ export class Hub {
         taken.add(p.champ);
       }
       for (const p of tp) {
-        if (p.bot) p.summ = p.role === 'jungle' ? 'smite' : p.role === 'support' ? 'ignite' : this.rng.pick(['heal', 'barrier', 'ghost', 'heal']);
+        if (p.bot) p.summ = p.role === 'jungle' ? 'strike' : p.role === 'support' ? 'scorch' : this.rng.pick(['mend', 'bulwark', 'haste', 'mend']);
         p.locked = true;
       }
     }
@@ -575,7 +575,7 @@ export class Hub {
   startMatch(sel) {
     const id = `m${this.nextId++}`;
     const skill = { easy: 0.45, normal: 0.7, hard: 0.92 }[sel.opts.difficulty] ?? 0.7;
-    const players = sel.players.map(p => ({ key: p.key, name: p.name, team: p.team, champ: p.champ, summoner: p.summ, bot: !p.session, role: p.role, skill, session: p.session }));
+    const players = sel.players.map(p => ({ key: p.key, name: p.name, team: p.team, champ: p.champ, spell: p.summ, bot: !p.session, role: p.role, skill, session: p.session }));
     const match = new Match({
       id, mode: sel.opts.mode, ranked: sel.opts.ranked, players,
       hooks: { end: (m, result) => this.onMatchEnd(m, result), feed: () => {} },

@@ -2,12 +2,12 @@
    projectiles and ability areas. */
 import * as THREE from 'three';
 import { geo, std, basic, mesh, glowSprite, buildHero, buildMonster } from './models.js';
-import { TEAM_HEX } from './rift.js';
+import { TEAM_HEX } from './valley.js';
 
 const CHAMP_MODEL = {
   garrok: { cls: 'paladin', scale: 1.35 }, brakka: { cls: 'paladin', scale: 1.3, horns: true }, thorne: { cls: 'paladin', scale: 1.15 },
   rook: { cls: 'paladin', scale: 1.15 }, kaelen: { cls: 'paladin', scale: 1.0, hood: true }, lyra: { cls: 'arcanist', scale: 1.0 },
-  mira: { cls: 'arcanist', scale: 1.0, halo: true }, zarak: { cls: 'arcanist', scale: 0.95 }, vex: { cls: 'gunner', scale: 1.0 }, nyra: { cls: 'gunner', scale: 1.0 },
+  mira: { cls: 'arcanist', scale: 1.0, halo: true }, zarak: { cls: 'arcanist', scale: 0.95 }, hale: { cls: 'gunner', scale: 1.0 }, nyra: { cls: 'gunner', scale: 1.0 },
 };
 
 export function buildChampion(id, info, team) {
@@ -92,7 +92,7 @@ export function buildTower(team, tier) {
   return { root, parts: { crystal, glow } };
 }
 
-export function buildInhibitor(team) {
+export function buildSpire(team) {
   const root = new THREE.Group();
   const tc = TEAM_HEX[team];
   root.add(mesh(geo('iBase', () => new THREE.CylinderGeometry(1.4, 1.6, 0.5, 12)), std(0x8a8478), 0, 0.25, 0));
@@ -104,7 +104,7 @@ export function buildInhibitor(team) {
   return { root, parts: { crystal, ring, glow } };
 }
 
-export function buildNexus(team) {
+export function buildCore(team) {
   const root = new THREE.Group();
   const tc = TEAM_HEX[team];
   root.add(mesh(geo('nBase', () => new THREE.CylinderGeometry(2.6, 3.0, 0.8, 12)), std(0x8a8478), 0, 0.4, 0));
@@ -143,7 +143,7 @@ export function buildTrap() {
   return { root, parts: {} };
 }
 
-function buildDragon() {
+function buildWyrm() {
   const g = new THREE.Group();
   const scale = std(0xc2410c, { flatShading: true, roughness: 0.7 });
   const body = mesh(geo('dBody', () => new THREE.SphereGeometry(1.2, 12, 10)), scale, 0, 1.6, 0);
@@ -171,8 +171,8 @@ function buildDragon() {
 const MONSTER_MODEL = { golem: 'golem', brute: 'brute', wolf: 'wolf', bat: 'bat', slime: 'slime', overlord: 'overlord' };
 
 export function buildMobaMonster(model, small, epic) {
-  if (model === 'dragon') {
-    const built = buildDragon();
+  if (model === 'wyrm') {
+    const built = buildWyrm();
     const root = new THREE.Group();
     root.add(built.g);
     return { root, parts: built };
@@ -202,7 +202,7 @@ export function buildMobaProjectile(style, team, champColor) {
   return { root, parts: { core, glow }, spin: style === 'shuriken' || style === 'axe' };
 }
 
-const AREA_COLORS = { telegraph: 0xef4444, lucent: 0xfef9c3, star: 0x7dd3fc, equinox: 0xa78bfa, inferno: 0xf97316, whirl: 0x84cc16, decimate: 0xdc2626, wrath: 0x22c55e };
+const AREA_COLORS = { telegraph: 0xef4444, solarwell: 0xfef9c3, star: 0x7dd3fc, eclipse: 0xa78bfa, inferno: 0xf97316, whirl: 0x84cc16, reap: 0xdc2626, wrath: 0x22c55e };
 
 export function buildMobaArea(style, radius, len, width, hostile) {
   const root = new THREE.Group();
@@ -227,10 +227,10 @@ export function buildMobaArea(style, radius, len, width, hostile) {
   const fill = new THREE.Mesh(geo('aFill', () => new THREE.CircleGeometry(1, 48)), basic(color, { transparent: true, opacity: 0.18, side: THREE.DoubleSide, depthWrite: false }));
   fill.rotation.x = -Math.PI / 2;
   fill.position.y = 0.08;
-  fill.scale.setScalar(style === 'telegraph' || style === 'decimate' || style === 'wrath' || style === 'star' ? 0.01 : radius);
+  fill.scale.setScalar(style === 'telegraph' || style === 'reap' || style === 'wrath' || style === 'star' ? 0.01 : radius);
   root.add(edge, fill);
   parts.edge = edge; parts.fill = fill;
-  if (style === 'inferno' || style === 'lucent' || style === 'equinox') {
+  if (style === 'inferno' || style === 'solarwell' || style === 'eclipse') {
     const glow = glowSprite(color, radius * 2);
     glow.position.y = 0.5;
     root.add(glow);

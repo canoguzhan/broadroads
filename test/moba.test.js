@@ -1,6 +1,6 @@
 import { test, describe } from 'node:test';
 import assert from 'node:assert/strict';
-import { getRift, TEAMS } from '../shared/moba/map.js';
+import { getValley, TEAMS } from '../shared/moba/map.js';
 import { Match } from '../shared/moba/match.js';
 import { CHAMPIONS, CHAMPION_IDS, XP_TO_LEVEL, canRankUp } from '../shared/moba/champions.js';
 import { ITEMS, priceFor } from '../shared/moba/items.js';
@@ -21,7 +21,7 @@ function bfs(map, sx, sy) {
   return d;
 }
 
-function makeMatch(blue = ['vex'], red = ['garrok'], opts = {}) {
+function makeMatch(blue = ['hale'], red = ['garrok'], opts = {}) {
   const players = [];
   blue.forEach((c, i) => players.push({ key: `b${i}`, name: `Blue${i}`, team: 'blue', champ: c, bot: !!opts.bots, role: 'mid' }));
   red.forEach((c, i) => players.push({ key: `r${i}`, name: `Red${i}`, team: 'red', champ: c, bot: !!opts.bots, role: 'mid' }));
@@ -31,34 +31,34 @@ const run = (m, sec) => { for (let i = 0; i < sec * 20; i++) { m.update(0.05); m
 
 describe('map', () => {
   test('every structure, camp, lane point and pit is reachable', () => {
-    const rift = getRift();
-    const d = bfs(rift.map, 12, 138);
-    const reach = (p, what) => assert.ok(d[Math.floor(p.x) + Math.floor(p.y) * rift.map.w] >= 0, `${what} unreachable`);
+    const valley = getValley();
+    const d = bfs(valley.map, 12, 138);
+    const reach = (p, what) => assert.ok(d[Math.floor(p.x) + Math.floor(p.y) * valley.map.w] >= 0, `${what} unreachable`);
     for (const t of TEAMS) {
-      const T = rift.teams[t];
-      reach(T.fountain, 'fountain'); reach(T.nexus, 'nexus');
+      const T = valley.teams[t];
+      reach(T.fountain, 'fountain'); reach(T.core, 'core');
       T.towers.forEach(x => reach(x, `${t} tower`));
-      T.inhibitors.forEach(x => reach(x, `${t} inhib`));
+      T.spires.forEach(x => reach(x, `${t} spire`));
       T.camps.forEach(c => reach(c, `camp ${c.id}`));
       for (const lane of Object.keys(T.paths)) T.paths[lane].forEach((p, i) => reach(p, `${t} ${lane} path ${i}`));
     }
-    reach(rift.epic.dragon, 'dragon'); reach(rift.epic.baron, 'baron');
-    assert.ok(rift.bushCount >= 10);
+    reach(valley.epic.wyrm, 'wyrm'); reach(valley.epic.titan, 'titan');
+    assert.ok(valley.bushCount >= 10);
   });
 
   test('the map is mirrored across the diagonal', () => {
-    const { map } = getRift();
+    const { map } = getValley();
     for (let y = 0; y < map.h; y++) for (let x = 0; x < map.w; x++) assert.equal(map.get(x, y), map.get(y, x));
   });
 });
 
 describe('items', () => {
   test('recipes discount owned components', () => {
-    const inv = [{ id: 'pickaxe', n: 1 }, null, null, null, null, null];
-    const p = priceFor('executioner', inv);
-    assert.equal(p.price, ITEMS.executioner.cost - ITEMS.pickaxe.cost);
+    const inv = [{ id: 'warpick', n: 1 }, null, null, null, null, null];
+    const p = priceFor('piercer', inv);
+    assert.equal(p.price, ITEMS.piercer.cost - ITEMS.warpick.cost);
     assert.deepEqual(p.consume, [0]);
-    assert.equal(priceFor('executioner', Array(6).fill(null)).price, ITEMS.executioner.cost);
+    assert.equal(priceFor('piercer', Array(6).fill(null)).price, ITEMS.piercer.cost);
   });
 
   test('every recipe component exists and costs less than the item', () => {
@@ -81,7 +81,7 @@ describe('match rules', () => {
     assert.equal(h.level, 6);
     assert.equal(h.points, 6);
     assert.ok(canRankUp(h, 'r'));
-    const hp1 = CHAMPIONS.vex.base.hp;
+    const hp1 = CHAMPIONS.hale.base.hp;
     assert.ok(h.maxHp > hp1);
   });
 
@@ -94,16 +94,16 @@ describe('match rules', () => {
     assert.ok([...m.entities.values()].some(e => e.kind === 'minion' && e.hp < e.maxHp), 'minions are fighting');
   });
 
-  test('towers must fall in order; nexus is protected', () => {
+  test('towers must fall in order; core is protected', () => {
     const m = makeMatch();
     const red = m.structures.red;
     const t1 = red.find(s => s.kind === 'tower' && s.lane === 'mid' && s.tier === 1);
     const t2 = red.find(s => s.kind === 'tower' && s.lane === 'mid' && s.tier === 2);
-    const nexus = red.find(s => s.kind === 'nexus');
+    const core = red.find(s => s.kind === 'core');
     const h = m.heroes[0];
     assert.ok(m.structureProtected(t2));
     assert.equal(m.damage(h, t2, 500, 'physical', { attack: true }), 0);
-    assert.equal(m.damage(h, nexus, 500, 'physical', { attack: true }), 0);
+    assert.equal(m.damage(h, core, 500, 'physical', { attack: true }), 0);
     assert.equal(m.damage(h, t1, 500, 'physical', { ability: true }), 0, 'abilities do not damage structures');
     m.kill(t1, h);
     assert.ok(!m.structureProtected(t2));
@@ -111,26 +111,26 @@ describe('match rules', () => {
     assert.equal(m.towersDown.blue, 1);
   });
 
-  test('destroying the nexus ends the match', () => {
+  test('destroying the core ends the match', () => {
     let ended = null;
     const m = makeMatch();
     m.hooks.end = (_, r) => { ended = r; };
-    const nexus = m.structures.red.find(s => s.kind === 'nexus');
-    m.kill(nexus, m.heroes[0]);
+    const core = m.structures.red.find(s => s.kind === 'core');
+    m.kill(core, m.heroes[0]);
     assert.ok(m.ended);
     assert.equal(ended.winner, 'blue');
     assert.equal(ended.players.length, 2);
   });
 
-  test('champion kills grant gold, first blood and respawn timers', () => {
+  test('champion kills grant gold, first strike and respawn timers', () => {
     const m = makeMatch();
     const [b, r] = m.heroes;
     const gold = b.gold;
     m.damage(b, r, 99999, 'true');
     assert.ok(r.dead);
     assert.equal(b.kills, 1);
-    assert.ok(b.gold >= gold + 400, 'kill + first blood bounty');
-    assert.ok(m.fx.some(e => e.e === 'ann' && /First Blood/.test(e.text)));
+    assert.ok(b.gold >= gold + 400, 'kill + first strike bounty');
+    assert.ok(m.fx.some(e => e.e === 'ann' && /First Strike/.test(e.text)));
     run(m, 4);
     assert.ok(r.dead);
     run(m, 10);
@@ -145,16 +145,16 @@ describe('match rules', () => {
     m.command(h, { t: 'buy', item: 'boots' });
     m.command(h, { t: 'buy', item: 'boots' });
     assert.equal(h.items.filter(i => i && i.id === 'boots').length, 1);
-    m.command(h, { t: 'buy', item: 'pickaxe' });
-    m.command(h, { t: 'buy', item: 'executioner' });
-    assert.ok(h.items.some(i => i && i.id === 'executioner'));
-    assert.ok(!h.items.some(i => i && i.id === 'pickaxe'));
+    m.command(h, { t: 'buy', item: 'warpick' });
+    m.command(h, { t: 'buy', item: 'piercer' });
+    assert.ok(h.items.some(i => i && i.id === 'piercer'));
+    assert.ok(!h.items.some(i => i && i.id === 'warpick'));
     assert.ok(h.stats.armorPen >= 30);
-    m.command(h, { t: 'buy', item: 'berserker' });
-    assert.ok(h.items.some(i => i && i.id === 'berserker') && !h.items.some(i => i && i.id === 'boots'), 'boots upgrade');
+    m.command(h, { t: 'buy', item: 'rushboots' });
+    assert.ok(h.items.some(i => i && i.id === 'rushboots') && !h.items.some(i => i && i.id === 'boots'), 'boots upgrade');
     h.x = 75; h.y = 75;
     const g = h.gold;
-    m.command(h, { t: 'buy', item: 'ruby' });
+    m.command(h, { t: 'buy', item: 'heartgem' });
     assert.equal(h.gold, g, 'cannot shop away from base');
     h.x = h.spawn.x; h.y = h.spawn.y;
     m.command(h, { t: 'buy', item: 'potion' });
@@ -172,7 +172,7 @@ describe('match rules', () => {
       h.x = 75; h.y = 76; enemy.x = 77; enemy.y = 76;
       m.addXp(h, XP_TO_LEVEL[6]);
       for (const s of ['q', 'w', 'e', 'r']) { h.ranks[s] = 1; }
-      const ally = m.addHero({ key: 'ally', name: 'Ally', team: 'blue', champ: id === 'mira' ? 'vex' : 'mira', bot: false });
+      const ally = m.addHero({ key: 'ally', name: 'Ally', team: 'blue', champ: id === 'mira' ? 'hale' : 'mira', bot: false });
       ally.x = 74; ally.y = 77; ally.hp = ally.maxHp / 2;
       m.updateVision();
       for (const s of ['q', 'w', 'e', 'r']) {
@@ -200,9 +200,9 @@ describe('match rules', () => {
     snap = m.snapshotFor({ team: 'blue', heroId: b.id, known });
     assert.ok((snap.a || []).some(e => e.i === r.id), 'enemy in vision is sent');
     // Enemy steps into a bush away from us.
-    const rift = m.rift;
-    const bushIdx = rift.bushId.findIndex(v => v >= 0);
-    const bx = bushIdx % rift.size + 0.5, by = Math.floor(bushIdx / rift.size) + 0.5;
+    const valley = m.valley;
+    const bushIdx = valley.bushId.findIndex(v => v >= 0);
+    const bx = bushIdx % valley.size + 0.5, by = Math.floor(bushIdx / valley.size) + 0.5;
     r.x = bx; r.y = by; b.x = bx + 5; b.y = by;
     if (!m.map.walkableAt(b.x, b.y)) { b.x = bx; b.y = by + 5; }
     m.updateVision();
@@ -226,29 +226,29 @@ describe('match rules', () => {
     assert.ok(m.inFountain(h), 'teleported home');
   });
 
-  test('summoner spells: flash blinks, ignite burns', () => {
-    const m = makeMatch(['vex'], ['garrok']);
+  test('battle spells: blink teleports, scorch burns', () => {
+    const m = makeMatch(['hale'], ['garrok']);
     const [b, r] = m.heroes;
-    b.summoners.f = 'ignite';
+    b.spells.f = 'scorch';
     b.x = 75; b.y = 80; r.x = 78; r.y = 80;
     m.updateVision();
     const x0 = b.x;
     m.command(b, { t: 'summ', k: 'd', x: b.x - 10, y: b.y });
-    assert.ok(b.x < x0 - 3, 'flashed');
+    assert.ok(b.x < x0 - 3, 'blinked');
     assert.ok(b.cd.d > 0);
     b.x = 76;
     const hp = r.hp;
     m.command(b, { t: 'summ', k: 'f', x: r.x, y: r.y, id: r.id });
     run(m, 5.5);
-    assert.ok(r.hp < hp, 'ignite damage');
+    assert.ok(r.hp < hp, 'scorch damage');
   });
 
   test('a 10-bot game progresses: farming, levels, kills, towers', () => {
     const roles = ['top', 'jungle', 'mid', 'bot', 'support'];
-    const blue = ['thorne', 'rook', 'lyra', 'vex', 'mira'], red = ['garrok', 'kaelen', 'zarak', 'nyra', 'brakka'];
+    const blue = ['thorne', 'rook', 'lyra', 'hale', 'mira'], red = ['garrok', 'kaelen', 'zarak', 'nyra', 'brakka'];
     const players = [];
-    blue.forEach((c, i) => players.push({ key: `b${i}`, name: `B${i}`, team: 'blue', champ: c, bot: true, role: roles[i], summoner: roles[i] === 'jungle' ? 'smite' : 'heal' }));
-    red.forEach((c, i) => players.push({ key: `r${i}`, name: `R${i}`, team: 'red', champ: c, bot: true, role: roles[i], summoner: roles[i] === 'jungle' ? 'smite' : 'ignite' }));
+    blue.forEach((c, i) => players.push({ key: `b${i}`, name: `B${i}`, team: 'blue', champ: c, bot: true, role: roles[i], spell: roles[i] === 'jungle' ? 'strike' : 'mend' }));
+    red.forEach((c, i) => players.push({ key: `r${i}`, name: `R${i}`, team: 'red', champ: c, bot: true, role: roles[i], spell: roles[i] === 'jungle' ? 'strike' : 'scorch' }));
     const m = new Match({ id: 'bots', players, seed: 3 });
     run(m, 12 * 60);
     const cs = m.heroes.reduce((a, h) => a + h.cs, 0);

@@ -21,7 +21,7 @@ describe('lobby', () => {
     const a = await join(hub, 'Alice');
     const hello = a.last('hello');
     assert.equal(hello.champions.length, 10);
-    assert.ok(hello.items.bloodthirster);
+    assert.ok(hello.items.vampblade);
     assert.equal(a.last('profile').profile.rating, 1000);
     assert.equal(a.last('lobby').state, 'lobby');
   });
@@ -34,7 +34,7 @@ describe('lobby', () => {
     assert.equal(sel.players.length, 10);
     assert.equal(sel.players.filter(p => p.bot).length, 9);
     hub.handle(a, { t: 'pick', champ: 'nyra' });
-    hub.handle(a, { t: 'csumm', spell: 'barrier' });
+    hub.handle(a, { t: 'csumm', spell: 'bulwark' });
     hub.handle(a, { t: 'lock' });
     ticks(hub, 50);
     const m = a.last('match');
@@ -45,7 +45,7 @@ describe('lobby', () => {
     assert.equal(new Set(blueChamps).size, 5, 'no duplicate champions on a team');
     ticks(hub, 10);
     const snap = a.last('s');
-    assert.equal(snap.me.sm.f, 'barrier');
+    assert.equal(snap.me.sm.f, 'bulwark');
     assert.ok(a.last('score'));
   });
 
@@ -62,11 +62,11 @@ describe('lobby', () => {
     const a = await join(hub, 'Alice');
     hub.handle(a, { t: 'queue', mode: 'practice' });
     ticks(hub, 60);
-    hub.handle(a, { t: 'buy', item: 'longsword' });
+    hub.handle(a, { t: 'buy', item: 'blade' });
     hub.handle(a, { t: 'lvl', sl: 'q' });
     ticks(hub, 2);
     const me = a.last('s').me;
-    assert.ok(me.it.some(i => i && i.id === 'longsword'));
+    assert.ok(me.it.some(i => i && i.id === 'blade'));
     assert.equal(me.rk.q, 1);
     hub.handle(a, { t: 'chat', ch: 'team', text: 'hello team' });
     assert.equal(a.last('chat').text, 'hello team');

@@ -40,7 +40,7 @@ export function buildHero(cls, theme, gear = {}, colors = null) {
   root.add(body);
   const armorColor = gear.armor ? new THREE.Color(RARITY_HEX[gear.armor]).lerp(new THREE.Color(c.body), 0.6) : new THREE.Color(c.body);
   const torso = mesh(geo('torso', () => new THREE.CylinderGeometry(0.28, 0.34, 0.75, 10)), std(armorColor, { metalness: cls === 'paladin' ? 0.5 : 0.15 }), 0, 0.85, 0);
-  const belt = mesh(geo('belt', () => new THREE.CylinderGeometry(0.35, 0.35, 0.08, 10)), std(c.trim, { metalness: 0.6 }), 0, 0.55, 0);
+  const belt = mesh(geo('girdle', () => new THREE.CylinderGeometry(0.35, 0.35, 0.08, 10)), std(c.trim, { metalness: 0.6 }), 0, 0.55, 0);
   const legs = mesh(geo('legs', () => new THREE.CylinderGeometry(0.3, 0.22, 0.5, 10)), std(c.cloth), 0, 0.27, 0);
   const head = mesh(geo('head', () => new THREE.SphereGeometry(0.22, 14, 10)), std(0xe8c39e, { roughness: 0.9 }), 0, 1.42, 0);
   body.add(torso, belt, legs, head);

@@ -1,4 +1,4 @@
-/* The Rift: a mirrored three-lane MOBA map. Blue base bottom-left, red base
+/* The Valley: a mirrored three-lane MOBA map. Blue base bottom-left, red base
    top-right. The map is symmetric across the top-left → bottom-right
    diagonal (x, y) ↔ (y, x), which is also where the river runs. */
 import { TILE, TileMap } from '../tiles.js';
@@ -14,25 +14,25 @@ const mirror = p => ({ ...p, x: p.y, y: p.x });
 // Blue-side layout (all points have y > x, i.e. below the diagonal).
 const BLUE = {
   fountain: { x: 12, y: 138 },
-  nexus: { x: 26, y: 124 },
+  core: { x: 26, y: 124 },
   towers: [
     { lane: 'top', tier: 1, x: 16.5, y: 48 }, { lane: 'top', tier: 2, x: 16.5, y: 78 }, { lane: 'top', tier: 3, x: 16.5, y: 103 },
     { lane: 'mid', tier: 1, x: 60.5, y: 89.5 }, { lane: 'mid', tier: 2, x: 50.5, y: 99.5 }, { lane: 'mid', tier: 3, x: 42.5, y: 107.5 },
     { lane: 'bot', tier: 1, x: 102, y: 133.5 }, { lane: 'bot', tier: 2, x: 72, y: 133.5 }, { lane: 'bot', tier: 3, x: 47, y: 133.5 },
     { lane: 'base', tier: 4, x: 32, y: 119 }, { lane: 'base', tier: 4, x: 31, y: 129 },
   ],
-  inhibitors: [
+  spires: [
     { lane: 'top', x: 16.5, y: 112 },
     { lane: 'mid', x: 36.5, y: 113.5 },
     { lane: 'bot', x: 38, y: 133.5 },
   ],
   camps: [
-    { id: 'blueBuff', type: 'ancient', x: 32, y: 72, buff: 'blue' },
+    { id: 'sageBuff', type: 'mossback', x: 32, y: 72, buff: 'blue' },
     { id: 'wolves', type: 'wolves', x: 34, y: 94 },
-    { id: 'raptors', type: 'raptors', x: 50, y: 66 },
-    { id: 'redBuff', type: 'brute', x: 78, y: 113, buff: 'red' },
-    { id: 'gromp', type: 'gromp', x: 60, y: 106 },
-    { id: 'krugs', type: 'krugs', x: 100, y: 120 },
+    { id: 'duskwings', type: 'duskwings', x: 50, y: 66 },
+    { id: 'brandBuff', type: 'brute', x: 78, y: 113, buff: 'red' },
+    { id: 'bogtoad', type: 'bogtoad', x: 60, y: 106 },
+    { id: 'stonehulks', type: 'stonehulks', x: 100, y: 120 },
   ],
 };
 
@@ -44,8 +44,8 @@ const BLUE_PATHS = {
 };
 
 export const EPIC = {
-  dragon: { x: 110, y: 110 },
-  baron: { x: 40, y: 40 },
+  wyrm: { x: 110, y: 110 },
+  titan: { x: 40, y: 40 },
 };
 
 function carveDisc(map, cx, cy, r, tile, only) {
@@ -67,7 +67,7 @@ function carveLine(map, ax, ay, bx, by, r, tile, only) {
   }
 }
 
-export function generateRift() {
+export function generateValley() {
   const S = MAP_SIZE;
   const map = new TileMap(S, S);
   map.fill(0, 0, S - 1, S - 1, TILE.TREE);
@@ -85,8 +85,8 @@ export function generateRift() {
   for (const [ax, ay, bx, by] of paths) carveLine(map, ax, ay, bx, by, 1.9, J, [TILE.TREE]);
   for (const c of BLUE.camps) carveDisc(map, c.x, c.y, 4.2, J, [TILE.TREE]);
   // Epic monster pits on the river.
-  carveDisc(map, EPIC.dragon.x, EPIC.dragon.y, 7, TILE.RIVER);
-  carveDisc(map, EPIC.baron.x, EPIC.baron.y, 7, TILE.RIVER);
+  carveDisc(map, EPIC.wyrm.x, EPIC.wyrm.y, 7, TILE.RIVER);
+  carveDisc(map, EPIC.titan.x, EPIC.titan.y, 7, TILE.RIVER);
 
   // Lanes.
   const L = TILE.ROAD;
@@ -145,9 +145,9 @@ export function generateRift() {
     blue: { ...BLUE, paths: {} },
     red: {
       fountain: mirror(BLUE.fountain),
-      nexus: mirror(BLUE.nexus),
+      core: mirror(BLUE.core),
       towers: BLUE.towers.map(mirror),
-      inhibitors: BLUE.inhibitors.map(mirror),
+      spires: BLUE.spires.map(mirror),
       camps: BLUE.camps.map(c => ({ ...mirror(c), id: `${c.id}R` })),
       paths: {},
     },
@@ -162,13 +162,13 @@ export function generateRift() {
 }
 
 let cached = null;
-export function getRift() {
-  if (!cached) cached = generateRift();
+export function getValley() {
+  if (!cached) cached = generateValley();
   return cached;
 }
 
-export function bushAt(rift, x, y) {
+export function bushAt(valley, x, y) {
   const tx = Math.floor(x), ty = Math.floor(y);
-  if (tx < 0 || ty < 0 || tx >= rift.size || ty >= rift.size) return -1;
-  return rift.bushId[tx + ty * rift.size];
+  if (tx < 0 || ty < 0 || tx >= valley.size || ty >= valley.size) return -1;
+  return valley.bushId[tx + ty * valley.size];
 }

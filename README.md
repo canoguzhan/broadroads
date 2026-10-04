@@ -1,9 +1,9 @@
 # ⚔️ BroadRoads
 
-**A free 5v5 MOBA in your browser**, inspired by League of Legends, Mobile Legends: Bang Bang and Dota.
+**A free 5v5 MOBA in your browser.**
 Play at **[broadroads.com](https://broadroads.com)**.
 
-Pick a champion, push three lanes, farm the jungle, slay the Drake and the Void Lord, and destroy the enemy Nexus.
+Pick a champion, push three lanes, hunt in the jungle, slay the Ember Wyrm and the Abyss Titan, and destroy the enemy Core.
 Ranked matchmaking, custom games with friends, and practice against smart bots, on desktop or phone.
 
 The game runs on an authoritative Node.js server with a Three.js client. When no server is reachable, the browser
@@ -19,64 +19,65 @@ runs the same simulation locally, so practice vs AI always works offline.
 | **🤖 Practice vs AI** | You and your party against bots, starting instantly. Easy / Normal / Hard difficulty. Works offline too. |
 | **🏟️ Custom Game** | Create a room and share the 6-digit code. Pick teams, add bots per slot, choose bot difficulty, and start. |
 
-Every match goes **Champion Select** (40 s, no duplicate champions per team, pick a second summoner spell)
+Every match goes **Champion Select** (40 s, no duplicate champions per team, pick a second battle spell)
 → **Match** → **Results** (KDA, CS, gold, damage, MVP, rating change, profile XP).
 If you disconnect or leave, a bot takes over your champion, and you can **reconnect** from the lobby.
 
-## 🗺️ The Rift
+## 🗺️ The Valley
 
-- **Three lanes** (top, mid, bot), each with outer, inner and inhibitor towers, plus an inhibitor. The Nexus is guarded by two Nexus towers.
+- **Three lanes** (top, mid, bot), each with outer, inner and spire towers, plus a **Spire**. The **Core** is guarded by two Core towers.
   Structures must fall in order, abilities don't damage structures, and structures take reduced damage without a minion escort.
-- **Minion waves** every 28 s (melee, caster, siege every third wave). Destroying an inhibitor spawns **super minions** in that lane until it respawns.
-- **Jungle**: Ancient Golem (**blue buff**: ability haste and mana regen), Crimson Brute (**red buff**: burning, slowing attacks), wolves, raptors, Gromp and krugs.
-  Smite carriers deal bonus damage to monsters.
-- **Elder Drake** in the bot river: each kill gives the team a permanent +6% damage, stacking.
-  **Void Lord** in the top river: +30 AD and +50 AP to living team members, faster recall, and empowered nearby minions.
+- **Minion waves** every 28 s (melee, caster, siege every third wave). Destroying a spire spawns **juggernaut minions** in that lane until it respawns.
+- **Jungle**: Mossback Golem (**Sage's Insight**: haste and mana regen), Ironhide Brute (**Searing Brand**: burning, slowing attacks),
+  Howlers, Duskwings, Bogtoad and Stonehulks. Champions carrying Hunter's Strike deal bonus damage to monsters.
+- **Ember Wyrm** in the bottom river: each kill gives the team a permanent +6% damage, stacking.
+  **Abyss Titan** in the top river: +30 attack and +50 ability power to living team members, faster return home, and empowered nearby minions.
 - **Fog of war** (server-side, so it can't be map-hacked), **bushes** that hide units, and **wards** (T).
 - **Fountain**: heals and lets you shop. It shoots enemies who come too close.
 
 ## 🧙 Champions
 
-| Champion | Role | Kit highlights |
+| Champion | Role | Abilities |
 | --- | --- | --- |
-| 🪨 **Garrok** | Tank | Seismic Shard slow-steal, armor-scaling slam, Unstoppable Force knock-up charge |
-| ✨ **Lyra** | Mage | Light Binding root, team shields, slowing Lucent Singularity, map-wide Final Spark |
-| 🗡️ **Kaelen** | Assassin | Piercing shuriken, shadow dash, Death Mark execute based on missing health |
-| 🏹 **Vex** | Marksman | Frost-slow attacks, Volley, Tumble, map-crossing stun arrow |
-| 🪓 **Thorne** | Fighter | Bleed stacks, healing Decimate, Apprehend pull, true-damage Guillotine that resets on kills |
-| 🌙 **Mira** | Support | Starcall, ally heals, silencing Equinox, global Wish heal |
-| 🔥 **Zarak** | Mage | Pyromania stun every 4th spell, fireball, flame cone, Infernus field |
-| 🎯 **Nyra** | Marksman | Longest range, headshots, Yordle traps, Calibrum net, Ace in the Hole snipe |
-| 🐂 **Brakka** | Tank / Support | Pulverize knock-up, Headbutt, team-heal roar, Unbreakable damage reduction |
-| 🌪️ **Rook** | Fighter | Whirlwind, Cleaving Throw, Leap Strike, missing-health Soul Wrath |
+| 🪨 **Garrok**, the Mountain Heart | Tank | Boulder Toss · Storm Fists · Quake Stomp · Avalanche Charge |
+| ✨ **Lyra**, the Dawnweaver | Mage | Sunlit Chains · Aegis of Dawn · Solar Well · Daybreak Lance |
+| 🗡️ **Kaelen**, the Veiled Knife | Assassin | Whirling Star · Veil Step · Night Cleave · Final Verdict |
+| 🏹 **Hale**, the Winter Huntress | Marksman | Hunter's Rhythm · Hailstorm · Glide · Glacier Spear |
+| 🪓 **Thorne**, the Iron Warlord | Fighter | Reaping Arc · Hamstring · Chain Hook · Executioner's Leap |
+| 🌙 **Mira**, the Moonsinger | Support | Falling Star · Moonlit Blessing · Silent Eclipse · Lunar Hymn |
+| 🔥 **Zarak**, the Cinder Prodigy | Mage | Firebolt · Flame Fan · Ember Ward · Meteor Fall |
+| 🎯 **Nyra**, the Desert Marshal | Marksman | Longshot · Snare Trap · Bola Shot · Dead Eye |
+| 🐂 **Brakka**, the Stampede | Tank / Support | Earthbreaker · Horn Charge · War Bellow · Iron Hide |
+| 🌪️ **Rook**, the Storm Blade | Fighter | Cyclone · Axe Hurl · Skyfall Strike · Tempest Wrath |
 
-Levels go 1–18 with one ability point per level; R unlocks at 6, 11 and 16.
-Stats include AD, AP, armor, MR, attack speed, crit, ability haste, lifesteal, armor and magic penetration, and tenacity.
-Damage is physical, magic or true, with LoL-style resistances.
+Each champion also has a passive. Levels go 1–18 with one ability point per level; the ultimate unlocks at 6, 11 and 16.
+Stats include attack, ability power, armor, magic resist, attack speed, crit, haste, lifesteal, armor and magic
+penetration, and tenacity. Damage is physical, magic or true.
 
-**Items**: 35 items with a recipe system (owned components are discounted), boots tiers, potions and item passives
-(Thornmail, Sunfire burn, Rylai slow, Deathcap AP amp, Infinity crit, Spirit Visage heal amp).
-**Summoner spells**: Flash, plus Heal, Ignite, Smite, Ghost or Barrier.
+**Items**: 35 original items with a recipe system (owned components are discounted), boot upgrades, potions and
+item passives (Spiked Plate, Emberplate Aegis, Frostbound Orb, Archmage's Crown, Starforged Edge, Grove Charm and more).
+
+**Battle spells**: Blink, plus Mend, Scorch, Hunter's Strike, Haste or Bulwark.
 
 ## 🕹️ Controls
 
-| Action | Desktop (LoL-style) | Phone (MLBB-style) |
+| Action | Desktop | Phone |
 | --- | --- | --- |
 | Move / attack | Right-click (hold to keep moving); right-click an enemy to attack | Joystick + ⚔️ button (auto-targets) |
 | Attack-move / stop | A / S | — |
-| Abilities | Q W E R quick-cast at cursor; Ctrl+Q/W/E/R or **+** to level up | Q W E R buttons (auto-aim) |
-| Summoners | D / F | D / F buttons |
-| Items · ward · recall · shop | 1–6 · T · B · P | Bar buttons |
+| Abilities | Q W E R cast at the cursor; Ctrl+Q/W/E/R or **+** to level up | Q W E R buttons (auto-aim) |
+| Battle spells | D / F | D / F buttons |
+| Items · ward · return home · shop | 1–6 · T · B · P | Bar buttons |
 | Camera | Space (center), Y (lock/unlock, edge-pan), wheel (zoom), click the minimap | Locked follow |
 | Scoreboard · ping · chat | Tab · Alt+click · Enter (team), `/all` (all chat), `/ff` (surrender after 10:00) | — |
 
 ## 🤖 Bots
 
-Bots play the same game with the same commands a player has. They:
+Bots play with the same commands a player has. They:
 
 - level abilities, shop their champion's build and last-hit in lane;
-- respect tower aggro, retreat and recall when low, and trade or all-in based on the odds;
-- jungle with smite, rally for Drake and Void Lord, defend the base, and group up late in the game.
+- respect tower aggro, retreat and return home when low, and trade or all-in based on the odds;
+- hunt jungle camps, rally for the Ember Wyrm and Abyss Titan, defend the base, and group up later in the game.
 
 ---
 
@@ -98,13 +99,6 @@ npm test                                         # simulation, lobby and server 
 npx playwright install chromium && npm run build && npm run test:e2e   # real-browser end-to-end test
 ```
 
-The end-to-end test drives two browsers through the full flow:
-
-- registering, lobby chat, a party invite, every lobby tab, and a custom room joined by code;
-- champion select;
-- in the match: team chat, the shop, ability level-up, movement, the scoreboard, and leaving and rejoining;
-- offline practice.
-
 ## 🌐 Deployment (broadroads.com)
 
 The game needs a long-running server for WebSockets, so it runs on a VPS. Any 1 vCPU / 1 GB machine can host
@@ -119,11 +113,8 @@ docker compose up -d --build
 
 **Without Docker:** `deploy/broadroads.service` (systemd) plus `deploy/Caddyfile` or `deploy/nginx.conf`.
 
-Point the DNS A records of `broadroads.com` and `www` at the server. With `DATABASE_URL` set (Neon or any Postgres),
-profiles are stored in `br_accounts` / `br_characters`. Accounts from the original site's `broadroads_users` table are
-imported on first login. Without it, a JSON file in `DATA_DIR` is used.
-
-Configuration lives in [`.env.example`](.env.example).
+Point the DNS A records of `broadroads.com` and `www` at the server. With `DATABASE_URL` set (any Postgres),
+profiles are stored in `br_accounts` / `br_characters`. Without it, a JSON file in `DATA_DIR` is used.
 
 ## 🏗️ Architecture
 
@@ -131,19 +122,14 @@ Configuration lives in [`.env.example`](.env.example).
 shared/                 runs on the server AND in the browser (offline mode)
   hub.js                lobby: sessions, parties, ranked queue, custom rooms, champion select,
                         matches, reconnect, results/Elo, chat, leaderboards
-  moba/match.js         authoritative 20 Hz match: structures, minions, jungle, epics, heroes,
-                        orders, auto-attacks, abilities, CC, damage, gold/XP, shop, summoners,
-                        recall, vision & bushes, announcements, per-team snapshots
+  moba/match.js         authoritative 20 Hz match simulation
   moba/champions.js     10 champions (passives + Q/W/E/R)
-  moba/items.js         items, recipes, summoner spells
+  moba/items.js         items, recipes, battle spells
   moba/bot.js           hero AI
-  moba/map.js           the Rift (mirrored 3-lane map)
+  moba/map.js           the Valley (mirrored 3-lane map)
   moba/pathfind.js      A* + path smoothing
-server/                 HTTP + WebSocket gateway, scrypt auth, HMAC tokens, rate limits,
-                        JSON-file or PostgreSQL storage, graceful shutdown
-client/                 Three.js renderer (chunk-culled terrain, procedural models, fog of war, FX),
-                        LoL/MLBB controls, HUD, minimap, shop, lobby, champion select
+server/                 HTTP + WebSocket gateway, scrypt auth, HMAC tokens, rate limits, storage
+client/                 Three.js renderer, controls, HUD, minimap, shop, lobby, champion select
 ```
 
-The server is authoritative for everything. Clients send orders (move, attack, cast at a point) and receive only
-what their team can see.
+All champions, abilities, items, spells, monsters, structures, the map and the art are original to BroadRoads.

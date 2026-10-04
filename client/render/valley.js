@@ -1,4 +1,4 @@
-/* 3D terrain for the Rift: baked ground texture plus instanced forest,
+/* 3D terrain for the Valley: baked ground texture plus instanced forest,
    bushes and river water, chunked so the camera can cull off-screen parts. */
 import * as THREE from 'three';
 import { TILE } from '../../shared/tiles.js';
@@ -74,10 +74,10 @@ function bakeGround(map, size) {
   return { tex, canvas };
 }
 
-export function buildRift(rift, quality) {
-  const map = rift.map;
+export function buildValley(valley, quality) {
+  const map = valley.map;
   const group = new THREE.Group();
-  const { tex, canvas } = bakeGround(map, rift.size);
+  const { tex, canvas } = bakeGround(map, valley.size);
   const ground = new THREE.Mesh(new THREE.PlaneGeometry(map.w, map.h), new THREE.MeshLambertMaterial({ map: tex }));
   ground.rotation.x = -Math.PI / 2;
   ground.position.set(map.w / 2, 0, map.h / 2);
@@ -128,7 +128,7 @@ export function buildRift(rift, quality) {
 
   // Fountain platforms.
   for (const team of ['blue', 'red']) {
-    const f = rift.teams[team].fountain;
+    const f = valley.teams[team].fountain;
     const ring = new THREE.Mesh(new THREE.RingGeometry(5.5, 6.2, 48), new THREE.MeshBasicMaterial({ color: TEAM_HEX[team], transparent: true, opacity: 0.6, side: THREE.DoubleSide }));
     ring.rotation.x = -Math.PI / 2;
     ring.position.set(f.x, 0.06, f.y);

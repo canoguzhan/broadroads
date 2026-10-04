@@ -670,7 +670,7 @@ kbd { background: #2a2434; border: 1px solid #4a4058; border-bottom-width: 2px; 
 .ann.out { opacity: 0; }
 .ann.k-multi, .ann.k-ace { color: #fb923c; font-size: 2rem; }
 .ann.k-victory { font-size: 2.6rem; }
-.ann.k-buff, .ann.k-inhib, .ann.k-epicSpawn { font-size: 1.1rem; color: #e9d5ff; }
+.ann.k-buff, .ann.k-spire, .ann.k-epicSpawn { font-size: 1.1rem; color: #e9d5ff; }
 .m-death { position: absolute; top: 40%; left: 50%; transform: translate(-50%, -50%); font-family: var(--display); font-size: 2rem; font-weight: 900; color: #fff; text-shadow: 0 2px 10px #000; pointer-events: none; }
 body.is-dead #game-canvas { filter: grayscale(0.85) brightness(.75); }
 .m-recall { position: absolute; bottom: 150px; left: 50%; transform: translateX(-50%); width: 260px; height: 18px; background: #000; border: 1px solid #60a5fa; border-radius: 9px; overflow: hidden; display: grid; place-items: center; font-size: 11px; font-weight: 800; }
@@ -692,8 +692,8 @@ body.is-dead #game-canvas { filter: grayscale(0.85) brightness(.75); }
 .label.enemy .lb-fill { background: linear-gradient(#fca5a5, #dc2626); }
 .label.enemy .l-name { color: #fecaca; }
 .l-minion .lb { width: 30px; height: 4px; }
-.l-tower .lb, .l-inhib .lb { width: 90px; height: 7px; }
-.l-nexus .lb { width: 130px; height: 9px; }
+.l-tower .lb, .l-spire .lb { width: 90px; height: 7px; }
+.l-core .lb { width: 130px; height: 9px; }
 .label.protected .lb { opacity: .5; }
 .label.protected .lb::after { content: '🔒'; position: absolute; right: -14px; top: -5px; font-size: 9px; }
 .l-monster .lb { width: 46px; }

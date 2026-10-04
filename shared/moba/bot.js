@@ -25,7 +25,7 @@ function shop(m, h) {
   // First visit: starter items.
   if (!h.bot.started) {
     h.bot.started = true;
-    m.command(h, { t: 'buy', item: h.c.base.ad > 60 || !h.c.ranged ? 'longsword' : 'tome' });
+    m.command(h, { t: 'buy', item: h.c.base.ad > 60 || !h.c.ranged ? 'blade' : 'tome' });
     m.command(h, { t: 'buy', item: 'potion' });
     m.command(h, { t: 'buy', item: 'potion' });
   }
@@ -86,10 +86,10 @@ function laneProgress(path, x, y) {
 }
 
 function laneFront(m, h, lane) {
-  const path = m.rift.teams[h.team].paths[lane];
+  const path = m.valley.teams[h.team].paths[lane];
   // Hold point: just in front of our furthest living tower in that lane.
   const towers = m.structures[h.team].filter(t => t.kind === 'tower' && t.lane === lane && !t.dead).sort((a, b) => a.tier - b.tier);
-  const t = towers[0] || m.structures[h.team].find(s => s.kind === 'nexus');
+  const t = towers[0] || m.structures[h.team].find(s => s.kind === 'core');
   const tp = laneProgress(path, t.x, t.y) + 3;
   // The allied minion furthest along the lane path.
   let best = null, bestP = -1;
@@ -163,7 +163,7 @@ function useAbilities(m, h, target, mode) {
         break;
       }
       case 'escape':
-        if (mode === 'retreat' && target && d < 6) { const f = m.rift.teams[h.team].fountain; return castAt(m, h, slot, { x: h.x + (f.x - h.x) * 0.1, y: h.y + (f.y - h.y) * 0.1 }); }
+        if (mode === 'retreat' && target && d < 6) { const f = m.valley.teams[h.team].fountain; return castAt(m, h, slot, { x: h.x + (f.x - h.x) * 0.1, y: h.y + (f.y - h.y) * 0.1 }); }
         if (mode === 'fight' && a.target === 'point' && target && d > h.stats.range && d < range + h.stats.range && target.hp < target.maxHp * 0.4) return castAt(m, h, slot, target);
         break;
       case 'trap':
@@ -174,17 +174,17 @@ function useAbilities(m, h, target, mode) {
   }
 }
 
-function summoners(m, h, target, mode) {
+function spells(m, h, target, mode) {
   for (const k of ['d', 'f']) {
     if (h.cd[k] > 0) continue;
-    const sp = h.summoners[k];
-    if (sp === 'flash' && mode === 'retreat' && h.hp < h.maxHp * 0.2 && target && dist(h.x, h.y, target.x, target.y) < 4) {
-      const f = m.rift.teams[h.team].fountain;
+    const sp = h.spells[k];
+    if (sp === 'blink' && mode === 'retreat' && h.hp < h.maxHp * 0.2 && target && dist(h.x, h.y, target.x, target.y) < 4) {
+      const f = m.valley.teams[h.team].fountain;
       m.command(h, { t: 'summ', k, x: f.x, y: f.y });
-    } else if (sp === 'heal' && h.hp < h.maxHp * 0.25 && target) m.command(h, { t: 'summ', k, x: h.x, y: h.y });
-    else if (sp === 'barrier' && h.hp < h.maxHp * 0.25 && target) m.command(h, { t: 'summ', k, x: h.x, y: h.y });
-    else if (sp === 'ignite' && target && target.kind === 'hero' && target.hp < target.maxHp * 0.3 && dist(h.x, h.y, target.x, target.y) < 6) m.command(h, { t: 'summ', k, x: target.x, y: target.y, id: target.id });
-    else if (sp === 'ghost' && (mode === 'retreat' || mode === 'fight') && target && h.hp < h.maxHp * 0.4) m.command(h, { t: 'summ', k, x: h.x, y: h.y });
+    } else if (sp === 'mend' && h.hp < h.maxHp * 0.25 && target) m.command(h, { t: 'summ', k, x: h.x, y: h.y });
+    else if (sp === 'bulwark' && h.hp < h.maxHp * 0.25 && target) m.command(h, { t: 'summ', k, x: h.x, y: h.y });
+    else if (sp === 'scorch' && target && target.kind === 'hero' && target.hp < target.maxHp * 0.3 && dist(h.x, h.y, target.x, target.y) < 6) m.command(h, { t: 'summ', k, x: target.x, y: target.y, id: target.id });
+    else if (sp === 'haste' && (mode === 'retreat' || mode === 'fight') && target && h.hp < h.maxHp * 0.4) m.command(h, { t: 'summ', k, x: h.x, y: h.y });
   }
 }
 
@@ -195,13 +195,13 @@ function moveTo(m, h, x, y) {
 }
 
 function retreat(m, h, threat) {
-  const f = m.rift.teams[h.team].fountain;
+  const f = m.valley.teams[h.team].fountain;
   if (!threat || dist(h.x, h.y, threat.x, threat.y) > 10) {
     if (!h.recall) m.command(h, { t: 'recall' });
     return;
   }
   useAbilities(m, h, threat, 'retreat');
-  summoners(m, h, threat, 'retreat');
+  spells(m, h, threat, 'retreat');
   moveTo(m, h, f.x, f.y);
 }
 
@@ -243,8 +243,8 @@ function jungleThink(m, h) {
   const unit = camp.units.filter(u => !u.dead).sort((a, b) => a.hp - b.hp)[0];
   if (!unit) return false;
   if (h.hp < h.maxHp * 0.35) return false;
-  // Smite the big monster when it would die.
-  const sk = h.summoners.d === 'smite' ? 'd' : h.summoners.f === 'smite' ? 'f' : null;
+  // Use Hunter's Strike on the big monster when it would die.
+  const sk = h.spells.d === 'strike' ? 'd' : h.spells.f === 'strike' ? 'f' : null;
   const big = camp.units.find(u => !u.dead && !u.def.small);
   if (sk && h.cd[sk] <= 0 && big && big.hp <= 450 + 30 * h.level && dist(h.x, h.y, big.x, big.y) < 5) m.command(h, { t: 'summ', k: sk, x: big.x, y: big.y, id: big.id });
   // Monsters in fog cannot be targeted yet: walk to the camp first.
@@ -255,19 +255,19 @@ function jungleThink(m, h) {
 }
 
 function objectiveThink(m, h) {
-  for (const k of ['dragon', 'baron']) {
+  for (const k of ['wyrm', 'titan']) {
     const u = m.epics[k].unit;
     if (!u || u.dead) continue;
-    if (k === 'dragon' && m.time < 300) continue;
-    if (k === 'baron' && m.time < 1080) continue;
-    // Who takes part: dragon = jungle + bot lane (everyone late), baron = everyone.
+    if (k === 'wyrm' && m.time < 300) continue;
+    if (k === 'titan' && m.time < 1080) continue;
+    // Who takes part: wyrm = jungle + bot lane (everyone late), titan = everyone.
     const role = h.bot.role;
-    const joins = k === 'baron' || m.time > 1080 || role === 'jungle' || role === 'bot' || role === 'support';
+    const joins = k === 'titan' || m.time > 1080 || role === 'jungle' || role === 'bot' || role === 'support';
     if (!joins || h.hp < h.maxHp * 0.55) continue;
     const allies = m.heroes.filter(a => a.team === h.team && !a.dead && a.hp > a.maxHp * 0.4 && dist(a.x, a.y, u.x, u.y) < 22);
     const enemiesNear = m.heroes.filter(e => e.team !== h.team && !e.dead && m.visibleTo(e, h.team) && dist(e.x, e.y, u.x, u.y) < 16);
-    const need = k === 'baron' ? 4 : 2;
-    const levelOk = h.level >= (k === 'baron' ? 11 : 6);
+    const need = k === 'titan' ? 4 : 2;
+    const levelOk = h.level >= (k === 'titan' ? 11 : 6);
     if (!levelOk || enemiesNear.length > 1) continue;
     const jungler = m.heroes.find(a => a.team === h.team && a.bot && a.bot.role === 'jungle' && !a.dead);
     // Rally: jungler heads to the pit, others join when the jungler is on the way.
@@ -275,7 +275,7 @@ function objectiveThink(m, h) {
       if (role === 'jungle' || (jungler && dist(jungler.x, jungler.y, u.x, u.y) < 20)) { if (dist(h.x, h.y, u.x, u.y) > 7) { moveTo(m, h, u.x, u.y); return true; } return true; }
       continue;
     }
-    const sk = h.summoners.d === 'smite' ? 'd' : h.summoners.f === 'smite' ? 'f' : null;
+    const sk = h.spells.d === 'strike' ? 'd' : h.spells.f === 'strike' ? 'f' : null;
     if (sk && h.cd[sk] <= 0 && u.hp <= 450 + 30 * h.level && dist(h.x, h.y, u.x, u.y) < 5) m.command(h, { t: 'summ', k: sk, x: u.x, y: u.y, id: u.id });
     if (!m.visibleTo(u, h.team)) moveTo(m, h, u.x, u.y);
     else if (h.order.type !== 'attack' || h.order.target !== u.id) m.command(h, { t: 'mv', x: u.x, y: u.y, id: u.id });
@@ -322,7 +322,7 @@ export function botThink(m, h, dt) {
   if (tower && tower.target === h.id && hpPct < 0.95) {
     const target = bestTarget(m, h, enemies);
     const kill = target && target.hp < target.maxHp * 0.15 && dist(h.x, h.y, target.x, target.y) < h.stats.range + 1;
-    if (!kill) { const f = m.rift.teams[h.team].fountain; moveTo(m, h, h.x + (f.x - h.x) * 0.15, h.y + (f.y - h.y) * 0.15); return; }
+    if (!kill) { const f = m.valley.teams[h.team].fountain; moveTo(m, h, h.x + (f.x - h.x) * 0.15, h.y + (f.y - h.y) * 0.15); return; }
   }
 
   // Retreat when low or outnumbered.
@@ -343,14 +343,14 @@ export function botThink(m, h, dt) {
     const favorable = (myPower >= theirPower * 1.15 || target.hp < target.maxHp * 0.3) && (!underTheirTower || towerTankers >= 2 || target.hp < target.maxHp * 0.2);
     if (favorable) {
       useAbilities(m, h, target, 'fight');
-      summoners(m, h, target, 'fight');
+      spells(m, h, target, 'fight');
       if (h.order.type !== 'attack' || h.order.target !== target.id) m.command(h, { t: 'mv', x: target.x, y: target.y, id: target.id });
       return;
     }
     // Poke from range but keep distance.
     useAbilities(m, h, target, 'poke');
     if (dist(h.x, h.y, target.x, target.y) < target.stats.range + 2.5) {
-      const f = m.rift.teams[h.team].fountain;
+      const f = m.valley.teams[h.team].fountain;
       moveTo(m, h, h.x + (f.x - h.x) * 0.08, h.y + (f.y - h.y) * 0.08);
       return;
     }
@@ -379,7 +379,7 @@ export function botThink(m, h, dt) {
   const front = laneFront(m, h, lane);
   // Attack enemy structures when minions are tanking.
   const struct = m.autoTarget({ ...h, x: h.x, y: h.y }, h.stats.range + 1.5);
-  if (struct && (struct.kind === 'tower' || struct.kind === 'inhib' || struct.kind === 'nexus')) {
+  if (struct && (struct.kind === 'tower' || struct.kind === 'spire' || struct.kind === 'core')) {
     const tankers = m.alliesNear(h.team, struct.x, struct.y, 8).filter(u => u.kind === 'minion').length;
     if (struct.kind !== 'tower' || tankers >= 1) { if (h.order.target !== struct.id) m.command(h, { t: 'mv', x: struct.x, y: struct.y, id: struct.id }); return; }
   }
@@ -401,7 +401,7 @@ export function botThink(m, h, dt) {
     }
   }
   // Walk to the lane front (slightly behind it).
-  const own = m.rift.teams[h.team].nexus;
+  const own = m.valley.teams[h.team].core;
   const back = h.c.ranged ? 3.5 : 1.5;
   const [dx, dy] = [own.x - front.x, own.y - front.y];
   const dd = Math.hypot(dx, dy) || 1;

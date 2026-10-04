@@ -122,7 +122,7 @@ test('two players chat in the lobby, make a custom room and play the same match'
   a.send({ t: 'room', op: 'start' });
   await a.wait(m => m.t === 'select');
   a.send({ t: 'pick', champ: 'lyra' });
-  b.send({ t: 'pick', champ: 'vex' });
+  b.send({ t: 'pick', champ: 'hale' });
   a.send({ t: 'lock' });
   b.send({ t: 'lock' });
   const ma = await a.wait(m => m.t === 'match', 15000);

@@ -1,5 +1,5 @@
-/* MOBA input. Desktop: LoL-style right-click movement and quick-cast abilities
-   (plus arrow-key movement). Touch: MLBB-style joystick + buttons. */
+/* MOBA input. Desktop: right-click movement and quick-cast abilities at the
+   cursor (plus arrow-key movement). Touch: virtual joystick + buttons. */
 
 const KEYS = {
   KeyQ: 'q', KeyW: 'w', KeyE: 'e', KeyR: 'r', KeyD: 'd', KeyF: 'f', KeyB: 'recall', KeyT: 'ward', KeyA: 'amove', KeyS: 'stop',

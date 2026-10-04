@@ -32,7 +32,7 @@ export class Select {
         return h(`div.sel-player${p.you ? '.you' : ''}${p.locked ? '.locked' : ''}`, {},
           h('div.sp-icon', { text: c ? c.icon : '❔' }),
           h('div', {}, h('div.sp-name', { text: `${p.name}${p.bot ? ' 🤖' : ''}` }), h('div.sp-champ', { text: c ? c.name : own ? 'Picking…' : p.locked ? '' : 'Picking…' })),
-          own && p.summ ? h('div.sp-summ', { text: `✨${app.data.summoners[p.summ]?.icon || ''}` }) : null,
+          own && p.summ ? h('div.sp-summ', { text: `✨${app.data.spells[p.summ]?.icon || ''}` }) : null,
           p.locked ? h('div.sp-lock', { text: '🔒' }) : null);
       }));
     const grid = h('div.sel-grid', {}, ...champs.filter(c => this.role === 'All' || c.role === this.role).map(c => {
@@ -46,8 +46,8 @@ export class Select {
     }));
     const shownDetail = h('div.sel-detail');
     if (shown) this.renderDetail(shownDetail, shown);
-    const summs = h('div.sel-summs', {}, h('span.muted', { text: 'Summoners: ✨ Flash + ' }),
-      ...app.data.second.map(s => { const d = app.data.summoners[s]; return h(`button.summ-btn${me.summ === s ? '.active' : ''}`, { title: `${d.name}: ${d.desc}`, disabled: me.locked, onclick: () => app.send({ t: 'csumm', spell: s }) }, `${d.icon} ${d.name}`); }));
+    const summs = h('div.sel-summs', {}, h('span.muted', { text: 'Spells: ✨ Blink + ' }),
+      ...app.data.second.map(s => { const d = app.data.spells[s]; return h(`button.summ-btn${me.summ === s ? '.active' : ''}`, { title: `${d.name}: ${d.desc}`, disabled: me.locked, onclick: () => app.send({ t: 'csumm', spell: s }) }, `${d.icon} ${d.name}`); }));
     clear(this.root);
     this.root.append(h('div.auth-bg'), h('div.sel-wrap', {},
       h('div.sel-top', {}, h('div.sel-mode', { text: `${sel.mode === 'practice' ? 'Practice vs AI' : sel.mode === 'custom' ? 'Custom Game' : sel.ranked ? 'Ranked 5v5' : 'Matchmade 5v5'} · Choose your champion` }), h('div.sel-timer', { text: sel.timeLeft })),

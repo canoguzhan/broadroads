@@ -7,7 +7,7 @@ import { Chat } from '../ui/chat.js';
 import { Input } from '../input.js';
 import { sound } from '../audio/sound.js';
 import { $ } from '../ui/dom.js';
-import { getRift } from '../../shared/moba/map.js';
+import { getValley } from '../../shared/moba/map.js';
 import { F } from '../../shared/constants.js';
 import { dist } from '../../shared/math.js';
 
@@ -24,8 +24,8 @@ export class Game {
     this.champInfo = Object.fromEntries(data.champions.map(c => [c.id, c]));
     this.players = new Map(match.players.map(p => [p.id, p]));
     this.world = new ClientWorld();
-    this.world.setMatch(getRift(), match.you, match.team);
-    this.renderer.setMatch(this.world.rift, match.team, this.champInfo);
+    this.world.setMatch(getValley(), match.you, match.team);
+    this.renderer.setMatch(this.world.valley, match.team, this.champInfo);
     this.renderer.youId = match.you;
     this.renderer.locked = settings.cameraLock !== false;
     this.pings = [];
@@ -110,9 +110,9 @@ export class Game {
     const mx = this.input.mouse.x, my = this.input.mouse.y;
     let best = null, bd = 42;
     for (const e of this.world.entities.values()) {
-      if (!['hero', 'minion', 'monster', 'tower', 'inhib', 'nexus', 'ward'].includes(e.kind) || (e.fl & F.DEAD)) continue;
-      const p = this.renderer.project(e.x, e.y, e.kind === 'tower' || e.kind === 'nexus' ? 2.5 : 1);
-      const d = Math.hypot(p.x - mx, p.y - my) - (e.kind === 'nexus' ? 30 : e.kind === 'tower' ? 18 : 0);
+      if (!['hero', 'minion', 'monster', 'tower', 'spire', 'core', 'ward'].includes(e.kind) || (e.fl & F.DEAD)) continue;
+      const p = this.renderer.project(e.x, e.y, e.kind === 'tower' || e.kind === 'core' ? 2.5 : 1);
+      const d = Math.hypot(p.x - mx, p.y - my) - (e.kind === 'core' ? 30 : e.kind === 'tower' ? 18 : 0);
       if (d < bd) { bd = d; best = e; }
     }
     this.hover = best;
@@ -250,7 +250,7 @@ export class Game {
       case 'buy': sound.playAnvilStrike(); this.panels.refresh(['shop']); break;
       case 'nomana': this.ui.toast('Not enough mana', 'warn', 900); break;
       case 'kill': this.hud.feed(ev.k, ev.v, ev.a); if (ev.k === you) sound.playVictory(); else if (ev.v === you) sound.playDefeat(); break;
-      case 'ann': this.hud.announce(ev.text, ev.k); if (['kill', 'multi', 'ace', 'tower', 'inhib', 'epic', 'victory'].includes(ev.k)) sound.playFanfare(); this.chat.system(ev.text, 'event'); break;
+      case 'ann': this.hud.announce(ev.text, ev.k); if (['kill', 'multi', 'ace', 'tower', 'spire', 'epic', 'victory'].includes(ev.k)) sound.playFanfare(); this.chat.system(ev.text, 'event'); break;
       case 'ping': this.pings.push({ x: ev.x, y: ev.y, t: 3, color: PING_COLORS[ev.k] || '#22c55e' }); sound.playPickup(); break;
       case 'respawn': if (ev.id === you) sound.playReviveChime(); break;
       case 'recall': if (ev.id === you) sound.playReviveChime(); break;

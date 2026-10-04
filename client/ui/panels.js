@@ -4,7 +4,7 @@ import { priceFor } from '../../shared/moba/items.js';
 import { CHAMPIONS } from '../../shared/moba/champions.js';
 
 const CATS = [['rec', '⭐ Recommended'], ['basic', 'Basic'], ['boots', 'Boots'], ['attack', 'Attack'], ['magic', 'Magic'], ['defense', 'Defense'], ['consumable', 'Consumables']];
-const STAT = { ad: 'Attack Damage', ap: 'Ability Power', hp: 'Health', mp: 'Mana', armor: 'Armor', mr: 'Magic Resist', as: '% Attack Speed', crit: '% Crit Chance', ms: 'Move Speed', msPct: '% Move Speed', haste: 'Ability Haste', lifesteal: '% Lifesteal', armorPen: '% Armor Pen', magicPen: 'Magic Pen', magicPenPct: '% Magic Pen', hpRegen: 'HP Regen /s', mpRegen: 'Mana Regen /s', tenacity: '% Tenacity' };
+const STAT = { ad: 'Attack Damage', ap: 'Ability Power', hp: 'Health', mp: 'Mana', armor: 'Armor', mr: 'Magic Resist', as: '% Attack Speed', crit: '% Crit Chance', ms: 'Move Speed', msPct: '% Move Speed', haste: 'Haste', lifesteal: '% Lifesteal', armorPen: '% Armor Pen', magicPen: 'Magic Pen', magicPenPct: '% Magic Pen', hpRegen: 'HP Regen /s', mpRegen: 'Mana Regen /s', tenacity: '% Tenacity' };
 
 export class Panels {
   constructor(game) {
@@ -98,7 +98,7 @@ export class Panels {
     return {
       title: `📊 ${timeStr(sc.time)} · Blue ${sc.kills.blue} – ${sc.kills.red} Red`,
       wide: true,
-      content: h('div', {}, h('h4.t-blue', { text: `Blue team · 🏰 ${sc.towers.blue} · 🐉 ${sc.dragons.blue} · 👾 ${sc.barons.blue}` }), table('blue'), h('h4.t-red', { text: `Red team · 🏰 ${sc.towers.red} · 🐉 ${sc.dragons.red} · 👾 ${sc.barons.red}` }), table('red')),
+      content: h('div', {}, h('h4.t-blue', { text: `Blue team · 🏰 ${sc.towers.blue} · 🐉 ${sc.wyrms.blue} · 👾 ${sc.titans.blue}` }), table('blue'), h('h4.t-red', { text: `Red team · 🏰 ${sc.towers.red} · 🐉 ${sc.wyrms.red} · 👾 ${sc.titans.red}` }), table('red')),
     };
   }
 
@@ -134,12 +134,12 @@ export class Panels {
       title: '❔ Controls',
       content: h('div', {}, h('table.keys', {},
         row('Right click', 'Move / attack target (hold to keep moving)'), row('A + cursor', 'Attack-move'), row('S', 'Stop'),
-        row('Q W E R', 'Cast at cursor (quick cast)'), row('Ctrl + Q/W/E/R', 'Level up ability'), row('D · F', 'Summoner spells'),
-        row('1 – 6', 'Use item (potions)'), row('T', 'Place ward at cursor'), row('B', 'Recall to base'), row('P', 'Shop'),
+        row('Q W E R', 'Cast at cursor (quick cast)'), row('Ctrl + Q/W/E/R', 'Level up ability'), row('D · F', 'Battle spells'),
+        row('1 – 6', 'Use item (potions)'), row('T', 'Place ward at cursor'), row('B', 'Return to base'), row('P', 'Shop'),
         row('Tab (hold)', 'Scoreboard'), row('Space (hold)', 'Center camera'), row('Y', 'Lock / unlock camera'), row('Arrow keys', 'Move directly'),
         row('Alt + click', 'Ping'), row('Enter', 'Team chat (/all for all chat)'), row('Wheel', 'Zoom'), row('Esc', 'Settings')),
         h('h4', { text: 'How to win' }),
-        h('p', { text: 'Destroy the enemy Nexus. Push lanes with your minions: towers must fall in order (outer → inner → inhibitor tower → inhibitor), then the two Nexus towers. Destroying an inhibitor spawns super minions. Last-hit minions for gold, kill jungle camps, and slay the Drake (permanent team damage) and the Void Lord (empowers your minions).' })),
+        h('p', { text: 'Destroy the enemy Core. Push lanes with your minions: towers must fall in order (outer → inner → spire tower → spire), then the two Core towers. Destroying a spire spawns juggernaut minions. Last-hit minions for gold, kill jungle camps, and slay the Ember Wyrm (permanent team damage) and the Abyss Titan (empowers your minions).' })),
     };
   }
 

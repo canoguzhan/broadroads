@@ -3,48 +3,48 @@
 
 export const ITEMS = {
   // ---- consumables ----
-  potion: { name: 'Health Potion', icon: '🧪', cost: 50, cat: 'consumable', stats: {}, consumable: true, stack: 5, desc: 'Restores 150 health over 12s.' },
+  potion: { name: 'Healing Draught', icon: '🧪', cost: 50, cat: 'consumable', stats: {}, consumable: true, stack: 5, desc: 'Restores 150 health over 12s.' },
 
   // ---- basic ----
-  longsword: { name: 'Long Sword', icon: '🗡️', cost: 350, cat: 'basic', stats: { ad: 10 } },
-  tome: { name: 'Amplifying Tome', icon: '📕', cost: 435, cat: 'basic', stats: { ap: 20 } },
-  cloth: { name: 'Cloth Armor', icon: '🧥', cost: 300, cat: 'basic', stats: { armor: 15 } },
-  cloak: { name: 'Null-Magic Mantle', icon: '🧣', cost: 450, cat: 'basic', stats: { mr: 25 } },
-  ruby: { name: 'Ruby Crystal', icon: '❤️', cost: 400, cat: 'basic', stats: { hp: 150 } },
-  sapphire: { name: 'Sapphire Crystal', icon: '🔷', cost: 350, cat: 'basic', stats: { mp: 250 } },
-  dagger: { name: 'Dagger', icon: '🔪', cost: 300, cat: 'basic', stats: { as: 12 } },
-  boots: { name: 'Boots', icon: '👢', cost: 300, cat: 'boots', stats: { ms: 0.35 }, boots: true },
-  pickaxe: { name: 'Pickaxe', icon: '⛏️', cost: 875, cat: 'basic', stats: { ad: 25 } },
-  rod: { name: 'Blasting Wand', icon: '🪄', cost: 850, cat: 'basic', stats: { ap: 40 } },
-  belt: { name: 'Giant\'s Belt', icon: '🎗️', cost: 900, cat: 'basic', stats: { hp: 350 } },
-  feather: { name: 'Cloak of Agility', icon: '🪶', cost: 600, cat: 'basic', stats: { crit: 15 } },
+  blade: { name: 'Iron Blade', icon: '🗡️', cost: 350, cat: 'basic', stats: { ad: 10 } },
+  tome: { name: 'Apprentice Tome', icon: '📕', cost: 435, cat: 'basic', stats: { ap: 20 } },
+  vest: { name: 'Padded Vest', icon: '🧥', cost: 300, cat: 'basic', stats: { armor: 15 } },
+  veil: { name: 'Warding Veil', icon: '🧣', cost: 450, cat: 'basic', stats: { mr: 25 } },
+  heartgem: { name: 'Heartgem', icon: '❤️', cost: 400, cat: 'basic', stats: { hp: 150 } },
+  managem: { name: 'Manastone', icon: '🔷', cost: 350, cat: 'basic', stats: { mp: 250 } },
+  knife: { name: 'Quick Knife', icon: '🔪', cost: 300, cat: 'basic', stats: { as: 12 } },
+  boots: { name: 'Traveler\'s Boots', icon: '👢', cost: 300, cat: 'boots', stats: { ms: 0.35 }, boots: true },
+  warpick: { name: 'War Pick', icon: '⛏️', cost: 875, cat: 'basic', stats: { ad: 25 } },
+  wand: { name: 'Ember Wand', icon: '🪄', cost: 850, cat: 'basic', stats: { ap: 40 } },
+  girdle: { name: 'Titan Girdle', icon: '🎗️', cost: 900, cat: 'basic', stats: { hp: 350 } },
+  feather: { name: 'Swift Feather', icon: '🪶', cost: 600, cat: 'basic', stats: { crit: 15 } },
 
   // ---- boots ----
-  swift: { name: 'Swiftness Boots', icon: '🥾', cost: 900, cat: 'boots', from: ['boots'], stats: { ms: 0.9 }, boots: true },
-  greaves: { name: 'Plated Steelcaps', icon: '🛡️', cost: 1100, cat: 'boots', from: ['boots', 'cloth'], stats: { ms: 0.65, armor: 20 }, boots: true },
-  treads: { name: 'Mercury\'s Treads', icon: '🦶', cost: 1100, cat: 'boots', from: ['boots', 'cloak'], stats: { ms: 0.65, mr: 25, tenacity: 30 }, boots: true },
-  sorcboots: { name: 'Sorcerer\'s Shoes', icon: '🪄', cost: 1100, cat: 'boots', from: ['boots'], stats: { ms: 0.65, magicPen: 15 }, boots: true },
-  ionian: { name: 'Ionian Boots', icon: '⏳', cost: 950, cat: 'boots', from: ['boots'], stats: { ms: 0.65, haste: 20 }, boots: true },
-  berserker: { name: 'Berserker\'s Greaves', icon: '💨', cost: 1100, cat: 'boots', from: ['boots', 'dagger'], stats: { ms: 0.65, as: 30 }, boots: true },
+  windboots: { name: 'Windrunner Boots', icon: '🥾', cost: 900, cat: 'boots', from: ['boots'], stats: { ms: 0.9 }, boots: true },
+  ironboots: { name: 'Ironshod Boots', icon: '🛡️', cost: 1100, cat: 'boots', from: ['boots', 'vest'], stats: { ms: 0.65, armor: 20 }, boots: true },
+  warboots: { name: 'Steadfast Boots', icon: '🦶', cost: 1100, cat: 'boots', from: ['boots', 'veil'], stats: { ms: 0.65, mr: 25, tenacity: 30 }, boots: true },
+  spellboots: { name: 'Spellweaver Shoes', icon: '🪄', cost: 1100, cat: 'boots', from: ['boots'], stats: { ms: 0.65, magicPen: 15 }, boots: true },
+  sageboots: { name: 'Sage\'s Sandals', icon: '⏳', cost: 950, cat: 'boots', from: ['boots'], stats: { ms: 0.65, haste: 20 }, boots: true },
+  rushboots: { name: 'Rusher\'s Boots', icon: '💨', cost: 1100, cat: 'boots', from: ['boots', 'knife'], stats: { ms: 0.65, as: 30 }, boots: true },
 
   // ---- attack ----
-  bloodthirster: { name: 'Bloodthirster', icon: '🩸', cost: 3400, cat: 'attack', from: ['pickaxe', 'longsword', 'feather'], stats: { ad: 55, lifesteal: 18, crit: 15 } },
-  infinity: { name: 'Infinity Edge', icon: '🌟', cost: 3400, cat: 'attack', from: ['pickaxe', 'pickaxe', 'feather'], stats: { ad: 65, crit: 25 }, passive: 'Critical strikes deal 40% more damage.', critBonus: 0.4 },
-  stormbow: { name: 'Stormrazor Bow', icon: '🏹', cost: 2600, cat: 'attack', from: ['dagger', 'dagger', 'feather'], stats: { as: 40, crit: 25, msPct: 7 } },
-  cleaver: { name: 'Black Cleaver', icon: '🪓', cost: 3000, cat: 'attack', from: ['pickaxe', 'ruby'], stats: { ad: 40, hp: 300, haste: 20 } },
-  executioner: { name: 'Lord Dominik\'s Regards', icon: '⚔️', cost: 3000, cat: 'attack', from: ['pickaxe', 'longsword'], stats: { ad: 45, armorPen: 30 } },
+  vampblade: { name: 'Crimson Fang', icon: '🩸', cost: 3400, cat: 'attack', from: ['warpick', 'blade', 'feather'], stats: { ad: 55, lifesteal: 18, crit: 15 } },
+  starblade: { name: 'Starforged Edge', icon: '🌟', cost: 3400, cat: 'attack', from: ['warpick', 'warpick', 'feather'], stats: { ad: 65, crit: 25 }, passive: 'Critical strikes deal 40% more damage.', critBonus: 0.4 },
+  galebow: { name: 'Galecaller Bow', icon: '🏹', cost: 2600, cat: 'attack', from: ['knife', 'knife', 'feather'], stats: { as: 40, crit: 25, msPct: 7 } },
+  cleaver: { name: 'Rending Cleaver', icon: '🪓', cost: 3000, cat: 'attack', from: ['warpick', 'heartgem'], stats: { ad: 40, hp: 300, haste: 20 } },
+  piercer: { name: 'Armorbreaker', icon: '⚔️', cost: 3000, cat: 'attack', from: ['warpick', 'blade'], stats: { ad: 45, armorPen: 30 } },
 
   // ---- magic ----
-  archmage: { name: 'Rabadon\'s Deathcap', icon: '🎩', cost: 3600, cat: 'magic', from: ['rod', 'rod'], stats: { ap: 120 }, passive: 'Increases ability power by 35%.', apMult: 0.35 },
-  voidscepter: { name: 'Void Staff', icon: '🕳️', cost: 3000, cat: 'magic', from: ['rod', 'tome'], stats: { ap: 70, magicPenPct: 40 } },
-  frostorb: { name: 'Rylai\'s Scepter', icon: '❄️', cost: 2900, cat: 'magic', from: ['rod', 'ruby'], stats: { ap: 80, hp: 300 }, passive: 'Ability damage slows enemies by 20% for 1s.', abilitySlow: true },
-  codex: { name: 'Arcane Codex', icon: '📘', cost: 3000, cat: 'magic', from: ['tome', 'sapphire', 'tome'], stats: { ap: 60, haste: 25, mp: 400 } },
+  crown: { name: 'Archmage\'s Crown', icon: '🎩', cost: 3600, cat: 'magic', from: ['wand', 'wand'], stats: { ap: 120 }, passive: 'Increases ability power by 35%.', apMult: 0.35 },
+  nullstaff: { name: 'Nullstaff', icon: '🕳️', cost: 3000, cat: 'magic', from: ['wand', 'tome'], stats: { ap: 70, magicPenPct: 40 } },
+  frostorb: { name: 'Frostbound Orb', icon: '❄️', cost: 2900, cat: 'magic', from: ['wand', 'heartgem'], stats: { ap: 80, hp: 300 }, passive: 'Ability damage slows enemies by 20% for 1s.', abilitySlow: true },
+  codex: { name: 'Scholar\'s Codex', icon: '📘', cost: 3000, cat: 'magic', from: ['tome', 'managem', 'tome'], stats: { ap: 60, haste: 25, mp: 400 } },
 
   // ---- defense ----
-  thornmail: { name: 'Thornmail', icon: '🌵', cost: 2700, cat: 'defense', from: ['cloth', 'belt'], stats: { armor: 70, hp: 350 }, passive: 'Reflects magic damage to attackers who hit you with basic attacks.', thorns: true },
-  visage: { name: 'Spirit Visage', icon: '💚', cost: 2900, cat: 'defense', from: ['cloak', 'belt'], stats: { hp: 450, mr: 50, hpRegen: 2, haste: 10 }, passive: 'Increases healing and shielding received by 25%.', healAmp: 0.25 },
-  titan: { name: 'Heartsteel', icon: '💗', cost: 3000, cat: 'defense', from: ['belt', 'ruby', 'ruby'], stats: { hp: 800, hpRegen: 4 } },
-  sunfire: { name: 'Sunfire Aegis', icon: '🔥', cost: 2800, cat: 'defense', from: ['cloth', 'belt'], stats: { hp: 450, armor: 40 }, passive: 'Burns nearby enemies for magic damage every second.', burnAura: true },
+  spikeplate: { name: 'Spiked Plate', icon: '🌵', cost: 2700, cat: 'defense', from: ['vest', 'girdle'], stats: { armor: 70, hp: 350 }, passive: 'Reflects magic damage to attackers who hit you with basic attacks.', thorns: true },
+  grovecharm: { name: 'Grove Charm', icon: '💚', cost: 2900, cat: 'defense', from: ['veil', 'girdle'], stats: { hp: 450, mr: 50, hpRegen: 2, haste: 10 }, passive: 'Increases healing and shielding received by 25%.', healAmp: 0.25 },
+  colossus: { name: 'Colossus Heart', icon: '💗', cost: 3000, cat: 'defense', from: ['girdle', 'heartgem', 'heartgem'], stats: { hp: 800, hpRegen: 4 } },
+  emberplate: { name: 'Emberplate Aegis', icon: '🔥', cost: 2800, cat: 'defense', from: ['vest', 'girdle'], stats: { hp: 450, armor: 40 }, passive: 'Burns nearby enemies for magic damage every second.', burnAura: true },
 };
 
 export const ITEM_IDS = Object.keys(ITEMS);
@@ -71,12 +71,12 @@ export function priceFor(itemId, inventory) {
   return { price: item.cost - discount, consume };
 }
 
-export const SUMMONERS = {
-  flash: { name: 'Flash', icon: '✨', cd: 150, desc: 'Teleports a short distance toward your cursor.' },
-  heal: { name: 'Heal', icon: '💚', cd: 120, desc: 'Heals you and the most injured nearby ally, and grants movement speed.' },
-  ignite: { name: 'Ignite', icon: '🔥', cd: 120, desc: 'Burns an enemy champion for true damage over 5s and cuts their healing.' },
-  smite: { name: 'Smite', icon: '⚡', cd: 45, desc: 'Deals heavy true damage to a monster or minion. Needed for jungling.' },
-  ghost: { name: 'Ghost', icon: '👻', cd: 120, desc: 'Gain 40% movement speed for 8s.' },
-  barrier: { name: 'Barrier', icon: '🛡️', cd: 120, desc: 'Shields yourself for 2.5s.' },
+export const SPELLS = {
+  blink: { name: 'Blink', icon: '✨', cd: 150, desc: 'Teleports a short distance toward your cursor.' },
+  mend: { name: 'Mend', icon: '💚', cd: 120, desc: 'Heals you and the most injured nearby ally, and grants a burst of movement speed.' },
+  scorch: { name: 'Scorch', icon: '🔥', cd: 120, desc: 'Sets an enemy champion ablaze for true damage over 5s and reduces their healing.' },
+  strike: { name: 'Hunter\'s Strike', icon: '⚡', cd: 45, desc: 'Deals heavy true damage to a monster or minion. Carry it to hunt in the jungle.' },
+  haste: { name: 'Haste', icon: '👻', cd: 120, desc: 'Gain 40% movement speed for 8s.' },
+  bulwark: { name: 'Bulwark', icon: '🛡️', cd: 120, desc: 'Shields yourself for 2.5s.' },
 };
-export const SECOND_SUMMONERS = ['heal', 'ignite', 'smite', 'ghost', 'barrier'];
+export const SECOND_SPELLS = ['mend', 'scorch', 'strike', 'haste', 'bulwark'];

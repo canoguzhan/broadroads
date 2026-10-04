@@ -71,7 +71,7 @@ export class Hud {
     this.wardEl = h('div.mb-item.ward', { title: 'Ward (T)', onclick: () => g.castKey('ward') }, h('span.mb-iic', { text: '👁️' }), h('span.mb-ik', { text: 'T' }), h('span.mb-in'));
     items.append(this.wardEl);
     this.goldEl = h('button.mb-gold', { onclick: () => g.panels.toggle('shop'), title: 'Shop (P)' });
-    this.recallBtn = h('button.mb-recall', { onclick: () => g.send({ t: 'recall' }), title: 'Recall (B)' }, '🏠');
+    this.recallBtn = h('button.mb-recall', { onclick: () => g.send({ t: 'recall' }), title: 'Return home (B)' }, '🏠');
     this.root.append(h('div.m-bottom', {},
       this.statsEl,
       h('div.mb-left', {}, this.portrait, this.xpRing),
@@ -87,7 +87,7 @@ export class Hud {
 
     this.annEl = h('div.m-ann');
     this.deathEl = h('div.m-death', { hidden: true });
-    this.recallEl = h('div.m-recall', { hidden: true }, h('div.mr-fill'), h('span', { text: 'Recalling…' }));
+    this.recallEl = h('div.m-recall', { hidden: true }, h('div.mr-fill'), h('span', { text: 'Returning home…' }));
     this.root.append(this.annEl, this.deathEl, this.recallEl);
     this.chatRoot = h('div.m-chat');
     this.root.append(this.chatRoot);
@@ -126,7 +126,7 @@ export class Hud {
 
   summTip(ev, k) {
     const sp = this.game.world.me?.sm?.[k];
-    const d = this.game.data.summoners[sp];
+    const d = this.game.data.spells[sp];
     if (!d) return;
     this.game.ui.showTip(ev.currentTarget, h('div', {}, h('div.tip-title', { text: `${d.icon} ${d.name}` }), h('div.tip-sub', { text: `Cooldown ${d.cd}s` }), h('div.tip-desc', { text: d.desc })));
   }
@@ -180,7 +180,7 @@ export class Hud {
     }
     for (const k of ['d', 'f']) {
       const sm = this.summ[k];
-      const sp = g.data.summoners[me.sm[k]];
+      const sp = g.data.spells[me.sm[k]];
       sm.el.querySelector('.mb-ic').textContent = sp ? sp.icon : '?';
       const left = me.cd[k], max = me.cdm[k] || (sp ? sp.cd : 1);
       if (left > 0.05) { sm.cd.style.background = `conic-gradient(rgba(0,0,0,0.75) ${(left / max) * 360}deg, transparent 0deg)`; sm.cdt.textContent = Math.ceil(left); }
@@ -216,7 +216,7 @@ export class Hud {
     this.scoreEl.querySelector('.ms-blue').textContent = `${sc.kills.blue}`;
     this.scoreEl.querySelector('.ms-red').textContent = `${sc.kills.red}`;
     this.scoreEl.querySelector('.ms-time').textContent = timeStr(sc.time);
-    this.objEl.textContent = `🏰 ${sc.towers.blue}–${sc.towers.red}   🐉 ${sc.dragons.blue}–${sc.dragons.red}${sc.dragonIn ? ` (${timeStr(sc.dragonIn)})` : ' (up)'}   👾 ${sc.baronIn ? timeStr(sc.baronIn) : 'up'}`;
+    this.objEl.textContent = `🏰 ${sc.towers.blue}–${sc.towers.red}   🐉 ${sc.wyrms.blue}–${sc.wyrms.red}${sc.wyrmIn ? ` (${timeStr(sc.wyrmIn)})` : ' (up)'}   👾 ${sc.titanIn ? timeStr(sc.titanIn) : 'up'}`;
     clear(this.teamEl);
     for (const p of sc.players.filter(p => p.tm === g.world.team && p.id !== g.world.youId)) {
       const e = g.world.entities.get(p.id);
@@ -249,17 +249,17 @@ export class Hud {
   }
 
   /* ---------------- minimap ---------------- */
-  buildMiniBase(rift) {
+  buildMiniBase(valley) {
     const c = document.createElement('canvas');
-    c.width = rift.size; c.height = rift.size;
+    c.width = valley.size; c.height = valley.size;
     const ctx = c.getContext('2d');
-    const img = ctx.createImageData(rift.size, rift.size);
+    const img = ctx.createImageData(valley.size, valley.size);
     const cache = {};
-    for (let y = 0; y < rift.size; y++) for (let x = 0; x < rift.size; x++) {
-      const t = rift.map.get(x, y);
+    for (let y = 0; y < valley.size; y++) for (let x = 0; x < valley.size; x++) {
+      const t = valley.map.get(x, y);
       const hex = MINI[t] || '#000';
       const col = cache[hex] || (cache[hex] = [parseInt(hex.slice(1, 3), 16), parseInt(hex.slice(3, 5), 16), parseInt(hex.slice(5, 7), 16)]);
-      const i = (y * rift.size + x) * 4;
+      const i = (y * valley.size + x) * 4;
       img.data[i] = col[0]; img.data[i + 1] = col[1]; img.data[i + 2] = col[2]; img.data[i + 3] = 255;
     }
     ctx.putImageData(img, 0, 0);
@@ -269,7 +269,7 @@ export class Hud {
   miniClick(e) {
     const g = this.game;
     const r = this.mini.getBoundingClientRect();
-    const S = g.world.rift.size;
+    const S = g.world.valley.size;
     const x = (e.clientX - r.left) / r.width * S, y = (e.clientY - r.top) / r.height * S;
     if (e.button === 2) { g.send({ t: 'mv', x, y }); g.renderer.showMoveMarker(x, y); return; }
     if (e.altKey) { g.send({ t: 'mping', x, y, k: 'go' }); return; }
@@ -282,10 +282,10 @@ export class Hud {
     if (this.miniT > 0) return;
     this.miniT = 0.12;
     const g = this.game, w = g.world;
-    if (!w.rift) return;
-    if (!this.miniBase) this.buildMiniBase(w.rift);
+    if (!w.valley) return;
+    if (!this.miniBase) this.buildMiniBase(w.valley);
     const ctx = this.mini.getContext('2d');
-    const W = this.mini.width, S = w.rift.size, k = W / S;
+    const W = this.mini.width, S = w.valley.size, k = W / S;
     ctx.drawImage(this.miniBase, 0, 0, W, W);
     // Fog of war.
     if (g.renderer.fogCanvas) { ctx.globalAlpha = 0.45; ctx.globalCompositeOperation = 'multiply'; ctx.drawImage(invertFog(g.renderer.fogCanvas), 0, 0, W, W); ctx.globalCompositeOperation = 'source-over'; ctx.globalAlpha = 1; }
@@ -295,8 +295,8 @@ export class Hud {
       ctx.fillStyle = TEAM_CSS[e.tm] || '#ccc';
       switch (e.kind) {
         case 'tower': ctx.fillRect(x - 3.5, y - 3.5, 7, 7); ctx.strokeStyle = '#000'; ctx.strokeRect(x - 3.5, y - 3.5, 7, 7); break;
-        case 'inhib': ctx.beginPath(); ctx.arc(x, y, 4, 0, Math.PI * 2); ctx.fill(); break;
-        case 'nexus': ctx.beginPath(); ctx.arc(x, y, 6.5, 0, Math.PI * 2); ctx.fill(); ctx.strokeStyle = '#fff'; ctx.stroke(); break;
+        case 'spire': ctx.beginPath(); ctx.arc(x, y, 4, 0, Math.PI * 2); ctx.fill(); break;
+        case 'core': ctx.beginPath(); ctx.arc(x, y, 6.5, 0, Math.PI * 2); ctx.fill(); ctx.strokeStyle = '#fff'; ctx.stroke(); break;
         case 'minion': ctx.fillRect(x - 1, y - 1, 2.5, 2.5); break;
         case 'monster': ctx.fillStyle = e.ep ? '#c084fc' : '#facc15'; ctx.beginPath(); ctx.arc(x, y, e.ep ? 5 : 2.5, 0, Math.PI * 2); ctx.fill(); break;
         case 'ward': ctx.fillStyle = '#fde047'; ctx.fillRect(x - 1.5, y - 1.5, 3, 3); break;

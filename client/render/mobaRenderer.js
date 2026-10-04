@@ -1,11 +1,11 @@
 /* Three.js scene for a MOBA match: terrain, entities, fog of war, FX, camera. */
 import * as THREE from 'three';
-import { buildRift, TEAM_HEX } from './rift.js';
-import { buildChampion, buildMinion, buildTower, buildInhibitor, buildNexus, buildWard, buildTrap, buildMobaMonster, buildMobaProjectile, buildMobaArea } from './mobaModels.js';
+import { buildValley, TEAM_HEX } from './valley.js';
+import { buildChampion, buildMinion, buildTower, buildSpire, buildCore, buildWard, buildTrap, buildMobaMonster, buildMobaProjectile, buildMobaArea } from './mobaModels.js';
 import { FxSystem } from './fx.js';
 import { F } from '../../shared/constants.js';
 
-const SIGHT = { hero: 11, minion: 7, tower: 9.5, ward: 8, inhib: 7, nexus: 8 };
+const SIGHT = { hero: 11, minion: 7, tower: 9.5, ward: 8, spire: 7, core: 8 };
 const FX_COLORS = { earth: 0xd6a35c, light: 0xfef08a, shadow: 0x7c3aed, frost: 0x93c5fd, blood: 0xdc2626, star: 0x7dd3fc, fire: 0xf97316, nature: 0x84cc16, void: 0xa855f7, gold: 0xfbbf24, thunder: 0xfacc15, unbreakable: 0x22d3ee };
 
 export class MobaRenderer {
@@ -68,27 +68,27 @@ export class MobaRenderer {
     this.width = w; this.height = h;
   }
 
-  setMatch(rift, team, champInfo) {
+  setMatch(valley, team, champInfo) {
     this.clear();
-    this.rift = rift;
+    this.valley = valley;
     this.team = team;
     this.champInfo = champInfo;
-    this.terrain = buildRift(rift, this.quality);
+    this.terrain = buildValley(valley, this.quality);
     this.scene.add(this.terrain.group);
     // Fog of war overlay above the terrain.
     this.fogCanvas = document.createElement('canvas');
-    this.fogCanvas.width = rift.size; this.fogCanvas.height = rift.size;
+    this.fogCanvas.width = valley.size; this.fogCanvas.height = valley.size;
     this.fogTex = new THREE.CanvasTexture(this.fogCanvas);
     this.fogTex.magFilter = THREE.LinearFilter;
     this.fogTex.minFilter = THREE.LinearFilter;
     const fogMat = new THREE.MeshBasicMaterial({ color: 0x000000, transparent: true, opacity: 0.62, alphaMap: this.fogTex, depthWrite: false });
-    this.fogMesh = new THREE.Mesh(new THREE.PlaneGeometry(rift.size, rift.size), fogMat);
+    this.fogMesh = new THREE.Mesh(new THREE.PlaneGeometry(valley.size, valley.size), fogMat);
     this.fogMesh.rotation.x = -Math.PI / 2;
-    this.fogMesh.position.set(rift.size / 2, 2.9, rift.size / 2);
+    this.fogMesh.position.set(valley.size / 2, 2.9, valley.size / 2);
     this.fogMesh.renderOrder = 5;
     this.scene.add(this.fogMesh);
     this.fogT = 0;
-    const f = rift.teams[team].fountain;
+    const f = valley.teams[team].fountain;
     this.camTarget.set(f.x, 0, f.y);
   }
 
@@ -111,8 +111,8 @@ export class MobaRenderer {
       case 'hero': built = buildChampion(e.c, this.champInfo[e.c] || { color: 0x888888, accent: 0xffffff }, e.tm); break;
       case 'minion': built = buildMinion(e.t, e.tm); break;
       case 'tower': built = buildTower(e.tm, e.t); break;
-      case 'inhib': built = buildInhibitor(e.tm); break;
-      case 'nexus': built = buildNexus(e.tm); break;
+      case 'spire': built = buildSpire(e.tm); break;
+      case 'core': built = buildCore(e.tm); break;
       case 'ward': built = buildWard(e.tm); break;
       case 'trap': built = buildTrap(); break;
       case 'monster': built = buildMobaMonster(e.md, e.sm, e.ep); break;
@@ -167,7 +167,7 @@ export class MobaRenderer {
             if (!dead) body.position.y = e.moving > 0.2 ? Math.abs(Math.sin(v.phase * 11)) * 0.08 : 0;
           }
           if (v.parts.legs) v.parts.legs.forEach((l, i) => { l.rotation.x = e.moving > 0.2 ? Math.sin(v.phase * 10 + i * Math.PI) * 0.5 : 0; });
-          if (v.parts.wings) { const a = Math.sin(v.phase * (e.kind === 'monster' && e.md === 'dragon' ? 4 : 20)) * 0.6; v.parts.wings[0].rotation.y = a; v.parts.wings[1].rotation.y = -a; }
+          if (v.parts.wings) { const a = Math.sin(v.phase * (e.kind === 'monster' && e.md === 'wyrm' ? 4 : 20)) * 0.6; v.parts.wings[0].rotation.y = a; v.parts.wings[1].rotation.y = -a; }
           if (v.parts.spin) v.parts.spin.rotation.y += dt * 1.5;
           if (v.parts.handR) {
             if (v.attackT > 0) { v.attackT = Math.max(0, v.attackT - dt * 5); v.parts.handR.rotation.y = -Math.sin(v.attackT * Math.PI) * 1.6; }
@@ -190,7 +190,7 @@ export class MobaRenderer {
           }
           break;
         }
-        case 'tower': case 'inhib': case 'nexus':
+        case 'tower': case 'spire': case 'core':
           root.position.set(e.x, dead ? -1.5 : 0, e.y);
           if (v.parts.crystal) { v.parts.crystal.rotation.y += dt; v.parts.crystal.visible = !dead; }
           if (v.parts.glow) v.parts.glow.visible = !dead;
@@ -209,7 +209,7 @@ export class MobaRenderer {
           root.position.set(e.x, 0, e.y);
           const p = v.parts;
           const prog = 1 - Math.max(0, e.life) / Math.max(0.01, e.dur);
-          if (p.fill && (e.s === 'telegraph' || e.s === 'decimate' || e.s === 'wrath' || e.s === 'star')) { p.fill.scale.setScalar(Math.max(0.01, e.rad * prog)); p.fill.material.opacity = 0.2 + prog * 0.35; }
+          if (p.fill && (e.s === 'telegraph' || e.s === 'reap' || e.s === 'wrath' || e.s === 'star')) { p.fill.scale.setScalar(Math.max(0.01, e.rad * prog)); p.fill.material.opacity = 0.2 + prog * 0.35; }
           if (p.edge && e.s === 'whirl') p.edge.rotation.z += dt * 10;
           if (p.plane) p.plane.material.opacity = 0.15 + prog * 0.45;
           if (p.glow) p.glow.material.opacity = 0.4 + Math.sin(v.phase * 8) * 0.2;
@@ -263,9 +263,9 @@ export class MobaRenderer {
       v.root.add(v.recallFx);
     }
     if (v.recallFx) { v.recallFx.visible = recall; v.recallFx.rotation.y += 0.05; }
-    const baron = (e.fl & F.BARON) !== 0;
-    if (baron && !v.baron) { v.baron = new THREE.Mesh(new THREE.RingGeometry(0.7, 0.85, 24), new THREE.MeshBasicMaterial({ color: 0xa855f7, transparent: true, opacity: 0.8, side: THREE.DoubleSide })); v.baron.rotation.x = -Math.PI / 2; v.baron.position.y = 0.05; v.root.add(v.baron); }
-    if (v.baron) v.baron.visible = baron;
+    const titan = (e.fl & F.TITAN) !== 0;
+    if (titan && !v.titan) { v.titan = new THREE.Mesh(new THREE.RingGeometry(0.7, 0.85, 24), new THREE.MeshBasicMaterial({ color: 0xa855f7, transparent: true, opacity: 0.8, side: THREE.DoubleSide })); v.titan.rotation.x = -Math.PI / 2; v.titan.position.y = 0.05; v.root.add(v.titan); }
+    if (v.titan) v.titan.visible = titan;
   }
 
   /* ---------------- fog ---------------- */
@@ -275,7 +275,7 @@ export class MobaRenderer {
     if (this.fogT > 0) return;
     this.fogT = 0.15;
     const ctx = this.fogCanvas.getContext('2d');
-    const S = this.rift.size;
+    const S = this.valley.size;
     // Grayscale map read through alphaMap's green channel: white = fogged, black = visible.
     ctx.globalCompositeOperation = 'source-over';
     ctx.fillStyle = '#fff';
@@ -292,7 +292,7 @@ export class MobaRenderer {
       const r = SIGHT[e.kind];
       if (r) circle(e.x, e.y, r);
     }
-    const f = this.rift.teams[this.team].fountain;
+    const f = this.valley.teams[this.team].fountain;
     circle(f.x, f.y, 12);
     this.fogTex.needsUpdate = true;
     this.fogImage = ctx;
@@ -325,18 +325,18 @@ export class MobaRenderer {
       case 'heal': if (ent) fx.burst(ent.x, ent.y, { color: 0x4ade80, count: 8, speed: 1, up: 3, gravity: -1, life: 0.7 }); break;
       case 'shield': if (ent) fx.ring(ent.x, ent.y, { color: 0xe0f2fe, radius: 1.3, life: 0.4 }); break;
       case 'buff': if (ent) fx.pillar(ent.x, ent.y, c, 0.6, 3); break;
-      case 'flash': fx.glow(ev.x, ev.y, { color: c, size: 2.5, life: 0.25 }); break;
+      case 'glint': fx.glow(ev.x, ev.y, { color: c, size: 2.5, life: 0.25 }); break;
       case 'dash': fx.burst(ev.x, ev.y, { color: 0xffffff, count: 8, speed: 2, up: 0.5, life: 0.35 }); break;
       case 'blink': fx.glow(ev.x, ev.y, { color: 0xfef9c3, size: 2.5, life: 0.3 }); fx.glow(ev.x2, ev.y2, { color: 0xfef9c3, size: 2.5, life: 0.3 }); fx.burst(ev.x2, ev.y2, { color: 0xfef9c3, count: 12 }); break;
       case 'impact': fx.burst(ev.x, ev.y, { y: 1, color: 0xffffff, count: 5, speed: 3, life: 0.3 }); break;
-      case 'death': fx.burst(ev.x, ev.y, { color: ev.k === 'hero' ? 0xef4444 : ev.k === 'tower' || ev.k === 'inhib' || ev.k === 'nexus' ? 0xfbbf24 : 0x9ca3af, count: ev.k === 'hero' || ev.k === 'tower' ? 40 : 14, speed: 5, life: 0.9 }); if (ev.k === 'tower' || ev.k === 'nexus' || ev.k === 'inhib') { fx.explosion(ev.x, ev.y, 4, 0xfbbf24); this.shake(0.6); } break;
+      case 'death': fx.burst(ev.x, ev.y, { color: ev.k === 'hero' ? 0xef4444 : ev.k === 'tower' || ev.k === 'spire' || ev.k === 'core' ? 0xfbbf24 : 0x9ca3af, count: ev.k === 'hero' || ev.k === 'tower' ? 40 : 14, speed: 5, life: 0.9 }); if (ev.k === 'tower' || ev.k === 'core' || ev.k === 'spire') { fx.explosion(ev.x, ev.y, 4, 0xfbbf24); this.shake(0.6); } break;
       case 'levelup': fx.pillar(ev.x, ev.y, 0xfacc15, 1, 5); break;
       case 'respawn': fx.pillar(ev.x, ev.y, 0x60a5fa, 0.8, 4); break;
       case 'recall': fx.pillar(ev.x, ev.y, 0x60a5fa, 0.6, 5); break;
       case 'ward': fx.ring(ev.x, ev.y, { color: TEAM_HEX[ev.team], radius: 1.2, life: 0.5 }); break;
       case 'trap': fx.burst(ev.x, ev.y, { color: 0xd6d3d1, count: 14, speed: 3 }); break;
-      case 'smite': fx.pillar(ev.x, ev.y, 0xfacc15, 0.4, 6); break;
-      case 'summ': if (ev.k === 'heal') fx.ring(ev.x, ev.y, { color: 0x4ade80, radius: 3, life: 0.5 }); else if (ev.k === 'ghost') fx.burst(ev.x, ev.y, { color: 0xe5e7eb, count: 10 }); else if (ev.k === 'barrier') fx.ring(ev.x, ev.y, { color: 0xfde68a, radius: 1.4, life: 0.5 }); break;
+      case 'strike': fx.pillar(ev.x, ev.y, 0xfacc15, 0.4, 6); break;
+      case 'summ': if (ev.k === 'mend') fx.ring(ev.x, ev.y, { color: 0x4ade80, radius: 3, life: 0.5 }); else if (ev.k === 'haste') fx.burst(ev.x, ev.y, { color: 0xe5e7eb, count: 10 }); else if (ev.k === 'bulwark') fx.ring(ev.x, ev.y, { color: 0xfde68a, radius: 1.4, life: 0.5 }); break;
       case 'ping': {
         const color = ev.k === 'danger' ? 0xef4444 : ev.k === 'help' ? 0x3b82f6 : ev.k === 'omw' ? 0xfacc15 : 0x22c55e;
         fx.ring(ev.x, ev.y, { color, radius: 2.2, life: 1.2 }); fx.ring(ev.x, ev.y, { color, radius: 1.2, life: 0.9 });
@@ -363,8 +363,8 @@ export class MobaRenderer {
       this.camTarget.x = THREE.MathUtils.lerp(this.camTarget.x, focus.x, Math.min(1, dt * 8));
       this.camTarget.z = THREE.MathUtils.lerp(this.camTarget.z, focus.y, Math.min(1, dt * 8));
     } else if (edgePan) {
-      this.camTarget.x = Math.max(0, Math.min(this.rift?.size || 150, this.camTarget.x + edgePan.x * dt * 40));
-      this.camTarget.z = Math.max(0, Math.min(this.rift?.size || 150, this.camTarget.z + edgePan.y * dt * 40));
+      this.camTarget.x = Math.max(0, Math.min(this.valley?.size || 150, this.camTarget.x + edgePan.x * dt * 40));
+      this.camTarget.z = Math.max(0, Math.min(this.valley?.size || 150, this.camTarget.z + edgePan.y * dt * 40));
     }
     const d = 26 * this.zoom;
     let sx = 0, sy = 0;
