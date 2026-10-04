@@ -166,6 +166,14 @@ class ClientNavigationController {
     const champView = document.getElementById('view-champ-select');
     if (champView) champView.style.display = 'grid';
 
+    // If PvP mode, ensure teams and AI bots exist
+    if (state.gameMode === 'pvp') {
+      if (!pvpEngine.blueTeam || pvpEngine.blueTeam.length === 0) {
+        pvpEngine.initLobby();
+        pvpEngine.fillWithAIBots();
+      }
+    }
+
     // Render current monthly theme champions
     if (window.renderClassSelectionCards) {
       window.renderClassSelectionCards(state.currentMonth);
@@ -187,10 +195,32 @@ class ClientNavigationController {
     if (!teamContainer) return;
     teamContainer.innerHTML = '';
 
+    const rosterTitle = document.getElementById('champ-select-roster-title');
+    if (rosterTitle) {
+      if (state.gameMode === 'pvp') {
+        const teamName = (state.hero.team || state.pvp.playerTeam || 'blue').toUpperCase();
+        rosterTitle.textContent = `${teamName} TEAM ROSTER (5v5)`;
+        rosterTitle.style.color = teamName === 'BLUE' ? '#00f0ff' : '#ff4655';
+      } else if (state.gameMode === 'multiplayer') {
+        rosterTitle.textContent = 'CO-OP SQUAD ROSTER';
+        rosterTitle.style.color = '#00f5d4';
+      } else {
+        rosterTitle.textContent = 'SOLO DEPLOYMENT';
+        rosterTitle.style.color = '#f0e6d2';
+      }
+    }
+
     let members = [];
     if (state.gameMode === 'pvp') {
-      const myTeam = state.hero.team === 'blue' ? pvpEngine.blueTeam : pvpEngine.redTeam;
-      members = myTeam;
+      const playerTeam = state.hero.team || state.pvp.playerTeam || 'blue';
+      const myTeam = playerTeam === 'blue' ? pvpEngine.blueTeam : pvpEngine.redTeam;
+      members = (myTeam && myTeam.length > 0) ? myTeam : [
+        { name: state.username, isLocal: true, classId: state.heroClass, isBot: false },
+        { name: 'Vanguard_AI', isLocal: false, classId: 'paladin', isBot: true },
+        { name: 'Cryo_Striker', isLocal: false, classId: 'gunner', isBot: true },
+        { name: 'Frost_Archon', isLocal: false, classId: 'arcanist', isBot: true },
+        { name: 'Glacial_Knight', isLocal: false, classId: 'paladin', isBot: true }
+      ];
     } else if (state.gameMode === 'multiplayer' && window.net) {
       members = window.net.getPlayerRoster();
     } else {
@@ -201,11 +231,15 @@ class ClientNavigationController {
       const card = document.createElement('div');
       card.className = `champ-pick-card ${m.isLocal ? 'is-local' : ''}`;
       const classIcons = { paladin: '🛡️', gunner: '🏹', arcanist: '🔮' };
+      const currentClass = m.isLocal ? (state.heroClass || m.classId || 'paladin') : (m.classId || 'paladin');
+      const isLocked = !m.isLocal || this.isLockedIn;
       card.innerHTML = `
-        <div class="champ-pick-avatar">${classIcons[m.classId || 'paladin'] || '🛡️'}</div>
+        <div class="champ-pick-avatar">${classIcons[currentClass] || '🛡️'}</div>
         <div class="champ-pick-info">
-          <span class="champ-pick-name">${escapeHtml(m.name || 'Commander')}</span>
-          <span class="champ-pick-status">LOCKED IN</span>
+          <span class="champ-pick-name">${escapeHtml(m.name || 'Commander')}${m.isLocal ? ' (You)' : (m.isBot ? ' [AI]' : '')}</span>
+          <span class="champ-pick-status" style="color: ${isLocked ? '#00f5d4' : '#ffb703'};">
+            ${isLocked ? 'LOCKED IN' : 'SELECTING...'}
+          </span>
         </div>
       `;
       teamContainer.appendChild(card);
@@ -223,6 +257,9 @@ class ClientNavigationController {
       lockBtn.classList.add('locked');
       lockBtn.textContent = '✨ CHAMPION LOCKED IN!';
     }
+
+    // Instantly reflect locked-in state on player's card
+    this.renderChampSelectTeamPicks();
 
     showLolBanner('CHAMPION LOCKED IN!', `${state.heroClass.toUpperCase()} READY FOR ARENA DEPLOYMENT`);
 
@@ -360,7 +397,11 @@ class ClientNavigationController {
 
     const btnConfirmMode = document.getElementById('btn-confirm-game-mode');
     if (btnConfirmMode) btnConfirmMode.addEventListener('click', () => {
-      this.showLobby();
+      if (this.selectedMode === 'pvp') {
+        pvpEngine.initLobby();
+        pvpEngine.fillWithAIBots();
+      }
+      this.showChampSelect();
     });
   }
 
@@ -411,7 +452,7 @@ class ClientNavigationController {
     const btnBackToLobby = document.getElementById('btn-back-to-lobby');
     if (btnBackToLobby) btnBackToLobby.addEventListener('click', () => {
       sound.playPickup();
-      this.showLobby();
+      this.showModeSelect();
     });
 
     const btnLockIn = document.getElementById('btn-lock-in-champion');
