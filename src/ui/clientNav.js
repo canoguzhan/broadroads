@@ -21,8 +21,13 @@ class ClientNavigationController {
     this.bindFriendsDock();
     this.updateUserDisplay();
 
-    // Start in mode select view
-    this.showModeSelect();
+    // Prepare mode selection as active client view (start-modal stays hidden until user clicks Enter Arena)
+    this.hideAllViews();
+    const modeSelectView = document.getElementById('view-mode-select');
+    if (modeSelectView) {
+      modeSelectView.classList.add('active');
+    }
+    this.updateModeSelectFooter();
   }
 
   updateUserDisplay() {
@@ -44,10 +49,13 @@ class ClientNavigationController {
     const modal = document.getElementById('start-modal');
     if (modal) {
       modal.classList.remove('hidden');
-      modal.style.display = 'flex';
+      modal.style.setProperty('display', 'flex', 'important');
     }
     const modeSelectView = document.getElementById('view-mode-select');
-    if (modeSelectView) modeSelectView.style.display = 'flex';
+    if (modeSelectView) {
+      modeSelectView.classList.add('active');
+      modeSelectView.style.setProperty('display', 'flex', 'important');
+    }
 
     // Highlight selected card
     document.querySelectorAll('.mode-card-tile').forEach(card => {
@@ -107,7 +115,10 @@ class ClientNavigationController {
     state.clientPhase = 'lobby';
     this.hideAllViews();
     const lobbyView = document.getElementById('view-lobby');
-    if (lobbyView) lobbyView.style.display = 'flex';
+    if (lobbyView) {
+      lobbyView.classList.add('active');
+      lobbyView.style.setProperty('display', 'flex', 'important');
+    }
 
     // Show appropriate lobby subpanel
     const pvpPanel = document.getElementById('lobby-pvp-panel');
@@ -164,7 +175,10 @@ class ClientNavigationController {
     this.isLockedIn = false;
     this.hideAllViews();
     const champView = document.getElementById('view-champ-select');
-    if (champView) champView.style.display = 'grid';
+    if (champView) {
+      champView.classList.add('active');
+      champView.style.setProperty('display', 'grid', 'important');
+    }
 
     // If PvP mode, ensure teams and AI bots exist
     if (state.gameMode === 'pvp') {
@@ -285,9 +299,18 @@ class ClientNavigationController {
     const v1 = document.getElementById('view-mode-select');
     const v2 = document.getElementById('view-lobby');
     const v3 = document.getElementById('view-champ-select');
-    if (v1) v1.style.display = 'none';
-    if (v2) v2.style.display = 'none';
-    if (v3) v3.style.display = 'none';
+    if (v1) {
+      v1.classList.remove('active');
+      v1.style.setProperty('display', 'none', 'important');
+    }
+    if (v2) {
+      v2.classList.remove('active');
+      v2.style.setProperty('display', 'none', 'important');
+    }
+    if (v3) {
+      v3.classList.remove('active');
+      v3.style.setProperty('display', 'none', 'important');
+    }
   }
 
   openProfileModal(targetUser = null) {

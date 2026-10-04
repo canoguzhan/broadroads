@@ -48,14 +48,27 @@
 .view-mode-select,
 .view-lobby,
 .view-champ-select {
-  flex: 1 1 0% !important;
-  width: 100% !important;
-  max-width: 100% !important;
-  height: calc(100vh - 60px) !important;
-  max-height: calc(100vh - 60px) !important;
-  min-height: 0 !important;
-  box-sizing: border-box !important;
-  overflow-y: auto !important;
+  display: none !important;
+  flex: 1 1 0%;
+  width: 100%;
+  max-width: 100%;
+  height: calc(100vh - 60px);
+  max-height: calc(100vh - 60px);
+  min-height: 0;
+  box-sizing: border-box;
+  overflow-y: auto;
+}
+
+.view-mode-select.active {
+  display: flex !important;
+}
+
+.view-lobby.active {
+  display: flex !important;
+}
+
+.view-champ-select.active {
+  display: grid !important;
 }
 
 /* Top Header Profile & Locked Username (Non-Editable) */
@@ -467,14 +480,13 @@
    PHASE 3: AUTHENTIC LoL CHAMPION SELECT VIEW
    ========================================================================== */
 .view-champ-select {
-  width: 100% !important;
-  max-width: 1440px !important;
-  margin: 0 auto !important;
-  height: calc(100vh - 60px) !important;
-  max-height: calc(100vh - 60px) !important;
-  display: grid !important;
-  grid-template-columns: 320px minmax(500px, 780px) 300px !important;
-  justify-content: center !important;
+  width: 100%;
+  max-width: 1440px;
+  margin: 0 auto;
+  height: calc(100vh - 60px);
+  max-height: calc(100vh - 60px);
+  grid-template-columns: 320px minmax(500px, 780px) 300px;
+  justify-content: center;
   gap: 24px;
   padding: 24px 30px;
   overflow-y: auto;
@@ -484,15 +496,15 @@
 }
 @media (max-width: 1200px) {
   .view-champ-select {
-    grid-template-columns: 280px 1fr 260px !important;
+    grid-template-columns: 280px 1fr 260px;
     gap: 16px;
     padding: 16px;
   }
 }
 @media (max-width: 960px) {
   .view-champ-select {
-    grid-template-columns: 1fr !important;
-    max-width: 600px !important;
+    grid-template-columns: 1fr;
+    max-width: 600px;
   }
 }
 
