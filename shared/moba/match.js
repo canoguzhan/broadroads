@@ -478,8 +478,8 @@ export class Match {
     this.kills[team]++;
     const assisters = this.heroes.filter(h => h.team === team && h !== killer && [...v.lastHitBy].some(([id, t]) => id === h.id && this.time - t <= CFG.assistWindow));
     let bounty = 300;
-    if (!this.firstBlood) { bounty += 100; this.firstBlood = true; this.announce('First Strike!', 'kill', { killer, victim: v }); }
-    if (v.streak >= 3) { const sd = Math.min(500, 100 * (v.streak - 2)); bounty += sd; this.announce(`${killer ? killer.name : 'The enemy'} ended ${v.name}'s streak!`, 'kill'); }
+    if (!this.firstBlood) { bounty += 100; this.firstBlood = true; this.announce('First Strike!', 'kill', { killer, victim: v, key: 'first_strike' }); }
+    if (v.streak >= 3) { const sd = Math.min(500, 100 * (v.streak - 2)); bounty += sd; this.announce(`${killer ? killer.name : 'The enemy'} ended ${v.name}'s streak!`, 'kill', { key: 'streak_end' }); }
     if (killer && killer.kind === 'hero') {
       killer.kills++;
       killer.streak++;
@@ -487,8 +487,8 @@ export class Match {
       this.emit({ e: 'gold', to: killer.id, v: bounty, x: v.x, y: v.y });
       if (this.time - killer.multi.t <= 10) killer.multi.n++; else killer.multi.n = 1;
       killer.multi.t = this.time;
-      if (MULTI[killer.multi.n]) this.announce(`${killer.name} — ${MULTI[killer.multi.n]}!`, 'multi', { killer, victim: v });
-      else if (SPREE[Math.min(8, killer.streak)] && killer.streak >= 3) this.announce(`${killer.name} ${SPREE[Math.min(8, killer.streak)]}`, 'spree', { killer });
+      if (MULTI[killer.multi.n]) this.announce(`${killer.name} — ${MULTI[killer.multi.n]}!`, 'multi', { killer, victim: v, key: `multi${killer.multi.n}` });
+      else if (SPREE[Math.min(8, killer.streak)] && killer.streak >= 3) this.announce(`${killer.name} ${SPREE[Math.min(8, killer.streak)]}`, 'spree', { killer, key: `streak${Math.min(8, killer.streak)}` });
     }
     const assistGold = assisters.length ? Math.floor(bounty * 0.5 / assisters.length) : 0;
     for (const a of assisters) { a.assists++; this.addGold(a, assistGold); }
@@ -499,7 +499,7 @@ export class Match {
     v.lastHitBy.clear();
     this.emit({ e: 'kill', k: killer ? killer.id : 0, v: v.id, a: assisters.map(a => a.id) });
     if (this.hooks.feed) this.hooks.feed(this, killer, v, assisters);
-    if (this.heroes.filter(h => h.team === v.team).every(h => h.dead)) this.announce(`TEAM WIPE! ${team === 'blue' ? 'Blue' : 'Red'} team defeated every enemy!`, 'ace');
+    if (this.heroes.filter(h => h.team === v.team).every(h => h.dead)) this.announce(`TEAM WIPE! ${team === 'blue' ? 'Blue' : 'Red'} team defeated every enemy!`, 'ace', { team, key: 'team_wipe' });
     v.x = v.spawn.x; v.y = v.spawn.y;
   }
 
@@ -508,11 +508,11 @@ export class Match {
     if (s.kind === 'tower') {
       this.towersDown[team]++;
       for (const h of this.heroes) if (h.team === team) { this.addGold(h, 150); this.addXp(h, 50); }
-      this.announce(`${team === 'blue' ? 'Blue' : 'Red'} team destroyed a ${s.lane === 'base' ? 'core' : s.lane} tower!`, 'tower', { team });
+      this.announce(`${team === 'blue' ? 'Blue' : 'Red'} team destroyed a ${s.lane === 'base' ? 'core' : s.lane} tower!`, 'tower', { team, key: 'tower' });
     } else if (s.kind === 'spire') {
       s.respawnAt = this.time + CFG.spireRespawn;
       for (const h of this.heroes) if (h.team === team) this.addGold(h, 50);
-      this.announce(`${team === 'blue' ? 'Blue' : 'Red'} team destroyed the ${s.lane} spire! Juggernaut minions incoming.`, 'spire', { team });
+      this.announce(`${team === 'blue' ? 'Blue' : 'Red'} team destroyed the ${s.lane} spire! Juggernaut minions incoming.`, 'spire', { team, key: 'spire' });
     } else if (s.kind === 'core') {
       this.end(team, 'core');
     }
@@ -551,6 +551,7 @@ export class Match {
     if (tgt && t.atkT <= 0) {
       t.atkT = 1 / t.as;
       const minutes = this.time / 60;
+      this.emit({ e: 'tshot', id: t.id, x: t.x, y: t.y });
       this.projectile(t, tgt, { speed: 16, style: 'tower', onHit: u => {
         if (u.kind === 'minion') {
           const pct = u.mtype === 'melee' ? 0.45 : u.mtype === 'caster' ? 0.7 : u.mtype === 'siege' ? 0.14 : 0.08;
@@ -755,13 +756,13 @@ export class Match {
       for (const h of this.heroes) if (h.team === team) { this.addGold(h, 25); this.recompute(h); }
       this.epics.wyrm.unit = null;
       this.epics.wyrm.respawnAt = this.time + CFG.wyrmRespawn;
-      this.announce(`${team === 'blue' ? 'Blue' : 'Red'} team slew the Ember Wyrm! (+${this.wyrms[team] * 6}% damage)`, 'epic', { team });
+      this.announce(`${team === 'blue' ? 'Blue' : 'Red'} team slew the Ember Wyrm! (+${this.wyrms[team] * 6}% damage)`, 'epic', { team, key: 'wyrm' });
     } else if (m.mtype === 'titan') {
       for (const h of this.heroes) if (h.team === team && !h.dead) { this.addGold(h, 300); this.addBuff(h, { id: 'titan', dur: 150, stats: { ad: 30, ap: 50 } }); }
       this.titans[team]++;
       this.epics.titan.unit = null;
       this.epics.titan.respawnAt = this.time + CFG.titanRespawn;
-      this.announce(`${team === 'blue' ? 'Blue' : 'Red'} team slew the Abyss Titan! Minions empowered.`, 'epic', { team });
+      this.announce(`${team === 'blue' ? 'Blue' : 'Red'} team slew the Abyss Titan! Minions empowered.`, 'epic', { team, key: 'titan' });
     }
     if (m.camp && m.camp.units.every(u => u.dead)) m.camp.respawnAt = this.time + (m.camp.buff ? 150 : 110);
   }
@@ -945,7 +946,7 @@ export class Match {
       }
       if (h.c.onAttackHit && !t.dead) h.c.onAttackHit(this, h, t);
     };
-    if (h.c.ranged) this.projectile(h, t, { speed: h.c.projSpeed, style: `aa:${h.champ}`, onHit: hit });
+    if (h.c.ranged) { this.projectile(h, t, { speed: h.c.projSpeed, style: `aa:${h.champ}`, onHit: hit }); this.emit({ e: 'atk', id: h.id }); }
     else { hit(); this.emit({ e: 'atk', id: h.id }); }
   }
 
@@ -1302,6 +1303,7 @@ export class Match {
     if (!it || h.dead) return;
     if (it.id === 'potion') {
       if (this.hasBuff(h, 'potion')) return;
+      this.emit({ e: 'potion', to: h.id, id: h.id });
       this.addBuff(h, { id: 'potion', dur: 12, tickEvery: 0.5, onTick: () => this.heal(h, h, 150 / 24, { quiet: true }) });
       it.n--;
       if (it.n <= 0) h.items[slot] = null;
@@ -1362,14 +1364,14 @@ export class Match {
       if (!ep.unit && ep.respawnAt && this.time >= ep.respawnAt) {
         ep.respawnAt = 0;
         ep.unit = this.spawnMonster(k, ep.pos.x, ep.pos.y, this.time / 60);
-        this.announce(k === 'wyrm' ? 'The Ember Wyrm has spawned in the bottom river!' : 'The Abyss Titan has awoken in the top river!', 'epicSpawn');
+        this.announce(k === 'wyrm' ? 'The Ember Wyrm has spawned in the bottom river!' : 'The Abyss Titan has awoken in the top river!', 'epicSpawn', { key: `${k}_spawn` });
       }
     }
     // Spire respawns.
     for (const team of ['blue', 'red']) for (const s of this.structures[team]) {
       if (s.kind === 'spire' && s.dead && s.respawnAt && this.time >= s.respawnAt) {
         s.dead = false; s.hp = s.maxHp; s.respawnAt = 0; s.ver++;
-        this.announce(`The ${team} ${s.lane} spire has respawned.`, 'spire');
+        this.announce(`The ${team} ${s.lane} spire has respawned.`, 'spire', { key: 'spire_restored' });
       }
     }
     this.visT -= dt;
@@ -1408,7 +1410,7 @@ export class Match {
   }
 
   announce(text, kind, extra = {}) {
-    this.emit({ e: 'ann', text, k: kind, team: extra.team || null, killer: extra.killer ? extra.killer.champ : null, victim: extra.victim ? extra.victim.champ : null, priv: !!extra.private });
+    this.emit({ e: 'ann', text, k: kind, key: extra.key || null, team: extra.team || null, killer: extra.killer ? extra.killer.champ : null, victim: extra.victim ? extra.victim.champ : null, priv: !!extra.private });
   }
 
   surrenderVote(h, yes) {

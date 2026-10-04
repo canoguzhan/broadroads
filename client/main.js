@@ -8,14 +8,15 @@ import { Select } from './ui/select.js';
 import { UI } from './ui/ui.js';
 import { $, $$ } from './ui/dom.js';
 import { NAME_RE } from '../shared/constants.js';
-import { sound } from './audio/sound.js';
+import { sfx } from './audio/sfx.js';
 
 const TOKEN_KEY = 'broadroads_token';
 
 class App {
   constructor() {
     this.settings = this.loadSettings();
-    sound.setVolume(this.settings.volume);
+    sfx.setVolume(this.settings.volume);
+    sfx.setMusicVolume(this.settings.musicVolume);
     this.ui = new UI();
     this.conn = null;
     this.game = null;
@@ -28,7 +29,7 @@ class App {
   }
 
   loadSettings() {
-    const d = { quality: matchMedia('(pointer: coarse)').matches ? 'low' : 'medium', volume: 0.6, showFps: false, cameraLock: true, difficulty: 'normal' };
+    const d = { quality: matchMedia('(pointer: coarse)').matches ? 'low' : 'medium', volume: 0.6, musicVolume: 0.4, showFps: false, cameraLock: true, difficulty: 'normal' };
     try { return { ...d, ...JSON.parse(localStorage.getItem('broadroads_settings') || '{}') }; } catch { return d; }
   }
   saveSettings() { try { localStorage.setItem('broadroads_settings', JSON.stringify(this.settings)); } catch { /* ignore */ } }
@@ -61,7 +62,7 @@ class App {
 
   async submit(ev) {
     ev.preventDefault();
-    sound.init();
+    sfx.init();
     $('#auth-error').textContent = '';
     const name = $('#auth-user').value.trim();
     const pass = $('#auth-pass').value;
@@ -113,15 +114,29 @@ class App {
         if (this.game) { this.game.destroy(); this.game = null; }
         this.lobby.setState(m);
         this.show('screen-lobby');
+        this.inSelect = false;
+        sfx.playMusic('music_lobby');
         if (!this.offline) this.send({ t: 'who' });
         break;
-      case 'select': this.select.update(m.select); this.show('screen-select'); break;
+      case 'select':
+        if (!this.inSelect) {
+          this.inSelect = true;
+          sfx.play('queue_found', { late: true });
+          if (m.select.mode === 'ranked') sfx.announce('vo_match_found', 3);
+          sfx.announce('vo_choose', 2);
+        }
+        this.select.update(m.select);
+        this.show('screen-select');
+        break;
       case 'match': this.startGame(m); break;
       case 'party': this.lobby?.setParty(m.party); break;
-      case 'invite': this.ui.prompt(`${m.from} invites you to their party.`, () => this.send({ t: 'party', op: 'accept', party: m.party }), () => this.send({ t: 'party', op: 'decline', party: m.party })); break;
+      case 'invite': sfx.play('ui_notify'); this.ui.prompt(`${m.from} invites you to their party.`, () => this.send({ t: 'party', op: 'accept', party: m.party }), () => this.send({ t: 'party', op: 'decline', party: m.party })); break;
       case 'who': this.lobby?.setWho(m); break;
       case 'lb': this.lobby?.setLeaderboard(m); break;
-      case 'chat': if (this.game) this.game.onMessage(m); else this.lobby?.chat.add(m); break;
+      case 'chat':
+        if (this.game) this.game.onMessage(m);
+        else { this.lobby?.chat.add(m); if (m.from && m.from !== this.name) sfx.play('chat_msg', { gap: 0.3 }); }
+        break;
       case 'notice': this.ui.toast(m.text, m.kind); break;
       case 'kicked': this.kickedReason = m.reason; break;
       case 'authFail': try { localStorage.removeItem(TOKEN_KEY); } catch { /* ignore */ } this.exit(m.error); break;
@@ -132,6 +147,7 @@ class App {
 
   startGame(m) {
     if (this.game) { this.game.destroy(); this.game = null; }
+    this.inSelect = false;
     if (!this.renderer) {
       try { this.renderer = new MobaRenderer($('#game-canvas'), this.settings.quality); } catch (err) { console.error(err); this.ui.toast('WebGL is not available in this browser.', 'bad'); return; }
       window.addEventListener('resize', () => this.renderer.resize());
@@ -145,6 +161,7 @@ class App {
 
   exit(reason) {
     clearInterval(this.pingTimer);
+    sfx.playMusic(null);
     if (this.game) { this.game.destroy(); this.game = null; }
     if (this.conn) { const c = this.conn; this.conn = null; c.close(); }
     $('#orientation-lock').classList.remove('active');
@@ -179,3 +196,4 @@ app.boot();
 // Read-only hooks used by the end-to-end browser tests.
 Object.defineProperty(window, '__broadroads', { get: () => app.game });
 Object.defineProperty(window, '__app', { get: () => app });
+Object.defineProperty(window, '__sfx', { get: () => sfx });

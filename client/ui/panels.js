@@ -2,6 +2,7 @@
 import { h, $, clear, timeStr } from './dom.js';
 import { priceFor } from '../../shared/moba/items.js';
 import { CHAMPIONS } from '../../shared/moba/champions.js';
+import { sfx } from '../audio/sfx.js';
 
 const CATS = [['rec', '⭐ Recommended'], ['basic', 'Basic'], ['boots', 'Boots'], ['attack', 'Attack'], ['magic', 'Magic'], ['defense', 'Defense'], ['consumable', 'Consumables']];
 const STAT = { ad: 'Attack Damage', ap: 'Ability Power', hp: 'Health', mp: 'Mana', armor: 'Armor', mr: 'Magic Resist', as: '% Attack Speed', crit: '% Crit Chance', ms: 'Move Speed', msPct: '% Move Speed', haste: 'Haste', lifesteal: '% Lifesteal', armorPen: '% Armor Pen', magicPen: 'Magic Pen', magicPenPct: '% Magic Pen', hpRegen: 'HP Regen /s', mpRegen: 'Mana Regen /s', tenacity: '% Tenacity' };
@@ -17,8 +18,8 @@ export class Panels {
 
   isOpen(n) { return this.current === n; }
   toggle(n) { if (this.current === n) this.close(); else this.open(n); }
-  open(n) { this.current = n; this.render(); }
-  close() { this.current = null; clear(this.root); this.game.ui.hideTip(); }
+  open(n) { if (this.current !== n) sfx.play('ui_open', { gap: 0.1 }); this.current = n; this.render(); }
+  close() { if (this.current) sfx.play('ui_close', { gap: 0.1 }); this.current = null; clear(this.root); this.game.ui.hideTip(); }
   refresh(names) { if (this.current && (!names || names.includes(this.current))) this.render(); }
 
   render() {
@@ -109,6 +110,8 @@ export class Panels {
     quality.addEventListener('change', () => g.setSetting('quality', quality.value));
     const vol = h('input', { type: 'range', min: 0, max: 100, value: Math.round(s.volume * 100) });
     vol.addEventListener('input', () => g.setSetting('volume', vol.value / 100));
+    const music = h('input', { type: 'range', min: 0, max: 100, value: Math.round((s.musicVolume ?? 0.4) * 100) });
+    music.addEventListener('input', () => g.setSetting('musicVolume', music.value / 100));
     const fps = h('input', { type: 'checkbox', checked: s.showFps });
     fps.addEventListener('change', () => g.setSetting('showFps', fps.checked));
     const lock = h('input', { type: 'checkbox', checked: g.renderer.locked });
@@ -117,7 +120,8 @@ export class Panels {
       title: '⚙️ Settings',
       content: h('div', {},
         h('label.field', {}, h('span', { text: 'Graphics quality' }), quality),
-        h('label.field', {}, h('span', { text: 'Sound volume' }), vol),
+        h('label.field', {}, h('span', { text: 'Master volume' }), vol),
+        h('label.field', {}, h('span', { text: 'Music & ambience volume' }), music),
         h('label.field.row', {}, lock, h('span', { text: 'Lock camera to champion (Y)' })),
         h('label.field.row', {}, fps, h('span', { text: 'Show FPS & ping' })),
         h('div.btn-row', {},

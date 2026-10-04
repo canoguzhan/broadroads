@@ -1,5 +1,6 @@
 /* Toasts, tooltips and accept/decline prompts. */
 import { h, $ } from './dom.js';
+import { sfx } from '../audio/sfx.js';
 
 export class UI {
   constructor() {
@@ -15,6 +16,7 @@ export class UI {
     const now = Date.now();
     if (this.recent.get(text) > now - 1200) return;
     this.recent.set(text, now);
+    sfx.play(kind === 'warn' || kind === 'bad' ? 'ui_error' : 'ui_notify', { gap: 0.25 });
     const el = h(`div.toast.t-${kind}`, { text });
     this.toasts.append(el);
     while (this.toasts.children.length > 5) this.toasts.firstChild.remove();

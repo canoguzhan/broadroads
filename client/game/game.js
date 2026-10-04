@@ -5,7 +5,7 @@ import { Hud } from '../ui/hud.js';
 import { Panels } from '../ui/panels.js';
 import { Chat } from '../ui/chat.js';
 import { Input } from '../input.js';
-import { sound } from '../audio/sound.js';
+import { sfx } from '../audio/sfx.js';
 import { $ } from '../ui/dom.js';
 import { getValley } from '../../shared/moba/map.js';
 import { F } from '../../shared/constants.js';
@@ -63,9 +63,18 @@ export class Game {
     switch (m.t) {
       case 's': this.world.applySnapshot(m); break;
       case 'score': this.world.score = m.score; this.hud.setScore(m.score); this.panels.refresh(['score']); break;
-      case 'end': this.endResult = m; this.panels.open('end'); (m.result.winner === this.world.team ? sound.playVictory() : sound.playDefeat()); break;
+      case 'end': {
+        this.endResult = m;
+        this.panels.open('end');
+        const win = m.result.winner === this.world.team;
+        sfx.clearVoices();
+        sfx.play(win ? 'victory' : 'defeat', { late: true });
+        sfx.announce(win ? 'vo_victory' : 'vo_defeat', 10);
+        break;
+      }
       case 'chat':
         this.chat.add(m);
+        if (m.from && m.from !== this.name) sfx.play('chat_msg', { gap: 0.3 });
         if (m.from) for (const e of this.world.entities.values()) if (e.kind === 'hero' && e.n === m.from) { this.labels.bubble(e.id, m.text, m.ch); break; }
         break;
       case 'notice': this.ui.toast(m.text, m.kind); break;
@@ -74,6 +83,10 @@ export class Game {
   }
 
   start() {
+    sfx.playMusic('amb_valley');
+    sfx.play('match_start', { late: true });
+    sfx.announce('vo_welcome', 5);
+    sfx.preload([...MATCH_SOUNDS, ...Object.values(ATTACK_SOUND), ...[...this.players.values()].flatMap(p => ['q', 'w', 'e', 'r'].map(k => `${p.champ}_${k}`))]);
     this.running = true;
     this.last = performance.now();
     const loop = t => {
@@ -139,6 +152,17 @@ export class Game {
     w.update(dt);
     this.updateHover();
     const you = w.you();
+    if (you) {
+      sfx.listener = you;
+      // Footsteps while our champion moves.
+      this.stepT = (this.stepT || 0) - dt;
+      if (you.moving > 0.3 && !(you.fl & F.DEAD) && this.stepT <= 0) {
+        this.stepT = 0.34;
+        this.stepN = ((this.stepN || 0) + 1) % 3;
+        sfx.play(`step_${this.stepN + 1}`, { rate: 0.92 + Math.random() * 0.16, gap: 0.2 });
+      }
+    }
+    if (w.time >= 20 && !this.minionsAnnounced) { this.minionsAnnounced = true; sfx.announce('vo_minions', 2); }
     const focus = this.input.keys.has('Space') && you ? you : you;
     const pan = this.renderer.locked ? null : this.input.edgePan(this.renderer.width, this.renderer.height);
     if (this.input.keys.has('Space') && you) { this.renderer.camTarget.x = you.x; this.renderer.camTarget.z = you.y; }
@@ -177,7 +201,7 @@ export class Game {
   }
 
   castKey(slot) {
-    sound.init();
+    sfx.init();
     const you = this.world.you();
     let p, id;
     if (this.input.isTouch && you) {
@@ -205,14 +229,14 @@ export class Game {
   }
 
   action(a, ev) {
-    sound.init();
+    sfx.init();
     switch (a) {
       case 'rclick': this.rmbT = 0.15; return this.issueMove(false);
       case 'lclick': if (this.amovePending) { this.amovePending = false; this.issueMove(true); } return;
       case 'amove': this.issueMove(true); this.rangeT = 1.2; return;
       case 'stop': return this.send({ t: 'stop' });
       case 'q': case 'w': case 'e': case 'r': case 'd': case 'f': case 'ward': return this.castKey(a);
-      case 'level': return this.send({ t: 'lvl', sl: ev });
+      case 'level': this.sfxSkill(); return this.send({ t: 'lvl', sl: ev });
       case 'recall': return this.send({ t: 'recall' });
       case 'item0': case 'item1': case 'item2': case 'item3': case 'item4': case 'item5': return this.send({ t: 'use', slot: Number(a.slice(4)) });
       case 'shop': return this.panels.toggle('shop');
@@ -232,31 +256,99 @@ export class Game {
     const w = this.world;
     this.renderer.handleFx(ev, w);
     const you = w.youId;
+    const ent = ev.id ? w.entities.get(ev.id) : null;
+    const at = (key, opts) => (ent ? sfx.playAt(key, ent.x, ent.y, opts) : ev.x !== undefined ? sfx.playAt(key, ev.x, ev.y, opts) : sfx.play(key, opts));
     switch (ev.e) {
       case 'dmg': {
         const mine = ev.s === you, onMe = ev.id === you;
         const e = w.entities.get(ev.id);
-        if (onMe) { this.labels.floatText(ev.x, ev.y, `-${ev.v}`, 'hurt'); if (ev.v > 60) sound.playHit(); }
-        else if (mine) this.labels.floatText(ev.x, ev.y, ev.c ? `${ev.v}!` : `${ev.v}`, ev.c ? 'crit' : ev.t === 'm' ? 'magic' : ev.t === 't' ? 'true' : 'dmg', ev.c ? 1.3 : 1);
-        else if (e && e.kind === 'hero') this.labels.floatText(ev.x, ev.y, `${ev.v}`, 'other', 0.8);
+        if (onMe) { this.labels.floatText(ev.x, ev.y, `-${ev.v}`, 'hurt'); sfx.play('hurt', { gap: 0.25, vol: Math.min(1, 0.4 + ev.v / 150) }); }
+        else if (mine) {
+          this.labels.floatText(ev.x, ev.y, ev.c ? `${ev.v}!` : `${ev.v}`, ev.c ? 'crit' : ev.t === 'm' ? 'magic' : ev.t === 't' ? 'true' : 'dmg', ev.c ? 1.3 : 1);
+          sfx.play(ev.c ? 'hit_crit' : ev.t === 'm' ? 'hit_magic' : 'hit_physical', { gap: 0.08, vol: 0.8 });
+        } else if (e && e.kind === 'hero') { this.labels.floatText(ev.x, ev.y, `${ev.v}`, 'other', 0.8); sfx.playAt(ev.t === 'm' ? 'hit_magic' : 'hit_physical', ev.x, ev.y, { gap: 0.12, vol: 0.5 }); }
         break;
       }
       case 'heal': if (ev.v >= 10) this.labels.floatText(ev.x, ev.y, `+${ev.v}`, 'heal'); break;
-      case 'gold': this.labels.floatText(ev.x, ev.y, `+${ev.v}`, 'gold', 0.85); sound.playPickup(); break;
-      case 'levelup': if (ev.id === you) { sound.playFanfare(); } { const e = w.entities.get(ev.id); if (e) { e.l = ev.l; this.labels.levelChanged(e); } } break;
-      case 'atk': if (ev.id === you) sound.playSlash(); break;
-      case 'cast': if (ev.id === you) sound.playMagicSpark(); break;
-      case 'shock': case 'boom': case 'nova': if (this.near(ev)) sound.playNova(); break;
-      case 'buy': sound.playAnvilStrike(); this.panels.refresh(['shop']); break;
+      case 'healfx': at('heal'); break;
+      case 'shield': if (ev.id === you) sfx.play('shield', { gap: 0.3 }); break;
+      case 'gold': this.labels.floatText(ev.x, ev.y, `+${ev.v}`, 'gold', 0.85); sfx.play('gold', { gap: 0.12 }); break;
+      case 'levelup': {
+        if (ev.id === you) sfx.play('levelup');
+        const e = w.entities.get(ev.id);
+        if (e) { e.l = ev.l; this.labels.levelChanged(e); }
+        break;
+      }
+      case 'atk': {
+        if (!ent) break;
+        const key = ent.kind === 'hero' ? ATTACK_SOUND[ent.c] || 'atk_sword' : 'atk_sword';
+        at(key, { gap: ent.kind === 'hero' ? 0.05 : 0.15, vol: ent.kind === 'hero' ? (ev.id === you ? 1 : 0.7) : 0.25, rate: ent.kind === 'minion' ? 1.2 : 0.95 + Math.random() * 0.1 });
+        break;
+      }
+      case 'cast': at(`${ev.c}_${ev.sl}`, { gap: 0.1, vol: ev.id === you ? 1 : 0.8 }); break;
+      case 'summ': at(SPELL_SOUND[ev.k] || 'blink', { gap: 0.2 }); break;
+      case 'dash': at('dash', { gap: 0.2, vol: 0.8 }); break;
+      case 'blink': at('blink', { gap: 0.3 }); break;
+      case 'cc': if (ev.id === you && ev.k !== 'slow') sfx.play('stun', { gap: 0.5 }); break;
+      case 'tshot': at('tower_shot', { gap: 0.2 }); break;
+      case 'potion': sfx.play('potion'); break;
+      case 'ward': at('ward'); break;
+      case 'trap': at('trap'); break;
+      case 'death': {
+        const key = { hero: 'death_hero', minion: 'death_minion', tower: 'tower_destroyed', spire: 'spire_destroyed', core: 'core_destroyed', monster: 'monster_roar' }[ev.k];
+        if (key) sfx.playAt(key, ev.x, ev.y, { gap: ev.k === 'minion' ? 0.15 : 0.1, range: ev.k === 'tower' || ev.k === 'spire' || ev.k === 'core' ? 80 : 24 });
+        break;
+      }
+      case 'buy': sfx.play('ui_buy'); this.panels.refresh(['shop']); break;
       case 'nomana': this.ui.toast('Not enough mana', 'warn', 900); break;
-      case 'kill': this.hud.feed(ev.k, ev.v, ev.a); if (ev.k === you) sound.playVictory(); else if (ev.v === you) sound.playDefeat(); break;
-      case 'ann': this.hud.announce(ev.text, ev.k); if (['kill', 'multi', 'ace', 'tower', 'spire', 'epic', 'victory'].includes(ev.k)) sound.playFanfare(); this.chat.system(ev.text, 'event'); break;
-      case 'ping': this.pings.push({ x: ev.x, y: ev.y, t: 3, color: PING_COLORS[ev.k] || '#22c55e' }); sound.playPickup(); break;
-      case 'respawn': if (ev.id === you) sound.playReviveChime(); break;
-      case 'recall': if (ev.id === you) sound.playReviveChime(); break;
+      case 'kill': {
+        this.hud.feed(ev.k, ev.v, ev.a);
+        const victim = this.players.get(ev.v);
+        const line = ev.v === you ? 'vo_you_slain' : ev.k === you ? 'vo_you_killed' : victim && victim.team === w.team ? 'vo_ally_slain' : 'vo_enemy_slain';
+        // Defer so a bigger callout from the same tick (first strike, multi-kill) can win.
+        this.pendingKillLine = { key: line, priority: ev.v === you || ev.k === you ? 3 : 1 };
+        setTimeout(() => { if (this.pendingKillLine) { sfx.announce(this.pendingKillLine.key, this.pendingKillLine.priority); this.pendingKillLine = null; } }, 60);
+        break;
+      }
+      case 'ann': {
+        this.hud.announce(ev.text, ev.k);
+        this.chat.system(ev.text, 'event');
+        const vo = this.announcerLine(ev);
+        if (vo) { this.pendingKillLine = null; sfx.announce(vo.key, vo.priority); }
+        if (ev.key === 'wyrm_spawn') sfx.play('wyrm_roar', { late: true });
+        if (ev.key === 'titan_spawn') sfx.play('titan_roar', { late: true });
+        break;
+      }
+      case 'ping': this.pings.push({ x: ev.x, y: ev.y, t: 3, color: PING_COLORS[ev.k] || '#22c55e' }); sfx.play(`ping_${ev.k}`, { gap: 0.3 }); break;
+      case 'respawn': if (ev.id === you) sfx.play('respawn'); break;
+      case 'recallStart': if (ev.id === you) this.recallSrc = sfx.play('recall_channel'); else at('recall_channel', { vol: 0.5 }); break;
+      case 'recall': at('recall_done'); break;
       default:
     }
   }
+
+  /** Maps a server announcement to an announcer voice line from this team's point of view. */
+  announcerLine(ev) {
+    const mine = ev.team === this.world.team;
+    switch (ev.key) {
+      case 'first_strike': return { key: 'vo_first_strike', priority: 6 };
+      case 'streak_end': return { key: 'vo_streak_end', priority: 4 };
+      case 'team_wipe': return { key: 'vo_team_wipe', priority: 7 };
+      case 'tower': return { key: mine ? 'vo_enemy_tower' : 'vo_ally_tower', priority: 4 };
+      case 'spire': return { key: mine ? 'vo_enemy_spire' : 'vo_ally_spire', priority: 5 };
+      case 'spire_restored': return { key: 'vo_spire_restored', priority: 2 };
+      case 'wyrm': return { key: mine ? 'vo_ally_wyrm' : 'vo_enemy_wyrm', priority: 5 };
+      case 'titan': return { key: mine ? 'vo_ally_titan' : 'vo_enemy_titan', priority: 5 };
+      case 'wyrm_spawn': return { key: 'vo_wyrm_spawn', priority: 3 };
+      case 'titan_spawn': return { key: 'vo_titan_spawn', priority: 3 };
+      default:
+        if (ev.key && /^multi[2-5]$/.test(ev.key)) return { key: `vo_${ev.key}`, priority: 6 + Number(ev.key.slice(5)) / 10 };
+        if (ev.key && /^streak[3-8]$/.test(ev.key)) return { key: `vo_${ev.key}`, priority: 4 };
+        return null;
+    }
+  }
+
+  sfxSkill() { if (this.world.me && this.world.me.pts > 0) sfx.play('ui_skill'); }
 
   near(ev) { const y = this.world.you(); return !y || ev.x === undefined || dist(y.x, y.y, ev.x, ev.y) < 18; }
 
@@ -264,7 +356,8 @@ export class Game {
     this.settings[k] = v;
     this.app.saveSettings();
     if (k === 'quality') this.renderer.setQuality(v);
-    if (k === 'volume') sound.setVolume(v);
+    if (k === 'volume') sfx.setVolume(v);
+    if (k === 'musicVolume') sfx.setMusicVolume(v);
   }
 
   quit() {
@@ -274,3 +367,7 @@ export class Game {
 }
 
 function round2(v) { return Math.round(v * 100) / 100; }
+
+const ATTACK_SOUND = { garrok: 'atk_fist', brakka: 'atk_fist', thorne: 'atk_axe', rook: 'atk_axe', kaelen: 'atk_sword', hale: 'atk_bow', nyra: 'atk_gun', lyra: 'atk_magic', mira: 'atk_magic', zarak: 'atk_magic' };
+const SPELL_SOUND = { blink: 'blink', mend: 'heal', scorch: 'sp_scorch', strike: 'sp_strike', haste: 'sp_haste', bulwark: 'shield' };
+const MATCH_SOUNDS = ['hurt', 'hit_physical', 'hit_magic', 'hit_crit', 'gold', 'atk_sword', 'death_minion', 'tower_shot', 'levelup', 'vo_minions', 'vo_ally_slain', 'vo_enemy_slain', 'vo_you_slain', 'vo_you_killed', 'vo_first_strike'];

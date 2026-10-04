@@ -71,6 +71,32 @@ item passives (Spiked Plate, Emberplate Aegis, Frostbound Orb, Archmage's Crown,
 | Camera | Space (center), Y (lock/unlock, edge-pan), wheel (zoom), click the minimap | Locked follow |
 | Scoreboard · ping · chat | Tab · Alt+click · Enter (team), `/all` (all chat), `/ff` (surrender after 10:00) | — |
 
+## 🔊 Audio
+
+All 135 sounds were generated with the [ElevenLabs](https://elevenlabs.io) API and are committed to `public/sfx/`:
+
+- **UI sounds:** clicks, hovers, panels, shop, match found, lock-in.
+- **Movement:** footsteps, dashes, blinks, returning home.
+- **Combat:** attacks per champion style, hits, crits, deaths, towers and structures.
+- **Abilities:** all 40 champion abilities and the battle spells.
+- **Monsters:** roars for the Ember Wyrm and the Abyss Titan.
+- **Other:** pings, victory and defeat stingers, lobby music, valley ambience.
+- **Announcer:** a full voice pack ("Welcome to the Valley", "First strike!", "Triple takedown!", "Enemy spire destroyed", "Victory!" and more), resolved from your team's point of view.
+
+To regenerate or add sounds, edit the lists in `scripts/generate-audio.mjs` and run:
+
+```bash
+ELEVENLABS_API_KEY=your_key node scripts/generate-audio.mjs          # only missing files
+ELEVENLABS_API_KEY=your_key node scripts/generate-audio.mjs --force ui_click   # regenerate one
+```
+
+The client (`client/audio/sfx.js`):
+
+- lazy-loads sounds and plays combat audio positionally (volume and stereo pan by distance from your champion);
+- queues announcer lines by priority;
+- crossfades music and ambience;
+- has master and music volume controls in Settings.
+
 ## 🤖 Bots
 
 Bots play with the same commands a player has. They:

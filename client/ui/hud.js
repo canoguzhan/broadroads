@@ -46,7 +46,7 @@ export class Hud {
     this.passiveEl = h('div.mb-passive');
     abilRow.append(this.passiveEl);
     for (const s of ['q', 'w', 'e', 'r']) {
-      const up = h('button.mb-up', { title: `Level up (Ctrl+${SLOT_KEYS[s]})`, onclick: ev => { ev.stopPropagation(); g.send({ t: 'lvl', sl: s }); } }, '+');
+      const up = h('button.mb-up', { title: `Level up (Ctrl+${SLOT_KEYS[s]})`, onclick: ev => { ev.stopPropagation(); g.send({ t: 'lvl', sl: s }); g.sfxSkill(); } }, '+');
       const el = h('div.mb-slot', { onclick: () => g.castKey(s), onmouseenter: ev => this.abilityTip(ev, s), onmouseleave: () => g.ui.hideTip() },
         h('div.mb-ic'), h('div.mb-cd'), h('div.mb-cdt'), h('div.mb-key', { text: SLOT_KEYS[s] }), h('div.mb-mana'), h('div.mb-pips'), up);
       this.abil[s] = { el, up, cd: el.querySelector('.mb-cd'), cdt: el.querySelector('.mb-cdt'), pips: el.querySelector('.mb-pips'), mana: el.querySelector('.mb-mana') };

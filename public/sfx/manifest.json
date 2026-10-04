@@ -1,0 +1,714 @@
+{
+ "ui_click": {
+  "file": "ui_click.mp3",
+  "kind": "sfx",
+  "vol": 0.5
+ },
+ "ui_hover": {
+  "file": "ui_hover.mp3",
+  "kind": "sfx",
+  "vol": 0.25
+ },
+ "ui_open": {
+  "file": "ui_open.mp3",
+  "kind": "sfx",
+  "vol": 0.5
+ },
+ "ui_close": {
+  "file": "ui_close.mp3",
+  "kind": "sfx",
+  "vol": 0.45
+ },
+ "ui_error": {
+  "file": "ui_error.mp3",
+  "kind": "sfx",
+  "vol": 0.5
+ },
+ "ui_notify": {
+  "file": "ui_notify.mp3",
+  "kind": "sfx",
+  "vol": 0.6
+ },
+ "ui_buy": {
+  "file": "ui_buy.mp3",
+  "kind": "sfx",
+  "vol": 0.6
+ },
+ "ui_sell": {
+  "file": "ui_sell.mp3",
+  "kind": "sfx",
+  "vol": 0.6
+ },
+ "ui_skill": {
+  "file": "ui_skill.mp3",
+  "kind": "sfx",
+  "vol": 0.55
+ },
+ "queue_found": {
+  "file": "queue_found.mp3",
+  "kind": "sfx",
+  "vol": 0.8
+ },
+ "lock_in": {
+  "file": "lock_in.mp3",
+  "kind": "sfx",
+  "vol": 0.7
+ },
+ "select_tick": {
+  "file": "select_tick.mp3",
+  "kind": "sfx",
+  "vol": 0.35
+ },
+ "chat_msg": {
+  "file": "chat_msg.mp3",
+  "kind": "sfx",
+  "vol": 0.35
+ },
+ "match_start": {
+  "file": "match_start.mp3",
+  "kind": "sfx",
+  "vol": 0.75
+ },
+ "step_1": {
+  "file": "step_1.mp3",
+  "kind": "sfx",
+  "vol": 0.18
+ },
+ "step_2": {
+  "file": "step_2.mp3",
+  "kind": "sfx",
+  "vol": 0.18
+ },
+ "step_3": {
+  "file": "step_3.mp3",
+  "kind": "sfx",
+  "vol": 0.18
+ },
+ "dash": {
+  "file": "dash.mp3",
+  "kind": "sfx",
+  "vol": 0.6
+ },
+ "blink": {
+  "file": "blink.mp3",
+  "kind": "sfx",
+  "vol": 0.6
+ },
+ "recall_channel": {
+  "file": "recall_channel.mp3",
+  "kind": "sfx",
+  "vol": 0.5
+ },
+ "recall_done": {
+  "file": "recall_done.mp3",
+  "kind": "sfx",
+  "vol": 0.6
+ },
+ "respawn": {
+  "file": "respawn.mp3",
+  "kind": "sfx",
+  "vol": 0.6
+ },
+ "atk_sword": {
+  "file": "atk_sword.mp3",
+  "kind": "sfx",
+  "vol": 0.45
+ },
+ "atk_axe": {
+  "file": "atk_axe.mp3",
+  "kind": "sfx",
+  "vol": 0.45
+ },
+ "atk_fist": {
+  "file": "atk_fist.mp3",
+  "kind": "sfx",
+  "vol": 0.45
+ },
+ "atk_bow": {
+  "file": "atk_bow.mp3",
+  "kind": "sfx",
+  "vol": 0.45
+ },
+ "atk_gun": {
+  "file": "atk_gun.mp3",
+  "kind": "sfx",
+  "vol": 0.45
+ },
+ "atk_magic": {
+  "file": "atk_magic.mp3",
+  "kind": "sfx",
+  "vol": 0.45
+ },
+ "hit_physical": {
+  "file": "hit_physical.mp3",
+  "kind": "sfx",
+  "vol": 0.45
+ },
+ "hit_magic": {
+  "file": "hit_magic.mp3",
+  "kind": "sfx",
+  "vol": 0.45
+ },
+ "hit_crit": {
+  "file": "hit_crit.mp3",
+  "kind": "sfx",
+  "vol": 0.6
+ },
+ "hurt": {
+  "file": "hurt.mp3",
+  "kind": "sfx",
+  "vol": 0.5
+ },
+ "death_hero": {
+  "file": "death_hero.mp3",
+  "kind": "sfx",
+  "vol": 0.7
+ },
+ "death_minion": {
+  "file": "death_minion.mp3",
+  "kind": "sfx",
+  "vol": 0.3
+ },
+ "gold": {
+  "file": "gold.mp3",
+  "kind": "sfx",
+  "vol": 0.35
+ },
+ "levelup": {
+  "file": "levelup.mp3",
+  "kind": "sfx",
+  "vol": 0.7
+ },
+ "potion": {
+  "file": "potion.mp3",
+  "kind": "sfx",
+  "vol": 0.6
+ },
+ "ward": {
+  "file": "ward.mp3",
+  "kind": "sfx",
+  "vol": 0.5
+ },
+ "trap": {
+  "file": "trap.mp3",
+  "kind": "sfx",
+  "vol": 0.65
+ },
+ "shield": {
+  "file": "shield.mp3",
+  "kind": "sfx",
+  "vol": 0.5
+ },
+ "heal": {
+  "file": "heal.mp3",
+  "kind": "sfx",
+  "vol": 0.5
+ },
+ "stun": {
+  "file": "stun.mp3",
+  "kind": "sfx",
+  "vol": 0.5
+ },
+ "sp_scorch": {
+  "file": "sp_scorch.mp3",
+  "kind": "sfx",
+  "vol": 0.6
+ },
+ "sp_strike": {
+  "file": "sp_strike.mp3",
+  "kind": "sfx",
+  "vol": 0.65
+ },
+ "sp_haste": {
+  "file": "sp_haste.mp3",
+  "kind": "sfx",
+  "vol": 0.55
+ },
+ "tower_shot": {
+  "file": "tower_shot.mp3",
+  "kind": "sfx",
+  "vol": 0.55
+ },
+ "tower_destroyed": {
+  "file": "tower_destroyed.mp3",
+  "kind": "sfx",
+  "vol": 0.8
+ },
+ "spire_destroyed": {
+  "file": "spire_destroyed.mp3",
+  "kind": "sfx",
+  "vol": 0.8
+ },
+ "core_destroyed": {
+  "file": "core_destroyed.mp3",
+  "kind": "sfx",
+  "vol": 0.9
+ },
+ "wyrm_roar": {
+  "file": "wyrm_roar.mp3",
+  "kind": "sfx",
+  "vol": 0.75
+ },
+ "titan_roar": {
+  "file": "titan_roar.mp3",
+  "kind": "sfx",
+  "vol": 0.8
+ },
+ "monster_roar": {
+  "file": "monster_roar.mp3",
+  "kind": "sfx",
+  "vol": 0.5
+ },
+ "ping_go": {
+  "file": "ping_go.mp3",
+  "kind": "sfx",
+  "vol": 0.5
+ },
+ "ping_danger": {
+  "file": "ping_danger.mp3",
+  "kind": "sfx",
+  "vol": 0.55
+ },
+ "ping_help": {
+  "file": "ping_help.mp3",
+  "kind": "sfx",
+  "vol": 0.5
+ },
+ "ping_omw": {
+  "file": "ping_omw.mp3",
+  "kind": "sfx",
+  "vol": 0.5
+ },
+ "victory": {
+  "file": "victory.mp3",
+  "kind": "sfx",
+  "vol": 0.8
+ },
+ "defeat": {
+  "file": "defeat.mp3",
+  "kind": "sfx",
+  "vol": 0.8
+ },
+ "garrok_q": {
+  "file": "garrok_q.mp3",
+  "kind": "sfx",
+  "vol": 0.6
+ },
+ "garrok_w": {
+  "file": "garrok_w.mp3",
+  "kind": "sfx",
+  "vol": 0.55
+ },
+ "garrok_e": {
+  "file": "garrok_e.mp3",
+  "kind": "sfx",
+  "vol": 0.65
+ },
+ "garrok_r": {
+  "file": "garrok_r.mp3",
+  "kind": "sfx",
+  "vol": 0.75
+ },
+ "lyra_q": {
+  "file": "lyra_q.mp3",
+  "kind": "sfx",
+  "vol": 0.55
+ },
+ "lyra_w": {
+  "file": "lyra_w.mp3",
+  "kind": "sfx",
+  "vol": 0.5
+ },
+ "lyra_e": {
+  "file": "lyra_e.mp3",
+  "kind": "sfx",
+  "vol": 0.6
+ },
+ "lyra_r": {
+  "file": "lyra_r.mp3",
+  "kind": "sfx",
+  "vol": 0.75
+ },
+ "kaelen_q": {
+  "file": "kaelen_q.mp3",
+  "kind": "sfx",
+  "vol": 0.55
+ },
+ "kaelen_w": {
+  "file": "kaelen_w.mp3",
+  "kind": "sfx",
+  "vol": 0.55
+ },
+ "kaelen_e": {
+  "file": "kaelen_e.mp3",
+  "kind": "sfx",
+  "vol": 0.55
+ },
+ "kaelen_r": {
+  "file": "kaelen_r.mp3",
+  "kind": "sfx",
+  "vol": 0.7
+ },
+ "hale_q": {
+  "file": "hale_q.mp3",
+  "kind": "sfx",
+  "vol": 0.5
+ },
+ "hale_w": {
+  "file": "hale_w.mp3",
+  "kind": "sfx",
+  "vol": 0.6
+ },
+ "hale_e": {
+  "file": "hale_e.mp3",
+  "kind": "sfx",
+  "vol": 0.5
+ },
+ "hale_r": {
+  "file": "hale_r.mp3",
+  "kind": "sfx",
+  "vol": 0.7
+ },
+ "thorne_q": {
+  "file": "thorne_q.mp3",
+  "kind": "sfx",
+  "vol": 0.6
+ },
+ "thorne_w": {
+  "file": "thorne_w.mp3",
+  "kind": "sfx",
+  "vol": 0.6
+ },
+ "thorne_e": {
+  "file": "thorne_e.mp3",
+  "kind": "sfx",
+  "vol": 0.6
+ },
+ "thorne_r": {
+  "file": "thorne_r.mp3",
+  "kind": "sfx",
+  "vol": 0.75
+ },
+ "mira_q": {
+  "file": "mira_q.mp3",
+  "kind": "sfx",
+  "vol": 0.55
+ },
+ "mira_w": {
+  "file": "mira_w.mp3",
+  "kind": "sfx",
+  "vol": 0.5
+ },
+ "mira_e": {
+  "file": "mira_e.mp3",
+  "kind": "sfx",
+  "vol": 0.55
+ },
+ "mira_r": {
+  "file": "mira_r.mp3",
+  "kind": "sfx",
+  "vol": 0.65
+ },
+ "zarak_q": {
+  "file": "zarak_q.mp3",
+  "kind": "sfx",
+  "vol": 0.55
+ },
+ "zarak_w": {
+  "file": "zarak_w.mp3",
+  "kind": "sfx",
+  "vol": 0.6
+ },
+ "zarak_e": {
+  "file": "zarak_e.mp3",
+  "kind": "sfx",
+  "vol": 0.55
+ },
+ "zarak_r": {
+  "file": "zarak_r.mp3",
+  "kind": "sfx",
+  "vol": 0.8
+ },
+ "nyra_q": {
+  "file": "nyra_q.mp3",
+  "kind": "sfx",
+  "vol": 0.65
+ },
+ "nyra_w": {
+  "file": "nyra_w.mp3",
+  "kind": "sfx",
+  "vol": 0.5
+ },
+ "nyra_e": {
+  "file": "nyra_e.mp3",
+  "kind": "sfx",
+  "vol": 0.55
+ },
+ "nyra_r": {
+  "file": "nyra_r.mp3",
+  "kind": "sfx",
+  "vol": 0.75
+ },
+ "brakka_q": {
+  "file": "brakka_q.mp3",
+  "kind": "sfx",
+  "vol": 0.65
+ },
+ "brakka_w": {
+  "file": "brakka_w.mp3",
+  "kind": "sfx",
+  "vol": 0.65
+ },
+ "brakka_e": {
+  "file": "brakka_e.mp3",
+  "kind": "sfx",
+  "vol": 0.6
+ },
+ "brakka_r": {
+  "file": "brakka_r.mp3",
+  "kind": "sfx",
+  "vol": 0.6
+ },
+ "rook_q": {
+  "file": "rook_q.mp3",
+  "kind": "sfx",
+  "vol": 0.55
+ },
+ "rook_w": {
+  "file": "rook_w.mp3",
+  "kind": "sfx",
+  "vol": 0.55
+ },
+ "rook_e": {
+  "file": "rook_e.mp3",
+  "kind": "sfx",
+  "vol": 0.65
+ },
+ "rook_r": {
+  "file": "rook_r.mp3",
+  "kind": "sfx",
+  "vol": 0.75
+ },
+ "music_lobby": {
+  "file": "music_lobby.mp3",
+  "kind": "music",
+  "vol": 0.35,
+  "loop": true
+ },
+ "amb_valley": {
+  "file": "amb_valley.mp3",
+  "kind": "music",
+  "vol": 0.3,
+  "loop": true
+ },
+ "vo_welcome": {
+  "file": "vo_welcome.mp3",
+  "kind": "voice",
+  "vol": 0.9,
+  "text": "Welcome to the Valley."
+ },
+ "vo_minions_soon": {
+  "file": "vo_minions_soon.mp3",
+  "kind": "voice",
+  "vol": 0.9,
+  "text": "Thirty seconds until minions spawn."
+ },
+ "vo_minions": {
+  "file": "vo_minions.mp3",
+  "kind": "voice",
+  "vol": 0.9,
+  "text": "Minions have spawned."
+ },
+ "vo_first_strike": {
+  "file": "vo_first_strike.mp3",
+  "kind": "voice",
+  "vol": 0.9,
+  "text": "First strike!"
+ },
+ "vo_multi2": {
+  "file": "vo_multi2.mp3",
+  "kind": "voice",
+  "vol": 0.9,
+  "text": "Double takedown!"
+ },
+ "vo_multi3": {
+  "file": "vo_multi3.mp3",
+  "kind": "voice",
+  "vol": 0.9,
+  "text": "Triple takedown!"
+ },
+ "vo_multi4": {
+  "file": "vo_multi4.mp3",
+  "kind": "voice",
+  "vol": 0.9,
+  "text": "Quad takedown!"
+ },
+ "vo_multi5": {
+  "file": "vo_multi5.mp3",
+  "kind": "voice",
+  "vol": 0.9,
+  "text": "Total takedown!"
+ },
+ "vo_you_slain": {
+  "file": "vo_you_slain.mp3",
+  "kind": "voice",
+  "vol": 0.9,
+  "text": "You have been slain."
+ },
+ "vo_you_killed": {
+  "file": "vo_you_killed.mp3",
+  "kind": "voice",
+  "vol": 0.9,
+  "text": "You have slain an enemy."
+ },
+ "vo_ally_slain": {
+  "file": "vo_ally_slain.mp3",
+  "kind": "voice",
+  "vol": 0.9,
+  "text": "An ally has been slain."
+ },
+ "vo_enemy_slain": {
+  "file": "vo_enemy_slain.mp3",
+  "kind": "voice",
+  "vol": 0.9,
+  "text": "An enemy has been slain."
+ },
+ "vo_streak3": {
+  "file": "vo_streak3.mp3",
+  "kind": "voice",
+  "vol": 0.9,
+  "text": "Heating up!"
+ },
+ "vo_streak4": {
+  "file": "vo_streak4.mp3",
+  "kind": "voice",
+  "vol": 0.9,
+  "text": "On fire!"
+ },
+ "vo_streak5": {
+  "file": "vo_streak5.mp3",
+  "kind": "voice",
+  "vol": 0.9,
+  "text": "Relentless!"
+ },
+ "vo_streak6": {
+  "file": "vo_streak6.mp3",
+  "kind": "voice",
+  "vol": 0.9,
+  "text": "Overwhelming!"
+ },
+ "vo_streak7": {
+  "file": "vo_streak7.mp3",
+  "kind": "voice",
+  "vol": 0.9,
+  "text": "Mythic!"
+ },
+ "vo_streak8": {
+  "file": "vo_streak8.mp3",
+  "kind": "voice",
+  "vol": 0.9,
+  "text": "Beyond legend!"
+ },
+ "vo_streak_end": {
+  "file": "vo_streak_end.mp3",
+  "kind": "voice",
+  "vol": 0.9,
+  "text": "Streak ended!"
+ },
+ "vo_team_wipe": {
+  "file": "vo_team_wipe.mp3",
+  "kind": "voice",
+  "vol": 0.9,
+  "text": "Team wipe!"
+ },
+ "vo_ally_tower": {
+  "file": "vo_ally_tower.mp3",
+  "kind": "voice",
+  "vol": 0.9,
+  "text": "Your tower has fallen."
+ },
+ "vo_enemy_tower": {
+  "file": "vo_enemy_tower.mp3",
+  "kind": "voice",
+  "vol": 0.9,
+  "text": "Enemy tower destroyed."
+ },
+ "vo_ally_spire": {
+  "file": "vo_ally_spire.mp3",
+  "kind": "voice",
+  "vol": 0.9,
+  "text": "Your spire has been destroyed."
+ },
+ "vo_enemy_spire": {
+  "file": "vo_enemy_spire.mp3",
+  "kind": "voice",
+  "vol": 0.9,
+  "text": "Enemy spire destroyed. Juggernaut minions incoming!"
+ },
+ "vo_spire_restored": {
+  "file": "vo_spire_restored.mp3",
+  "kind": "voice",
+  "vol": 0.9,
+  "text": "A spire has been restored."
+ },
+ "vo_wyrm_spawn": {
+  "file": "vo_wyrm_spawn.mp3",
+  "kind": "voice",
+  "vol": 0.9,
+  "text": "The Ember Wyrm has spawned."
+ },
+ "vo_titan_spawn": {
+  "file": "vo_titan_spawn.mp3",
+  "kind": "voice",
+  "vol": 0.9,
+  "text": "The Abyss Titan has awoken."
+ },
+ "vo_ally_wyrm": {
+  "file": "vo_ally_wyrm.mp3",
+  "kind": "voice",
+  "vol": 0.9,
+  "text": "Your team has slain the Ember Wyrm."
+ },
+ "vo_enemy_wyrm": {
+  "file": "vo_enemy_wyrm.mp3",
+  "kind": "voice",
+  "vol": 0.9,
+  "text": "The enemy has slain the Ember Wyrm."
+ },
+ "vo_ally_titan": {
+  "file": "vo_ally_titan.mp3",
+  "kind": "voice",
+  "vol": 0.9,
+  "text": "Your team has slain the Abyss Titan."
+ },
+ "vo_enemy_titan": {
+  "file": "vo_enemy_titan.mp3",
+  "kind": "voice",
+  "vol": 0.9,
+  "text": "The enemy has slain the Abyss Titan."
+ },
+ "vo_victory": {
+  "file": "vo_victory.mp3",
+  "kind": "voice",
+  "vol": 0.9,
+  "text": "Victory!"
+ },
+ "vo_defeat": {
+  "file": "vo_defeat.mp3",
+  "kind": "voice",
+  "vol": 0.9,
+  "text": "Defeat."
+ },
+ "vo_match_found": {
+  "file": "vo_match_found.mp3",
+  "kind": "voice",
+  "vol": 0.9,
+  "text": "Match found."
+ },
+ "vo_choose": {
+  "file": "vo_choose.mp3",
+  "kind": "voice",
+  "vol": 0.9,
+  "text": "Choose your champion."
+ }
+}

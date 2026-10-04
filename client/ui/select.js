@@ -1,6 +1,7 @@
 /* Champion select screen. */
 import { h, $, clear } from './dom.js';
 import { championDetail } from './lobby.js';
+import { sfx } from '../audio/sfx.js';
 
 const ROLES = ['All', 'Tank', 'Fighter', 'Assassin', 'Mage', 'Marksman', 'Support'];
 
@@ -14,6 +15,12 @@ export class Select {
   }
 
   update(sel) {
+    const prev = this.state;
+    const me = sel.players.find(p => p.you);
+    const wasLocked = prev && prev.id === sel.id && prev.players.find(p => p.you)?.locked;
+    if (me && me.locked && !wasLocked) sfx.play('lock_in', { late: true });
+    if (sel.timeLeft <= 5 && sel.timeLeft > 0 && (!prev || prev.timeLeft !== sel.timeLeft)) sfx.play('select_tick', { gap: 0.5 });
+    if (me && me.champ && prev && prev.id === sel.id && prev.players.find(p => p.you)?.champ !== me.champ) sfx.play('ui_skill', { gap: 0.1 });
     this.state = sel;
     this.render();
   }

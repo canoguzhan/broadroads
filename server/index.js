@@ -20,7 +20,7 @@ if (fs.existsSync(path.join(ROOT, '.env')) && typeof process.loadEnvFile === 'fu
 const MIME = {
   '.html': 'text/html; charset=utf-8', '.js': 'text/javascript; charset=utf-8', '.css': 'text/css; charset=utf-8',
   '.json': 'application/json', '.svg': 'image/svg+xml', '.png': 'image/png', '.jpg': 'image/jpeg', '.ico': 'image/x-icon',
-  '.webp': 'image/webp', '.woff2': 'font/woff2', '.txt': 'text/plain; charset=utf-8', '.webmanifest': 'application/manifest+json',
+  '.webp': 'image/webp', '.woff2': 'font/woff2', '.mp3': 'audio/mpeg', '.ogg': 'audio/ogg', '.wav': 'audio/wav', '.txt': 'text/plain; charset=utf-8', '.webmanifest': 'application/manifest+json',
 };
 
 export function loadConfig(env = process.env) {
@@ -158,9 +158,10 @@ export async function startServer(overrides = {}) {
     }
     const ext = path.extname(target);
     const immutable = target.includes(`${path.sep}assets${path.sep}`);
+    const audio = target.includes(`${path.sep}sfx${path.sep}`) && ext === '.mp3';
     res.writeHead(200, {
       'Content-Type': MIME[ext] || 'application/octet-stream',
-      'Cache-Control': immutable ? 'public, max-age=31536000, immutable' : 'no-cache',
+      'Cache-Control': immutable ? 'public, max-age=31536000, immutable' : audio ? 'public, max-age=86400' : 'no-cache',
       'X-Content-Type-Options': 'nosniff',
       'Referrer-Policy': 'strict-origin-when-cross-origin',
     });
