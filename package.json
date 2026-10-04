@@ -1,18 +1,30 @@
 {
   "name": "broadroads",
-  "version": "1.0.0",
-  "description": "BROADROADS - Isometric Gear Refinery Arena (3D Three.js Action & Crafting Game)",
+  "version": "2.0.0",
+  "description": "BroadRoads — an online action-RPG: shared MMO world, solo & party dungeons, and ranked PvP arenas.",
   "private": true,
   "type": "module",
-  "scripts": {
-    "dev": "vite",
-    "build": "vite build",
-    "preview": "vite preview"
+  "homepage": "https://broadroads.com",
+  "engines": {
+    "node": ">=20"
   },
-  "devDependencies": {
-    "vite": "^6.2.0"
+  "scripts": {
+    "dev": "node scripts/dev.js",
+    "dev:client": "vite",
+    "dev:server": "node --watch server/index.js",
+    "build": "vite build",
+    "start": "node server/index.js",
+    "test": "node --test 'test/*.test.js'",
+    "test:e2e": "node scripts/e2e.js",
+    "preview": "npm run build && npm start"
   },
   "dependencies": {
-    "@neondatabase/serverless": "^1.2.0"
+    "pg": "^8.13.1",
+    "ws": "^8.18.0"
+  },
+  "devDependencies": {
+    "playwright": "^1.63.0",
+    "three": "^0.171.0",
+    "vite": "^6.2.0"
   }
 }

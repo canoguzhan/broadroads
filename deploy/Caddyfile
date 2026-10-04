@@ -1,0 +1,11 @@
+# Caddy obtains and renews TLS certificates automatically.
+{$DOMAIN:broadroads.com}, www.{$DOMAIN:broadroads.com} {
+	encode gzip zstd
+	# WebSocket upgrades are proxied transparently.
+	reverse_proxy game:8080
+	header {
+		Strict-Transport-Security "max-age=31536000; includeSubDomains"
+		X-Content-Type-Options nosniff
+		Referrer-Policy strict-origin-when-cross-origin
+	}
+}

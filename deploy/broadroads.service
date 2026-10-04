@@ -1,0 +1,27 @@
+# systemd unit for running the game server without Docker.
+#   sudo cp deploy/broadroads.service /etc/systemd/system/
+#   sudo systemctl daemon-reload && sudo systemctl enable --now broadroads
+# Put a reverse proxy with TLS in front (see deploy/nginx.conf or deploy/Caddyfile).
+[Unit]
+Description=BroadRoads game server
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=broadroads
+WorkingDirectory=/opt/broadroads
+EnvironmentFile=/opt/broadroads/.env
+Environment=NODE_ENV=production
+ExecStart=/usr/bin/node server/index.js
+Restart=always
+RestartSec=3
+# Give the server time to save every online player on shutdown.
+TimeoutStopSec=20
+NoNewPrivileges=true
+ProtectSystem=full
+ProtectHome=true
+ReadWritePaths=/opt/broadroads/data
+
+[Install]
+WantedBy=multi-user.target

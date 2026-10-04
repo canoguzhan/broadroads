@@ -1,0 +1,36 @@
+# Production stack: game server behind Caddy (automatic HTTPS for broadroads.com).
+#   1. Point the DNS A record of broadroads.com (and www) at this machine.
+#   2. cp .env.example .env  and set TOKEN_SECRET (and DATABASE_URL if using Postgres).
+#   3. docker compose up -d --build
+services:
+  game:
+    build: .
+    restart: unless-stopped
+    env_file: .env
+    environment:
+      PORT: 8080
+      DATA_DIR: /data
+    volumes:
+      - game-data:/data
+    expose:
+      - "8080"
+
+  caddy:
+    image: caddy:2-alpine
+    restart: unless-stopped
+    depends_on:
+      - game
+    ports:
+      - "80:80"
+      - "443:443"
+    environment:
+      DOMAIN: ${DOMAIN:-broadroads.com}
+    volumes:
+      - ./deploy/Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy-data:/data
+      - caddy-config:/config
+
+volumes:
+  game-data:
+  caddy-data:
+  caddy-config:
