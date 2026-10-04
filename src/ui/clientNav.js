@@ -159,7 +159,7 @@ class ClientNavigationController {
     this.isLockedIn = false;
     this.hideAllViews();
     const champView = document.getElementById('view-champ-select');
-    if (champView) champView.style.display = 'flex';
+    if (champView) champView.style.display = 'grid';
 
     // Render current monthly theme champions
     if (window.renderClassSelectionCards) {

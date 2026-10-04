@@ -670,6 +670,10 @@
         sound.playPickup();
         if (landingPage) landingPage.style.display = 'none';
         if (startModal) startModal.style.display = 'flex';
+        if (window.clientNav) {
+          window.clientNav.showModeSelect();
+          window.clientNav.updateUserDisplay();
+        }
         if (screen.orientation && screen.orientation.lock) {
           screen.orientation.lock('landscape').catch(() => {});
         }

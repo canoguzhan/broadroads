@@ -15,6 +15,7 @@
 
   <!-- Modular Hextech, MLBB & Base Stylesheet -->
   <link rel="stylesheet" href="/src/styles/main.css">
+  <link rel="stylesheet" href="/src/styles/client.css">
 </head>
 <body>
 
@@ -825,7 +826,7 @@
   </div>
 
   <!-- AAA CLIENT FULL-SCREEN LOBBY SCREEN (League Client Aesthetics) -->
-  <div class="modal-overlay lol-client-lobby" id="start-modal" style="display: none;">
+  <div class="lol-client-lobby" id="start-modal" style="display: none;">
     <!-- Top Client Bar -->
     <header class="lol-client-header">
       <div class="lol-client-branding">
@@ -1052,7 +1053,7 @@
       <!-- Left: Champion Roster -->
       <div class="champ-select-col">
         <button class="btn-back-to-modes" id="btn-back-to-lobby">⬅ BACK TO LOBBY</button>
-        <div class="class-selection-title">SEASON CHAMPIONS</div>
+        <div class="class-selection-title" id="class-selection-title">SEASON CHAMPIONS</div>
         <div class="class-grid" id="class-selection-grid" style="display: flex; flex-direction: column; gap: 8px;">
           <!-- Dynamically populated based on current theme -->
         </div>

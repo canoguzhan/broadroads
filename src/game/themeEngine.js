@@ -85,16 +85,18 @@
       theme.classes.forEach((cls, idx) => {
         const card = document.createElement('div');
         const isSelected = (idx === state.selectedClassIndex);
-        card.className = `class-card ${isSelected ? 'selected' : ''}`;
+        card.className = `class-card champ-archetype-card ${isSelected ? 'selected' : ''}`;
         card.dataset.classIndex = idx;
         card.dataset.classType = cls.type;
         card.dataset.classId = cls.id;
 
         card.innerHTML = `
           <div class="class-card-icon">${cls.icon}</div>
-          <div class="class-card-name">${cls.name}</div>
-          <div class="class-card-desc">${cls.desc}</div>
-          <div class="class-card-special">Special: ${cls.special}</div>
+          <div class="class-card-details">
+            <div class="class-card-name">${cls.name}</div>
+            <div class="class-card-desc">${cls.desc}</div>
+            <div class="class-card-special">⚡ ${cls.special}</div>
+          </div>
         `;
 
         card.addEventListener('click', () => {
@@ -107,6 +109,9 @@
           updateLobbyFeaturedChampion(cls);
           if (typeof hero !== 'undefined' && hero) {
             hero.setClass(cls.id, cls);
+          }
+          if (window.clientNav && typeof window.clientNav.renderChampSelectTeamPicks === 'function') {
+            window.clientNav.renderChampSelectTeamPicks();
           }
         });
 
