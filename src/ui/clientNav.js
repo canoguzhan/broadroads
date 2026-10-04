@@ -41,6 +41,11 @@ class ClientNavigationController {
   showModeSelect() {
     state.clientPhase = 'mode_select';
     this.hideAllViews();
+    const modal = document.getElementById('start-modal');
+    if (modal) {
+      modal.classList.remove('hidden');
+      modal.style.display = 'flex';
+    }
     const modeSelectView = document.getElementById('view-mode-select');
     if (modeSelectView) modeSelectView.style.display = 'flex';
 
@@ -224,7 +229,10 @@ class ClientNavigationController {
     // Transition directly into arena
     setTimeout(() => {
       const modal = document.getElementById('start-modal');
-      if (modal) modal.style.display = 'none';
+      if (modal) {
+        modal.style.display = 'none';
+        modal.classList.add('hidden');
+      }
 
       if (state.gameMode === 'pvp') {
         pvpEngine.startPvPMatch();
@@ -233,7 +241,7 @@ class ClientNavigationController {
           window.startMatchWithLoadingScreen(() => window.resetGame());
         }
       }
-    }, 1200);
+    }, 1000);
   }
 
   hideAllViews() {
@@ -367,14 +375,26 @@ class ClientNavigationController {
 
     // PvP Team Selection Buttons
     const btnJoinBlue = document.getElementById('btn-pvp-join-blue');
-    if (btnJoinBlue) btnJoinBlue.addEventListener('click', () => pvpEngine.setPlayerSide('blue'));
+    if (btnJoinBlue) btnJoinBlue.addEventListener('click', (e) => {
+      e.stopPropagation();
+      pvpEngine.setPlayerSide('blue');
+    });
 
     const btnJoinRed = document.getElementById('btn-pvp-join-red');
-    if (btnJoinRed) btnJoinRed.addEventListener('click', () => pvpEngine.setPlayerSide('red'));
+    if (btnJoinRed) btnJoinRed.addEventListener('click', (e) => {
+      e.stopPropagation();
+      pvpEngine.setPlayerSide('red');
+    });
 
     // Bot Fill Button
     const btnFillBots = document.getElementById('btn-pvp-fill-bots');
-    if (btnFillBots) btnFillBots.addEventListener('click', () => pvpEngine.fillWithAIBots());
+    if (btnFillBots) {
+      btnFillBots.addEventListener('click', (e) => {
+        e.stopPropagation();
+        e.preventDefault();
+        pvpEngine.fillWithAIBots();
+      });
+    }
 
     // Proceed to Champ Select buttons
     const btnProceedPvP = document.getElementById('btn-pvp-proceed-champ');

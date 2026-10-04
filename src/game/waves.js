@@ -117,14 +117,18 @@
     function updateWaveSpawning(dt) {
       if (state.phase !== 'playing') return;
 
-      // 3-SECOND TIMER BEFORE MOB SPAWNING
+      // 3-SECOND TIMER BEFORE MOB SPAWNING / ARENA COMBAT
       if (state.spawnDelayCountdown > 0) {
         state.spawnDelayCountdown -= dt;
         updateCountdownOverlay(state.spawnDelayCountdown);
         const cdDigit = Math.max(1, Math.ceil(state.spawnDelayCountdown));
-        document.getElementById('enemies-alive-text').textContent = `SPAWNING IN ${cdDigit}s...`;
+        const aliveEl = document.getElementById('enemies-alive-text');
+        if (aliveEl) aliveEl.textContent = `BATTLE IN ${cdDigit}s...`;
         return; // Hold mob spawning and wave time drain during 3s prep!
       }
+
+      // In 5v5 PvP mode, autonomous AI bots handle combat; do not spawn PvE wave mobs
+      if (state.gameMode === 'pvp') return;
 
       // Spawn boss once countdown ends if boss floor
       const isBossFloor = (state.soloSubMode === 'dungeon' && state.currentWave % 10 === 0) || (state.soloSubMode !== 'dungeon' && state.currentWave % 5 === 0);

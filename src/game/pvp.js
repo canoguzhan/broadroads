@@ -58,7 +58,38 @@ class PvPEngine {
     state.pvp.playerTeam = team;
     state.hero.team = team;
     sound.playPickup();
-    this.initLobby();
+
+    const hadBots = this.blueTeam.some(p => p.isBot) || this.redTeam.some(p => p.isBot);
+
+    // Remove local player from both teams
+    this.blueTeam = this.blueTeam.filter(p => !p.isLocal);
+    this.redTeam = this.redTeam.filter(p => !p.isLocal);
+
+    const playerObj = {
+      id: 'player',
+      name: state.username,
+      team: team,
+      isLocal: true,
+      isBot: false,
+      classId: state.heroClass || 'paladin',
+      ready: true
+    };
+
+    if (team === 'blue') {
+      this.blueTeam.unshift(playerObj);
+      if (this.blueTeam.length > 5) this.blueTeam.pop();
+    } else {
+      this.redTeam.unshift(playerObj);
+      if (this.redTeam.length > 5) this.redTeam.pop();
+    }
+
+    if (hadBots) {
+      this.fillWithAIBots();
+    } else {
+      state.pvp.blueTeam = this.blueTeam;
+      state.pvp.redTeam = this.redTeam;
+      this.renderPvPLobbyUI();
+    }
   }
 
   fillWithAIBots() {
@@ -177,6 +208,8 @@ class PvPEngine {
   startPvPMatch() {
     this.pvpActive = true;
     state.gameMode = 'pvp';
+    state.phase = 'playing';
+    state.isExitPaused = false;
     state.hero.team = state.pvp.playerTeam || 'blue';
     this.scores = { blue: 0, red: 0, target: 15 };
     state.pvp.scores = this.scores;
@@ -184,22 +217,106 @@ class PvPEngine {
     // Enforce 5 players per team with auto-fill if user started with open slots
     this.fillWithAIBots();
 
+    // Hide all menu and client modals
+    const startModal = document.getElementById('start-modal');
+    if (startModal) {
+      startModal.style.display = 'none';
+      startModal.classList.add('hidden');
+    }
+    const landingPage = document.getElementById('landing-page');
+    if (landingPage) landingPage.style.display = 'none';
+    const gameoverModal = document.getElementById('gameover-modal');
+    if (gameoverModal) gameoverModal.style.display = 'none';
+    const refineryModal = document.getElementById('refinery-modal');
+    if (refineryModal) refineryModal.style.display = 'none';
+
+    // Clear any leftover PvE enemies, drops, or projectiles
+    if (window.enemies) {
+      window.enemies.forEach(e => e.destroy());
+      window.enemies.length = 0;
+    }
+    if (window.droppedMaterials) {
+      window.droppedMaterials.forEach(d => window.scene.remove(d.mesh));
+      window.droppedMaterials.length = 0;
+    }
+    if (window.projectiles) {
+      window.projectiles.forEach(p => window.scene.remove(p.mesh));
+      window.projectiles.length = 0;
+    }
+    if (window.slashWaves) {
+      window.slashWaves.forEach(w => window.scene.remove(w.mesh));
+      window.slashWaves.length = 0;
+    }
+
     // Setup larger battlefield
     this.setupPvPArena();
 
     // Spawn 3D AI Entities for Bots
     this.spawnPvPBots();
 
+    // Base class stat modifiers based on classType (melee, ranged, magic)
+    const classType = (state.activeClassData && state.activeClassData.type) ||
+      (state.heroClass === 'gunner' ? 'ranged' : (state.heroClass === 'arcanist' ? 'magic' : 'melee'));
+
+    if (classType === 'melee') {
+      state.hero.maxHp = 140;
+      state.hero.maxShield = 70;
+      state.hero.moveSpeed = 8.5;
+      state.hero.attackDamage = 32;
+      state.hero.critChance = 0.15;
+    } else if (classType === 'ranged') {
+      state.hero.maxHp = 100;
+      state.hero.maxShield = 50;
+      state.hero.moveSpeed = 10.0;
+      state.hero.attackDamage = 26;
+      state.hero.critChance = 0.20;
+    } else if (classType === 'magic') {
+      state.hero.maxHp = 110;
+      state.hero.maxShield = 80;
+      state.hero.moveSpeed = 8.2;
+      state.hero.attackDamage = 34;
+      state.hero.critChance = 0.28;
+    }
+    state.hero.hp = state.hero.maxHp;
+    state.hero.shield = state.hero.maxShield;
+    state.hero.dashCooldown = 1.1;
+    state.hero.specialCharge = 100;
+    state.hero.ultimateCooldown = 0;
+    state.hero.isDowned = false;
+
     // Position local hero at their team fountain
     if (window.hero) {
       const spawnX = state.hero.team === 'blue' ? -27 : 27;
       window.hero.position.set(spawnX, 0, 0);
       window.hero.targetPos.set(spawnX, 0, 0);
-      state.hero.hp = state.hero.maxHp;
-      state.hero.shield = state.hero.maxShield;
-      state.hero.isDowned = false;
-      state.hero.invincibleTimer = 3.0; // 3s spawn invincibility
+      window.hero.invincibleTimer = 3.0; // 3s spawn invincibility
+      window.hero.setClass(state.heroClass, state.activeClassData);
+      if (window.hero.nameplate) {
+        window.hero.nameplate.update(state.username, 1.0, false, false, state.hero.team === 'blue' ? '#00f0ff' : '#ff0054');
+      }
     }
+
+    // Update Action Spell Icons based on class type
+    const attackIcon = { melee: '⚔️', ranged: '🏹', magic: '🔮' };
+    const specialIcon = { melee: '⚡', ranged: '🚀', magic: '🌌' };
+    const attBtn = document.getElementById('attack-btn-icon');
+    if (attBtn) attBtn.textContent = attackIcon[classType] || '⚔️';
+    const specBtn = document.getElementById('special-btn-icon');
+    if (specBtn) specBtn.textContent = specialIcon[classType] || '⚡';
+    const lolSpellQ = document.getElementById('lol-spell-q');
+    if (lolSpellQ) lolSpellQ.textContent = attackIcon[classType] || '⚔️';
+    const lolSpellE = document.getElementById('lol-spell-e');
+    if (lolSpellE) lolSpellE.textContent = specialIcon[classType] || '⚡';
+
+    // Show in-game HUDs
+    const lolTop = document.getElementById('lol-top-hud');
+    if (lolTop) lolTop.style.display = 'flex';
+    const lolBottom = document.getElementById('lol-bottom-console');
+    if (lolBottom) lolBottom.style.display = 'flex';
+
+    if (window.updateVitalsHUD) window.updateVitalsHUD();
+    if (window.updateSpecialButton) window.updateSpecialButton();
+    if (window.updateLolHUD) window.updateLolHUD();
 
     // Show PvP scoreboard overlay
     const pvpScoreOverlay = document.getElementById('pvp-scoreboard-overlay');
@@ -212,6 +329,11 @@ class PvPEngine {
 
     showLolBanner('5v5 BATTLEGROUND COMMENCED!', `FIRST TEAM TO 15 KILLS WINS! (YOU ARE TEAM ${state.hero.team.toUpperCase()})`);
     sound.playFanfare();
+
+    // Start 3-second countdown preparation overlay
+    if (window.showArenaCountdown) {
+      window.showArenaCountdown();
+    }
   }
 
   setupPvPArena() {

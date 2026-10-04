@@ -347,7 +347,12 @@
       const gameoverModal = document.getElementById('gameover-modal');
       const loadingScreen = document.getElementById('lol-loading-screen');
 
-      if (startModal) startModal.style.display = 'none';
+      if (startModal) {
+        startModal.style.display = 'none';
+        startModal.classList.add('hidden');
+      }
+      const landingPage = document.getElementById('landing-page');
+      if (landingPage) landingPage.style.display = 'none';
       if (gameoverModal) gameoverModal.style.display = 'none';
       if (loadingScreen) loadingScreen.style.display = 'none'; // Skip loading screen entirely
 
@@ -359,7 +364,8 @@
       if (lolBottom) lolBottom.style.display = 'flex';
       const lolMinimap = document.getElementById('lol-minimap-container');
       if (lolMinimap) lolMinimap.style.display = (state.gameMode === 'pvp') ? 'block' : 'none';
-      if (state.platform === 'mobile' || isMobileDevice() || window.innerWidth <= 950 || window.innerHeight <= 520) {
+      const isMobile = state.platform === 'mobile' || (window.isMobileDevice && window.isMobileDevice()) || window.innerWidth <= 950 || window.innerHeight <= 520;
+      if (isMobile) {
         document.querySelectorAll('.mobile-controls').forEach(el => el.style.display = 'block');
       }
 

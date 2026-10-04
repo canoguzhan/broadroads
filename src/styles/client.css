@@ -5,26 +5,35 @@
 /* Fullscreen League-style client viewport container */
 #start-modal,
 .lol-client-lobby {
-  position: fixed !important;
-  inset: 0 !important;
-  width: 100vw !important;
-  height: 100vh !important;
-  max-width: 100vw !important;
-  max-height: 100vh !important;
-  margin: 0 !important;
-  padding: 0 !important;
-  display: flex !important;
-  flex-direction: column !important;
-  align-items: stretch !important;
-  justify-content: flex-start !important;
-  background: radial-gradient(circle at center, #091428 0%, #010a13 85%) !important;
-  z-index: 500 !important;
-  overflow: hidden !important;
-  box-sizing: border-box !important;
-  border: none !important;
-  border-radius: 0 !important;
-  transform: none !important;
-  animation: none !important;
+  position: fixed;
+  inset: 0;
+  width: 100vw;
+  height: 100vh;
+  max-width: 100vw;
+  max-height: 100vh;
+  margin: 0;
+  padding: 0;
+  flex-direction: column;
+  align-items: stretch;
+  justify-content: flex-start;
+  background: radial-gradient(circle at center, #091428 0%, #010a13 85%);
+  z-index: 500;
+  overflow: hidden;
+  box-sizing: border-box;
+  border: none;
+  border-radius: 0;
+  transform: none;
+  animation: none;
+}
+
+#start-modal.hidden,
+#start-modal[style*="display: none"],
+.lol-client-lobby.hidden {
+  display: none !important;
+}
+
+#start-modal:not(.hidden):not([style*="display: none"]) {
+  display: flex;
 }
 
 .lol-client-header {
@@ -276,7 +285,8 @@
   margin-bottom: 16px;
   width: 100%;
 }
-.btn-back-to-modes {
+.btn-back-to-modes,
+.btn-lobby-secondary {
   background: rgba(9, 20, 40, 0.8);
   border: 1px solid #785a28;
   color: #c8aa6e;
@@ -288,7 +298,8 @@
   cursor: pointer;
   transition: all 0.15s;
 }
-.btn-back-to-modes:hover {
+.btn-back-to-modes:hover,
+.btn-lobby-secondary:hover {
   border-color: #c8aa6e;
   color: #f0e6d2;
   background: rgba(200, 170, 110, 0.15);
