@@ -204,18 +204,31 @@
     function returnToLobby() {
       state.phase = 'title';
       state.isExitPaused = false;
+      state.spawnDelayCountdown = 0;
       closePollVoteModal();
       closeExitConfirmModal();
+
+      // Restore PvP arena if PvP was active or if pvpEngine exists
+      if (window.pvpEngine) {
+        window.pvpEngine.restoreStandardArena();
+        window.pvpEngine.pvpActive = false;
+      }
 
       const hideIds = [
         'refinery-modal', 'gameover-modal', 'revive-banner', 'boss-hud',
         'lol-top-hud', 'lol-bottom-console', 'lol-minimap-container',
-        'lol-boss-bar-container', 'lol-announcement-banner', 'lol-allies-hud'
+        'lol-boss-bar-container', 'lol-announcement-banner', 'lol-allies-hud',
+        'pvp-scoreboard-overlay', 'exit-confirm-modal', 'poll-vote-modal',
+        'shortcuts-modal', 'dungeon-clear-modal', 'dungeon-levelup-modal',
+        'ascension-modal', 'arena-countdown-overlay', 'lol-loading-screen'
       ];
       hideIds.forEach(id => {
         const el = document.getElementById(id);
         if (el) el.style.display = 'none';
       });
+
+      const fct = document.getElementById('fct-layer');
+      if (fct) fct.innerHTML = '';
 
       document.querySelectorAll('.mobile-controls').forEach(el => {
         el.style.display = 'none';
@@ -253,10 +266,18 @@
 
       if (hero) {
         hero.position.set(0, 0, 0);
-        hero.velocity.set(0, 0);
-        state.hero.health = state.hero.maxHealth;
-        state.hero.shield = state.hero.maxShield;
+        if (hero.targetPos) hero.targetPos.set(0, 0, 0);
+        if (hero.velocity) hero.velocity.set(0, 0);
+        hero.targetRotation = 0;
+        if (hero.group) hero.group.rotation.set(0, 0, 0);
+        hero.moveTarget = null;
+        state.hero.hp = state.hero.maxHp || 140;
+        state.hero.shield = state.hero.maxShield || 60;
         state.hero.isDowned = false;
+        state.hero.dashTimer = 0;
+        state.hero.attackCooldown = 0;
+        state.hero.invincibleTimer = 0;
+        state.hero.ultimateCooldown = 0;
       }
       camera.position.set(0, 22, 22);
       camera.lookAt(0, 0, 0);
@@ -264,9 +285,22 @@
       try { net.removeAllRemoteHeroes(); } catch(e){}
       updateTeammatesHUD();
 
-      // Show Start/Lobby Modal
-      const startModal = document.getElementById('start-modal');
-      if (startModal) startModal.style.display = 'flex';
+      // Show Mode Select in Client Nav
+      if (window.clientNav) {
+        window.clientNav.showModeSelect();
+        window.clientNav.updateUserDisplay();
+      } else {
+        const startModal = document.getElementById('start-modal');
+        if (startModal) {
+          startModal.classList.remove('hidden');
+          startModal.style.setProperty('display', 'flex', 'important');
+        }
+        const modeSelect = document.getElementById('view-mode-select');
+        if (modeSelect) {
+          modeSelect.classList.add('active');
+          modeSelect.style.setProperty('display', 'flex', 'important');
+        }
+      }
 
       if (state.gameMode === 'multiplayer') {
         if (net.isHost) {
@@ -285,7 +319,6 @@
           state.guestIsReady = false;
         }
       }
-      if (typeof updateStartModalButtons === 'function') updateStartModalButtons();
     }
 
     function openShortcutsModal() {
