@@ -143,6 +143,11 @@ export class Hub {
       }
       m.flushFx();
       if (m.ended && m.endT <= -6) this.closeMatch(m);
+      // Matches nobody is connected to are shut down after a grace period (players can rejoin before then).
+      else if (!m.ended) {
+        m.unattended = m.heroes.some(h => h.session) ? 0 : (m.unattended || 0) + dt;
+        if (m.unattended > (this.config.unattendedLimit ?? 180)) this.closeMatch(m);
+      }
     }
     this.timers.score -= dt;
     if (this.timers.score <= 0) {

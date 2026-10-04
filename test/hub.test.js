@@ -160,6 +160,21 @@ describe('lobby', () => {
     assert.ok(a.view);
   });
 
+  test('matches with nobody connected are closed after a grace period', async () => {
+    const hub = makeHub({ unattendedLimit: 5 });
+    const a = await join(hub, 'Alice');
+    hub.handle(a, { t: 'queue', mode: 'practice' });
+    ticks(hub, 60);
+    assert.equal(hub.matches.size, 1);
+    hub.handle(a, { t: 'abandon' });
+    ticks(hub, 20 * 3);
+    assert.equal(hub.matches.size, 1, 'still running during the grace period');
+    ticks(hub, 20 * 3);
+    assert.equal(hub.matches.size, 0, 'closed');
+    hub.handle(a, { t: 'rejoin' });
+    assert.equal(a.view, null);
+  });
+
   test('leaderboards and who list', async () => {
     const hub = makeHub();
     const a = await join(hub, 'Alice'), b = await join(hub, 'Bob');
