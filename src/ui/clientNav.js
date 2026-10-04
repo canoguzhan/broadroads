@@ -125,20 +125,26 @@ class ClientNavigationController {
     const coopPanel = document.getElementById('lobby-coop-panel');
     const soloPanel = document.getElementById('lobby-solo-panel');
 
+    const isConnectedGuest = window.net && !window.net.isHost && !!window.net.roomNumber;
+
     if (this.selectedMode === 'pvp') {
       if (pvpPanel) pvpPanel.style.display = 'flex';
       if (coopPanel) coopPanel.style.display = 'none';
       if (soloPanel) soloPanel.style.display = 'none';
-      pvpEngine.initLobby();
-      if (window.net) {
-        window.net.initHostRoom('pvp');
+      if (!isConnectedGuest) {
+        pvpEngine.initLobby();
+        if (window.net && !window.net.roomNumber) {
+          window.net.initHostRoom('pvp');
+        }
       }
     } else if (this.selectedMode === 'coop') {
       if (pvpPanel) pvpPanel.style.display = 'none';
       if (coopPanel) coopPanel.style.display = 'flex';
       if (soloPanel) soloPanel.style.display = 'none';
-      if (window.net) {
-        window.net.initHostRoom('coop');
+      if (!isConnectedGuest) {
+        if (window.net && !window.net.roomNumber) {
+          window.net.initHostRoom('coop');
+        }
       }
     } else {
       if (pvpPanel) pvpPanel.style.display = 'none';
@@ -289,7 +295,19 @@ class ClientNavigationController {
       }
 
       if (state.gameMode === 'pvp') {
-        pvpEngine.startPvPMatch();
+        if (window.net && window.net.isHost) {
+          window.net.broadcast({ type: 'START_PVP_MATCH' });
+          pvpEngine.startPvPMatch();
+        } else if (window.net && !window.net.isHost && window.net.roomNumber) {
+          window.net.broadcast({
+            type: 'PVP_GUEST_LOCK',
+            username: state.username,
+            heroClass: state.heroClass
+          });
+          showLolBanner('CHAMPION READY!', 'WAITING FOR ARENA HOST TO COMMENCE COMBAT...');
+        } else {
+          pvpEngine.startPvPMatch();
+        }
       } else {
         if (window.startMatchWithLoadingScreen && window.resetGame) {
           window.startMatchWithLoadingScreen(() => window.resetGame());
@@ -450,13 +468,24 @@ class ClientNavigationController {
       btnFillBots.addEventListener('click', (e) => {
         e.stopPropagation();
         e.preventDefault();
-        pvpEngine.fillWithAIBots();
+        if (window.net && !window.net.isHost && window.net.roomNumber) {
+          window.net.broadcast({ type: 'PVP_REQUEST_FILL_BOTS' });
+        } else {
+          pvpEngine.fillWithAIBots();
+        }
       });
     }
 
     // Proceed to Champ Select buttons
     const btnProceedPvP = document.getElementById('btn-pvp-proceed-champ');
-    if (btnProceedPvP) btnProceedPvP.addEventListener('click', () => this.showChampSelect());
+    if (btnProceedPvP) {
+      btnProceedPvP.addEventListener('click', () => {
+        if (window.net && window.net.isHost) {
+          window.net.broadcast({ type: 'PVP_PROCEED_CHAMP' });
+        }
+        this.showChampSelect();
+      });
+    }
 
     const btnProceedSolo = document.getElementById('btn-solo-proceed-champ');
     if (btnProceedSolo) btnProceedSolo.addEventListener('click', () => this.showChampSelect());

@@ -633,6 +633,9 @@
         const code = pvpInputRoomCode ? pvpInputRoomCode.value.trim() : '';
         if (code.length >= 1) {
           sound.init();
+          state.gameMode = 'pvp';
+          state.selectedMode = 'pvp';
+          if (window.clientNav) window.clientNav.selectedMode = 'pvp';
           net.joinRoom(code);
         } else {
           const pill = document.getElementById('pvp-guest-status-pill');
@@ -662,6 +665,9 @@
         const code = pvpModalInputCode ? pvpModalInputCode.value.trim() : '';
         if (code.length >= 1) {
           sound.init();
+          state.gameMode = 'pvp';
+          state.selectedMode = 'pvp';
+          if (window.clientNav) window.clientNav.selectedMode = 'pvp';
           net.joinRoom(code);
           if (pvpInviteModal) pvpInviteModal.style.display = 'none';
         } else {

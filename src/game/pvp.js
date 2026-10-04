@@ -25,27 +25,24 @@ class PvPEngine {
     this.blueTeam = [];
     this.redTeam = [];
 
+    const myPeerId = (window.net && window.net.myId) ? window.net.myId : 'host';
+
     // Local player in slot 0 of chosen team
+    const localPlayer = {
+      id: myPeerId,
+      peerId: myPeerId,
+      name: state.username || 'Commander',
+      team: playerTeam,
+      isLocal: true,
+      isBot: false,
+      classId: state.heroClass || 'paladin',
+      ready: true
+    };
+
     if (playerTeam === 'blue') {
-      this.blueTeam.push({
-        id: 'player',
-        name: state.username,
-        team: 'blue',
-        isLocal: true,
-        isBot: false,
-        classId: state.heroClass || 'paladin',
-        ready: true
-      });
+      this.blueTeam.push(localPlayer);
     } else {
-      this.redTeam.push({
-        id: 'player',
-        name: state.username,
-        team: 'red',
-        isLocal: true,
-        isBot: false,
-        classId: state.heroClass || 'paladin',
-        ready: true
-      });
+      this.redTeam.push(localPlayer);
     }
 
     state.pvp.blueTeam = this.blueTeam;
@@ -59,17 +56,26 @@ class PvPEngine {
     state.hero.team = team;
     sound.playPickup();
 
+    const isMeCheck = (p) => {
+      if (p.peerId && window.net && p.peerId === window.net.myId) return true;
+      if (window.net && window.net.isHost && p.isLocal) return true;
+      if (!p.isBot && p.name && state.username && p.name.toLowerCase() === state.username.toLowerCase()) return true;
+      return false;
+    };
+
     const hadBots = this.blueTeam.some(p => p.isBot) || this.redTeam.some(p => p.isBot);
 
     // Remove local player from both teams
-    this.blueTeam = this.blueTeam.filter(p => !p.isLocal);
-    this.redTeam = this.redTeam.filter(p => !p.isLocal);
+    this.blueTeam = this.blueTeam.filter(p => !isMeCheck(p));
+    this.redTeam = this.redTeam.filter(p => !isMeCheck(p));
 
+    const myPeerId = (window.net && window.net.myId) ? window.net.myId : 'player';
     const playerObj = {
-      id: 'player',
-      name: state.username,
+      id: myPeerId,
+      peerId: myPeerId,
+      name: state.username || 'Commander',
       team: team,
-      isLocal: true,
+      isLocal: (window.net ? window.net.isHost : true),
       isBot: false,
       classId: state.heroClass || 'paladin',
       ready: true
@@ -83,12 +89,32 @@ class PvPEngine {
       if (this.redTeam.length > 5) this.redTeam.pop();
     }
 
+    state.pvp.blueTeam = this.blueTeam;
+    state.pvp.redTeam = this.redTeam;
+
     if (hadBots) {
       this.fillWithAIBots();
     } else {
-      state.pvp.blueTeam = this.blueTeam;
-      state.pvp.redTeam = this.redTeam;
       this.renderPvPLobbyUI();
+    }
+
+    if (window.net) {
+      if (window.net.isHost) {
+        window.net.broadcast({
+          type: 'PVP_LOBBY_SYNC',
+          roomNumber: window.net.roomNumber,
+          blueTeam: this.blueTeam,
+          redTeam: this.redTeam
+        });
+      } else {
+        window.net.broadcast({
+          type: 'PVP_TEAM_CHANGE',
+          peerId: window.net.myId,
+          username: state.username,
+          team: team,
+          heroClass: state.heroClass
+        });
+      }
     }
   }
 
@@ -131,24 +157,50 @@ class PvPEngine {
     state.pvp.blueTeam = this.blueTeam;
     state.pvp.redTeam = this.redTeam;
     this.renderPvPLobbyUI();
+
+    if (window.net && window.net.isHost) {
+      window.net.broadcast({
+        type: 'PVP_LOBBY_SYNC',
+        blueTeam: this.blueTeam,
+        redTeam: this.redTeam
+      });
+    }
   }
 
-  addPlayerToTeam(username, team = 'blue') {
-    this.blueTeam = this.blueTeam.filter(p => p.name !== username);
-    this.redTeam = this.redTeam.filter(p => p.name !== username);
+  addPlayerToTeam(username, team = 'blue', peerId = null, heroClass = 'paladin') {
+    const isTargetCheck = (p) => {
+      if (peerId && p.peerId && p.peerId === peerId) return true;
+      if (!peerId && p.name && username && p.name.toLowerCase() === username.toLowerCase()) return true;
+      return false;
+    };
+    this.blueTeam = this.blueTeam.filter(p => !isTargetCheck(p));
+    this.redTeam = this.redTeam.filter(p => !isTargetCheck(p));
+
     const targetTeam = team === 'blue' ? this.blueTeam : this.redTeam;
     if (targetTeam.length >= 5) return false;
     targetTeam.push({
-      id: 'player_' + username,
+      id: peerId || ('player_' + username),
+      peerId: peerId,
       name: username,
       team: team,
       isLocal: false,
       isBot: false,
-      classId: 'paladin',
+      classId: heroClass || 'paladin',
       ready: true
     });
+    state.pvp.blueTeam = this.blueTeam;
+    state.pvp.redTeam = this.redTeam;
     this.renderPvPLobbyUI();
     return true;
+  }
+
+  removePlayerByPeerId(peerId) {
+    if (!peerId) return;
+    this.blueTeam = this.blueTeam.filter(p => p.peerId !== peerId);
+    this.redTeam = this.redTeam.filter(p => p.peerId !== peerId);
+    state.pvp.blueTeam = this.blueTeam;
+    state.pvp.redTeam = this.redTeam;
+    this.renderPvPLobbyUI();
   }
 
   renderPvPLobbyUI() {
@@ -175,7 +227,9 @@ class PvPEngine {
         const p = teamArray[i];
         if (p) {
           slotEl.className = `pvp-slot-card filled team-${teamColor}`;
-          const isMe = p.isLocal;
+          const isMe = (p.peerId && window.net && p.peerId === window.net.myId) ||
+                       (window.net && window.net.isHost && p.isLocal) ||
+                       (!p.isBot && p.name && state.username && p.name.toLowerCase() === state.username.toLowerCase());
           const classIcons = { paladin: '🛡️', gunner: '🏹', arcanist: '🔮' };
           slotEl.innerHTML = `
             <div class="pvp-slot-avatar">${classIcons[p.classId] || '🛡️'}</div>
@@ -439,7 +493,8 @@ class PvPEngine {
     ];
 
     allMembers.forEach(member => {
-      if (member.isLocal) return; // Local hero is already managed by HeroEntity
+      // Local hero is already managed by HeroEntity, and remote human peers are synced via WebRTC
+      if (member.isLocal || !member.isBot) return;
 
       const bot = new PvPAIBot(member);
       this.botEntities.push(bot);

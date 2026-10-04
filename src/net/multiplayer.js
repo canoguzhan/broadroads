@@ -156,6 +156,7 @@
 
       joinRoom(roomNum) {
         this.isHost = false;
+        this.gameMode = (state.gameMode === 'pvp') ? 'pvp' : 'coop';
         this.connections.clear();
         this.removeAllRemoteHeroes();
 
@@ -172,6 +173,15 @@
 
         this.roomNumber = cleanNum;
         const hostPeerId = 'broadroads-room-' + cleanNum;
+
+        // Immediately update room labels across the UI
+        const roomEl = document.getElementById('room-code-text');
+        if (roomEl) roomEl.textContent = '#' + cleanNum;
+        const pvpRoomEl = document.getElementById('pvp-room-code-text');
+        if (pvpRoomEl) pvpRoomEl.textContent = '#' + cleanNum;
+        const pvpModalRoomEl = document.getElementById('pvp-modal-room-code');
+        if (pvpModalRoomEl) pvpModalRoomEl.textContent = '#' + cleanNum;
+
         const guestStatus = document.getElementById('guest-status-pill');
         if (guestStatus) guestStatus.textContent = `🔄 Connecting to room #${cleanNum}...`;
         const pvpStatus = document.getElementById('pvp-guest-status-pill');
@@ -207,9 +217,9 @@
             const status = document.getElementById('guest-status-pill');
             if (status) status.textContent = '❌ Failed to connect. Check room number.';
             const pvpStatus = document.getElementById('pvp-guest-status-pill');
-            if (pvpStatus) pvpStatus.textContent = '❌ Failed to connect. Check room number.';
+            if (pvpStatus) pvpStatus.textContent = '❌ Failed to connect. Check arena number.';
             const pvpModalStatus = document.getElementById('pvp-modal-status-pill');
-            if (pvpModalStatus) pvpModalStatus.textContent = '❌ Failed to connect. Check room number.';
+            if (pvpModalStatus) pvpModalStatus.textContent = '❌ Failed to connect. Check arena number.';
           });
         } catch (e) {
           console.error('Join error:', e);
@@ -235,7 +245,7 @@
       setupConnection(conn) {
         conn.on('open', () => {
           if (this.isHost) {
-            // Register guest connection
+            // Register guest connection placeholder
             this.connections.set(conn.peer, {
               conn: conn,
               username: 'Squadmate',
@@ -258,17 +268,6 @@
               roomNumber: this.roomNumber
             });
 
-            if (state.gameMode === 'pvp' && window.pvpEngine) {
-              const assignedTeam = (window.pvpEngine.redTeam.length <= window.pvpEngine.blueTeam.length) ? 'red' : 'blue';
-              conn.send({
-                type: 'PVP_INIT_SYNC',
-                roomNumber: this.roomNumber,
-                assignedTeam: assignedTeam,
-                blueTeam: window.pvpEngine.blueTeam,
-                redTeam: window.pvpEngine.redTeam
-              });
-            }
-
             this.updateLobbyUI();
             this.startSync();
           } else {
@@ -277,7 +276,9 @@
               type: 'GUEST_HANDSHAKE',
               username: state.username,
               heroClass: state.heroClass,
-              classData: state.activeClassData
+              classData: state.activeClassData,
+              team: state.pvp?.playerTeam || null,
+              gameMode: state.gameMode
             });
 
             const guestPill = document.getElementById('guest-status-pill');
@@ -288,7 +289,7 @@
             }
             const pvpGuestPill = document.getElementById('pvp-guest-status-pill');
             if (pvpGuestPill) {
-              pvpGuestPill.textContent = '✅ Connected to PvP Battleground! Ready to fight!';
+              pvpGuestPill.textContent = `✅ Connected to PvP Arena #${this.roomNumber}! Ready to fight!`;
             }
             const guestRoster = document.getElementById('guest-lobby-roster');
             if (guestRoster) guestRoster.style.display = 'flex';
@@ -320,13 +321,29 @@
           this.handlePacket(packet, conn);
         });
 
+        conn.on('error', (err) => {
+          console.warn('Peer connection error:', err);
+        });
+
         conn.on('close', () => {
           if (this.isHost) {
             const guest = this.connections.get(conn.peer);
             const departedName = guest ? guest.username : 'Squadmate';
             this.connections.delete(conn.peer);
 
-            if (state.phase === 'playing' || state.phase === 'refinery') {
+            if (state.gameMode === 'pvp' && window.pvpEngine) {
+              window.pvpEngine.removePlayerByPeerId(conn.peer);
+              this.broadcast({
+                type: 'PVP_LOBBY_SYNC',
+                roomNumber: this.roomNumber,
+                blueTeam: window.pvpEngine.blueTeam,
+                redTeam: window.pvpEngine.redTeam
+              });
+              const pvpStatusEl = document.getElementById('pvp-host-status-pill');
+              if (pvpStatusEl) {
+                pvpStatusEl.textContent = `🟢 Live Room #${this.roomNumber} (${this.connections.size + 1}/10 Combatants). Ready!`;
+              }
+            } else if (state.phase === 'playing' || state.phase === 'refinery') {
               // Convert departed guest hero into autonomous AI Bot
               const rh = remoteHeroes.get(conn.peer);
               if (rh) {
@@ -347,7 +364,10 @@
             this.updateLobbyUI();
             updateTeammatesHUD();
           } else {
-            document.getElementById('guest-status-pill').textContent = '⚠️ Disconnected from host.';
+            const guestPill = document.getElementById('guest-status-pill');
+            if (guestPill) guestPill.textContent = '⚠️ Disconnected from host.';
+            const pvpPill = document.getElementById('pvp-guest-status-pill');
+            if (pvpPill) pvpPill.textContent = '⚠️ Disconnected from host arena.';
             if (state.phase === 'playing' || state.phase === 'refinery') {
               startSquadPollVote('Host');
             } else {
@@ -398,6 +418,7 @@
           type: 'PLAYER_SYNC',
           peerId: this.myId || 'host',
           username: state.username,
+          team: state.hero.team || state.pvp.playerTeam || 'blue',
           x: hero.position.x,
           z: hero.position.z,
           rot: hero.group.rotation.y,
@@ -454,39 +475,75 @@
 
         if (packet.type === 'GUEST_HANDSHAKE') {
           if (this.isHost) {
-            const guest = this.connections.get(senderConn.peer);
-            if (guest) {
-              guest.username = packet.username || 'Commander';
-              guest.heroClass = packet.heroClass || 'paladin';
-              guest.classData = packet.classData;
-              guest.isReady = false;
+            let guestName = (packet.username || 'Commander').trim();
+            if (!guestName) guestName = 'Commander';
+
+            // Disambiguate duplicate username if same as host or another connected player
+            const existingNames = new Set();
+            existingNames.add(state.username.toLowerCase());
+            this.connections.forEach(c => {
+              if (c.username) existingNames.add(c.username.toLowerCase());
+            });
+
+            if (existingNames.has(guestName.toLowerCase())) {
+              const suffix = senderConn.peer.slice(-4) || '2';
+              guestName = `${guestName}_${suffix}`;
             }
-            if (state.gameMode === 'pvp' && window.pvpEngine) {
+
+            const guest = this.connections.get(senderConn.peer) || {};
+            guest.conn = senderConn;
+            guest.username = guestName;
+            guest.heroClass = packet.heroClass || 'paladin';
+            guest.classData = packet.classData;
+            guest.isReady = false;
+            this.connections.set(senderConn.peer, guest);
+
+            if ((state.gameMode === 'pvp' || packet.gameMode === 'pvp') && window.pvpEngine) {
               const guestTeam = packet.team || ((window.pvpEngine.redTeam.length <= window.pvpEngine.blueTeam.length) ? 'red' : 'blue');
-              window.pvpEngine.addPlayerToTeam(packet.username || 'Commander', guestTeam);
-              this.broadcast({
-                type: 'PVP_LOBBY_SYNC',
+              window.pvpEngine.addPlayerToTeam(guestName, guestTeam, senderConn.peer, packet.heroClass || 'paladin');
+
+              // Send PVP_INIT_SYNC directly to THIS newly joined guest
+              senderConn.send({
+                type: 'PVP_INIT_SYNC',
+                roomNumber: this.roomNumber,
+                assignedTeam: guestTeam,
+                assignedName: guestName,
                 blueTeam: window.pvpEngine.blueTeam,
                 redTeam: window.pvpEngine.redTeam
               });
-            }
-            this.updateLobbyUI();
 
-            // Broadcast complete roster to all guests
-            this.broadcast({
-              type: 'LOBBY_STATE_SYNC',
-              players: this.getPlayerRoster(),
-              month: state.currentMonth
-            });
+              // Broadcast updated lobby roster to ALL OTHER connected peers
+              this.broadcast({
+                type: 'PVP_LOBBY_SYNC',
+                roomNumber: this.roomNumber,
+                blueTeam: window.pvpEngine.blueTeam,
+                redTeam: window.pvpEngine.redTeam
+              }, senderConn.peer);
+
+              this.updateLobbyUI();
+            } else {
+              this.updateLobbyUI();
+              // Broadcast complete roster to all guests
+              this.broadcast({
+                type: 'LOBBY_STATE_SYNC',
+                players: this.getPlayerRoster(),
+                month: state.currentMonth
+              });
+            }
           }
           return;
         }
 
         if (packet.type === 'PVP_INIT_SYNC') {
+          this.isHost = false;
+          if (packet.roomNumber) this.roomNumber = packet.roomNumber;
+          if (packet.assignedName) state.username = packet.assignedName;
+
           if (window.clientNav) {
             window.clientNav.selectMode('pvp');
             window.clientNav.showLobby();
           }
+
           if (window.pvpEngine) {
             state.pvp.playerTeam = packet.assignedTeam || 'red';
             state.hero.team = state.pvp.playerTeam;
@@ -494,23 +551,91 @@
             if (packet.redTeam) window.pvpEngine.redTeam = packet.redTeam;
             window.pvpEngine.renderPvPLobbyUI();
           }
+
+          const rCode = packet.roomNumber || this.roomNumber;
+          const pvpRoomEl = document.getElementById('pvp-room-code-text');
+          if (pvpRoomEl) pvpRoomEl.textContent = '#' + rCode;
+          const pvpModalRoomEl = document.getElementById('pvp-modal-room-code');
+          if (pvpModalRoomEl) pvpModalRoomEl.textContent = '#' + rCode;
+
           const pvpGuestStatus = document.getElementById('pvp-guest-status-pill');
-          if (pvpGuestStatus) pvpGuestStatus.textContent = `🟢 Connected to PvP Battleground (#${packet.roomNumber || this.roomNumber})! Team: ${state.pvp.playerTeam.toUpperCase()}`;
+          if (pvpGuestStatus) pvpGuestStatus.textContent = `🟢 Connected to Arena #${rCode}! Team: ${state.pvp.playerTeam.toUpperCase()}`;
           const pvpModalStatus = document.getElementById('pvp-modal-status-pill');
-          if (pvpModalStatus) pvpModalStatus.textContent = `🟢 Connected to PvP Battleground (#${packet.roomNumber || this.roomNumber})!`;
+          if (pvpModalStatus) pvpModalStatus.textContent = `🟢 Connected to Arena #${rCode}!`;
+          const pvpHostStatus = document.getElementById('pvp-host-status-pill');
+          if (pvpHostStatus) pvpHostStatus.textContent = `🟢 Connected to Arena #${rCode}`;
           return;
         }
 
         if (packet.type === 'PVP_LOBBY_SYNC') {
+          if (packet.roomNumber) this.roomNumber = packet.roomNumber;
           if (window.pvpEngine) {
             if (packet.blueTeam) window.pvpEngine.blueTeam = packet.blueTeam;
             if (packet.redTeam) window.pvpEngine.redTeam = packet.redTeam;
             window.pvpEngine.renderPvPLobbyUI();
           }
+          const rCode = packet.roomNumber || this.roomNumber;
+          const pvpRoomEl = document.getElementById('pvp-room-code-text');
+          if (pvpRoomEl && rCode) pvpRoomEl.textContent = '#' + rCode;
+          const pvpModalRoomEl = document.getElementById('pvp-modal-room-code');
+          if (pvpModalRoomEl && rCode) pvpModalRoomEl.textContent = '#' + rCode;
+
           const pvpGuestStatus = document.getElementById('pvp-guest-status-pill');
-          if (pvpGuestStatus) pvpGuestStatus.textContent = `🟢 Connected to PvP Battleground (#${this.roomNumber})!`;
+          if (pvpGuestStatus) pvpGuestStatus.textContent = `🟢 Connected to Arena #${rCode}!`;
           const pvpModalStatus = document.getElementById('pvp-modal-status-pill');
-          if (pvpModalStatus) pvpModalStatus.textContent = `🟢 Connected to PvP Battleground (#${this.roomNumber})!`;
+          if (pvpModalStatus) pvpModalStatus.textContent = `🟢 Connected to Arena #${rCode}!`;
+          return;
+        }
+
+        if (packet.type === 'PVP_TEAM_CHANGE') {
+          if (this.isHost && window.pvpEngine) {
+            const guestPeerId = packet.peerId || senderConn.peer;
+            const guest = this.connections.get(guestPeerId);
+            const pName = (guest && guest.username) ? guest.username : (packet.username || 'Combatant');
+            window.pvpEngine.addPlayerToTeam(pName, packet.team || 'blue', guestPeerId, packet.heroClass || 'paladin');
+            this.broadcast({
+              type: 'PVP_LOBBY_SYNC',
+              roomNumber: this.roomNumber,
+              blueTeam: window.pvpEngine.blueTeam,
+              redTeam: window.pvpEngine.redTeam
+            });
+          }
+          return;
+        }
+
+        if (packet.type === 'PVP_REQUEST_FILL_BOTS') {
+          if (this.isHost && window.pvpEngine) {
+            window.pvpEngine.fillWithAIBots();
+          }
+          return;
+        }
+
+        if (packet.type === 'PVP_PROCEED_CHAMP') {
+          if (window.clientNav) {
+            window.clientNav.showChampSelect();
+          }
+          return;
+        }
+
+        if (packet.type === 'PVP_GUEST_LOCK') {
+          if (this.isHost) {
+            const guestPeerId = senderConn.peer;
+            const guest = this.connections.get(guestPeerId);
+            if (guest) guest.isReady = true;
+            if (window.clientNav) window.clientNav.renderChampSelectTeamPicks();
+          }
+          return;
+        }
+
+        if (packet.type === 'START_PVP_MATCH') {
+          const modal = document.getElementById('start-modal');
+          if (modal) {
+            modal.style.display = 'none';
+            modal.classList.add('hidden');
+          }
+          if (window.pvpEngine) {
+            window.pvpEngine.startPvPMatch();
+          }
           return;
         }
 
@@ -638,11 +763,14 @@
           if (!rh) {
             rh = new HeroEntity(true, pId, packet.username || 'Teammate', packet.class, packet.classData);
             rh.isHost = (pId === 'host' || pId.includes('room-'));
+            rh.team = packet.team || (state.gameMode === 'pvp' ? 'red' : null);
             rh.hp = packet.hp || 140;
             rh.maxHp = packet.maxHp || 140;
             rh.position.set(packet.x || 3, 0, packet.z || 0);
             remoteHeroes.set(pId, rh);
           }
+
+          if (packet.team) rh.team = packet.team;
 
           if (!rh.isAI) {
             rh.targetPos.set(packet.x, 0, packet.z);
@@ -652,7 +780,8 @@
             rh.isDowned = packet.isDowned;
           }
           if (rh.nameplate) {
-            rh.nameplate.update(packet.username || rh.username, packet.hp / packet.maxHp, packet.isDowned, rh.isHost);
+            const teamColor = rh.team === 'blue' ? '#00f0ff' : (rh.team === 'red' ? '#ff0054' : null);
+            rh.nameplate.update(packet.username || rh.username, packet.hp / packet.maxHp, packet.isDowned, rh.isHost, teamColor);
           }
 
           updateTeammatesHUD();
