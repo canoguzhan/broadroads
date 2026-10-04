@@ -1,8 +1,11 @@
 /* Generates rigged, animated 3D champions with the Tripo v3 API.
    Pipeline per champion: text-to-model → rig-check (free) → rig (biped) →
-   retarget (one batch: idle, run, attack, cast, hurt, death) → download GLB.
-   Progress is saved to public/models/tasks.json so reruns resume without
-   paying twice. Raw GLBs land in models-src/ (git-ignored) for review.
+   retarget each animation (idle, run, attack, cast, death) → download GLBs.
+   Batch retargets only return the last clip, so each animation is its own
+   task: the first includes the mesh, the rest are skeleton-only (~50 KB).
+   Progress is saved to models-src/tasks.json so reruns resume without paying
+   twice. Raw files land in models-src/ (git-ignored); then run
+   `node scripts/build-models.mjs` to merge and compress them into public/models.
 
    Usage: TRIPO_API_KEY=... node scripts/generate-champions.mjs [champ ...] [--dry-run] [--force] */
 import fs from 'node:fs';
@@ -34,8 +37,8 @@ const CHAMPIONS = [
   ['brakka', 'armored minotaur bull warrior with big horns, steel shoulder pads and huge fists', 'punch'],
   ['rook', 'green-armored storm warrior holding a large axe, with lightning accents on the armor', 'slash'],
 ];
-const animationsFor = style => ['preset:biped:idle', 'preset:biped:run', ATTACK[style], 'preset:biped:cast_a_spell', 'preset:biped:hurt', 'preset:biped:fall']
-  .filter((a, i, arr) => arr.indexOf(a) === i);
+// clip name in the final GLB → Tripo preset
+const animationsFor = style => ({ idle: 'preset:biped:idle', run: 'preset:biped:run', attack: ATTACK[style], cast: 'preset:biped:cast_a_spell', death: 'preset:biped:fall' });
 
 const state = fs.existsSync(STATE_FILE) ? JSON.parse(fs.readFileSync(STATE_FILE, 'utf8')) : {};
 const save = () => fs.writeFileSync(STATE_FILE, JSON.stringify(state, null, 1));
@@ -71,8 +74,8 @@ async function step(champ, name, create, label) {
 
 async function generate([id, desc, style]) {
   const file = path.join(OUT, `${id}.glb`);
-  if (!force && fs.existsSync(file)) { console.log(`• ${id}: already generated`); return; }
-  if (force) delete state[id];
+  if (!force && state[id]?.done) { console.log(`• ${id}: already generated`); return; }
+  if (force) { delete state[id]; fs.rmSync(file, { force: true }); fs.rmSync(path.join(OUT, id), { recursive: true, force: true }); }
   console.log(`▶ ${id}`);
   await step(id, 'model', () => api('POST', '/generation/text-to-model', {
     prompt: `${desc}, ${STYLE}`, model: 'v3.1-20260211', negative_prompt: 'multiple characters, base, pedestal, text, blurry, broken mesh',
@@ -82,24 +85,37 @@ async function generate([id, desc, style]) {
   const out = check.output || {};
   if (out.riggable === false) throw new Error(`${id} is not riggable (rig_type ${out.rig_type}); try a different prompt`);
   await step(id, 'rig', () => api('POST', '/animations/rig', { input: state[id].model, model: 'v1.0-20240301', rig_type: 'biped', spec: 'tripo', out_format: 'glb' }), 'rig');
-  const anim = await step(id, 'retarget', () => api('POST', '/animations/retarget', {
-    input: state[id].rig, animations: animationsFor(style), out_format: 'glb', bake_animation: true, export_with_geometry: true, animate_in_place: true,
-  }), 'animations');
-  const url = anim.output && (anim.output.model_url || anim.output.model);
-  if (!url) throw new Error(`${id}: no model_url in ${JSON.stringify(anim.output)}`);
-  const res = await fetch(url);
-  if (!res.ok) throw new Error(`${id}: download failed ${res.status}`);
-  fs.writeFileSync(file, Buffer.from(await res.arrayBuffer()));
-  state[id].done = true;
-  state[id].animations = animationsFor(style);
+  const s = state[id];
+  s.anims = s.anims || {};
+  if (s.retarget && !s.base) { s.anims.death = s.retarget; s.base = 'death'; } // earlier batch run: mesh + last clip
+  if (!s.base) s.base = 'idle';
+  fs.mkdirSync(path.join(OUT, id), { recursive: true });
+  for (const [clip, preset] of Object.entries(animationsFor(style))) {
+    const withMesh = clip === s.base;
+    const dest = withMesh ? file : path.join(OUT, id, `${clip}.glb`);
+    if (fs.existsSync(dest)) continue;
+    if (!s.anims[clip]) {
+      s.anims[clip] = (await api('POST', '/animations/retarget', {
+        input: s.rig, animation: preset, out_format: 'glb', bake_animation: true, export_with_geometry: withMesh, animate_in_place: true,
+      })).task_id;
+      save();
+    }
+    const t = await waitTask(s.anims[clip], `${id} ${clip}`);
+    const url = t.output && t.output.model_url;
+    if (!url) throw new Error(`${id} ${clip}: no model_url in ${JSON.stringify(t.output)}`);
+    const res = await fetch(url);
+    if (!res.ok) throw new Error(`${id} ${clip}: download failed ${res.status}`);
+    fs.writeFileSync(dest, Buffer.from(await res.arrayBuffer()));
+  }
+  s.done = true;
   save();
   console.log(`✓ ${id} → ${path.relative(process.cwd(), file)} (${(fs.statSync(file).size / 1048576).toFixed(1)} MB)`);
 }
 
 const list = CHAMPIONS.filter(c => !only.length || only.includes(c[0]));
 const { balance, frozen } = await api('GET', '/account/balance');
-const todo = list.filter(c => force || !fs.existsSync(path.join(OUT, `${c[0]}.glb`)));
-const estimate = todo.length * (40 + 25 + 10 * 6);
+const todo = list.filter(c => force || !state[c[0]]?.done);
+const estimate = todo.length * (40 + 25 + 10 * 5); // H-series pricing is lower (~95)
 console.log(`Balance: ${balance} credits (${frozen} frozen). ${todo.length} champion(s) to generate, estimated ≤ ${estimate} credits.`);
 if (dryRun) process.exit(0);
 if (todo.length && balance < 50) { console.error('Not enough API credits. Top up at https://platform.tripo3d.ai (API billing is separate from Tripo Studio plans).'); process.exit(2); }

@@ -1,0 +1,13 @@
+{
+ "garrok": {
+  "file": "garrok.glb",
+  "clips": [
+   "death",
+   "run",
+   "idle",
+   "attack",
+   "cast"
+  ],
+  "v": "muub4nmy"
+ }
+}

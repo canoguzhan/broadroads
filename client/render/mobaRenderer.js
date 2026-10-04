@@ -3,6 +3,7 @@ import * as THREE from 'three';
 import { buildValley, TEAM_HEX } from './valley.js';
 import { buildChampion, buildMinion, buildTower, buildSpire, buildCore, buildWard, buildTrap, buildMobaMonster, buildMobaProjectile, buildMobaArea } from './mobaModels.js';
 import { FxSystem } from './fx.js';
+import { loadChampModel, attachChampModel, animateChamp } from './champModels.js';
 import { F } from '../../shared/constants.js';
 
 const SIGHT = { hero: 11, minion: 7, tower: 9.5, ward: 8, spire: 7, core: 8 };
@@ -131,6 +132,11 @@ export class MobaRenderer {
     if (e.kind === 'area' && e.s.startsWith('beam:')) built.root.rotation.y = -e.f + Math.PI / 2;
     this.scene.add(built.root);
     this.views.set(e.id, v);
+    if (e.kind === 'hero') {
+      loadChampModel(e.c).then(gltf => {
+        if (gltf && this.views.get(e.id) === v) attachChampModel(v, gltf, 1.9 * (built.parts.body.scale.x / 1.15));
+      });
+    }
   }
 
   champColorFromStyle(style) {
@@ -147,7 +153,7 @@ export class MobaRenderer {
     else this.disposeView(v);
   }
 
-  trigger(id) { const v = this.views.get(id); if (v) v.attackT = 1; }
+  trigger(id, kind = 'attack') { const v = this.views.get(id); if (v) { v.attackT = 1; v.oneShot = kind; } }
 
   update(world, dt) {
     const now = performance.now();
@@ -162,7 +168,8 @@ export class MobaRenderer {
           root.position.set(e.x, (e.fl & F.AIRBORNE) ? 0.8 + Math.sin(v.phase * 8) * 0.1 : 0, e.y);
           root.rotation.y = Math.PI / 2 - e.f;
           const body = v.parts.body;
-          if (body) {
+          if (v.anim) animateChamp(v, dead, e.moving > 0.2, dt, now);
+          else if (body) {
             body.rotation.x = THREE.MathUtils.lerp(body.rotation.x, dead ? -Math.PI / 2 : 0, dt * 8);
             if (!dead) body.position.y = e.moving > 0.2 ? Math.abs(Math.sin(v.phase * 11)) * 0.08 : 0;
           }
@@ -305,7 +312,7 @@ export class MobaRenderer {
     const ent = ev.id ? world.entities.get(ev.id) : null;
     switch (ev.e) {
       case 'atk': this.trigger(ev.id); break;
-      case 'cast': this.trigger(ev.id); if (ent) fx.glow(ent.x, ent.y, { color: (this.champInfo[ev.c] || {}).accent || 0xffffff, size: 2, life: 0.25 }); break;
+      case 'cast': this.trigger(ev.id, 'cast'); if (ent) fx.glow(ent.x, ent.y, { color: (this.champInfo[ev.c] || {}).accent || 0xffffff, size: 2, life: 0.25 }); break;
       case 'nova': fx.ring(ev.x, ev.y, { color: c, radius: ev.r, life: 0.45 }); fx.disc(ev.x, ev.y, { color: c, radius: ev.r, opacity: 0.35 }); fx.burst(ev.x, ev.y, { color: c, count: 22, speed: 6 }); break;
       case 'shock': fx.ring(ev.x, ev.y, { color: c, radius: ev.r, life: 0.55 }); fx.disc(ev.x, ev.y, { color: c, radius: ev.r }); fx.burst(ev.x, ev.y, { color: c, count: 36, speed: 8, life: 0.7 }); this.shake(0.25); break;
       case 'boom': fx.explosion(ev.x, ev.y, ev.r, c); break;
