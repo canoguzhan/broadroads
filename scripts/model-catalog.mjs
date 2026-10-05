@@ -34,6 +34,8 @@ export const CATALOG = [
   hero('nyra', 'desert marshal gunslinger woman in a long brown coat and wide-brimmed hat holding a long rifle', 'shoot'),
   hero('brakka', 'armored minotaur bull warrior with big horns, steel shoulder pads and huge fists', 'punch'),
   hero('rook', 'green-armored storm warrior holding a large axe, with lightning accents on the armor', 'slash'),
+  hero('thessa', 'graceful sea sorceress woman in teal and pearl robes with flowing aqua hair, holding a coral trident staff', 'cast'),
+  hero('borrin', 'hulking tree warden made of living bark and moss, with leafy shoulders, glowing green eyes and thorny vine arms', 'punch'),
 ];
 
 // Lane minions, one model per team so allegiance reads at a glance.

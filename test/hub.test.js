@@ -22,7 +22,7 @@ describe('lobby', () => {
     const hub = makeHub();
     const a = await join(hub, 'Alice');
     const hello = a.last('hello');
-    assert.equal(hello.champions.length, 10);
+    assert.equal(hello.champions.length, 12);
     assert.ok(hello.items.vampblade);
     assert.equal(a.last('profile').profile.rating, 1000);
     assert.equal(a.last('lobby').state, 'lobby');

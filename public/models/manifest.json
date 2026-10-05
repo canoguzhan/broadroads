@@ -375,5 +375,37 @@
   "group": "prop",
   "clips": [],
   "v": "muueogmx"
+ },
+ "thessa": {
+  "file": "thessa.glb",
+  "group": "champion",
+  "clips": [
+   "idle",
+   "run",
+   "attack",
+   "cast",
+   "death",
+   "stun",
+   "dance",
+   "cheer",
+   "laugh"
+  ],
+  "v": "muvg6vym"
+ },
+ "borrin": {
+  "file": "borrin.glb",
+  "group": "champion",
+  "clips": [
+   "idle",
+   "run",
+   "attack",
+   "cast",
+   "death",
+   "stun",
+   "dance",
+   "cheer",
+   "laugh"
+  ],
+  "v": "muvg6wye"
  }
 }

@@ -199,6 +199,44 @@ export const CHAMPIONS = {
     },
     bot: { build: ['rushboots', 'cleaver', 'vampblade', 'grovecharm', 'spikeplate', 'starblade'], q: 'melee', w: 'poke', e: 'engage', r: 'melee' },
   },
+
+  thessa: {
+    id: 'thessa', name: 'Thessa', title: 'the Tidecaller', role: 'Mage', roles: ['mid', 'support'], icon: '🌊', color: 0x0e7490, accent: 0x5eead4,
+    ranged: true, range: 5.5, projSpeed: 17,
+    base: { hp: 530, hpG: 90, mp: 460, mpG: 25, ad: 52, adG: 3.2, armor: 22, armorG: 4.2, mr: 30, mrG: 1.3, as: 0.66, asG: 2.6, ms: 5.0, hpRegen: 1.2, mpRegen: 1.7 },
+    passive: { name: 'Rising Tide', desc: 'Each ability that hits an enemy champion restores 3% of Thessa\'s missing mana and grants 10% movement speed for 2s.' },
+    onAbilityHit(m, h, u) { if (u.kind !== 'hero' || m.hasBuff(h, 'tideCd')) return; m.addBuff(h, { id: 'tideCd', dur: 0.5 }); h.mp = Math.min(h.maxMp, h.mp + (h.maxMp - h.mp) * 0.03); m.addBuff(h, { id: 'tideHaste', dur: 2, stats: { msPct: 10 } }); },
+    abilities: {
+      q: { name: 'Tidal Lance', icon: '🔱', desc: 'Hurls a lance of water: magic damage to the first enemy hit and a 35% slow for 1.5s.', cd: [7, 6.5, 6, 5.5, 5], mana: [55, 60, 65, 70, 75], range: 10, target: 'direction',
+        cast(m, h, rank, t) { m.skillshot(h, { angle: ang(h, t), speed: 22, range: 10, width: 0.7, style: 'crystal', onHit: (u, s) => { s.done = true; m.damage(h, u, dmg(h, [75, 120, 165, 210, 255], rank, { ap: 0.65 }), 'magic', { ability: true }); m.cc(u, 'slow', 1.5, 0.35, h); } }); } },
+      w: { name: 'Riptide', icon: '🌀', desc: 'Marks an area; after 0.6s enemies inside take magic damage and are pulled toward Thessa.', cd: [14, 13, 12, 11, 10], mana: [70, 75, 80, 85, 90], range: 8, target: 'point',
+        cast(m, h, rank, t) { m.area(h, { x: t.x, y: t.y, radius: 2.4, dur: 0.6, style: 'telegraph', onEnd: a => { for (const e of m.enemiesNear(h.team, a.x, a.y, a.radius)) { m.damage(h, e, dmg(h, [60, 100, 140, 180, 220], rank, { ap: 0.5 }), 'magic', { ability: true }); m.cc(e, 'pull', 0.35, 3, h); } m.emit({ e: 'nova', x: a.x, y: a.y, r: a.radius, c: 'frost' }); } }); } },
+      e: { name: 'Pearl Bubble', icon: '🫧', desc: 'Wraps an allied champion in a bubble that shields them and heals them when it pops.', cd: [12, 11, 10, 9, 8], mana: [60], range: 7, target: 'ally',
+        cast(m, h, rank, t) { const a = t.unit; m.shield(a, dmg(h, [60, 90, 120, 150, 180], rank, { ap: 0.4 }), 3); m.addBuff(a, { id: 'pearl', dur: 3, onExpire: () => { if (!a.dead) m.heal(h, a, dmg(h, [30, 45, 60, 75, 90], rank, { ap: 0.2 })); } }); m.emit({ e: 'shield', id: a.id }); } },
+      r: { name: 'Tsunami', icon: '🌊', desc: 'After 0.5s, sends a huge wave that damages and knocks up every enemy in its path.', cd: [110, 95, 80], mana: [100], range: 16, target: 'direction',
+        cast(m, h, rank, t) { m.beam(h, { angle: ang(h, t), length: 16, width: 3.2, delay: 0.5, style: 'spark', onHit: u => { m.damage(h, u, dmg(h, [200, 300, 400], rank, { ap: 0.8 }), 'magic', { ability: true }); m.cc(u, 'knockup', 1, 0, h); } }); } },
+    },
+    bot: { build: ['spellboots', 'codex', 'frostorb', 'crown', 'grovecharm', 'nullstaff'], q: 'poke', w: 'cc', e: 'heal', r: 'cc' },
+  },
+
+  borrin: {
+    id: 'borrin', name: 'Borrin', title: 'the Thornwarden', role: 'Tank', roles: ['jungle', 'top'], icon: '🌳', color: 0x3f6212, accent: 0xa3e635,
+    ranged: false, range: 1.8, projSpeed: 0,
+    base: { hp: 670, hpG: 108, mp: 300, mpG: 45, ad: 63, adG: 3.6, armor: 38, armorG: 4.6, mr: 32, mrG: 2, as: 0.64, asG: 2.4, ms: 4.95, hpRegen: 2.0, mpRegen: 1.4 },
+    passive: { name: 'Deep Roots', desc: 'Regenerates 1.5% max health per second while standing in bushes or the jungle out of combat.' },
+    tick(m, h) { if (m.time - h.lastDamagedT > 5 && !m.hasBuff(h, 'roots')) m.addBuff(h, { id: 'roots', dur: 1, tickEvery: 1, onTick: () => { if (m.time - h.lastDamagedT > 5 && h.hp < h.maxHp) m.heal(h, h, h.maxHp * 0.015, { quiet: true }); } }); },
+    abilities: {
+      q: { name: 'Bramble Lash', icon: '🌿', desc: 'Whips a thorned vine: magic damage and roots the first enemy hit for 1.25s.', cd: [12, 11, 10, 9, 8], mana: [60, 65, 70, 75, 80], range: 8, target: 'direction',
+        cast(m, h, rank, t) { m.skillshot(h, { angle: ang(h, t), speed: 20, range: 8, width: 0.8, style: 'axe', onHit: (u, s) => { s.done = true; m.damage(h, u, dmg(h, [70, 110, 150, 190, 230], rank, { ap: 0.5, hp: 0.02 }), 'magic', { ability: true }); m.cc(u, 'root', 1.25, 0, h); } }); } },
+      w: { name: 'Barkskin', icon: '🪵', desc: 'Gains a shield and 30 armor for 4s; enemies who attack Borrin take magic damage.', cd: [14, 13, 12, 11, 10], mana: [50], range: 0, target: 'self',
+        cast(m, h, rank) { m.shield(h, dmg(h, [60, 90, 120, 150, 180], rank, { hp: 0.06 }), 4); m.addBuff(h, { id: 'barkskin', dur: 4, stats: { armor: 30 }, onDamaged: src => { if (src && src.kind === 'hero' && src.team !== h.team) m.damage(h, src, dmg(h, [10, 15, 20, 25, 30], rank, { armor: 0.1 }), 'magic', { reflect: true }); } }); m.emit({ e: 'buff', id: h.id, c: 'nature' }); } },
+      e: { name: 'Briar Patch', icon: '🌵', desc: 'Grows a patch of thorns for 3s that slows and damages enemies standing in it.', cd: [11, 10.5, 10, 9.5, 9], mana: [55], range: 7, target: 'point',
+        cast(m, h, rank, t) { m.area(h, { x: t.x, y: t.y, radius: 2.6, dur: 3, style: 'whirl', tickEvery: 0.5, onTick: a => { for (const e of m.enemiesNear(h.team, a.x, a.y, a.radius)) { m.damage(h, e, dmg(h, [15, 25, 35, 45, 55], rank, { ap: 0.15, hp: 0.005 }), 'magic', { ability: true }); m.cc(e, 'slow', 0.6, 0.35, h); } } }); } },
+      r: { name: 'Overgrowth', icon: '🌳', desc: 'Roots burst from the ground around a location; after 0.8s every enemy inside is rooted for 2s.', cd: [120, 100, 80], mana: [100], range: 8, target: 'point',
+        cast(m, h, rank, t) { m.area(h, { x: t.x, y: t.y, radius: 4, dur: 0.8, style: 'telegraph', onEnd: a => { for (const e of m.enemiesNear(h.team, a.x, a.y, a.radius)) { m.damage(h, e, dmg(h, [150, 225, 300], rank, { ap: 0.6, hp: 0.03 }), 'magic', { ability: true }); m.cc(e, 'root', 2, 0, h); } m.emit({ e: 'shock', x: a.x, y: a.y, r: a.radius, c: 'nature' }); } }); } },
+    },
+    bot: { build: ['ironboots', 'emberplate', 'spikeplate', 'colossus', 'grovecharm', 'frostorb'], q: 'cc', w: 'shield', e: 'poke', r: 'engage' },
+  },
 };
 
 function thorneBleed(m, h, u) {

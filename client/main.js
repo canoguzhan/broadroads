@@ -177,7 +177,7 @@ class App {
     this.game.start();
     $('#orientation-lock').classList.add('active');
     if (m.spectator) this.ui.banner(m.replay ? 'REPLAY' : 'SPECTATING', `${m.players.filter(p => p.team === 'blue').length}v${m.players.filter(p => p.team === 'red').length} · ${m.mode}`);
-    else this.ui.banner(m.mode === 'tutorial' ? 'TUTORIAL' : m.mode === 'skirmish' ? 'SKIRMISH 3V3' : m.mode === 'practice' ? 'PRACTICE VS AI' : m.ranked ? 'RANKED MATCH' : '5V5 MATCH', `You are on the ${m.team === 'blue' ? 'Blue' : 'Red'} team`);
+    else this.ui.banner(m.mode === 'tutorial' ? 'TUTORIAL' : m.mode === 'skirmish' ? 'SKIRMISH 3V3' : m.mode === 'brawl' ? 'BRAWL 5V5' : m.mode === 'practice' ? 'PRACTICE VS AI' : m.ranked ? 'RANKED MATCH' : '5V5 MATCH', `You are on the ${m.team === 'blue' ? 'Blue' : 'Red'} team`);
   }
 
   /* ---------------- replays ---------------- */
@@ -247,7 +247,7 @@ class App {
     try { seen = localStorage.getItem('broadroads_seen_landing') === '1'; } catch { /* ignore */ }
     const champs = $('#ld-champs');
     if (champs && !champs.children.length) {
-      for (const id of ['garrok', 'lyra', 'kaelen', 'hale', 'thorne', 'mira', 'zarak', 'nyra', 'brakka', 'rook']) {
+      for (const id of ['garrok', 'lyra', 'kaelen', 'hale', 'thorne', 'mira', 'zarak', 'nyra', 'brakka', 'rook', 'thessa', 'borrin']) {
         const img = document.createElement('img');
         img.src = `${import.meta.env.BASE_URL || '/'}portraits/${id}.webp`; img.alt = id; img.title = id[0].toUpperCase() + id.slice(1); img.loading = 'lazy';
         champs.append(img);

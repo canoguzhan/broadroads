@@ -32,17 +32,21 @@ export const ITEMS = {
   starblade: { name: 'Starforged Edge', icon: '🌟', cost: 3400, cat: 'attack', from: ['warpick', 'warpick', 'feather'], stats: { ad: 65, crit: 25 }, passive: 'Critical strikes deal 40% more damage.', critBonus: 0.4 },
   galebow: { name: 'Galecaller Bow', icon: '🏹', cost: 2600, cat: 'attack', from: ['knife', 'knife', 'feather'], stats: { as: 40, crit: 25, msPct: 7 } },
   cleaver: { name: 'Rending Cleaver', icon: '🪓', cost: 3000, cat: 'attack', from: ['warpick', 'heartgem'], stats: { ad: 40, hp: 300, haste: 20 } },
+  maul: { name: 'Executioner\'s Maul', icon: '🔨', cost: 3100, cat: 'attack', from: ['warpick', 'heartgem'], stats: { ad: 50, hp: 250 }, passive: 'Deals 12% more damage to champions below 40% health.', executioner: 0.12 },
   piercer: { name: 'Armorbreaker', icon: '⚔️', cost: 3000, cat: 'attack', from: ['warpick', 'blade'], stats: { ad: 45, armorPen: 30 } },
 
   // ---- magic ----
   crown: { name: 'Archmage\'s Crown', icon: '🎩', cost: 3600, cat: 'magic', from: ['wand', 'wand'], stats: { ap: 120 }, passive: 'Increases ability power by 35%.', apMult: 0.35 },
   nullstaff: { name: 'Nullstaff', icon: '🕳️', cost: 3000, cat: 'magic', from: ['wand', 'tome'], stats: { ap: 70, magicPenPct: 40 } },
   frostorb: { name: 'Frostbound Orb', icon: '❄️', cost: 2900, cat: 'magic', from: ['wand', 'heartgem'], stats: { ap: 80, hp: 300 }, passive: 'Ability damage slows enemies by 20% for 1s.', abilitySlow: true },
+  stormrod: { name: 'Stormcaller Rod', icon: '⚡', cost: 2800, cat: 'magic', from: ['wand', 'tome'], stats: { ap: 75, msPct: 6, haste: 15 } },
+  lifeorb: { name: 'Lifeweaver Orb', icon: '🌱', cost: 2500, cat: 'magic', from: ['tome', 'heartgem'], stats: { ap: 50, hp: 200, haste: 15, mpRegen: 1.5 }, passive: 'Your heals and shields on allies are 20% stronger.', healPower: 0.2 },
   codex: { name: 'Scholar\'s Codex', icon: '📘', cost: 3000, cat: 'magic', from: ['tome', 'managem', 'tome'], stats: { ap: 60, haste: 25, mp: 400 } },
 
   // ---- defense ----
   spikeplate: { name: 'Spiked Plate', icon: '🌵', cost: 2700, cat: 'defense', from: ['vest', 'girdle'], stats: { armor: 70, hp: 350 }, passive: 'Reflects magic damage to attackers who hit you with basic attacks.', thorns: true },
   grovecharm: { name: 'Grove Charm', icon: '💚', cost: 2900, cat: 'defense', from: ['veil', 'girdle'], stats: { hp: 450, mr: 50, hpRegen: 2, haste: 10 }, passive: 'Increases healing and shielding received by 25%.', healAmp: 0.25 },
+  wardenmail: { name: 'Warden\'s Mail', icon: '🛡️', cost: 2800, cat: 'defense', from: ['vest', 'veil'], stats: { armor: 45, mr: 40, hp: 200, tenacity: 20 } },
   colossus: { name: 'Colossus Heart', icon: '💗', cost: 3000, cat: 'defense', from: ['girdle', 'heartgem', 'heartgem'], stats: { hp: 800, hpRegen: 4 } },
   emberplate: { name: 'Emberplate Aegis', icon: '🔥', cost: 2800, cat: 'defense', from: ['vest', 'girdle'], stats: { hp: 450, armor: 40 }, passive: 'Burns nearby enemies for magic damage every second.', burnAura: true },
 };

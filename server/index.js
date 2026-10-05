@@ -1,5 +1,6 @@
 /* BroadRoads game server: static client + REST auth API + WebSocket game gateway. */
 import http from 'node:http';
+import { fileAnalytics } from './analytics.js';
 import { encodeSnapshot } from '../shared/protocol.js';
 import { CHAMPION_IDS, championInfo } from '../shared/moba/champions.js';
 import { ITEMS, SPELLS, SECOND_SPELLS } from '../shared/moba/items.js';
@@ -111,9 +112,10 @@ export async function startServer(overrides = {}) {
   const hubConfig = {};
   for (const k of ['queueBotWait', 'selectTime', 'maxMatches', 'maxPlayers']) if (cfg[k] !== undefined) hubConfig[k] = cfg[k];
   const replays = fileReplays(cfg.dataDir);
+  const analytics = fileAnalytics(cfg.dataDir, log);
   // Static game data for logged-out replay viewers (shared links).
   const gameData = { champions: CHAMPION_IDS.map(championInfo), items: ITEMS, spells: SPELLS, second: SECOND_SPELLS };
-  const hub = new Hub({ store, config: hubConfig, log, replays });
+  const hub = new Hub({ store, config: hubConfig, log, replays, analytics });
   const monitor = new Monitor({ dataDir: cfg.dataDir, log, webhook: cfg.alertWebhook, hub });
   hub.onError = (where, err) => monitor.serverError(where, err);
   hub.onTick = ms => monitor.noteTick(ms);
@@ -213,7 +215,7 @@ export async function startServer(overrides = {}) {
         }
         if (p === '/api/admin/metrics') {
           if (!cfg.adminToken || !safeEqual(req.headers['x-admin-token'] || '', cfg.adminToken)) return json(res, 401, { error: 'Unauthorized' });
-          return json(res, 200, { metrics: monitor.metrics(), server: monitor.server, client: monitor.client });
+          return json(res, 200, { metrics: monitor.metrics(), server: monitor.server, client: monitor.client, analytics: analytics.report(14) });
         }
         if (req.method === 'OPTIONS') { res.writeHead(204, cors); return res.end(); }
         if (p === '/api/health') {
@@ -337,6 +339,7 @@ export async function startServer(overrides = {}) {
     await new Promise(r => server.close(r));
     if (store.close) await store.close();
     monitor.shutdown();
+    analytics.flush();
   }
 
   return { server, hub, store, stop, port: address.port, config: cfg, monitor };

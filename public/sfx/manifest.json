@@ -489,6 +489,46 @@
   "kind": "sfx",
   "vol": 0.75
  },
+ "thessa_q": {
+  "file": "thessa_q.mp3",
+  "kind": "sfx",
+  "vol": 0.55
+ },
+ "thessa_w": {
+  "file": "thessa_w.mp3",
+  "kind": "sfx",
+  "vol": 0.6
+ },
+ "thessa_e": {
+  "file": "thessa_e.mp3",
+  "kind": "sfx",
+  "vol": 0.5
+ },
+ "thessa_r": {
+  "file": "thessa_r.mp3",
+  "kind": "sfx",
+  "vol": 0.8
+ },
+ "borrin_q": {
+  "file": "borrin_q.mp3",
+  "kind": "sfx",
+  "vol": 0.55
+ },
+ "borrin_w": {
+  "file": "borrin_w.mp3",
+  "kind": "sfx",
+  "vol": 0.55
+ },
+ "borrin_e": {
+  "file": "borrin_e.mp3",
+  "kind": "sfx",
+  "vol": 0.55
+ },
+ "borrin_r": {
+  "file": "borrin_r.mp3",
+  "kind": "sfx",
+  "vol": 0.8
+ },
  "music_lobby": {
   "file": "music_lobby.mp3",
   "kind": "music",
@@ -950,5 +990,53 @@
   "kind": "voice",
   "vol": 0.85,
   "text": "The storm... passes."
+ },
+ "cv_thessa_pick": {
+  "file": "cv_thessa_pick.mp3",
+  "kind": "voice",
+  "vol": 0.85,
+  "text": "The tide is with us."
+ },
+ "cv_thessa_ult": {
+  "file": "cv_thessa_ult.mp3",
+  "kind": "voice",
+  "vol": 0.85,
+  "text": "Rise, ocean!"
+ },
+ "cv_thessa_kill": {
+  "file": "cv_thessa_kill.mp3",
+  "kind": "voice",
+  "vol": 0.85,
+  "text": "Washed away."
+ },
+ "cv_thessa_death": {
+  "file": "cv_thessa_death.mp3",
+  "kind": "voice",
+  "vol": 0.85,
+  "text": "Back... to the sea."
+ },
+ "cv_borrin_pick": {
+  "file": "cv_borrin_pick.mp3",
+  "kind": "voice",
+  "vol": 0.85,
+  "text": "Roots run deep."
+ },
+ "cv_borrin_ult": {
+  "file": "cv_borrin_ult.mp3",
+  "kind": "voice",
+  "vol": 0.85,
+  "text": "Overgrow them all!"
+ },
+ "cv_borrin_kill": {
+  "file": "cv_borrin_kill.mp3",
+  "kind": "voice",
+  "vol": 0.85,
+  "text": "Back to the soil."
+ },
+ "cv_borrin_death": {
+  "file": "cv_borrin_death.mp3",
+  "kind": "voice",
+  "vol": 0.85,
+  "text": "Even oaks... fall."
  }
 }

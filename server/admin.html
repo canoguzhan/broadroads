@@ -25,6 +25,9 @@
   button { cursor: pointer; }
   #login { max-width: 360px; margin: 20vh auto; display: flex; gap: 8px; }
   #login input { flex: 1; }
+  .grid2 { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 10px; }
+  td.num, th.num { text-align: right; font-variant-numeric: tabular-nums; }
+  .bar { display: inline-block; height: 6px; border-radius: 3px; background: var(--gold); vertical-align: middle; margin-left: 6px; }
   .dot { width: 9px; height: 9px; border-radius: 50%; display: inline-block; background: var(--good); }
   .dot.off { background: var(--bad); }
 </style>
@@ -34,6 +37,9 @@
 <main id="app" hidden>
   <h1><span>BroadRoads Admin</span><span class="dot" id="dot"></span><span class="muted" id="updated"></span><button id="logout" type="button">Forget token</button></h1>
   <div class="grid" id="cards"></div>
+  <h2>Player funnel (daily)</h2><div id="funnel"></div>
+  <h2>Champion balance (last 14 days)</h2><p class="muted">Win rate counts all games; “Human WR” only games played by people. Bots skew early numbers.</p><div id="champs"></div>
+  <h2>Items &amp; keystones (last 14 days)</h2><div class="grid2"><div id="items"></div><div id="keystones"></div></div>
   <h2>Server errors</h2><div id="server"></div>
   <h2>Client errors</h2><div id="client"></div>
 </main>
@@ -64,8 +70,26 @@ async function load() {
       card(m.errorsLastHour, 'errors last hour', m.errorsLastHour > 10), card(dur(m.uptime), `uptime${m.crashedLastTime ? ' (after a crash)' : ''}`, m.crashedLastTime), card(m.counts.client, 'client errors since start'), card(m.counts.server, 'server errors since start')].join('');
     $('#server').innerHTML = table(d.server, [['When', r => ago(r.at)], ['Where', r => esc(r.where)], ['Error', r => `${esc(r.message)}<pre>${esc(r.stack)}</pre>`]]);
     $('#client').innerHTML = table(d.client, [['When', r => `${ago(r.at)}${r.count > 1 ? `<br><span class="muted">×${r.count}</span>` : ''}`], ['Error', r => `${esc(r.message)}<pre>${esc(r.stack)}</pre>`], ['Context', r => `${esc(r.context)}<br><span class="muted">${esc(r.ua)}</span>`]]);
+    renderAnalytics(d.analytics || []);
     $('#updated').textContent = `updated ${new Date().toLocaleTimeString()}`;
   } catch { $('#dot').className = 'dot off'; $('#updated').textContent = 'server unreachable'; }
+}
+function renderAnalytics(days) {
+  const pct = (a, b) => (b ? `${Math.round((a / b) * 100)}%` : '—');
+  $('#funnel').innerHTML = table(days, [['Day', r => esc(r.date)], ['Players', r => r.players], ['New', r => r.newPlayers],
+    ['Tutorial started', r => r.tutorialStart], ['Tutorial done', r => `${r.tutorialDone} <span class="muted">${pct(r.tutorialDone, r.tutorialStart)}</span>`],
+    ['1st game', r => r.firstGame], ['2nd game', r => `${r.secondGame} <span class="muted">${pct(r.secondGame, r.firstGame)}</span>`],
+    ['Back next day', r => `${r.d1Return} <span class="muted">${pct(r.d1Return, r.newPlayers)}</span>`],
+    ['Matches', r => esc(Object.entries(r.matches).map(([k, v]) => `${k} ${v}`).join(', ') || '—')]]);
+  const sum = key => { const out = {}; for (const d of days) for (const [id, v] of Object.entries(d[key] || {})) { const o = out[id] || (out[id] = {}); for (const [k, n] of Object.entries(v)) o[k] = (o[k] || 0) + n; } return out; };
+  const champs = Object.entries(sum('champs')).map(([id, c]) => ({ id, ...c })).sort((a, b) => b.g - a.g);
+  const total = champs.reduce((n, c) => n + c.g, 0) / 10 || 1;
+  $('#champs').innerHTML = table(champs, [['Champion', r => esc(r.id)], ['Games', r => r.g], ['Win rate', r => `${pct(r.w, r.g)}<span class="bar" style="width:${Math.round((r.w / Math.max(1, r.g)) * 60)}px"></span>`],
+    ['Pick rate', r => pct(r.g, total)], ['Human WR', r => (r.hg ? `${pct(r.hw, r.hg)} <span class="muted">(${r.hg})</span>` : '—')],
+    ['KDA', r => `${(r.k / r.g).toFixed(1)} / ${(r.d / r.g).toFixed(1)} / ${(r.a / r.g).toFixed(1)}`], ['Dmg', r => Math.round(r.dmg / r.g)], ['Gold', r => Math.round(r.gold / r.g)]]);
+  const wr = key => Object.entries(sum(key)).map(([id, v]) => ({ id, ...v })).sort((a, b) => b.g - a.g);
+  $('#items').innerHTML = table(wr('items'), [['Item', r => esc(r.id)], ['Games', r => r.g], ['Win rate', r => pct(r.w, r.g)]]);
+  $('#keystones').innerHTML = table(wr('keystones'), [['Keystone', r => esc(r.id)], ['Games', r => r.g], ['Win rate', r => pct(r.w, r.g)]]);
 }
 load();
 setInterval(() => { if (token && !$('#app').hidden) load(); }, 5000);

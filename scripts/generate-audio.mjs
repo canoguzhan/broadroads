@@ -123,6 +123,14 @@ const SFX = [
   ['rook_w', 'axe thrown spinning through the air', 0.8, 0.55],
   ['rook_e', 'leap and heavy landing slam', 1.0, 0.65],
   ['rook_r', 'storm shockwave with thunder', 1.5, 0.75],
+  ['thessa_q', 'water spear launched with a splash', 0.9, 0.55],
+  ['thessa_w', 'swirling whirlpool rushing water pulling inward', 1.4, 0.6],
+  ['thessa_e', 'magical bubble forming with a soft shimmering pop', 1.0, 0.5],
+  ['thessa_r', 'massive ocean wave crashing tsunami roar', 2.0, 0.8],
+  ['borrin_q', 'thorny vine whip crack', 0.8, 0.55],
+  ['borrin_w', 'creaking wood bark hardening, deep rustle', 1.2, 0.55],
+  ['borrin_e', 'thorns sprouting from the ground, rustling brambles', 1.4, 0.55],
+  ['borrin_r', 'giant roots erupting from the earth, cracking ground', 2.0, 0.8],
 ];
 
 // [key, prompt, seconds, volume] — long loops.
@@ -181,6 +189,8 @@ const CHAMP_VOICES = [
   ['nyra', 'FGY2WhTYpPnrIDTdsKH5', 'Badge on. Safety off.', 'Dead eye. Dead you.', 'Bounty collected.', "Should've seen that coming."],
   ['brakka', 'IKne3meq5aSn9XLyUdCD', 'The herd charges as one!', 'Iron hide! Bring it on!', 'Trampled!', 'The herd... will remember.'],
   ['rook', 'CwhRBWXzGAHq8TQ4Fs17', 'The storm answers my call.', 'Tempest, rage!', 'Swept away.', 'The storm... passes.'],
+  ['thessa', 'cgSgspJ2msm6clMCkdW9', 'The tide is with us.', 'Rise, ocean!', 'Washed away.', 'Back... to the sea.'],
+  ['borrin', 'pqHfZKP75CvOlQylNhV4', 'Roots run deep.', 'Overgrow them all!', 'Back to the soil.', 'Even oaks... fall.'],
 ];
 
 async function post(url, body, attempt = 1) {

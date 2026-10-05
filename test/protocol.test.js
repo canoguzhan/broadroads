@@ -60,3 +60,22 @@ test('capacity: new matches stop at the cap, running ones are untouched', async 
   for (let i = 0; i < 60; i++) hub.tick();
   assert.equal(hub.matches.size, 1, 'the first match runs');
 });
+
+test('brawl: 5v5 with random unique champions, picks refused, one lane', async () => {
+  const hub = new Hub({ store: new MemoryStore(), config: { selectTime: 40 }, log: { error() {}, log() {}, info() {} } });
+  const inbox = [];
+  const s = await hub.connect({ accountId: 'a', name: 'A', send: m => inbox.push(m) });
+  hub.handle(s, { t: 'queue', mode: 'brawl' });
+  const sel = [...hub.selects.values()][0];
+  assert.equal(sel.players.length, 10);
+  for (const team of ['blue', 'red']) { const c = sel.players.filter(p => p.team === team).map(p => p.champ); assert.equal(new Set(c).size, 5); }
+  const mine = sel.players.find(p => p.session === s).champ;
+  hub.handle(s, { t: 'pick', champ: mine === 'lyra' ? 'garrok' : 'lyra' });
+  assert.equal(sel.players.find(p => p.session === s).champ, mine, 'pick refused');
+  hub.handle(s, { t: 'lock' });
+  for (let i = 0; i < 60; i++) hub.tick();
+  const m = [...hub.matches.values()][0];
+  assert.equal(m.mode, 'brawl');
+  assert.deepEqual(m.lanes, ['mid']);
+  assert.equal(m.heroes.find(h => h.session === s).level, 3);
+});

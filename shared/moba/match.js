@@ -1,5 +1,6 @@
 /* Authoritative 5v5 MOBA match simulation. */
 import { getValley, enemyOf, LANES, bushAt } from './map.js';
+import { KEYSTONES, defaultKeystone, keystoneOnAdd, keystoneTick, keystoneOnHit } from './keystones.js';
 import { selfDelta } from '../protocol.js';
 export const EMOTES = ['dance', 'cheer', 'laugh'];
 import { CHAMPIONS, SLOTS, MAX_LEVEL, XP_TO_LEVEL, canRankUp, bonusAd } from './champions.js';
@@ -75,7 +76,8 @@ export class Match {
     this.hooks = hooks;
     this.valley = getValley();
     // Skirmish: 3v3 on the middle lane only, faster economy and weaker structures (~10 minutes).
-    this.skirmish = mode === 'skirmish';
+    // Brawl is Skirmish's 5v5 sibling: same one-lane rules, random champions.
+    this.skirmish = mode === 'skirmish' || mode === 'brawl';
     this.lanes = this.skirmish ? ['mid'] : LANES;
     this.goldMul = this.skirmish ? 1.7 : 1;
     this.xpMul = this.skirmish ? 1.6 : 1;
@@ -156,6 +158,9 @@ export class Match {
       session: p.session || null, bot: p.bot ? makeBrain(p) : null, botRole: p.role || null,
       sight: CFG.heroSight, passiveShieldT: 0,
     });
+    h.keystone = KEYSTONES[p.keystone] ? p.keystone : defaultKeystone(c.role);
+    keystoneOnAdd(this, h);
+    this.recompute(h); h.hp = h.maxHp;
     if (this.skirmish) { h.gold = h.goldEarned = 1200; h.level = 3; h.points = 3; h.xp = XP_TO_LEVEL[3]; this.recompute(h); h.hp = h.maxHp; h.mp = h.maxMp; }
     this.heroes.push(h);
     this.recompute(h, true);
@@ -172,7 +177,7 @@ export class Match {
       maxHp: c.hp + c.hpG * lv, maxMp: c.mp + c.mpG * lv, ad: c.ad + c.adG * lv, ap: 0,
       armor: c.armor + c.armorG * lv, mr: c.mr + c.mrG * lv, asBonus: c.asG * lv, crit: 0, critBonus: 0,
       msFlat: 0, msPct: 0, haste: 0, lifesteal: 0, armorPen: 0, magicPen: 0, magicPenPct: 0,
-      hpRegen: c.hpRegen, mpRegen: c.mpRegen, tenacity: 0, apMult: 0, healAmp: 0, dmgReduce: 0, slow: 0,
+      hpRegen: c.hpRegen, mpRegen: c.mpRegen, tenacity: 0, apMult: 0, healAmp: 0, healPower: 0, executioner: 0, dmgBonus: 0, hpPct: 0, dmgReduce: 0, slow: 0,
       thorns: false, burnAura: false, abilitySlow: false, range: h.c.range,
     };
     h.baseStats = { ad: s.ad };
@@ -188,6 +193,8 @@ export class Match {
       if (d.critBonus) s.critBonus += d.critBonus;
       if (d.apMult) s.apMult += d.apMult;
       if (d.healAmp) s.healAmp += d.healAmp;
+      if (d.healPower) s.healPower += d.healPower;
+      if (d.executioner) s.executioner = Math.max(s.executioner, d.executioner);
       if (d.thorns) s.thorns = true;
       if (d.burnAura) s.burnAura = true;
       if (d.abilitySlow) s.abilitySlow = true;
@@ -199,11 +206,13 @@ export class Match {
       s.asBonus += st.as || 0; s.msPct += st.msPct || 0; s.lifesteal += st.lifesteal || 0; s.haste += st.haste || 0;
       s.mpRegen += st.mpRegen || 0; s.hpRegen += st.hpRegen || 0;
       s.dmgReduce = Math.max(s.dmgReduce, st.dmgReduce || 0);
+      s.dmgBonus += st.dmgBonus || 0; s.hpPct += st.hpPct || 0; s.msFlat += st.ms || 0;
       if (st.slow) s.slow = Math.max(s.slow, st.slow);
     }
     const dr = this.wyrms[h.team] || 0;
     s.ad *= 1 + dr * 0.06; s.ap *= 1 + dr * 0.06;
     s.ap *= 1 + s.apMult;
+    s.maxHp *= 1 + s.hpPct / 100;
     s.as = Math.min(2.5, h.c.base.as * (1 + s.asBonus / 100));
     s.ms = Math.max(2, (c.ms + s.msFlat) * (1 + s.msPct / 100) * (1 - Math.min(0.9, s.slow)));
     s.crit = Math.min(100, s.crit);
@@ -364,6 +373,11 @@ export class Match {
     }
     let dmg = type === 'true' ? amount : amount * (res >= 0 ? 100 / (100 + res) : 2 - 100 / (100 - res));
     if (tgt.kind === 'hero' && tgt.stats.dmgReduce) dmg *= 1 - tgt.stats.dmgReduce / 100;
+    const srcHero = src && src.kind === 'hero' ? src : null;
+    if (srcHero && tgt.kind === 'hero') {
+      if (srcHero.stats.executioner && tgt.hp < tgt.maxHp * 0.4) dmg *= 1 + srcHero.stats.executioner;
+      if (srcHero.stats.dmgBonus) dmg *= 1 + srcHero.stats.dmgBonus / 100;
+    }
     if (tgt.kind === 'minion' && tgt.empowered) dmg *= 0.5;
     // Junglers (Hunter's Strike carriers) deal more to monsters and take less from them.
     if (tgt.kind === 'monster' && src && src.kind === 'hero' && (src.spells.d === 'strike' || src.spells.f === 'strike')) dmg *= 1.5;
@@ -399,6 +413,7 @@ export class Match {
       if (bushAt(this.valley, hero.x, hero.y) >= 0) this.reveal(hero, 1);
     }
     if (tgt.kind === 'monster' && src) this.monsterAggro(tgt, src);
+    if (srcHero && tgt.kind === 'hero' && total >= 1 && srcHero.team !== tgt.team) keystoneOnHit(this, srcHero, tgt, opts);
     if (total >= 1) this.emit({ e: 'dmg', id: tgt.id, v: Math.round(total), t: type[0], c: opts.crit ? 1 : 0, s: src ? src.id : 0, x: tgt.x, y: tgt.y });
     if (tgt.hp <= 0) { tgt.hp = 0; this.kill(tgt, src); }
     return total;
@@ -407,6 +422,7 @@ export class Match {
   heal(src, tgt, amount, opts = {}) {
     if (!tgt || tgt.dead) return 0;
     if (tgt.kind === 'hero') amount *= 1 + tgt.stats.healAmp;
+    if (src && src !== tgt && src.kind === 'hero' && src.stats.healPower) amount *= 1 + src.stats.healPower;
     if (this.hasBuff(tgt, 'grievous')) amount *= 0.6;
     const before = tgt.hp;
     tgt.hp = Math.min(tgt.maxHp, tgt.hp + amount);
@@ -419,6 +435,8 @@ export class Match {
   shield(tgt, amount, dur) {
     if (!tgt || tgt.dead) return;
     if (tgt.kind === 'hero') amount *= 1 + tgt.stats.healAmp;
+    const by = this.caster;
+    if (by && by !== tgt && by.stats.healPower) amount *= 1 + by.stats.healPower;
     tgt.shields.push({ amt: amount, t: dur });
     this.emit({ e: 'shield', id: tgt.id, x: tgt.x, y: tgt.y });
   }
@@ -511,7 +529,7 @@ export class Match {
   heroKilled(v, killer, src) {
     v.deaths++;
     v.recall = null; v.windup = null; v.pendingCast = null; v.path = []; v.order = { type: 'idle' };
-    v.buffs = [];
+    v.buffs = v.buffs.filter(b => b.dur === Infinity); // keystone effects survive death
     v.shields = [];
     this.recompute(v);
     const respawn = Math.min(40, 5 + v.level * 1.8 + Math.max(0, this.time / 60 - 12) * 0.8);
@@ -1001,6 +1019,7 @@ export class Match {
     }
     if (h.bot) botThink(this, h, dt);
     if (h.c.tick) h.c.tick(this, h, dt);
+    if (h.keystone) keystoneTick(this, h);
     // Regeneration and fountain.
     const inF = this.inFountain(h);
     h.hp = Math.min(h.maxHp, h.hp + (h.stats.hpRegen + (inF ? h.maxHp * 0.12 : 0)) * dt);
@@ -1270,7 +1289,8 @@ export class Match {
     h.cdMax = h.cdMax || {};
     h.cdMax[slot] = h.cd[slot];
     if (t.x !== undefined && (t.x !== h.x || t.y !== h.y)) h.facing = Math.atan2(t.y - h.y, t.x - h.x);
-    a.cast(this, h, rank, t);
+    this.caster = h; // heal/shield power of the caster applies to what this cast gives allies
+    try { a.cast(this, h, rank, t); } finally { this.caster = null; }
     this.emit({ e: 'cast', id: h.id, sl: slot, x: h.x, y: h.y, c: h.champ });
   }
 
@@ -1495,7 +1515,7 @@ export class Match {
     const players = this.heroes.map(h => ({
       id: h.id, key: h.key, name: h.name, champ: h.champ, team: h.team, bot: !h.session && !!h.bot && !h.wasHuman,
       level: h.level, kills: h.kills, deaths: h.deaths, assists: h.assists, cs: h.cs, gold: Math.round(h.goldEarned),
-      dmg: Math.round(h.dmgToHeroes), healed: Math.round(h.healed), items: h.items.map(it => (it ? it.id : null)), win: h.team === winner,
+      dmg: Math.round(h.dmgToHeroes), healed: Math.round(h.healed), items: h.items.map(it => (it ? it.id : null)), keystone: h.keystone, win: h.team === winner,
     }));
     // MVP: best KDA-weighted score on the winning team.
     let mvp = null, best = -1;
@@ -1612,7 +1632,7 @@ export class Match {
       dead: h.dead ? 1 : 0, rs: h.dead ? r2(h.respawnAt - this.time) : 0, dr: h.dead && h.recap && h.recapSent !== h.deadT ? ((h.recapSent = h.deadT), h.recap) : undefined, // once per death
       rc: h.recall ? r2(1 - h.recall.t / h.recall.max) : 0,
       shop: this.canShop(h) ? 1 : 0,
-      b: h.buffs.filter(b => b.dur >= 1 && !b.id.startsWith('slow')).map(b => [b.id, Math.ceil(b.t)]),
+      b: h.buffs.filter(b => b.dur >= 1 && b.dur !== Infinity && !b.id.startsWith('slow')).map(b => [b.id, Math.ceil(b.t)]),
       ord: h.order.type === 'move' || h.order.type === 'amove' ? [r2(h.order.x), r2(h.order.y)] : null,
       tg: h.order.type === 'attack' ? h.order.target : 0,
     };

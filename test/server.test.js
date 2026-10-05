@@ -108,7 +108,7 @@ test('two players chat in the lobby, make a custom room and play the same match'
   const a = await client(tA);
   const b = await client(tB);
   const hello = await a.wait(m => m.t === 'hello');
-  assert.equal(hello.champions.length, 10);
+  assert.equal(hello.champions.length, 12);
   await a.wait(m => m.t === 'lobby');
   await b.wait(m => m.t === 'lobby');
 

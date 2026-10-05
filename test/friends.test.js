@@ -50,3 +50,25 @@ test('friend requests, accept, online status, offline requests and removal', asy
   assert.deepEqual(a.profile.friends, []);
   assert.deepEqual((await store.getCharacter('bob')).friends, []);
 });
+
+test('party members follow each other into custom rooms without accepting anything', async () => {
+  const hub = new Hub({ store: new AccountStore(), config: {}, log: { error() {}, log() {}, info() {} } });
+  const a = await join(hub, 'Alice'), b = await join(hub, 'Bob'), c = await join(hub, 'Cara');
+  hub.handle(a, { t: 'party', op: 'invite', name: 'Bob' });
+  hub.handle(b, { t: 'party', op: 'accept', party: a.partyId });
+  hub.handle(a, { t: 'room', op: 'create' });
+  const code = a.roomCode;
+  assert.ok(code);
+  assert.equal(b.roomCode, code, 'party member pulled into the room');
+  assert.ok(hub.rooms.get(code).blue.includes(b), 'same team');
+  // A third player joining the party later lands in the room too.
+  hub.handle(a, { t: 'party', op: 'invite', name: 'Cara' });
+  hub.handle(c, { t: 'party', op: 'accept', party: a.partyId });
+  assert.equal(c.roomCode, code);
+  // Joining someone else's room by code brings the whole party.
+  const d = await join(hub, 'Dan');
+  hub.handle(d, { t: 'room', op: 'create' });
+  hub.handle(b, { t: 'room', op: 'join', code: d.roomCode });
+  assert.equal(a.roomCode, d.roomCode);
+  assert.equal(c.roomCode, d.roomCode);
+});

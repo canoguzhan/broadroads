@@ -54,6 +54,7 @@ const ITEM_LOOK = {
   grovecharm: 'a green leaf amulet with glowing nature magic',
   colossus: 'a giant pink crystal heart encased in stone',
   emberplate: 'a burning molten armor plate with flames',
+  maul: 'a huge two-handed executioner maul with a dark iron head', stormrod: 'a silver rod crackling with blue lightning', lifeorb: 'a green orb with a sprouting seedling inside', wardenmail: 'a sturdy chainmail shirt with steel pauldrons',
 };
 const SPELL_LOOK = {
   blink: 'a burst of golden sparkles teleport flash',
@@ -95,9 +96,20 @@ const MISC = {
   tier_diamond: 'a brilliant blue diamond crest emblem with large wings, ranked badge', tier_master: 'a purple master crest emblem with a crown and flames, ranked badge',
   tier_champion: 'a radiant red and gold champion crest emblem with a crown and blazing wings, ranked badge', streak: 'a burning orange flame over a calendar page', firstwin: 'a golden sunrise over a victory trophy',
 };
-const misc = (...ids) => ids.map(id => ({ kind: 'misc', id, look: MISC[id] }));
+const misc = (...ids) => ids.map(id => ({ kind: 'misc', id, look: MISC[id] || id }));
 const of = kind => ICONS.filter(i => i.kind === kind);
-const items = of('item'), spells = of('spell'), abilities = of('ability'), passives = of('passive');
+const pick = (kind, ids) => ids.map(id => ICONS.find(i => i.kind === kind && i.id === id));
+// The first sheets are pinned to the original lists (new entries must not shift them).
+const ORIGINAL_ITEMS = ['potion', 'blade', 'tome', 'vest', 'veil', 'heartgem', 'managem', 'knife', 'boots', 'warpick', 'wand', 'girdle', 'feather', 'windboots', 'ironboots', 'warboots', 'spellboots', 'sageboots', 'rushboots', 'vampblade', 'starblade', 'galebow', 'cleaver', 'piercer', 'crown', 'nullstaff', 'frostorb', 'codex', 'spikeplate', 'grovecharm', 'colossus', 'emberplate'];
+const ORIGINAL_CHAMPS = ['garrok', 'lyra', 'kaelen', 'hale', 'thorne', 'mira', 'zarak', 'nyra', 'brakka', 'rook'];
+const items = pick('item', ORIGINAL_ITEMS), spells = of('spell');
+const abilities = pick('ability', ORIGINAL_CHAMPS.flatMap(c => ['q', 'w', 'e', 'r'].map(k => `${c}_${k}`)));
+const passives = pick('passive', ORIGINAL_CHAMPS);
+Object.assign(MISC, {
+  ks_warpath: 'crossed swords wrapped in rising red war banners', ks_starfall: 'a glowing star falling from the night sky with a trail', ks_ironroot: 'an iron-banded tree trunk with deep glowing roots', ks_swiftwind: 'a swirl of green leaves in a gust of wind',
+  brawl: 'two clashing fists over a single bridge', report: 'a red warning flag on a pole', placement: 'a silver medal with a question mark', ban: 'a champion silhouette crossed out with a red slash', mute: 'a speech bubble with a slash through it',
+  notify: 'a golden bell ringing', install: 'a glowing phone with a downward arrow', language: 'a globe with speech bubbles', afk: 'a sleeping hourglass with zzz', backup: 'a vault door with a shield',
+});
 const sheets = [
   items.slice(0, 9), items.slice(9, 18), items.slice(18, 27), [...items.slice(27), ...misc('ward', 'recall', 'gold', 'trophy')],
   [...spells, ...misc('tower', 'kill', 'shop')],
@@ -105,6 +117,10 @@ const sheets = [
   [...abilities.slice(36), passives.find(p => p.id === 'rook'), ...misc('wyrm', 'titan', 'levelup', 'quest')],
   passives.filter(p => p.id !== 'rook'),
   misc('tier_bronze', 'tier_silver', 'tier_gold', 'tier_platinum', 'tier_diamond', 'tier_master', 'tier_champion', 'streak', 'firstwin'),
+  // New in the second roster update.
+  [...pick('ability', ['thessa_q', 'thessa_w', 'thessa_e', 'thessa_r', 'borrin_q', 'borrin_w', 'borrin_e', 'borrin_r']), ...pick('passive', ['thessa'])],
+  [...pick('passive', ['borrin']), ...misc('ks_warpath', 'ks_starfall', 'ks_ironroot', 'ks_swiftwind'), ...pick('item', ['maul', 'stormrod', 'lifeorb', 'wardenmail'])],
+  misc('brawl', 'report', 'placement', 'ban', 'mute', 'notify', 'install', 'language', 'afk'),
 ];
 for (const sh of sheets) if (sh.length !== 9) throw new Error(`sheet has ${sh.length} icons: ${sh.map(i => i.id)}`);
 STYLE.misc = 'fantasy MOBA interface icons, a single object per tile';

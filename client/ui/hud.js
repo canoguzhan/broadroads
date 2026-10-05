@@ -328,7 +328,7 @@ export class Hud {
     this.scoreEl.querySelector('.ms-blue').textContent = `${sc.kills.blue}`;
     this.scoreEl.querySelector('.ms-red').textContent = `${sc.kills.red}`;
     this.scoreEl.querySelector('.ms-time').textContent = timeStr(sc.time);
-    const titan = g.match.mode === 'skirmish' ? '' : `   👾 ${sc.titanIn ? timeStr(sc.titanIn) : 'up'}`; // no Titan in Skirmish
+    const titan = g.match.mode === 'skirmish' || g.match.mode === 'brawl' ? '' : `   👾 ${sc.titanIn ? timeStr(sc.titanIn) : 'up'}`; // no Titan in Skirmish
     this.objEl.textContent = `🏰 ${sc.towers.blue}–${sc.towers.red}   🐉 ${sc.wyrms.blue}–${sc.wyrms.red}${sc.wyrmIn ? ` (${timeStr(sc.wyrmIn)})` : ' (up)'}${titan}`;
     clear(this.teamEl);
     for (const p of sc.players.filter(p => p.tm === g.world.team && p.id !== g.world.youId)) {

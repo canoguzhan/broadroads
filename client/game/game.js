@@ -472,6 +472,6 @@ export class Game {
 
 function round2(v) { return Math.round(v * 100) / 100; }
 
-const ATTACK_SOUND = { garrok: 'atk_fist', brakka: 'atk_fist', thorne: 'atk_axe', rook: 'atk_axe', kaelen: 'atk_sword', hale: 'atk_bow', nyra: 'atk_gun', lyra: 'atk_magic', mira: 'atk_magic', zarak: 'atk_magic' };
+const ATTACK_SOUND = { thessa: 'atk_magic', borrin: 'atk_fist', garrok: 'atk_fist', brakka: 'atk_fist', thorne: 'atk_axe', rook: 'atk_axe', kaelen: 'atk_sword', hale: 'atk_bow', nyra: 'atk_gun', lyra: 'atk_magic', mira: 'atk_magic', zarak: 'atk_magic' };
 const SPELL_SOUND = { blink: 'blink', mend: 'heal', scorch: 'sp_scorch', strike: 'sp_strike', haste: 'sp_haste', bulwark: 'shield' };
 const MATCH_SOUNDS = ['hurt', 'hit_physical', 'hit_magic', 'hit_crit', 'gold', 'atk_sword', 'death_minion', 'tower_shot', 'levelup', 'vo_minions', 'vo_ally_slain', 'vo_enemy_slain', 'vo_you_slain', 'vo_you_killed', 'vo_first_strike'];

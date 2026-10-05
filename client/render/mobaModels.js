@@ -7,7 +7,7 @@ import { runeTexture } from './glow.js';
 
 const CHAMP_MODEL = {
   garrok: { cls: 'paladin', scale: 1.35 }, brakka: { cls: 'paladin', scale: 1.3, horns: true }, thorne: { cls: 'paladin', scale: 1.15 },
-  rook: { cls: 'paladin', scale: 1.15 }, kaelen: { cls: 'paladin', scale: 1.0, hood: true }, lyra: { cls: 'arcanist', scale: 1.0 },
+  rook: { cls: 'paladin', scale: 1.15 }, thessa: { cls: 'arcanist', scale: 1.0, halo: true }, borrin: { cls: 'paladin', scale: 1.35, horns: true }, kaelen: { cls: 'paladin', scale: 1.0, hood: true }, lyra: { cls: 'arcanist', scale: 1.0 },
   mira: { cls: 'arcanist', scale: 1.0, halo: true }, zarak: { cls: 'arcanist', scale: 0.95 }, hale: { cls: 'gunner', scale: 1.0 }, nyra: { cls: 'gunner', scale: 1.0 },
 };
 

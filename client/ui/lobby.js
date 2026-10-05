@@ -112,6 +112,11 @@ export class Lobby {
         h('div.pc-title', { text: '⚡ Skirmish 3v3' }),
         h('p', { text: 'A quick 3v3 on the middle lane: start at level 3, faster gold, about 10 minutes. You (and up to 2 friends) against bots.' }),
         h('button.btn.btn-lg', { disabled: busy, onclick: () => app.send({ t: 'queue', mode: 'skirmish', difficulty: diff.value }) }, 'Start Skirmish')),
+      h('div.play-card.featured', {},
+        h('div.tc-badge', { text: 'Featured mode' }),
+        h('div.pc-title', {}, h('span.pc-ic', {}, pic('misc/brawl', '👊')), 'Brawl 5v5'),
+        h('p', { text: 'Five against five on one lane with random champions. Start at level 3 and fight from the first second. Bring your whole party.' }),
+        h('button.btn.btn-lg', { disabled: busy, onclick: () => app.send({ t: 'queue', mode: 'brawl', difficulty: diff.value }) }, 'Start Brawl')),
       // Last in the DOM (tests address cards by position); CSS lifts it to the top for new players.
       h(`div.play-card.tutorial-card${tutorialDone() ? '' : '.new'}`, {},
         tutorialDone() ? null : h('div.tc-badge', { text: 'New here? Start with this' }),

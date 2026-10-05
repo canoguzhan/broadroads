@@ -1,6 +1,7 @@
 /* Lobby + match server core. Transport-agnostic: wrapped by the Node server
    (WebSockets + database) and by the browser for offline play vs AI. */
 import { TICK, CHAT_MAX, PROTOCOL_VERSION } from './constants.js';
+import { KEYSTONES } from './moba/keystones.js';
 import { Match, CFG } from './moba/match.js';
 import { CHAMPIONS, CHAMPION_IDS, championInfo } from './moba/champions.js';
 import { ITEMS, SPELLS, SECOND_SPELLS } from './moba/items.js';
@@ -22,9 +23,10 @@ const clean = s => String(s ?? '').replace(/[\u0000-\u001f\u007f]/g, '').trim().
 export { leaderboardRow };
 
 export class Hub {
-  constructor({ store, config = {}, log = console, offline = false, replays = null } = {}) {
+  constructor({ store, config = {}, log = console, offline = false, replays = null, analytics = null } = {}) {
     this.store = store;
     this.replays = replays; // { save(header, lines), list(), load?(id) }
+    this.analytics = analytics; // { event(name, data) } — server only
     this.log = log;
     this.offline = offline;
     this.config = { queueBotWait: offline ? 0 : 25, autosave: 60, selectTime: SELECT_TIME, ...config };
@@ -74,6 +76,14 @@ export class Hub {
     try { data = await this.store.getCharacter(accountId); } catch (err) { this.log.error('load profile failed', err); }
     if (!this.sessions.has(session.id)) return session;
     session.profile = normalizeProfile(name, data);
+    const prof = session.profile;
+    this.analytics?.event('login', { accountId, isNew: !data });
+    // Next-day return: counted once, for players who come back the day after joining.
+    if (!prof.d1Counted && data) {
+      const dayOf = t => new Date(t).toISOString().slice(0, 10);
+      if (dayOf(prof.createdAt) === dayOf(Date.now() - 86400e3)) { this.analytics?.event('d1Return', { createdAt: prof.createdAt }); prof.d1Counted = true; }
+      else if (Date.now() - prof.createdAt > 2 * 86400e3) prof.d1Counted = true;
+    }
     ensureQuests(session.profile);
     const streakReward = loginStreak(session.profile);
     const season = seasonRollover(session.profile);
@@ -236,7 +246,7 @@ export class Hub {
       case 'queue': return this.joinQueue(session, msg);
       case 'cancel': return this.leaveQueue(session);
       case 'room': return this.roomOp(session, msg);
-      case 'pick': case 'csumm': case 'lock': return this.selectOp(session, msg);
+      case 'pick': case 'csumm': case 'ks': case 'lock': return this.selectOp(session, msg);
       case 'party': return this.partyOp(session, msg);
       case 'chat': return this.chat(session, msg);
       case 'who': return this.who(session);
@@ -244,6 +254,7 @@ export class Hub {
       case 'prof': return this.sendProfile(session, msg.name);
       case 'claim': case 'skin': case 'avatar': return this.progressOp(session, msg);
       case 'live': return session.send({ t: 'live', list: this.liveMatches() });
+      case 'track': if (msg.ev === 'tutorialDone' && !session.profile?.tutorialDone) { session.profile.tutorialDone = true; this.analytics?.event('tutorialDone'); } return;
       case 'friend': return this.friendOp(session, msg);
       case 'friends': return this.sendFriends(session);
       case 'spectate': return this.spectate(session, msg.id);
@@ -449,6 +460,9 @@ export class Hub {
         party.members.push(session.name);
         session.partyId = party.id;
         this.leaveQueue(session, true);
+        // Joining a party that is already in a custom room puts you in it too.
+        const inRoom = this.partySessions(session).find(m => m !== session && m.roomCode && this.rooms.has(m.roomCode));
+        if (inRoom) { const r = this.rooms.get(inRoom.roomCode); this.bringParty(inRoom, r); this.broadcastRoom(r); }
         return this.updateParty(party.id);
       }
       case 'decline': session.invites.delete(msg.party); return;
@@ -484,6 +498,22 @@ export class Hub {
     for (const n of party.members) this.byName.get(n.toLowerCase())?.send({ t: 'party', party: { id: party.id, leader: party.leader, members } });
   }
 
+  /** Party members follow each other into custom rooms automatically (same team when possible). */
+  bringParty(session, r) {
+    const team = r.blue.includes(session) ? 'blue' : 'red';
+    for (const m of this.partySessions(session)) {
+      if (m === session || m.roomCode === r.code || m.view || m.state === 'select') continue;
+      const side = r[team].includes(null) ? team : r[team === 'blue' ? 'red' : 'blue'].includes(null) ? (team === 'blue' ? 'red' : 'blue') : null;
+      if (!side) { this.notice(m, 'Your party joined a room, but it is full.', 'warn'); continue; }
+      if (m.roomCode) this.roomOp(m, { op: 'leave' });
+      this.leaveQueue(m, true);
+      r[side][r[side].indexOf(null)] = m;
+      m.roomCode = r.code;
+      m.state = 'room';
+      this.notice(m, `${session.name} brought your party into room ${r.code}.`);
+    }
+  }
+
   partySessions(session) {
     const party = this.parties.get(session.partyId);
     if (!party) return [session];
@@ -498,7 +528,7 @@ export class Hub {
 
   joinQueue(session, msg) {
     if (session.view || session.state === 'select') return;
-    const mode = ['practice', 'tutorial', 'skirmish'].includes(msg.mode) ? msg.mode : 'ranked';
+    const mode = ['practice', 'tutorial', 'skirmish', 'brawl'].includes(msg.mode) ? msg.mode : 'ranked';
     const party = this.parties.get(session.partyId);
     if (party && party.leader !== session.name) return this.notice(session, 'Only the party leader can start matchmaking.', 'warn');
     const group = this.partySessions(session);
@@ -506,7 +536,12 @@ export class Hub {
     if (session.roomCode) this.roomOp(session, { op: 'leave' });
     // The tutorial is solo: just you, friendly bots and enemy bots that stay home.
     if (mode !== 'ranked' && !this.canStartMatch()) return this.notice(session, 'The servers are busy right now. Please try again in a minute (or play offline).', 'warn');
+    if (mode === 'tutorial') this.analytics?.event('tutorialStart');
     if (mode === 'tutorial') return this.startSelect({ blue: [session], red: [] }, { mode: 'tutorial', ranked: false, difficulty: 'easy' });
+    if (mode === 'brawl') {
+      const difficulty = ['easy', 'normal', 'hard'].includes(msg.difficulty) ? msg.difficulty : 'normal';
+      return this.startSelect({ blue: group, red: [] }, { mode: 'brawl', ranked: false, difficulty, random: true, selectTime: 12 });
+    }
     if (mode === 'skirmish') {
       if (group.length > 3) return this.notice(session, 'Skirmish is 3v3: parties of up to 3.', 'warn');
       const difficulty = ['easy', 'normal', 'hard'].includes(msg.difficulty) ? msg.difficulty : 'normal';
@@ -581,6 +616,7 @@ export class Hub {
         this.rooms.set(code, r);
         session.roomCode = code;
         session.state = 'room';
+        this.bringParty(session, r);
         return this.broadcastRoom(r);
       }
       case 'join': {
@@ -593,6 +629,7 @@ export class Hub {
         r[team][r[team].indexOf(null)] = session;
         session.roomCode = r.code;
         session.state = 'room';
+        this.bringParty(session, r);
         return this.broadcastRoom(r);
       }
       case 'leave': {
@@ -654,7 +691,7 @@ export class Hub {
     const players = [];
     const used = new Set();
     for (const team of ['blue', 'red']) {
-      for (const s of sides[team]) { s.state = 'select'; players.push({ key: s.accountId, name: s.name, team, session: s, champ: null, summ: 'mend', locked: false, bot: false }); used.add(s.name); }
+      for (const s of sides[team]) { s.state = 'select'; players.push({ key: s.accountId, name: s.name, team, session: s, champ: null, summ: 'mend', keystone: s.profile?.keystone || null, locked: false, bot: false }); used.add(s.name); }
       const botCount = opts.bots ? opts.bots[team] : (opts.size || 5) - sides[team].length;
       for (let i = 0; i < botCount; i++) {
         let name;
@@ -663,7 +700,14 @@ export class Hub {
         players.push({ key: `bot:${id}:${team}${i}`, name, team, session: null, champ: null, summ: 'mend', locked: false, bot: true });
       }
     }
-    const sel = { id, players, opts, endsAt: this.time + (this.config.selectTime ?? SELECT_TIME), started: false };
+    if (opts.random) {
+      // Brawl: everyone gets a random champion (no duplicates per team).
+      for (const team of ['blue', 'red']) {
+        const pool = [...CHAMPION_IDS].sort(() => this.rng.next() - 0.5);
+        for (const p of players.filter(x => x.team === team)) { p.champ = pool.pop(); p.locked = !p.bot ? false : true; }
+      }
+    }
+    const sel = { id, players, opts, endsAt: this.time + Math.min(this.config.selectTime ?? SELECT_TIME, opts.selectTime ?? Infinity), started: false };
     this.selects.set(id, sel);
     this.broadcastSelect(sel);
     return sel;
@@ -672,7 +716,7 @@ export class Hub {
   selectInfo(sel, viewer) {
     return {
       id: sel.id, mode: sel.opts.mode, ranked: sel.opts.ranked, timeLeft: Math.max(0, Math.ceil(sel.endsAt - this.time)),
-      players: sel.players.map(p => ({ name: p.name, team: p.team, bot: p.bot, champ: p.team === viewer.team || p.locked ? p.champ : null, summ: p.team === viewer.team ? p.summ : null, locked: p.locked, you: p === viewer })),
+      players: sel.players.map(p => ({ name: p.name, team: p.team, bot: p.bot, champ: p.team === viewer.team || p.locked ? p.champ : null, summ: p.team === viewer.team ? p.summ : null, ks: p.team === viewer.team ? p.keystone : null, locked: p.locked, you: p === viewer })),
     };
   }
 
@@ -686,11 +730,14 @@ export class Hub {
     const p = sel.players.find(x => x.session === session);
     if (p.locked) return;
     if (msg.t === 'pick') {
+      if (sel.opts.random) return this.notice(session, 'Champions are random in Brawl.', 'warn');
       if (!CHAMPIONS[msg.champ]) return;
       if (sel.players.some(o => o !== p && o.team === p.team && o.champ === msg.champ)) return this.notice(session, 'A teammate already picked that champion.', 'warn');
       p.champ = msg.champ;
     } else if (msg.t === 'csumm') {
       if (SECOND_SPELLS.includes(msg.spell)) p.summ = msg.spell;
+    } else if (msg.t === 'ks') {
+      if (KEYSTONES[msg.k]) { p.keystone = msg.k; if (session.profile) session.profile.keystone = msg.k; } // remembered for next time
     } else if (msg.t === 'lock') {
       if (!p.champ) return this.notice(session, 'Pick a champion first.', 'warn');
       p.locked = true;
@@ -733,7 +780,7 @@ export class Hub {
   startMatch(sel) {
     const id = `m${this.nextId++}`;
     const skill = { easy: 0.45, normal: 0.7, hard: 0.92 }[sel.opts.difficulty] ?? 0.7;
-    const players = sel.players.map(p => ({ key: p.key, name: p.name, team: p.team, champ: p.champ, spell: p.summ, bot: !p.session, role: p.role, skill, session: p.session, skin: p.session ? equippedSkin(p.session.profile, p.champ) : 'base' }));
+    const players = sel.players.map(p => ({ key: p.key, name: p.name, team: p.team, champ: p.champ, spell: p.summ, keystone: p.keystone, bot: !p.session, role: p.role, skill, session: p.session, skin: p.session ? equippedSkin(p.session.profile, p.champ) : 'base' }));
     const match = new Match({
       id, mode: sel.opts.mode, ranked: sel.opts.ranked, players,
       hooks: { end: (m, result) => this.onMatchEnd(m, result), feed: () => {} },
@@ -773,6 +820,7 @@ export class Hub {
   }
 
   onMatchEnd(match, result) {
+    this.analytics?.event('match', { mode: match.mode, result });
     for (const s of match.spectators) s.send({ t: 'end', result, spectator: true });
     if (match.recorder) setTimeout(() => this.saveReplay(match, result), 3000);
     const humans = result.players.filter(p => !p.key.startsWith('bot:'));
@@ -788,6 +836,7 @@ export class Hub {
       const bonus = {};
       this.applyResult(p.key, prof => {
         prof.games++;
+        if (match.mode !== 'tutorial') { prof.realGames = (prof.realGames || 0) + 1; if (prof.realGames === 1) this.analytics?.event('firstGame'); if (prof.realGames === 2) this.analytics?.event('secondGame'); }
         if (p.win) prof.wins++; else prof.losses++;
         prof.kills += p.kills; prof.deaths += p.deaths; prof.assists += p.assists;
         if (rated) { prof.rating = Math.max(0, prof.rating + delta); rankedGame(prof); }

@@ -108,6 +108,7 @@ export class Tutorial {
     if (step.final) {
       this.el.classList.add('done');
       try { localStorage.setItem(DONE_KEY, '1'); } catch { /* ignore */ }
+      this.game.send({ t: 'track', ev: 'tutorialDone' });
       sfx.play('victory', { late: true });
       this.actionsEl.append(
         h('button.btn.btn-primary', { onclick: () => this.game.quit() }, 'Back to the lobby'),

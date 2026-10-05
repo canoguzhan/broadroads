@@ -6,6 +6,7 @@ import { pic, champKey } from './icons.js';
 import { championPreview } from '../render/preview.js';
 import { preloadModels } from '../render/assetModels.js';
 import { equippedSkin } from '../../shared/moba/progression.js';
+import { KEYSTONES, defaultKeystone } from '../../shared/moba/keystones.js';
 
 const ROLES = ['All', 'Tank', 'Fighter', 'Assassin', 'Mage', 'Marksman', 'Support'];
 
@@ -51,7 +52,7 @@ export class Select {
     const grid = h('div.sel-grid', {}, ...champs.filter(c => this.role === 'All' || c.role === this.role).map(c => {
       const taken = takenByTeam.has(c.id);
       return h(`button.champ-card${me.champ === c.id ? '.sel' : ''}${taken ? '.taken' : ''}`, {
-        disabled: taken || me.locked,
+        disabled: taken || me.locked || sel.mode === 'brawl',
         onclick: () => app.send({ t: 'pick', champ: c.id }),
         onmouseenter: () => { this.hovered = c.id; this.renderDetail(shownDetail, c); championPreview.show(c.id, c, equippedSkin(app.lobby?.profile, c.id)); },
         onmouseleave: () => { this.hovered = null; if (me.champ) championPreview.show(me.champ, app.champInfo[me.champ], equippedSkin(app.lobby?.profile, me.champ)); },
@@ -65,14 +66,17 @@ export class Select {
     if (shown) this.renderDetail(shownDetail, shown);
     const summs = h('div.sel-summs', {}, h('span.muted', { text: 'Spells: ✨ Blink + ' }),
       ...app.data.second.map(s => { const d = app.data.spells[s]; return h(`button.summ-btn${me.summ === s ? '.active' : ''}`, { title: `${d.name}: ${d.desc}`, disabled: me.locked, onclick: () => app.send({ t: 'csumm', spell: s }) }, h('span.summ-ic', {}, pic(`spell/${s}`, d.icon)), d.name); }));
+    const myKs = me.ks || (me.champ ? defaultKeystone(app.champInfo[me.champ]?.role) : null);
+    const keystones = h('div.sel-summs.sel-ks', {}, h('span.muted', { text: 'Keystone:' }),
+      ...Object.entries(KEYSTONES).map(([id, k]) => h(`button.summ-btn${myKs === id ? '.active' : ''}`, { title: `${k.name}: ${k.desc}`, disabled: me.locked, onclick: () => app.send({ t: 'ks', k: id }) }, h('span.summ-ic', {}, pic(`misc/ks_${id}`, k.icon)), k.name)));
     clear(this.root);
     this.root.append(h('div.auth-bg'), h('div.sel-wrap', {},
-      h('div.sel-top', {}, h('div.sel-mode', { text: `${sel.mode === 'tutorial' ? 'Tutorial' : sel.mode === 'skirmish' ? 'Skirmish 3v3' : sel.mode === 'practice' ? 'Practice vs AI' : sel.mode === 'custom' ? 'Custom Game' : sel.ranked ? 'Ranked 5v5' : 'Matchmade 5v5'} · Choose your champion` }), h('div.sel-timer', { text: sel.timeLeft })),
+      h('div.sel-top', {}, h('div.sel-mode', { text: `${sel.mode === 'tutorial' ? 'Tutorial' : sel.mode === 'skirmish' ? 'Skirmish 3v3' : sel.mode === 'brawl' ? 'Brawl · random champions' : sel.mode === 'practice' ? 'Practice vs AI' : sel.mode === 'custom' ? 'Custom Game' : sel.ranked ? 'Ranked 5v5' : 'Matchmade 5v5'} · Choose your champion` }), h('div.sel-timer', { text: sel.timeLeft })),
       h('div.sel-main', {},
         teamList(myTeam, true),
         h('div.sel-center', {},
           h('div.tabs.small.wrap', {}, ...ROLES.map(r => h(`button.tab${this.role === r ? '.active' : ''}`, { onclick: () => { this.role = r; this.render(); } }, r))),
-          grid, summs,
+          grid, summs, keystones,
           h('button.btn.btn-primary.btn-lg', { disabled: !me.champ || me.locked, onclick: () => app.send({ t: 'lock' }) }, me.locked ? 'Locked in — waiting for others' : 'Lock In')),
         h('div.sel-right', {}, preview, shownDetail, teamList(myTeam === 'blue' ? 'red' : 'blue', false)))));
   }
