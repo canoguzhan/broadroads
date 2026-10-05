@@ -170,6 +170,7 @@ export class Panels {
       wide: true,
       content: h('div.result', {},
         watching ? h('h2.win', { text: `${res.winner === 'blue' ? 'BLUE' : 'RED'} TEAM WINS` }) : h(`h2.${win ? 'win' : 'loss'}`, { text: win ? 'VICTORY' : 'DEFEAT' }),
+        r.bonus && r.bonus.firstWin ? h('div.first-win', {}, pic('misc/firstwin', '☀️'), h('b', { text: 'First win of the day!' }), ' +100 💠 +200 XP') : null,
         watching ? null : h('p', {}, `+${r.xp} XP`, r.rated ? ` · Rating ${r.delta >= 0 ? '+' : ''}${r.delta} (${r.profile.rating})` : ' · Unranked'),
         r.profile && r.profile.quests ? h('div.end-quests', {}, ...r.profile.quests.list.map(q => { const d = QUESTS[q.id]; return d ? h(`span.eq${q.n >= d.goal ? '.done' : ''}`, { text: `${q.n >= d.goal ? '✓' : '📜'} ${d.text}: ${Math.min(q.n, d.goal).toLocaleString()}/${d.goal.toLocaleString()}` }) : null; }), h('span.eq.sh', { text: `💠 ${r.profile.shards} shards` })) : null,
         h('h4.t-blue', { text: 'Blue team' }), table('blue'), h('h4.t-red', { text: 'Red team' }), table('red'),

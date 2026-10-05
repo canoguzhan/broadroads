@@ -115,3 +115,86 @@ export function avatarUnlocked(prof, id) {
 
 export const DEFAULT_AVATAR = 'portrait/minion_melee_blue';
 export const avatarOf = prof => (prof && prof.avatar && avatarUnlocked(prof, prof.avatar) ? prof.avatar : DEFAULT_AVATAR);
+
+/* ---------------- daily bonuses ---------------- */
+export const FIRST_WIN_SHARDS = 100, FIRST_WIN_XP = 200;
+// Login streak rewards, day 1..7 (then it cycles).
+export const STREAK_REWARDS = [25, 50, 75, 100, 150, 200, 300];
+const yesterday = now => today(now - 86400000);
+
+/** Daily login streak: call on login. Returns the shards granted today (0 if already counted). */
+export function loginStreak(prof, now = Date.now()) {
+  const day = today(now);
+  if (prof.lastLogin === day) return 0;
+  prof.streak = prof.lastLogin === yesterday(now) ? (prof.streak || 0) + 1 : 1;
+  prof.lastLogin = day;
+  const reward = STREAK_REWARDS[(prof.streak - 1) % STREAK_REWARDS.length];
+  prof.shards = (prof.shards || 0) + reward;
+  return reward;
+}
+
+export const firstWinAvailable = (prof, now = Date.now()) => prof.firstWinDay !== today(now);
+
+/** First win of the day: call for a won (non-tutorial) game. Returns true when the bonus was granted. */
+export function firstWin(prof, now = Date.now()) {
+  if (!firstWinAvailable(prof, now)) return false;
+  prof.firstWinDay = today(now);
+  prof.shards = (prof.shards || 0) + FIRST_WIN_SHARDS;
+  return true;
+}
+
+/* ---------------- ranked tiers and seasons ---------------- */
+// Each tier spans 200 rating with four divisions (IV..I) of 50; Champion is open-ended.
+export const TIERS = [
+  { id: 'bronze', name: 'Bronze', min: 0, color: '#c0794a', reward: 100 },
+  { id: 'silver', name: 'Silver', min: 900, color: '#c9d1d9', reward: 200 },
+  { id: 'gold', name: 'Gold', min: 1100, color: '#f5c542', reward: 350 },
+  { id: 'platinum', name: 'Platinum', min: 1300, color: '#4fd1c5', reward: 500 },
+  { id: 'diamond', name: 'Diamond', min: 1500, color: '#7aa7ff', reward: 750 },
+  { id: 'master', name: 'Master', min: 1700, color: '#c084fc', reward: 1000 },
+  { id: 'champion', name: 'Champion', min: 1900, color: '#ff6b6b', reward: 1500 },
+];
+const DIVS = ['IV', 'III', 'II', 'I'];
+
+export function tierOf(rating) {
+  let t = TIERS[0];
+  for (const x of TIERS) if (rating >= x.min) t = x;
+  const next = TIERS[TIERS.indexOf(t) + 1];
+  if (!next) return { ...t, div: '', label: t.name, progress: 1 };
+  const span = next.min - (t.min || 700); // Bronze effectively starts at 700
+  const into = Math.max(0, rating - (t.min || 700));
+  const div = DIVS[Math.min(3, Math.floor((into / span) * 4))];
+  return { ...t, div, label: `${t.name} ${div}`, progress: Math.min(1, into / span) };
+}
+
+// Seasons are calendar quarters; Season 1 is 2026 Q4 (launch).
+export function seasonOf(now = Date.now()) {
+  const d = new Date(now);
+  const q = Math.floor(d.getUTCMonth() / 3);
+  const number = (d.getUTCFullYear() - 2026) * 4 + q - 2;
+  const end = Date.UTC(d.getUTCFullYear(), (q + 1) * 3, 1);
+  return { id: `${d.getUTCFullYear()}-Q${q + 1}`, number: Math.max(1, number), endsAt: end };
+}
+
+/** Season rollover on login: archives the old season, pays its reward and soft-resets rating. */
+export function seasonRollover(prof, now = Date.now()) {
+  const s = seasonOf(now);
+  if (!prof.season) { prof.season = s.id; prof.peakRating = prof.rating; prof.seasonGames = 0; return null; }
+  if (prof.season === s.id) return null;
+  const peak = tierOf(prof.peakRating || prof.rating);
+  const played = (prof.seasonGames || 0) >= 5;
+  const reward = played ? peak.reward : 0;
+  prof.seasonHistory = [{ season: prof.season, peak: peak.label, tier: peak.id, games: prof.seasonGames || 0 }, ...(prof.seasonHistory || [])].slice(0, 12);
+  prof.shards = (prof.shards || 0) + reward;
+  prof.rating = Math.round(1000 + (prof.rating - 1000) / 2);
+  prof.season = s.id;
+  prof.peakRating = prof.rating;
+  prof.seasonGames = 0;
+  return { reward, peak: peak.label, played };
+}
+
+/** Rated game bookkeeping. */
+export function rankedGame(prof) {
+  prof.seasonGames = (prof.seasonGames || 0) + 1;
+  prof.peakRating = Math.max(prof.peakRating || 0, prof.rating);
+}

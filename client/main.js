@@ -137,6 +137,7 @@ class App {
         break;
       case 'match': this.startGame(m); break;
       case 'live': this.lobby?.setLive(m.list); break;
+      case 'friends': this.lobby?.setFriends(m); break;
       case 'replays': this.lobby?.setReplays(m.list); break;
       case 'replay': this.startReplay(m.header, m.lines); break;
       case 'party': this.lobby?.setParty(m.party); break;
@@ -167,7 +168,7 @@ class App {
     this.game.start();
     $('#orientation-lock').classList.add('active');
     if (m.spectator) this.ui.banner(m.replay ? 'REPLAY' : 'SPECTATING', `${m.players.filter(p => p.team === 'blue').length}v${m.players.filter(p => p.team === 'red').length} · ${m.mode}`);
-    else this.ui.banner(m.mode === 'tutorial' ? 'TUTORIAL' : m.mode === 'practice' ? 'PRACTICE VS AI' : m.ranked ? 'RANKED MATCH' : '5V5 MATCH', `You are on the ${m.team === 'blue' ? 'Blue' : 'Red'} team`);
+    else this.ui.banner(m.mode === 'tutorial' ? 'TUTORIAL' : m.mode === 'skirmish' ? 'SKIRMISH 3V3' : m.mode === 'practice' ? 'PRACTICE VS AI' : m.ranked ? 'RANKED MATCH' : '5V5 MATCH', `You are on the ${m.team === 'blue' ? 'Blue' : 'Red'} team`);
   }
 
   /* ---------------- replays ---------------- */

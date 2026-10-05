@@ -72,6 +72,11 @@ export class Match {
     this.ranked = ranked;
     this.hooks = hooks;
     this.valley = getValley();
+    // Skirmish: 3v3 on the middle lane only, faster economy and weaker structures (~10 minutes).
+    this.skirmish = mode === 'skirmish';
+    this.lanes = this.skirmish ? ['mid'] : LANES;
+    this.goldMul = this.skirmish ? 1.7 : 1;
+    this.xpMul = this.skirmish ? 1.6 : 1;
     this.map = this.valley.map;
     this.pf = new Pathfinder(this.map);
     this.rng = new RNG(seed ?? (Math.random() * 2 ** 31) | 0);
@@ -80,7 +85,7 @@ export class Match {
     this.nextId = 1;
     this.time = 0;
     this.fx = [];
-    this.waveT = CFG.minionFirst;
+    this.waveT = this.skirmish ? 10 : CFG.minionFirst;
     this.wave = 0;
     this.spawnQueue = [];
     this.kills = { blue: 0, red: 0 };
@@ -94,10 +99,10 @@ export class Match {
     this.visT = 0;
     this.buildStructures();
     this.camps = [];
-    for (const team of ['blue', 'red']) for (const c of this.valley.teams[team].camps) this.camps.push({ ...c, side: team, units: [], respawnAt: CFG.campFirst });
+    for (const team of ['blue', 'red']) for (const c of this.valley.teams[team].camps) this.camps.push({ ...c, side: team, units: [], respawnAt: this.skirmish ? 40 : CFG.campFirst });
     this.epics = {
       wyrm: { pos: this.valley.epic.wyrm, unit: null, respawnAt: CFG.wyrmFirst },
-      titan: { pos: this.valley.epic.titan, unit: null, respawnAt: CFG.titanFirst },
+      titan: { pos: this.valley.epic.titan, unit: null, respawnAt: this.skirmish ? Infinity : CFG.titanFirst },
     };
     for (const p of players) this.addHero(p);
   }
@@ -113,14 +118,17 @@ export class Match {
     this.structures = { blue: [], red: [] };
     for (const team of ['blue', 'red']) {
       const T = this.valley.teams[team];
+      const k = this.skirmish ? 0.38 : 1;
       for (const t of T.towers) {
+        if (!this.lanes.includes(t.lane) && t.lane !== 'base') continue;
         const st = TOWER[t.tier];
-        this.structures[team].push(this.add({ kind: 'tower', team, lane: t.lane, tier: t.tier, x: t.x, y: t.y, r: 1.0, facing: 0, hp: st.hp, maxHp: st.hp, armor: st.armor, mr: st.armor, ad: st.ad, as: 0.83, range: 7.5, atkT: 0, target: null, ramp: 0, sight: CFG.towerSight }));
+        this.structures[team].push(this.add({ kind: 'tower', team, lane: t.lane, tier: t.tier, x: t.x, y: t.y, r: 1.0, facing: 0, hp: st.hp * k, maxHp: st.hp * k, armor: st.armor, mr: st.armor, ad: st.ad, as: 0.83, range: 7.5, atkT: 0, target: null, ramp: 0, sight: CFG.towerSight }));
       }
       for (const i of T.spires) {
-        this.structures[team].push(this.add({ kind: 'spire', team, lane: i.lane, x: i.x, y: i.y, r: 1.3, facing: 0, hp: 2200, maxHp: 2200, armor: 20, mr: 20, respawnAt: 0, sight: 7 }));
+        if (!this.lanes.includes(i.lane)) continue;
+        this.structures[team].push(this.add({ kind: 'spire', team, lane: i.lane, x: i.x, y: i.y, r: 1.3, facing: 0, hp: 2200 * k, maxHp: 2200 * k, armor: 20, mr: 20, respawnAt: 0, sight: 7 }));
       }
-      this.structures[team].push(this.add({ kind: 'core', team, x: T.core.x, y: T.core.y, r: 2.2, facing: 0, hp: 4500, maxHp: 4500, armor: 0, mr: 0, sight: 8 }));
+      this.structures[team].push(this.add({ kind: 'core', team, x: T.core.x, y: T.core.y, r: 2.2, facing: 0, hp: 4500 * k, maxHp: 4500 * k, armor: 0, mr: 0, sight: 8 }));
     }
   }
 
@@ -146,6 +154,7 @@ export class Match {
       session: p.session || null, bot: p.bot ? makeBrain(p) : null, botRole: p.role || null,
       sight: CFG.heroSight, passiveShieldT: 0,
     });
+    if (this.skirmish) { h.gold = h.goldEarned = 1200; h.level = 3; h.points = 3; h.xp = XP_TO_LEVEL[3]; this.recompute(h); h.hp = h.maxHp; h.mp = h.maxMp; }
     this.heroes.push(h);
     this.recompute(h, true);
     h.hp = h.maxHp; h.mp = h.maxMp;
@@ -336,6 +345,7 @@ export class Match {
     if (!tgt || tgt.dead || tgt.removed || this.ended) return 0;
     if (this.hasFlag(tgt, 'untargetable') || this.hasFlag(tgt, 'invulnerable')) return 0;
     const isStructure = tgt.kind === 'tower' || tgt.kind === 'spire' || tgt.kind === 'core';
+    if (isStructure && this.skirmish && this.time > 720) amount *= tgt.kind === 'core' ? 2 : 1.5; // Skirmish sudden death (after 12:00)
     if (isStructure) {
       if (opts.ability || this.structureProtected(tgt)) return 0;
       // Structures take less damage when the attacker has no minion escort (anti-backdoor).
@@ -412,11 +422,11 @@ export class Match {
   }
 
   /* ================= kills & rewards ================= */
-  addGold(h, g) { if (h) { h.gold += g; h.goldEarned += g; } }
+  addGold(h, g) { if (h) { g *= this.goldMul; h.gold += g; h.goldEarned += g; } }
 
   addXp(h, xp) {
     if (!h || h.level >= MAX_LEVEL) return;
-    h.xp += xp;
+    h.xp += xp * this.xpMul;
     let up = false;
     while (h.level < MAX_LEVEL && h.xp >= XP_TO_LEVEL[h.level + 1]) { h.level++; h.points++; up = true; }
     if (up) {
@@ -503,7 +513,7 @@ export class Match {
     v.shields = [];
     this.recompute(v);
     const respawn = Math.min(40, 5 + v.level * 1.8 + Math.max(0, this.time / 60 - 12) * 0.8);
-    v.respawnAt = this.time + respawn;
+    v.respawnAt = this.time + respawn * (this.skirmish ? 0.6 : 1);
     const team = enemyOf(v.team);
     this.kills[team]++;
     const assisters = this.heroes.filter(h => h.team === team && h !== killer && [...v.lastHitBy].some(([id, t]) => id === h.id && this.time - t <= CFG.assistWindow));
@@ -540,7 +550,7 @@ export class Match {
       for (const h of this.heroes) if (h.team === team) { this.addGold(h, 150); this.addXp(h, 50); }
       this.announce(`${team === 'blue' ? 'Blue' : 'Red'} team destroyed a ${s.lane === 'base' ? 'core' : s.lane} tower!`, 'tower', { team, key: 'tower' });
     } else if (s.kind === 'spire') {
-      s.respawnAt = this.time + CFG.spireRespawn;
+      s.respawnAt = this.skirmish ? Infinity : this.time + CFG.spireRespawn; // Skirmish spires stay down
       for (const h of this.heroes) if (h.team === team) this.addGold(h, 50);
       this.announce(`${team === 'blue' ? 'Blue' : 'Red'} team destroyed the ${s.lane} spire! Juggernaut minions incoming.`, 'spire', { team, key: 'spire' });
     } else if (s.kind === 'core') {
@@ -599,10 +609,11 @@ export class Match {
     this.wave++;
     const scale = Math.floor(this.time / 90);
     for (const team of ['blue', 'red']) {
-      for (const lane of LANES) {
+      for (const lane of this.lanes) {
         const types = ['melee', 'melee', 'melee'];
         if (this.wave % 3 === 0) types.push('siege');
         types.push('caster', 'caster', 'caster');
+        if (this.skirmish && this.time > 600) types.push('super'); // Skirmish sudden death: juggernauts every wave after 10:00
         const enemySpiresDown = this.structures[enemyOf(team)].filter(s => s.kind === 'spire' && s.dead);
         if (enemySpiresDown.some(s => s.lane === lane)) {
           const si = types.indexOf('siege');
@@ -1400,7 +1411,7 @@ export class Match {
     if (this.time > CFG.passiveGoldStart) for (const h of this.heroes) { this.addGold(h, CFG.passiveGold * dt); this.addXp(h, CFG.passiveXp * dt); }
     // Waves.
     this.waveT -= dt;
-    if (this.waveT <= 0) { this.waveT = CFG.waveEvery; this.spawnWave(); }
+    if (this.waveT <= 0) { this.waveT = this.skirmish ? 20 : CFG.waveEvery; this.spawnWave(); }
     while (this.spawnQueue.length && this.spawnQueue[0].at <= this.time) this.spawnMinion(this.spawnQueue.shift());
     // Camps & epics.
     for (const c of this.camps) if (c.respawnAt && this.time >= c.respawnAt) { c.respawnAt = 0; this.spawnCamp(c); }
@@ -1458,7 +1469,7 @@ export class Match {
   }
 
   surrenderVote(h, yes) {
-    if (this.time < CFG.surrenderAfter || this.ended) return false;
+    if (this.time < (this.skirmish ? 300 : CFG.surrenderAfter) || this.ended) return false;
     const set = this.surrender[h.team];
     if (yes) set.add(h.id); else set.delete(h.id);
     const humans = this.heroes.filter(x => x.team === h.team && x.session);

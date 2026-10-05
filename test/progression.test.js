@@ -71,3 +71,47 @@ test('profile pictures unlock by champion played or account level', () => {
   p.avatar = 'portrait/mob_titan';
   assert.equal(avatarOf(p), DEFAULT_AVATAR, 'locked choice falls back');
 });
+
+import { loginStreak, firstWin, firstWinAvailable, STREAK_REWARDS, tierOf, seasonOf, seasonRollover, rankedGame, FIRST_WIN_SHARDS } from '../shared/moba/progression.js';
+
+test('login streak counts consecutive days and resets after a gap', () => {
+  const p = newProfile('Finn'), d = Date.UTC(2026, 9, 5, 12), day = 86400000;
+  const s0 = p.shards;
+  assert.equal(loginStreak(p, d), STREAK_REWARDS[0]);
+  assert.equal(loginStreak(p, d + 3600000), 0, 'once per day');
+  assert.equal(loginStreak(p, d + day), STREAK_REWARDS[1]);
+  assert.equal(p.streak, 2);
+  assert.equal(loginStreak(p, d + 3 * day), STREAK_REWARDS[0], 'missed a day');
+  assert.equal(p.streak, 1);
+  assert.equal(p.shards, s0 + STREAK_REWARDS[0] * 2 + STREAK_REWARDS[1]);
+});
+
+test('first win of the day pays once per day', () => {
+  const p = newProfile('Gus'), d = Date.UTC(2026, 9, 5, 12);
+  assert.ok(firstWinAvailable(p, d));
+  const s0 = p.shards;
+  assert.equal(firstWin(p, d), true);
+  assert.equal(firstWin(p, d + 1000), false);
+  assert.equal(p.shards, s0 + FIRST_WIN_SHARDS);
+  assert.equal(firstWin(p, d + 86400000), true);
+});
+
+test('tiers, divisions and season rollover', () => {
+  assert.equal(tierOf(650).label, 'Bronze IV');
+  assert.equal(tierOf(1000).id, 'silver');
+  assert.equal(tierOf(1180).label, 'Gold III');
+  assert.equal(tierOf(1210).label, 'Gold II');
+  assert.equal(tierOf(2400).label, 'Champion');
+  assert.equal(seasonOf(Date.UTC(2026, 9, 5)).number, 1);
+  assert.equal(seasonOf(Date.UTC(2027, 0, 5)).number, 2);
+  const p = newProfile('Hal');
+  seasonRollover(p, Date.UTC(2026, 9, 5));
+  p.rating = 1400; for (let i = 0; i < 5; i++) rankedGame(p);
+  const s0 = p.shards;
+  const r = seasonRollover(p, Date.UTC(2027, 0, 2));
+  assert.equal(r.peak, tierOf(1400).label);
+  assert.equal(p.shards, s0 + tierOf(1400).reward);
+  assert.equal(p.rating, 1200, 'soft reset halfway to 1000');
+  assert.equal(p.seasonHistory.length, 1);
+  assert.equal(seasonRollover(p, Date.UTC(2027, 0, 3)), null);
+});

@@ -90,6 +90,10 @@ const MISC = {
   trophy: 'a golden victory trophy cup', tower: 'a stone guard tower with a glowing crystal', kill: 'a white skull with crossed swords',
   shop: 'a merchant pouch with coins spilling out', wyrm: 'a fierce orange dragon head', titan: 'a dark purple horned titan head',
   levelup: 'a glowing upward golden arrow with sparkles', quest: 'a parchment scroll with a red wax seal',
+  tier_bronze: 'a bronze shield emblem with a single wing, ranked badge', tier_silver: 'a polished silver shield emblem with two wings, ranked badge',
+  tier_gold: 'a shining gold shield emblem with laurel wings, ranked badge', tier_platinum: 'a teal platinum crest emblem with crystal wings, ranked badge',
+  tier_diamond: 'a brilliant blue diamond crest emblem with large wings, ranked badge', tier_master: 'a purple master crest emblem with a crown and flames, ranked badge',
+  tier_champion: 'a radiant red and gold champion crest emblem with a crown and blazing wings, ranked badge', streak: 'a burning orange flame over a calendar page', firstwin: 'a golden sunrise over a victory trophy',
 };
 const misc = (...ids) => ids.map(id => ({ kind: 'misc', id, look: MISC[id] }));
 const of = kind => ICONS.filter(i => i.kind === kind);
@@ -100,6 +104,7 @@ const sheets = [
   abilities.slice(0, 9), abilities.slice(9, 18), abilities.slice(18, 27), abilities.slice(27, 36),
   [...abilities.slice(36), passives.find(p => p.id === 'rook'), ...misc('wyrm', 'titan', 'levelup', 'quest')],
   passives.filter(p => p.id !== 'rook'),
+  misc('tier_bronze', 'tier_silver', 'tier_gold', 'tier_platinum', 'tier_diamond', 'tier_master', 'tier_champion', 'streak', 'firstwin'),
 ];
 for (const sh of sheets) if (sh.length !== 9) throw new Error(`sheet has ${sh.length} icons: ${sh.map(i => i.id)}`);
 STYLE.misc = 'fantasy MOBA interface icons, a single object per tile';

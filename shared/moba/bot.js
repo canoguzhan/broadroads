@@ -135,6 +135,11 @@ function useAbilities(m, h, target, mode) {
     const a = h.c.abilities[slot];
     const tag = h.c.bot[slot];
     const range = (a.range || 3) + (target ? target.r : 0);
+    // Ultimates: wait for a clump of enemies or a target worth finishing.
+    if (slot === 'r' && target && ['poke', 'cc', 'melee', 'engage'].includes(tag)) {
+      const clump = m.heroes.filter(e => e.team !== h.team && !e.dead && dist(e.x, e.y, target.x, target.y) < 4.5).length;
+      if (clump < 2 && target.hp / target.maxHp > 0.5 && b.skill > 0.5) continue;
+    }
     switch (tag) {
       case 'poke': case 'cc':
         if (target && target.kind === 'hero' && d <= range * 0.95) return castAt(m, h, slot, target);
@@ -195,6 +200,7 @@ function moveTo(m, h, x, y) {
 }
 
 function retreat(m, h, threat) {
+  h.bot.state = 'retreat';
   const f = m.valley.teams[h.team].fountain;
   if (!threat || dist(h.x, h.y, threat.x, threat.y) > 10) {
     if (!h.recall) m.command(h, { t: 'recall' });
@@ -208,7 +214,10 @@ function retreat(m, h, threat) {
 function bestTarget(m, h, enemies) {
   let best = null, bs = Infinity;
   for (const e of enemies) {
-    const s = (e.hp / e.maxHp) * 10 + dist(h.x, h.y, e.x, e.y) * 0.8 + (e.c.role === 'Tank' ? 3 : 0);
+    // Focus fire: prefer whoever teammates are already hitting, and targets we can finish.
+    const focus = m.heroes.filter(a => a.team === h.team && a !== h && !a.dead && a.order.target === e.id).length;
+    const finish = e.hp < h.stats.ad * 3 + h.stats.ap * 0.6 ? 4 : 0;
+    const s = (e.hp / e.maxHp) * 10 + dist(h.x, h.y, e.x, e.y) * 0.8 + (e.c.role === 'Tank' ? 3 : 0) - focus * 3 - finish;
     if (s < bs) { bs = s; best = e; }
   }
   return best;
@@ -262,13 +271,15 @@ function objectiveThink(m, h) {
     if (k === 'titan' && m.time < 1080) continue;
     // Who takes part: wyrm = jungle + bot lane (everyone late), titan = everyone.
     const role = h.bot.role;
-    const joins = k === 'titan' || m.time > 1080 || role === 'jungle' || role === 'bot' || role === 'support';
+    const picks = m.heroes.filter(e => e.team !== h.team && e.dead).length >= 3; // enemies are down: everyone goes
+    const joins = picks || k === 'titan' || m.time > 1080 || role === 'jungle' || role === 'bot' || role === 'support';
     if (!joins || h.hp < h.maxHp * 0.55) continue;
     const allies = m.heroes.filter(a => a.team === h.team && !a.dead && a.hp > a.maxHp * 0.4 && dist(a.x, a.y, u.x, u.y) < 22);
     const enemiesNear = m.heroes.filter(e => e.team !== h.team && !e.dead && m.visibleTo(e, h.team) && dist(e.x, e.y, u.x, u.y) < 16);
-    const need = k === 'titan' ? 4 : 2;
-    const levelOk = h.level >= (k === 'titan' ? 11 : 6);
-    if (!levelOk || enemiesNear.length > 1) continue;
+    const late = m.time > 1200;
+    const need = picks ? (k === 'titan' ? 3 : 1) : k === 'titan' ? (late ? 3 : 4) : 2;
+    const levelOk = h.level >= (k === 'titan' ? (picks || late ? 9 : 11) : 6);
+    if (!levelOk || enemiesNear.length > (k === 'titan' && late ? 2 : 1)) continue;
     const jungler = m.heroes.find(a => a.team === h.team && a.bot && a.bot.role === 'jungle' && !a.dead);
     // Rally: jungler heads to the pit, others join when the jungler is on the way.
     if (allies.length < need) {
@@ -314,6 +325,9 @@ export function botThink(m, h, dt) {
   const enemies = visibleEnemies(m, h, 11);
   const allies = alliesNear(m, h, 10);
   const hpPct = h.hp / h.maxHp;
+  const prevState = b.state;
+  b.state = 'lane';
+  const enemiesDead = m.heroes.filter(e => e.team !== h.team && e.dead).length;
   const nearest = enemies.sort((a, c) => dist(h.x, h.y, a.x, a.y) - dist(h.x, h.y, c.x, c.y))[0];
 
   // Use potions.
@@ -330,8 +344,25 @@ export function botThink(m, h, dt) {
   // Retreat when low or outnumbered.
   const outnumbered = enemies.length > allies.length + 1;
   if (hpPct < 0.28 || (hpPct < 0.45 && outnumbered) || (h.mp < h.maxMp * 0.1 && !nearest && h.c.base.mp > 0)) return retreat(m, h, nearest);
+  // Fall back together: when teammates are retreating and the fight is even or worse, go with them.
+  const fleeing = allies.filter(a => a.bot && a.bot.state === 'retreat').length;
+  if (nearest && fleeing >= 2 && enemies.length >= allies.length - fleeing + 1 && hpPct < 0.8) return retreat(m, h, nearest);
+  void prevState;
+  // Peel: tanks and supports protect a low teammate who is being chased.
+  if (enemies.length && (b.role === 'support' || h.c.role === 'Tank' || h.c.role === 'Support')) {
+    const ward = m.heroes.find(a => a.team === h.team && a !== h && !a.dead && a.hp < a.maxHp * 0.45 && dist(a.x, a.y, h.x, h.y) < 10);
+    const chaser = ward && enemies.find(e => dist(e.x, e.y, ward.x, ward.y) < 5);
+    if (chaser && hpPct > 0.35) {
+      b.state = 'fight';
+      useAbilities(m, h, chaser, 'fight');
+      if (h.order.type !== 'attack' || h.order.target !== chaser.id) m.command(h, { t: 'mv', x: chaser.x, y: chaser.y, id: chaser.id });
+      return;
+    }
+  }
   // Go shopping with a full wallet when safe.
-  if (h.gold > 1500 && !nearest && !m.inFountain(h)) { m.command(h, { t: 'recall' }); return; }
+  // (Only while the build is unfinished: a full build used to send bots home forever.)
+  const buildDone = h.c.bot.build.every(id => h.items.some(it => it && it.id === id));
+  if (h.gold > 1500 && !buildDone && !nearest && !m.inFountain(h)) { m.command(h, { t: 'recall' }); return; }
 
   if (defendBase(m, h)) return;
 
@@ -344,6 +375,7 @@ export function botThink(m, h, dt) {
     const towerTankers = underTheirTower ? m.alliesNear(h.team, underTheirTower.x, underTheirTower.y, 8).filter(u => u.kind === 'minion').length : 1;
     const favorable = (myPower >= theirPower * 1.15 || target.hp < target.maxHp * 0.3) && (!underTheirTower || towerTankers >= 2 || target.hp < target.maxHp * 0.2);
     if (favorable) {
+      b.state = 'fight';
       useAbilities(m, h, target, 'fight');
       spells(m, h, target, 'fight');
       if (h.order.type !== 'attack' || h.order.target !== target.id) m.command(h, { t: 'mv', x: target.x, y: target.y, id: target.id });
@@ -361,15 +393,15 @@ export function botThink(m, h, dt) {
   if (objectiveThink(m, h)) return;
 
   // Role logic.
-  let lane = ROLE_LANE[b.role];
+  let lane = m.skirmish ? 'mid' : ROLE_LANE[b.role];
   if (b.role === 'jungle' && m.time < 900) {
     if (jungleThink(m, h)) return;
     if (hpPct < 0.5) return retreat(m, h, nearest);
     lane = 'mid';
   }
-  if (m.time > 900) {
-    // Late game: group in the lane closest to an enemy structure we can hit.
-    const order = ['mid', 'bot', 'top'];
+  if (m.time > 900 || (enemiesDead >= 3 && m.time > 480)) {
+    // Late game, or after winning a fight: group in the lane closest to an enemy structure we can hit.
+    const order = m.skirmish ? ['mid'] : ['mid', 'bot', 'top'];
     b.groupLane = order.find(l => m.structures[enemyOf(h.team)].some(s => s.lane === l && !s.dead)) || 'mid';
     lane = b.groupLane;
   }
@@ -392,7 +424,7 @@ export function botThink(m, h, dt) {
     const safe = !towerOver || m.alliesNear(h.team, towerOver.x, towerOver.y, 8).some(u => u.kind === 'minion');
     if (safe) {
       const killable = mt.hp <= h.stats.ad * 1.05 * 100 / (100 + (mt.armor || 0));
-      const pushing = m.time > 600 || b.role === 'jungle';
+      const pushing = m.time > 600 || b.role === 'jungle' || enemiesDead >= 2;
       if (killable || pushing || dist(h.x, h.y, mt.x, mt.y) > h.stats.range + 1) {
         if (h.order.type !== 'attack' || h.order.target !== mt.id) m.command(h, { t: 'mv', x: mt.x, y: mt.y, id: mt.id });
         return;

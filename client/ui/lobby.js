@@ -3,7 +3,7 @@ import { h, $, clear, timeStr } from './dom.js';
 import { pic, champKey, abilityKey } from './icons.js';
 import { championPreview } from '../render/preview.js';
 import { tutorialDone } from '../game/tutorial.js';
-import { QUESTS, SKINS, AVATARS, avatarUnlocked, avatarOf, ownsSkin, equippedSkin } from '../../shared/moba/progression.js';
+import { QUESTS, SKINS, AVATARS, avatarUnlocked, avatarOf, ownsSkin, equippedSkin, tierOf, seasonOf, firstWinAvailable, FIRST_WIN_SHARDS, FIRST_WIN_XP, STREAK_REWARDS } from '../../shared/moba/progression.js';
 import { profileXpNeeded } from '../../shared/moba/profile.js';
 import { Chat } from './chat.js';
 
@@ -35,8 +35,9 @@ export class Lobby {
     this.center = h('div.lob-center');
     this.partyEl = h('div.lob-party');
     this.whoEl = h('div.lob-who');
+    this.friendsEl = h('div.lob-friends');
     const chatBox = h('div.lob-chat');
-    this.root.append(h('div.auth-bg'), this.header, h('div.lob-grid', {}, this.playPanel, this.center, h('aside.lob-side', {}, this.partyEl, this.whoEl, chatBox)));
+    this.root.append(h('div.auth-bg'), this.header, h('div.lob-grid', {}, this.playPanel, this.center, h('aside.lob-side', {}, this.partyEl, this.friendsEl, this.whoEl, chatBox)));
     this.chat = new Chat(app, chatBox, 'lobby');
     this.renderPlay();
     this.renderCenter();
@@ -56,8 +57,9 @@ export class Lobby {
     clear(this.profileChip).append(
       h('span.lp-avatar', {}, pic(avatarOf(p), '👤')),
       h('span.lp-mid', {}, h('span.lp-name', { text: p.name }), h('span.lp-xp', { title: `${p.xp} / ${profileXpNeeded(p.level)} XP to level ${p.level + 1}` }, h('i', { style: { width: `${xpPct}%` } }))),
-      h('span.lp-lvl', { text: `Lv ${p.level}` }), h('span.lp-shards', { title: 'Shards: earned from quests, games and level-ups; spend them on skins' }, h('span.sh-ic', { text: '💠' }), String(p.shards || 0)), h('span.lp-rating', { text: `🏆 ${p.rating}` }));
+      h('span.lp-lvl', { text: `Lv ${p.level}` }), h('span.lp-shards', { title: 'Shards: earned from quests, games and level-ups; spend them on skins' }, h('span.sh-ic', { text: '💠' }), String(p.shards || 0)), h('span.lp-rating', { title: tierOf(p.rating).label }, h('span.lp-tier', {}, pic(`misc/tier_${tierOf(p.rating).id}`, '🏆')), String(p.rating)));
     if (this.tab !== 'leaderboard') this.renderCenter();
+    this.renderPlay();
   }
 
   setLive(list) { this.live = list; if (this.tab === 'play') this.renderCenter(); }
@@ -93,6 +95,7 @@ export class Lobby {
       h('div.play-card', {},
         h('div.pc-title', { text: '⚔️ Ranked 5v5' }),
         h('p', { text: app.offline ? 'Requires the online servers.' : 'Matchmaking with real players. Empty seats are filled by bots after a short wait (unranked).' }),
+        this.profile ? this.rankLine(this.profile) : null,
         h('button.btn.btn-primary.btn-lg', { disabled: app.offline || busy, onclick: () => app.send({ t: 'queue', mode: 'ranked' }) }, 'Find Match')),
       h('div.play-card', {},
         h('div.pc-title', { text: '🤖 Practice vs AI' }),
@@ -104,6 +107,10 @@ export class Lobby {
         h('p', { text: 'Create a room and share the code with friends, or join one.' }),
         h('div.row', {}, h('button.btn', { disabled: s.state === 'queue', onclick: () => app.send({ t: 'room', op: 'create' }) }, 'Create Room')),
         h('div.row', {}, code, h('button.btn', { disabled: s.state === 'queue', onclick: () => app.send({ t: 'room', op: 'join', code: code.value.trim() }) }, 'Join'))),
+      h('div.play-card', {},
+        h('div.pc-title', { text: '⚡ Skirmish 3v3' }),
+        h('p', { text: 'A quick 3v3 on the middle lane: start at level 3, faster gold, about 10 minutes. You (and up to 2 friends) against bots.' }),
+        h('button.btn.btn-lg', { disabled: busy, onclick: () => app.send({ t: 'queue', mode: 'skirmish', difficulty: diff.value }) }, 'Start Skirmish')),
       // Last in the DOM (tests address cards by position); CSS lifts it to the top for new players.
       h(`div.play-card.tutorial-card${tutorialDone() ? '' : '.new'}`, {},
         tutorialDone() ? null : h('div.tc-badge', { text: 'New here? Start with this' }),
@@ -139,10 +146,24 @@ export class Lobby {
         h('button.btn.btn-sm', { onclick: () => app.watchReplay(r.id) }, 'Watch'))));
   }
 
+  rankLine(p) {
+    const t = tierOf(p.rating), s = seasonOf();
+    const days = Math.max(0, Math.ceil((s.endsAt - Date.now()) / 86400000));
+    return h('div.rank-line', {},
+      h('span.rl-ic', {}, pic(`misc/tier_${t.id}`, '🏆')),
+      h('div.rl-mid', {}, h('div', {}, h('b', { text: t.label, style: { color: t.color } }), h('span.muted', { text: ` · ${p.rating}` })),
+        h('div.rl-bar', {}, h('i', { style: { width: `${t.progress * 100}%`, background: t.color } })),
+        h('div.muted.rl-season', { text: `Season ${s.number} · ends in ${days} days` })));
+  }
+
   questsView(p) {
     const left = Math.max(0, Math.ceil((new Date(`${p.quests.day}T00:00:00Z`).getTime() + 86400000 - Date.now()) / 3600000));
     return h('div.card.quests', {},
       h('div.q-head', {}, h('h4', { text: 'Daily quests' }), h('span.muted', { text: `New quests in ${left}h` })),
+      h('div.daily', {},
+        h('span.d-item', { title: `Log in every day: rewards ${STREAK_REWARDS.join(', ')} shards, then the cycle repeats` }, h('span.d-ic', {}, pic('misc/streak', '🔥')), h('span', {}, h('b', { text: `Day ${p.streak || 1}` }), ' login streak')),
+        h(`span.d-item${firstWinAvailable(p) ? '.ready' : ''}`, {}, h('span.d-ic', {}, pic('misc/firstwin', '☀️')),
+          h('span', {}, firstWinAvailable(p) ? h('b', { text: 'First win of the day ' }) : 'First win of the day ', firstWinAvailable(p) ? `+${FIRST_WIN_SHARDS} 💠 +${FIRST_WIN_XP} XP` : '✓ earned today'))),
       ...p.quests.list.map(q => {
         const d = QUESTS[q.id];
         if (!d) return null;
@@ -220,7 +241,7 @@ export class Lobby {
     return h('div.card', {},
       h('div.tabs.small', {}, ...kinds.map(([k, l]) => h(`button.tab${this.lbKind === k ? '.active' : ''}`, { onclick: () => { this.lbKind = k; this.app.send({ t: 'lb', kind: k }); this.renderCenter(); } }, l))),
       this.lb && this.lb.kind === this.lbKind ? h('table.lb-table', {}, h('tr', {}, h('th', { text: '#' }), h('th', { text: 'Player' }), h('th', { text: 'Level' }), h('th', { text: 'Rating' }), h('th', { text: 'W / L' })),
-        ...this.lb.rows.map((r, i) => h(`tr${r.name === this.app.name ? '.me' : ''}`, {}, h('td', { text: i + 1 }), h('td.lb-name', {}, h('span.lb-av', {}, pic(r.avatar || 'portrait/minion_melee_blue', '👤')), r.name), h('td', { text: r.level }), h('td', { text: r.rating }), h('td', { text: `${r.wins} / ${r.losses}` }))))
+        ...this.lb.rows.map((r, i) => h(`tr${r.name === this.app.name ? '.me' : ''}`, {}, h('td', { text: i + 1 }), h('td.lb-name', {}, h('span.lb-av', {}, pic(r.avatar || 'portrait/minion_melee_blue', '👤')), r.name), h('td', { text: r.level }), h('td.lb-rating', {}, h('span.lb-tier', { title: tierOf(r.rating).label }, pic(`misc/tier_${tierOf(r.rating).id}`, '')), String(r.rating)), h('td', { text: `${r.wins} / ${r.losses}` }))))
         : h('p.muted', { text: 'Loading…' }));
   }
 
@@ -233,8 +254,18 @@ export class Lobby {
       h('div.card', {}, h('h4', { text: p.name }), stat('Level', p.level), stat('Rating', p.rating), stat('Games', p.games), stat('Wins / Losses', `${p.wins} / ${p.losses}`),
         stat('Win rate', p.games ? `${Math.round(p.wins / p.games * 100)}%` : '—'), stat('Avg KDA', p.games ? `${(p.kills / p.games).toFixed(1)} / ${(p.deaths / p.games).toFixed(1)} / ${(p.assists / p.games).toFixed(1)}` : '—'),
         h('h4', { text: 'Champions' }), ...champs.slice(0, 6).map(([id, s]) => stat(h('span.stat-champ', {}, h('span.hr-icon', {}, pic(champKey(id), this.app.champInfo[id]?.icon || '')), this.app.champInfo[id]?.name || id), `${s.games} games · ${Math.round(s.wins / s.games * 100)}% WR`))),
+      this.rankView(p),
       this.avatarsView(p),
       h('div.card', {}, h('h4', { text: 'Match history' }), p.history.length ? h('div.history', {}, ...p.history.map(m => this.historyRow(m))) : h('p.muted', { text: 'No matches yet.' })));
+  }
+
+  rankView(p) {
+    const t = tierOf(p.rating), peak = tierOf(p.peakRating || p.rating), s = seasonOf();
+    return h('div.card.rank-card', {}, h('h4', { text: `Season ${s.number} rank` }),
+      h('div.rk-main', {}, h('span.rk-ic', {}, pic(`misc/tier_${t.id}`, '🏆')),
+        h('div', {}, h('div.rk-label', { text: t.label, style: { color: t.color } }), h('div.muted', { text: `${p.rating} rating · peak ${peak.label} · ${p.seasonGames || 0} ranked games` }),
+          h('div.rl-bar', {}, h('i', { style: { width: `${t.progress * 100}%`, background: t.color } })))),
+      (p.seasonHistory || []).length ? h('div.rk-hist', {}, ...p.seasonHistory.map(x => h('span.rk-h', { title: `${x.games} games` }, h('span.rk-hic', {}, pic(`misc/tier_${x.tier}`, '🏆')), `${x.season}: ${x.peak}`))) : h('p.muted', { text: 'Play 5 ranked games in a season to earn its reward when it ends (more shards for higher peaks).' }));
   }
 
   avatarsView(p) {
@@ -270,6 +301,29 @@ export class Lobby {
 
   /* ---------------- side ---------------- */
   setParty(p) { this.party = p; this.renderParty(); }
+  setFriends(m) { this.friends = m; this.renderFriends(); }
+
+  renderFriends() {
+    const app = this.app, f = this.friends;
+    clear(this.friendsEl);
+    if (app.offline) return;
+    const add = h('input', { placeholder: 'Add a friend by name', maxlength: 16 });
+    const send = () => { if (add.value.trim()) app.send({ t: 'friend', op: 'add', name: add.value.trim() }); add.value = ''; };
+    add.addEventListener('keydown', e => { if (e.key === 'Enter') send(); });
+    const list = f ? f.list : [];
+    const online = list.filter(x => x.online).length;
+    put(this.friendsEl, h('h4', { text: `🤝 Friends${list.length ? ` (${online}/${list.length} online)` : ''}` }),
+      ...(f ? f.reqs : []).map(n => h('div.fr-req', {}, h('span', {}, h('b', { text: n }), ' wants to be friends'),
+        h('button.btn.btn-sm.btn-primary', { onclick: () => app.send({ t: 'friend', op: 'accept', name: n }) }, 'Accept'),
+        h('button.btn.btn-sm', { onclick: () => app.send({ t: 'friend', op: 'decline', name: n }) }, '✕'))),
+      list.length ? h('div.fr-list', {}, ...list.map(x => h(`div.fr-row${x.online ? '.on' : ''}`, {},
+        h('span.fr-av', {}, pic(x.avatar || 'portrait/minion_melee_blue', '👤'), h('i.fr-dot')),
+        h('div.fr-mid', {}, h('b', { text: x.name }), h('small.muted', { text: x.online ? (x.match ? 'In a match' : x.state === 'queue' ? 'In queue' : x.state === 'select' ? 'Picking a champion' : 'In the lobby') + (x.level ? ` · Lv ${x.level}` : '') : 'Offline' })),
+        x.match ? h('button.btn.btn-sm', { title: 'Watch their match', onclick: () => app.send({ t: 'spectate', id: x.match }) }, '👁') : null,
+        x.online && !x.match && !x.party ? h('button.btn.btn-sm', { title: 'Invite to party', onclick: () => app.send({ t: 'party', op: 'invite', name: x.name }) }, '➕') : null,
+        h('button.btn.btn-sm.fr-rm', { title: 'Remove friend', onclick: () => { if (confirm(`Remove ${x.name} from your friends?`)) app.send({ t: 'friend', op: 'remove', name: x.name }); } }, '✕')))) : h('p.muted', { text: 'Add friends to see when they are online, invite them and watch their games.' }),
+      h('div.invite-row', {}, add, h('button.btn.btn-sm', { onclick: send }, 'Add')));
+  }
   setWho(w) { this.who = w; this.renderParty(); }
   setLeaderboard(lb) { this.lb = lb; if (this.tab === 'leaderboard') this.renderCenter(); }
 
@@ -286,7 +340,8 @@ export class Lobby {
     if (app.offline) return;
     put(this.whoEl,h('h4', {}, `🌐 Online (${this.who ? this.who.total : '…'}) `, h('button.btn.btn-sm', { onclick: () => app.send({ t: 'who' }) }, '↻')),
       h('div.who-list', {}, ...(this.who ? this.who.list : []).map(w => h('div.who-row', {}, h('span', { text: w.name }), h('small.muted', { text: `${w.rating} · ${w.state}` }),
-        w.name !== app.name && !w.party ? h('button.btn.btn-sm', { title: 'Invite', onclick: () => app.send({ t: 'party', op: 'invite', name: w.name }) }, '➕') : null))));
+        w.name !== app.name && !w.party ? h('button.btn.btn-sm', { title: 'Invite to party', onclick: () => app.send({ t: 'party', op: 'invite', name: w.name }) }, '➕') : null,
+        w.name !== app.name && !(this.friends?.list || []).some(f => f.name === w.name) ? h('button.btn.btn-sm', { title: 'Add friend', onclick: () => app.send({ t: 'friend', op: 'add', name: w.name }) }, '🤝') : null))));
   }
 }
 

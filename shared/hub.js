@@ -7,7 +7,7 @@ import { ITEMS, SPELLS, SECOND_SPELLS } from './moba/items.js';
 import { makeBrain } from './moba/bot.js';
 import { newProfile, normalizeProfile, profileXpNeeded, leaderboardRow } from './moba/profile.js';
 import { Recorder } from './moba/recorder.js';
-import { ensureQuests, questProgress, claimQuest, buySkin, equipSkin, avatarUnlocked, equippedSkin, SHARDS_PER_WIN, SHARDS_PER_GAME, SHARDS_PER_LEVEL } from './moba/progression.js';
+import { loginStreak, firstWin, seasonRollover, rankedGame, FIRST_WIN_XP, ensureQuests, questProgress, claimQuest, buySkin, equipSkin, avatarUnlocked, equippedSkin, SHARDS_PER_WIN, SHARDS_PER_GAME, SHARDS_PER_LEVEL } from './moba/progression.js';
 import { RNG } from './rng.js';
 
 const ROLES = ['top', 'jungle', 'mid', 'bot', 'support'];
@@ -40,7 +40,7 @@ export class Hub {
     this.rng = new RNG(Date.now() & 0xffffffff);
     this.time = 0;
     this.nextId = 1;
-    this.timers = { queue: 0, score: 0, party: 0 };
+    this.timers = { queue: 0, score: 0, party: 0, friends: 0 };
     this.interval = null;
     this.stats = { ticks: 0, tickMs: 0 };
   }
@@ -75,11 +75,18 @@ export class Hub {
     if (!this.sessions.has(session.id)) return session;
     session.profile = normalizeProfile(name, data);
     ensureQuests(session.profile);
+    const streakReward = loginStreak(session.profile);
+    const season = seasonRollover(session.profile);
     send({
       t: 'hello', v: PROTOCOL_VERSION, name, offline: this.offline,
       champions: CHAMPION_IDS.map(championInfo), items: ITEMS, spells: SPELLS, second: SECOND_SPELLS,
     });
     send({ t: 'profile', profile: session.profile });
+    if (streakReward) send({ t: 'notice', text: `Day ${session.profile.streak} login streak: +${streakReward} shards!`, kind: 'good' });
+    if (season && season.played) send({ t: 'notice', text: `New season! Last season you peaked at ${season.peak}: +${season.reward} shards.`, kind: 'good' });
+    if (streakReward || season) this.saveProfile(session);
+    this.sendFriends(session);
+    this.notifyFriends(session);
     // Rejoin a running match.
     const active = this.activeByAccount.get(accountId);
     if (active && !active.match.ended) this.attachToMatch(session, active.match, active.heroId);
@@ -97,6 +104,7 @@ export class Hub {
     this.sessions.delete(session.id);
     if (this.byName.get(session.name.toLowerCase()) === session) this.byName.delete(session.name.toLowerCase());
     if (this.byAccount.get(session.accountId) === session) this.byAccount.delete(session.accountId);
+    this.notifyFriends(session); // after removal, so they see us offline
     this.leaveQueue(session, true);
     if (session.roomCode) this.roomOp(session, { op: 'leave' });
     for (const sel of this.selects.values()) {
@@ -168,6 +176,8 @@ export class Hub {
     }
     this.timers.queue -= dt;
     if (this.timers.queue <= 0) { this.timers.queue = 1; this.processQueue(); }
+    this.timers.friends -= dt;
+    if (this.timers.friends <= 0) { this.timers.friends = 10; for (const s of this.sessions.values()) if (s.profile && (s.profile.friends || []).length) this.sendFriends(s); }
     this.timers.party -= dt;
     if (this.timers.party <= 0) { this.timers.party = 3; for (const id of this.parties.keys()) this.updateParty(id); }
     this.stats.ticks++;
@@ -202,6 +212,8 @@ export class Hub {
       case 'prof': return this.sendProfile(session, msg.name);
       case 'claim': case 'skin': case 'avatar': return this.progressOp(session, msg);
       case 'live': return session.send({ t: 'live', list: this.liveMatches() });
+      case 'friend': return this.friendOp(session, msg);
+      case 'friends': return this.sendFriends(session);
       case 'spectate': return this.spectate(session, msg.id);
       case 'replays': case 'replay': return this.replayOp(session, msg);
       case 'leave': if (session.view && (session.view.match.ended || session.view.spectator)) { this.detach(session); this.sendLobby(session); } return;
@@ -308,6 +320,77 @@ export class Hub {
     this.saveProfile(session);
   }
 
+  /* ================= friends ================= */
+  /** Applies fn to a player's profile by name, online or not. Returns their exact name, or null. */
+  async profileByName(name, fn) {
+    const s = this.byName.get(name.toLowerCase());
+    if (s && s.profile) { fn(s.profile); s.send({ t: 'profile', profile: s.profile }); this.saveProfile(s); this.sendFriends(s); return s.profile.name; }
+    if (!this.store.findAccount) return null;
+    const acc = await this.store.findAccount(name);
+    if (!acc) return null;
+    const prof = normalizeProfile(acc.username, await this.store.getCharacter(acc.id));
+    fn(prof);
+    await this.store.saveCharacter(acc.id, prof);
+    return prof.name;
+  }
+
+  async friendOp(session, msg) {
+    const me = session.profile;
+    if (!me) return;
+    const name = clean(msg.name).slice(0, 16);
+    const has = (list, n) => (list || []).some(x => x.toLowerCase() === n.toLowerCase());
+    const without = (list, n) => (list || []).filter(x => x.toLowerCase() !== n.toLowerCase());
+    switch (msg.op) {
+      case 'add': {
+        if (!name || name.toLowerCase() === session.name.toLowerCase()) return;
+        if (has(me.friends, name)) return this.notice(session, `${name} is already your friend.`);
+        if (has(me.friendReqs, name)) return this.friendOp(session, { op: 'accept', name });
+        if ((me.friends || []).length >= 100) return this.notice(session, 'Your friends list is full.', 'warn');
+        const real = await this.profileByName(name, p => { if (!has(p.friendReqs, me.name) && !has(p.friends, me.name)) p.friendReqs = [...(p.friendReqs || []), me.name].slice(-30); });
+        if (!real) return this.notice(session, `There is no player named ${name}.`, 'warn');
+        this.byName.get(real.toLowerCase())?.send({ t: 'notice', text: `${me.name} sent you a friend request.`, kind: 'info' });
+        return this.notice(session, `Friend request sent to ${real}.`);
+      }
+      case 'accept': {
+        if (!has(me.friendReqs, name)) return;
+        me.friendReqs = without(me.friendReqs, name);
+        const real = await this.profileByName(name, p => { p.friends = [...without(p.friends, me.name), me.name]; p.friendReqs = without(p.friendReqs, me.name); });
+        if (real) { me.friends = [...without(me.friends, real), real]; this.byName.get(real.toLowerCase())?.send({ t: 'notice', text: `${me.name} accepted your friend request.`, kind: 'good' }); }
+        break;
+      }
+      case 'decline': me.friendReqs = without(me.friendReqs, name); break;
+      case 'remove':
+        me.friends = without(me.friends, name);
+        await this.profileByName(name, p => { p.friends = without(p.friends, me.name); });
+        break;
+      default: return;
+    }
+    session.send({ t: 'profile', profile: me });
+    this.saveProfile(session);
+    this.sendFriends(session);
+  }
+
+  friendsInfo(session) {
+    return (session.profile.friends || []).map(n => {
+      const s = this.byName.get(n.toLowerCase());
+      const m = s && s.view && !s.view.spectator ? s.view.match : null;
+      return {
+        name: n, online: !!s, state: s ? s.state : 'offline', party: !!(s && s.partyId),
+        avatar: s?.profile?.avatar || null, level: s?.profile?.level || null, rating: s?.profile?.rating || null,
+        match: m && !m.ended && m.mode !== 'tutorial' ? m.id : null,
+      };
+    }).sort((a, b) => (b.online - a.online) || a.name.localeCompare(b.name));
+  }
+
+  sendFriends(session) {
+    if (session.profile) session.send({ t: 'friends', list: this.friendsInfo(session), reqs: session.profile.friendReqs || [] });
+  }
+
+  /** Tells this player's online friends that their status changed. */
+  notifyFriends(session) {
+    for (const n of session.profile?.friends || []) { const s = this.byName.get(n.toLowerCase()); if (s && s !== session) this.sendFriends(s); }
+  }
+
   /* ================= parties ================= */
   partyOp(session, msg) {
     const name = clean(msg.name);
@@ -383,7 +466,7 @@ export class Hub {
 
   joinQueue(session, msg) {
     if (session.view || session.state === 'select') return;
-    const mode = msg.mode === 'practice' || msg.mode === 'tutorial' ? msg.mode : 'ranked';
+    const mode = ['practice', 'tutorial', 'skirmish'].includes(msg.mode) ? msg.mode : 'ranked';
     const party = this.parties.get(session.partyId);
     if (party && party.leader !== session.name) return this.notice(session, 'Only the party leader can start matchmaking.', 'warn');
     const group = this.partySessions(session);
@@ -391,6 +474,11 @@ export class Hub {
     if (session.roomCode) this.roomOp(session, { op: 'leave' });
     // The tutorial is solo: just you, friendly bots and enemy bots that stay home.
     if (mode === 'tutorial') return this.startSelect({ blue: [session], red: [] }, { mode: 'tutorial', ranked: false, difficulty: 'easy' });
+    if (mode === 'skirmish') {
+      if (group.length > 3) return this.notice(session, 'Skirmish is 3v3: parties of up to 3.', 'warn');
+      const difficulty = ['easy', 'normal', 'hard'].includes(msg.difficulty) ? msg.difficulty : 'normal';
+      return this.startSelect({ blue: group, red: [] }, { mode: 'skirmish', ranked: false, difficulty, size: 3 });
+    }
     if (mode === 'practice' || this.offline) {
       const difficulty = ['easy', 'normal', 'hard'].includes(msg.difficulty) ? msg.difficulty : 'normal';
       return this.startSelect({ blue: group, red: [] }, { mode: 'practice', ranked: false, difficulty });
@@ -532,7 +620,7 @@ export class Hub {
     const used = new Set();
     for (const team of ['blue', 'red']) {
       for (const s of sides[team]) { s.state = 'select'; players.push({ key: s.accountId, name: s.name, team, session: s, champ: null, summ: 'mend', locked: false, bot: false }); used.add(s.name); }
-      const botCount = opts.bots ? opts.bots[team] : 5 - sides[team].length;
+      const botCount = opts.bots ? opts.bots[team] : (opts.size || 5) - sides[team].length;
       for (let i = 0; i < botCount; i++) {
         let name;
         do { name = `${this.rng.pick(BOT_NAMES)}Bot`; } while (used.has(name));
@@ -662,12 +750,15 @@ export class Hub {
       const exp = 1 / (1 + Math.pow(10, (theirs - mine) / 400));
       const delta = rated ? Math.round(32 * ((p.win ? 1 : 0) - exp)) : 0;
       const xp = (p.win ? 150 : 90) + p.kills * 10 + p.assists * 5 + (match.mode === 'practice' || match.mode === 'tutorial' ? -40 : 0);
+      const bonus = {};
       this.applyResult(p.key, prof => {
         prof.games++;
         if (p.win) prof.wins++; else prof.losses++;
         prof.kills += p.kills; prof.deaths += p.deaths; prof.assists += p.assists;
-        if (rated) prof.rating = Math.max(0, prof.rating + delta);
-        prof.xp += xp;
+        if (rated) { prof.rating = Math.max(0, prof.rating + delta); rankedGame(prof); }
+        const fw = p.win && match.mode !== 'tutorial' && firstWin(prof);
+        bonus.firstWin = fw;
+        prof.xp += xp + (fw ? FIRST_WIN_XP : 0);
         while (prof.xp >= profileXpNeeded(prof.level)) { prof.xp -= profileXpNeeded(prof.level); prof.level++; prof.shards = (prof.shards || 0) + SHARDS_PER_LEVEL; }
         if (match.mode !== 'tutorial') prof.shards = (prof.shards || 0) + SHARDS_PER_GAME + (p.win ? SHARDS_PER_WIN : 0);
         questProgress(prof, p, match.mode);
@@ -676,7 +767,7 @@ export class Hub {
         prof.champs[p.champ] = c;
         prof.history.unshift({ at: Date.now(), champ: p.champ, win: p.win, k: p.kills, d: p.deaths, a: p.assists, mode: match.mode, dur: result.duration, delta });
         prof.history = prof.history.slice(0, 20);
-      }, { result, delta, xp, rated, you: p.id });
+      }, { result, delta, xp, rated, you: p.id, bonus });
     }
   }
 

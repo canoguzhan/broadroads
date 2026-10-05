@@ -67,7 +67,7 @@ export class Select {
       ...app.data.second.map(s => { const d = app.data.spells[s]; return h(`button.summ-btn${me.summ === s ? '.active' : ''}`, { title: `${d.name}: ${d.desc}`, disabled: me.locked, onclick: () => app.send({ t: 'csumm', spell: s }) }, h('span.summ-ic', {}, pic(`spell/${s}`, d.icon)), d.name); }));
     clear(this.root);
     this.root.append(h('div.auth-bg'), h('div.sel-wrap', {},
-      h('div.sel-top', {}, h('div.sel-mode', { text: `${sel.mode === 'tutorial' ? 'Tutorial' : sel.mode === 'practice' ? 'Practice vs AI' : sel.mode === 'custom' ? 'Custom Game' : sel.ranked ? 'Ranked 5v5' : 'Matchmade 5v5'} · Choose your champion` }), h('div.sel-timer', { text: sel.timeLeft })),
+      h('div.sel-top', {}, h('div.sel-mode', { text: `${sel.mode === 'tutorial' ? 'Tutorial' : sel.mode === 'skirmish' ? 'Skirmish 3v3' : sel.mode === 'practice' ? 'Practice vs AI' : sel.mode === 'custom' ? 'Custom Game' : sel.ranked ? 'Ranked 5v5' : 'Matchmade 5v5'} · Choose your champion` }), h('div.sel-timer', { text: sel.timeLeft })),
       h('div.sel-main', {},
         teamList(myTeam, true),
         h('div.sel-center', {},
