@@ -142,14 +142,35 @@ export class Hub {
     session.send({ t: 'lobby', state: 'lobby', queue: this.queueInfo(session), room: session.roomCode ? this.roomInfo(this.rooms.get(session.roomCode)) : null, rejoin: !!(active && !active.match.ended) });
   }
 
+  /* ================= capacity ================= */
+  /** New matches only start while there is room: a match cap, and tick headroom
+      (a tick has 50 ms; above ~30 ms average new games would slow everyone). */
+  canStartMatch() {
+    const max = this.config.maxMatches ?? Infinity;
+    if (this.matches.size + this.selects.size >= max) return false;
+    return this.stats.tickMs < (this.config.tickBudgetMs ?? 30);
+  }
+
+  isFull() { return this.sessions.size >= (this.config.maxPlayers ?? Infinity); }
+
   /* ================= tick ================= */
   tickMatch(m, dt) {
     m.update(dt);
-    for (const h of m.heroes) {
-      if (!h.session || h.session.view?.match !== m) continue;
-      h.session.send(m.snapshotFor(h.session.view));
+    // Full snapshots at 10 Hz; on the ticks in between, only effect events
+    // (hits, casts) go out right away so combat feedback stays immediate.
+    const full = (m.netTick = (m.netTick || 0) + 1) % 2 === 0 || this.config.snapshotEvery === 1;
+    const viewers = [];
+    for (const h of m.heroes) if (h.session && h.session.view?.match === m) viewers.push(h.session);
+    for (const s of m.spectators) viewers.push(s);
+    for (const s of viewers) {
+      const v = s.view;
+      if (full) {
+        s.send(m.snapshotFor(v));
+      } else {
+        const fx = m.fxFor(v.team, v.heroId);
+        if (fx.length) s.send({ t: 's', time: Math.round(m.time * 100) / 100, fx });
+      }
     }
-    for (const s of m.spectators) s.send(m.snapshotFor(s.view));
     if (m.recorder && !m.recorderDone) m.recorder.capture();
     m.flushFx();
     if (m.ended && m.endT <= -6) this.closeMatch(m);
@@ -484,6 +505,7 @@ export class Hub {
     for (const s of group) this.leaveQueue(s, true);
     if (session.roomCode) this.roomOp(session, { op: 'leave' });
     // The tutorial is solo: just you, friendly bots and enemy bots that stay home.
+    if (mode !== 'ranked' && !this.canStartMatch()) return this.notice(session, 'The servers are busy right now. Please try again in a minute (or play offline).', 'warn');
     if (mode === 'tutorial') return this.startSelect({ blue: [session], red: [] }, { mode: 'tutorial', ranked: false, difficulty: 'easy' });
     if (mode === 'skirmish') {
       if (group.length > 3) return this.notice(session, 'Skirmish is 3v3: parties of up to 3.', 'warn');
@@ -514,6 +536,7 @@ export class Hub {
     const humans = this.queue.reduce((a, e) => a + e.sessions.length, 0);
     const oldest = Math.max(...this.queue.map(e => this.time - e.t));
     if (humans < 10 && oldest < this.config.queueBotWait) return;
+    if (!this.canStartMatch()) return; // busy: players keep waiting in the queue
     // Bin-pack groups (sorted by rating) into two teams of five.
     const sides = { blue: [], red: [] };
     const used = [];
@@ -616,6 +639,7 @@ export class Hub {
         const sides = { blue: room.blue.filter(s => s && s !== 'bot'), red: room.red.filter(s => s && s !== 'bot') };
         const bots = { blue: room.blue.filter(s => s === 'bot').length, red: room.red.filter(s => s === 'bot').length };
         if (!sides.blue.length && !sides.red.length) return;
+        if (!this.canStartMatch()) return this.notice(session, 'The servers are busy right now. Please try again in a minute.', 'warn');
         this.rooms.delete(room.code);
         for (const s of [...sides.blue, ...sides.red]) s.roomCode = null;
         return this.startSelect(sides, { mode: 'custom', ranked: false, difficulty: room.difficulty, bots });

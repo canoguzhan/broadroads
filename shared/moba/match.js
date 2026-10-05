@@ -1,5 +1,6 @@
 /* Authoritative 5v5 MOBA match simulation. */
 import { getValley, enemyOf, LANES, bushAt } from './map.js';
+import { selfDelta } from '../protocol.js';
 export const EMOTES = ['dance', 'cheer', 'laugh'];
 import { CHAMPIONS, SLOTS, MAX_LEVEL, XP_TO_LEVEL, canRankUp, bonusAd } from './champions.js';
 import { ITEMS, INV_SLOTS, START_GOLD, SELL_RATIO, SPELLS, priceFor } from './items.js';
@@ -1549,6 +1550,9 @@ export class Match {
     const { team, heroId, known } = view;
     const all = team === 'spectator'; // spectators and replays see everything
     const add = [], upd = [], seen = new Set();
+    // Far-away units (outside the screen) update every other snapshot.
+    const n = view.n = (view.n || 0) + 1;
+    const eye = !all && heroId ? this.get(heroId) : null;
     for (const e of this.entities.values()) {
       const structure = e.kind === 'tower' || e.kind === 'spire' || e.kind === 'core';
       if (!all && !structure && e.team !== team && e.vis && !e.vis[team]) continue;
@@ -1567,6 +1571,7 @@ export class Match {
         continue;
       }
       if (e.kind === 'proj' && !e.homing) continue;
+      if (eye && e.id !== heroId && ((n + e.id) & 1) && Math.abs(e.x - eye.x) + Math.abs(e.y - eye.y) > 40) continue;
       const mp = e.kind === 'hero' ? Math.floor(e.mp) : 0;
       if (k.x !== e.x || k.y !== e.y || k.f !== e.facing || k.hp !== hp || k.fl !== fl || k.mp !== mp) {
         const u = [e.id, r2(e.x), r2(e.y), r2(e.facing), hp, fl];
@@ -1580,7 +1585,11 @@ export class Match {
     const fx = this.fxFor(team, heroId);
     const s = { t: 's', time: r2(this.time) };
     const me = this.get(heroId);
-    if (me) s.me = this.selfState(me);
+    if (me) {
+      // Only changed fields; the client merges them (the first send is complete).
+      const d = selfDelta(view.meCache || (view.meCache = {}), this.selfState(me));
+      if (d) s.me = d;
+    }
     if (add.length) s.a = add;
     if (upd.length) s.u = upd;
     if (rem.length) s.r = rem;

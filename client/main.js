@@ -95,7 +95,9 @@ class App {
     this.name = name;
     this.offline = offline;
     conn.on('*', m => this.route(m));
-    conn.on('disconnect', m => { if (!m.byUs) this.exit(this.kickedReason || 'Disconnected from the server.'); });
+    conn.on('disconnect', m => { $('#reconnect').hidden = true; if (!m.byUs) this.exit(this.kickedReason || (m.code === 4005 ? 'The servers are full right now. Try again in a minute, or play offline.' : 'Disconnected from the server.')); });
+    conn.on('reconnecting', m => { $('#reconnect').hidden = false; $('#reconnect span').textContent = `Connection lost · reconnecting${m.attempt > 1 ? ` (try ${m.attempt})` : ''}…`; });
+    conn.on('reconnected', () => { $('#reconnect').hidden = true; this.ui.toast('Reconnected', 'good', 1500); });
     try {
       await iconsReady; // tiny manifests; the lobby renders portraits and icons
       await conn.connect();
@@ -111,6 +113,7 @@ class App {
     if (this.game && ['s', 'score', 'end'].includes(m.t)) return this.game.onMessage(m);
     switch (m.t) {
       case 'hello':
+        if (this.lobby && this.game && !this.game.match.replay) break; // reconnect during a match: keep the current UI
         this.data = { champions: m.champions, items: m.items, spells: m.spells, second: m.second };
         this.champInfo = Object.fromEntries(m.champions.map(c => [c.id, c]));
         this.lobby = new Lobby(this);
@@ -136,7 +139,11 @@ class App {
         this.select.update(m.select);
         this.show('screen-select');
         break;
-      case 'match': this.startGame(m); break;
+      case 'match':
+        // After a reconnect the server re-attaches us to the same match: resume in place.
+        if (this.game && !this.game.match.replay && this.game.match.id === m.id) this.game.resync(m);
+        else this.startGame(m);
+        break;
       case 'live': this.lobby?.setLive(m.list); break;
       case 'friends': this.lobby?.setFriends(m); break;
       case 'replays': this.lobby?.setReplays(m.list); break;

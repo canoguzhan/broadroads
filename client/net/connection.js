@@ -52,6 +52,12 @@ export async function checkServer(timeoutMs = 3500) {
   }
 }
 
+import { decodeSnapshot } from '../../shared/protocol.js';
+
+// Close codes that mean "do not come back": replaced by another login, bad token, server full.
+const FINAL_CODES = new Set([4000, 4001, 4003, 4005]);
+const BACKOFF = [300, 800, 1500, 2500, 4000, 6000, 8000, 8000];
+
 export class OnlineConnection extends Emitter {
   constructor(token) {
     super();
@@ -60,30 +66,58 @@ export class OnlineConnection extends Emitter {
     this.offline = false;
     this.closedByUs = false;
     this.bytesIn = 0;
+    this.lastMsgAt = 0;
   }
 
-  connect() {
+  /** Opens the socket and authenticates. Rejects if the server can't be reached. */
+  open() {
     return new Promise((resolve, reject) => {
       const ws = new WebSocket(wsUrl());
+      ws.binaryType = 'arraybuffer';
       this.ws = ws;
       let opened = false;
       ws.onopen = () => {
         opened = true;
+        this.lastMsgAt = Date.now();
         ws.send(JSON.stringify({ t: 'auth', token: this.token }));
         resolve();
       };
       ws.onmessage = ev => {
-        this.bytesIn += ev.data.length;
+        this.lastMsgAt = Date.now();
+        this.bytesIn += ev.data.byteLength ?? ev.data.length;
         let msg;
-        try { msg = JSON.parse(ev.data); } catch { return; }
+        try { msg = typeof ev.data === 'string' ? JSON.parse(ev.data) : decodeSnapshot(ev.data); } catch { return; }
         this.emit(msg.t, msg);
       };
       ws.onerror = () => { if (!opened) reject(new Error('Could not reach the game server.')); };
       ws.onclose = ev => {
-        if (!opened) return;
-        this.emit('disconnect', { code: ev.code, reason: ev.reason, byUs: this.closedByUs });
+        if (!opened || ws !== this.ws) return;
+        if (this.closedByUs || FINAL_CODES.has(ev.code)) return this.emit('disconnect', { code: ev.code, reason: ev.reason, byUs: this.closedByUs });
+        this.reconnect();
       };
     });
+  }
+
+  async connect() {
+    await this.open();
+    // Silent drops (mobile networks) never fire 'close' quickly: the server
+    // answers our 3-second pings, so 8 seconds of silence means the link is dead.
+    clearInterval(this.watch);
+    this.watch = setInterval(() => {
+      if (this.ws && this.ws.readyState === 1 && Date.now() - this.lastMsgAt > 8000) this.ws.close(4100, 'stale');
+    }, 2000);
+  }
+
+  async reconnect() {
+    if (this.reconnecting) return;
+    this.reconnecting = true;
+    for (let i = 0; i < BACKOFF.length && !this.closedByUs; i++) {
+      this.emit('reconnecting', { attempt: i + 1 });
+      await new Promise(r => setTimeout(r, BACKOFF[i]));
+      try { await this.open(); this.reconnecting = false; this.emit('reconnected', {}); return; } catch { /* try again */ }
+    }
+    this.reconnecting = false;
+    if (!this.closedByUs) this.emit('disconnect', { code: 1006, reason: 'lost', byUs: false });
   }
 
   send(msg) {
@@ -92,6 +126,7 @@ export class OnlineConnection extends Emitter {
 
   close() {
     this.closedByUs = true;
+    clearInterval(this.watch);
     if (this.ws) this.ws.close();
   }
 }

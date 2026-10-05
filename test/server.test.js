@@ -1,4 +1,5 @@
 import { test, before, after } from 'node:test';
+import { decodeSnapshot } from '../shared/protocol.js';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import os from 'node:os';
@@ -27,8 +28,8 @@ function client(token) {
   const ws = new WebSocket(`ws://127.0.0.1:${app.port}/ws`);
   const inbox = [];
   const waiters = [];
-  ws.on('message', d => {
-    const m = JSON.parse(d);
+  ws.on('message', (d, binary) => {
+    const m = binary ? decodeSnapshot(d) : JSON.parse(d);
     inbox.push(m);
     for (const w of [...waiters]) if (w.pred(m)) { waiters.splice(waiters.indexOf(w), 1); w.resolve(m); }
   });

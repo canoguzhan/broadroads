@@ -334,7 +334,7 @@ export class MobaRenderer {
       case 'atk': this.trigger(ev.id); break;
       case 'emote': { const v = this.views.get(ev.id); if (v) v.emote = { k: ev.k, until: performance.now() + (ev.k === 'dance' ? 8000 : 3800) }; break; }
       case 'cast': {
-        this.trigger(ev.id, 'cast');
+        if (!(ev.id === this.youId && performance.now() - (this.localCastAt || 0) < 600)) this.trigger(ev.id, 'cast'); // already played locally
         const accent = (this.champInfo[ev.c] || {}).accent || 0xffffff, ult = ev.sl === 'r';
         const x = ent ? ent.x : ev.x, y = ent ? ent.y : ev.y;
         fx.runes(x, y, { color: accent, radius: ult ? 2.4 : 1.4, life: ult ? 1 : 0.6, spin: ult ? 3 : 2 });

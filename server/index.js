@@ -1,5 +1,6 @@
 /* BroadRoads game server: static client + REST auth API + WebSocket game gateway. */
 import http from 'node:http';
+import { encodeSnapshot } from '../shared/protocol.js';
 import { CHAMPION_IDS, championInfo } from '../shared/moba/champions.js';
 import { ITEMS, SPELLS, SECOND_SPELLS } from '../shared/moba/items.js';
 import { Monitor } from './monitor.js';
@@ -41,6 +42,8 @@ export function loadConfig(env = process.env) {
     queueBotWait: env.QUEUE_BOT_WAIT ? Number(env.QUEUE_BOT_WAIT) : undefined,
     quiet: env.QUIET === '1',
     adminToken: env.ADMIN_TOKEN || '',
+    maxMatches: Number(env.MAX_MATCHES) || 20,
+    maxPlayers: Number(env.MAX_PLAYERS) || 400,
     alertWebhook: env.ALERT_WEBHOOK || '',
   };
 }
@@ -106,7 +109,7 @@ export async function startServer(overrides = {}) {
   const store = overrides.store || await createStore(cfg);
   const secret = loadSecret(cfg);
   const hubConfig = {};
-  for (const k of ['queueBotWait', 'selectTime']) if (cfg[k] !== undefined) hubConfig[k] = cfg[k];
+  for (const k of ['queueBotWait', 'selectTime', 'maxMatches', 'maxPlayers']) if (cfg[k] !== undefined) hubConfig[k] = cfg[k];
   const replays = fileReplays(cfg.dataDir);
   // Static game data for logged-out replay viewers (shared links).
   const gameData = { champions: CHAMPION_IDS.map(championInfo), items: ITEMS, spells: SPELLS, second: SECOND_SPELLS };
@@ -215,7 +218,7 @@ export async function startServer(overrides = {}) {
         if (req.method === 'OPTIONS') { res.writeHead(204, cors); return res.end(); }
         if (p === '/api/health') {
           return json(res, 200, {
-            ok: true, game: 'broadroads', protocol: PROTOCOL_VERSION, online: hub.sessions.size,
+            ok: true, game: 'broadroads', protocol: PROTOCOL_VERSION, online: hub.sessions.size, full: hub.isFull(), busy: !hub.canStartMatch(),
             matches: hub.matches.size, tickMs: Math.round(hub.stats.tickMs * 100) / 100, uptime: Math.round((Date.now() - startedAt) / 1000),
           }, cors);
         }
@@ -254,7 +257,8 @@ export async function startServer(overrides = {}) {
     }
   });
 
-  const wss = new WebSocketServer({ noServer: true, maxPayload: 8 * 1024 });
+  // permessage-deflate: ~55% smaller frames; context takeover keeps the dictionary between snapshots.
+  const wss = new WebSocketServer({ noServer: true, maxPayload: 8 * 1024, perMessageDeflate: { threshold: 128, zlibDeflateOptions: { level: 4, memLevel: 7 }, concurrencyLimit: 4 } });
   server.on('upgrade', (req, socket, head) => {
     const url = new URL(req.url, 'http://localhost');
     const origin = req.headers.origin;
@@ -272,7 +276,12 @@ export async function startServer(overrides = {}) {
     let windowStart = Date.now();
     ws.isAlive = true;
     ws.on('pong', () => { ws.isAlive = true; });
-    const send = msg => { if (ws.readyState === 1) ws.send(JSON.stringify(msg)); };
+    // Snapshots go out as compact binary frames; everything else as JSON text.
+    const send = msg => {
+      if (ws.readyState !== 1) return;
+      if (ws.bufferedAmount > 512 * 1024 && msg.t === 's' && !msg.fx) return; // slow link: skip a movement frame rather than queue it
+      ws.send(msg.t === 's' ? encodeSnapshot(msg) : JSON.stringify(msg));
+    };
     const authTimer = setTimeout(() => { if (!session) ws.close(4001, 'auth timeout'); }, 10000);
 
     ws.on('message', async raw => {
@@ -285,6 +294,7 @@ export async function startServer(overrides = {}) {
         if (msg.t !== 'auth' || session === undefined) return;
         const tok = verifyToken(secret, msg.token);
         if (!tok) { send({ t: 'authFail', error: 'Session expired. Please log in again.' }); ws.close(4003, 'bad token'); return; }
+        if (hub.isFull() && !hub.byAccount.has(tok.a) && !hub.activeByAccount.has(tok.a)) { ws.close(4005, 'server full'); return; } // players in a match can always come back
         clearTimeout(authTimer);
         session = undefined; // authenticating
         const s = await hub.connect({ accountId: tok.a, name: tok.n, send, meta: { ip: clientIp(req) } });

@@ -157,6 +157,18 @@ Press **G** (or 😊) for the wheel: Dance, Cheer and Laugh play Tripo-animated 
 
 Touch controls show ability icons and cooldowns. Tap an ability to auto-target (weakest champion in range first), or drag from it to aim with a range ring and target marker. Level-up badges sit on the ability buttons. If the frame rate stays under 25, the game offers lighter graphics.
 
+## 📡 Networking
+
+- **Snapshots at 10 Hz** (the simulation still runs at 20 Hz). On the ticks in between, only effect events (hits, casts) are sent, so combat feedback stays immediate.
+- **Binary snapshots** (`shared/protocol.js`): movement updates are 14–16 bytes each instead of ~35 bytes of JSON. Everything else stays JSON inside the same frame.
+- **Self-state deltas:** your gold, cooldowns, items and stats are sent only when they change.
+- **Distance throttling:** units far from your champion update every other snapshot.
+- **permessage-deflate** WebSocket compression. Slow links skip movement frames instead of queueing them.
+- **Result:** about 2.5 KB/s per player 6 minutes into a match, down from 44 KB/s.
+- **Client:** other units are drawn ~110 ms in the past, interpolated between server positions. Your own champion moves instantly (prediction) and is reconciled with the server, and cast animations play immediately.
+- **Reconnect:** dropped connections (including silent mobile drops, detected after 8 s) reconnect automatically for ~30 s and resume the same match in place.
+- **Capacity:** new matches stop at `MAX_MATCHES` (default 20) or when the average tick exceeds 30 ms of its 50 ms budget. New logins stop at `MAX_PLAYERS` (default 400). Running matches, and players returning to them, are never refused. `/api/health` reports `full` and `busy`.
+
 ## 🩺 Monitoring
 
 - Browser errors are reported to `/api/client-error` (deduplicated, rate-limited).

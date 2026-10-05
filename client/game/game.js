@@ -160,6 +160,8 @@ export class Game {
       this.lastDir = { ...dir, at };
       this.send({ t: 'dir', mx: dir.mx, my: dir.my, at });
     }
+    if (dir.mx || dir.my) this.world.predictDir(dir.mx, dir.my);
+    else if (this.world.predict && this.world.predict.dx !== undefined) this.world.predict = null;
     // Holding the right mouse button keeps moving toward the cursor.
     if (this.input.mouse.right) {
       this.rmbT -= dt;
@@ -213,6 +215,8 @@ export class Game {
     const p = this.cursorWorld();
     const target = this.hover && this.hover.tm !== this.world.team ? this.hover : null;
     this.send({ t: 'mv', x: round2(p.x), y: round2(p.y), id: target ? target.id : undefined, a: attackMove ? 1 : 0 });
+    // Start moving right away (attack orders stop short of the target, so only plain moves are predicted).
+    if (!target && !attackMove) this.world.predictMove(p.x, p.y); else this.world.predict = null;
     if (!quiet) this.renderer.showMoveMarker(p.x, p.y, !!target || attackMove);
   }
 
@@ -256,6 +260,13 @@ export class Game {
       return this.ui.toast(this.input.isTouch ? 'Not learned yet: tap its gold + when you level up.' : 'Level this ability first (Ctrl + key or the + button).', 'warn', 1500);
     }
     if (this.input.isTouch) navigator.vibrate?.(12);
+    // Play the cast animation immediately when the cast will succeed.
+    const info = this.myChamp(), rank = me ? me.rk[slot] : 0;
+    if (me && rank > 0 && (me.cd[slot] || 0) <= 0 && !me.dead && me.mp >= (info?.abilities[slot]?.mana[Math.min(info.abilities[slot].mana.length - 1, rank - 1)] || 0)) {
+      this.renderer.trigger(this.world.youId, 'cast');
+      this.renderer.localCastAt = performance.now();
+      this.world.predict = null;
+    }
     this.send({ t: 'cast', sl: slot, x: round2(p.x), y: round2(p.y), id });
   }
 
@@ -273,7 +284,7 @@ export class Game {
       case 'rclick': this.rmbT = 0.15; return this.issueMove(false);
       case 'lclick': if (this.amovePending) { this.amovePending = false; this.issueMove(true); } return;
       case 'amove': this.issueMove(true); this.rangeT = 1.2; return;
-      case 'stop': return this.send({ t: 'stop' });
+      case 'stop': this.world.predict = null; return this.send({ t: 'stop' });
       case 'q': case 'w': case 'e': case 'r': case 'd': case 'f': case 'ward': return this.castKey(a);
       case 'level': this.sfxSkill(); return this.send({ t: 'lvl', sl: ev });
       case 'recall': return this.send({ t: 'recall' });
@@ -442,6 +453,14 @@ export class Game {
     if (k === 'models') setModelsEnabled(v);
     if (k === 'volume') sfx.setVolume(v);
     if (k === 'musicVolume') sfx.setMusicVolume(v);
+  }
+
+  /** Reconnected to the same match: rebuild the world from fresh snapshots, keep everything else. */
+  resync(m) {
+    this.match = m;
+    this.players = new Map(m.players.map(p => [p.id, p]));
+    this.world.setMatch(this.world.valley, m.you, m.team);
+    this.world.predict = null;
   }
 
   quit() {

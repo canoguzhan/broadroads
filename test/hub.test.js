@@ -11,6 +11,8 @@ async function join(hub, name) {
   const s = await hub.connect({ accountId: name.toLowerCase(), name, send: m => inbox.push(m) });
   s.inbox = inbox;
   s.last = t => [...inbox].reverse().find(m => m.t === t);
+  // Self state arrives as deltas: merge them like the client does.
+  s.me = () => Object.assign({}, ...inbox.filter(m => m.t === 's' && m.me).map(m => m.me));
   return s;
 }
 const ticks = (hub, n) => { for (let i = 0; i < n; i++) hub.tick(); };
@@ -44,8 +46,7 @@ describe('lobby', () => {
     const blueChamps = m.players.filter(p => p.team === 'blue').map(p => p.champ);
     assert.equal(new Set(blueChamps).size, 5, 'no duplicate champions on a team');
     ticks(hub, 10);
-    const snap = a.last('s');
-    assert.equal(snap.me.sm.f, 'bulwark');
+    assert.equal(a.me().sm.f, 'bulwark');
     assert.ok(a.last('score'));
   });
 
@@ -65,7 +66,7 @@ describe('lobby', () => {
     hub.handle(a, { t: 'buy', item: 'blade' });
     hub.handle(a, { t: 'lvl', sl: 'q' });
     ticks(hub, 2);
-    const me = a.last('s').me;
+    const me = a.me();
     assert.ok(me.it.some(i => i && i.id === 'blade'));
     assert.equal(me.rk.q, 1);
     hub.handle(a, { t: 'chat', ch: 'team', text: 'hello team' });
