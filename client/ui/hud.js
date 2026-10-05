@@ -291,7 +291,11 @@ export class Hud {
     if (rc === this._recap) return;
     this._recap = rc;
     this.recapEl.hidden = !rc;
+    this.recapEl.classList.remove('collapsed');
+    clearTimeout(this.recapT);
     if (!rc) return;
+    this.recapEl.onclick = () => this.recapEl.classList.toggle('collapsed');
+    if (this.game.input.isTouch) this.recapT = setTimeout(() => this.recapEl.classList.add('collapsed'), 6000);
     const g = this.game, enemy = g.world.team === 'blue' ? 'red' : 'blue';
     const iconOf = r => r.k === 'hero' ? pic(champKey(r.c), g.champInfo[r.c]?.icon || '?')
       : r.k === 'tower' ? pic('misc/tower', '🏰')

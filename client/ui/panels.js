@@ -118,6 +118,8 @@ export class Panels {
     music.addEventListener('input', () => g.setSetting('musicVolume', music.value / 100));
     const fps = h('input', { type: 'checkbox', checked: s.showFps });
     fps.addEventListener('change', () => g.setSetting('showFps', fps.checked));
+    const autoLvl = h('input', { type: 'checkbox', checked: s.autoLevel ?? g.input.isTouch });
+    autoLvl.addEventListener('change', () => g.setSetting('autoLevel', autoLvl.checked));
     const models = h('input', { type: 'checkbox', checked: s.models !== false });
     models.addEventListener('change', () => g.setSetting('models', models.checked));
     const lock = h('input', { type: 'checkbox', checked: g.renderer.locked });
@@ -130,6 +132,7 @@ export class Panels {
         h('label.field', {}, h('span', { text: 'Music & ambience volume' }), music),
         h('label.field.row', {}, lock, h('span', { text: 'Lock camera to champion (Y)' })),
         h('label.field.row', {}, fps, h('span', { text: 'Show FPS & ping' })),
+        h('label.field.row', {}, autoLvl, h('span', { text: 'Auto-level abilities (ultimate first)' })),
         h('label.field.row', {}, models, h('span', { text: 'Detailed 3D models (turn off on slow devices; applies next match)' })),
         h('div.btn-row', {},
           h('button.btn', { onclick: () => this.open('help') }, '❔ Controls'),

@@ -1,5 +1,6 @@
 /* In-match client controller. */
 import { ClientWorld } from './world.js';
+import { canRankUp } from '../../shared/moba/champions.js';
 import { SpectatorBar } from './spectate.js';
 import { EmoteWheel, EMOTE_ICON } from './emotes.js';
 import { Tutorial } from './tutorial.js';
@@ -148,6 +149,7 @@ export class Game {
     const w = this.world;
     this.tutorial?.update(dt);
     this.replay?.update(dt);
+    this.autoLevel(dt);
     if (this.spectating) return this.spectatorFrame(dt);
     // Direct movement (arrow keys / joystick) and basic-attack button.
     const dir = this.input.arrows();
@@ -248,7 +250,11 @@ export class Game {
     if (slot === 'ward') return this.send({ t: 'ward', x: round2(p.x), y: round2(p.y) });
     if (slot === 'd' || slot === 'f') return this.send({ t: 'summ', k: slot, x: round2(p.x), y: round2(p.y), id });
     const me = this.world.me;
-    if (me && me.rk[slot] === 0) return this.ui.toast('Level this ability first (Ctrl + key or the + button).', 'warn', 1500);
+    if (me && me.rk[slot] === 0) {
+      // Phones: tapping a locked ability learns it when a point is free.
+      if (this.input.isTouch && canRankUp({ points: me.pts, ranks: me.rk, level: me.lv }, slot)) { this.send({ t: 'lvl', sl: slot }); this.sfxSkill(); return; }
+      return this.ui.toast(this.input.isTouch ? 'Not learned yet: tap its gold + when you level up.' : 'Level this ability first (Ctrl + key or the + button).', 'warn', 1500);
+    }
     if (this.input.isTouch) navigator.vibrate?.(12);
     this.send({ t: 'cast', sl: slot, x: round2(p.x), y: round2(p.y), id });
   }
@@ -405,6 +411,19 @@ export class Game {
       const e = this.world.entities.get(id);
       if (e) sfx.playAt(key, e.x, e.y, { ...opts, vol: 0.85, range: 30 });
     }, delay);
+  }
+
+  /** Auto-level (default on phones): ultimate first, then the lowest-ranked basic ability. */
+  autoLevel(dt) {
+    const me = this.world.me;
+    const on = this.settings.autoLevel ?? this.input.isTouch;
+    if (!on || !me || !me.pts || this.spectating) return;
+    this.autoLvlT = (this.autoLvlT || 0) - dt;
+    if (this.autoLvlT > 0) return;
+    this.autoLvlT = 0.6;
+    const st = { points: me.pts, ranks: me.rk, level: me.lv };
+    const slot = canRankUp(st, 'r') ? 'r' : ['q', 'w', 'e'].filter(s => canRankUp(st, s)).sort((a, b) => me.rk[a] - me.rk[b])[0];
+    if (slot) this.send({ t: 'lvl', sl: slot });
   }
 
   perfHint() {
