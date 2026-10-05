@@ -1,6 +1,7 @@
 /* In-match client controller. */
 import { ClientWorld } from './world.js';
 import { SpectatorBar } from './spectate.js';
+import { EmoteWheel, EMOTE_ICON } from './emotes.js';
 import { Tutorial } from './tutorial.js';
 import { setModelsEnabled } from '../render/assetModels.js';
 import { Labels } from '../ui/labels.js';
@@ -57,6 +58,7 @@ export class Game {
     this.world.on('fx', ev => this.onFx(ev));
     if (match.mode === 'tutorial') this.tutorial = new Tutorial(this);
     this.spectating = !!match.spectator;
+    if (!this.spectating) this.emotes = new EmoteWheel(this);
     if (this.spectating) { this.renderer.locked = false; this.spectator = new SpectatorBar(this); }
   }
 
@@ -99,7 +101,7 @@ export class Game {
     const loop = t => {
       if (!this.running) return;
       this.frameId = requestAnimationFrame(loop);
-      const dt = Math.min(0.1, (t - this.last) / 1000);
+      const dt = Math.max(0, Math.min(0.1, (t - this.last) / 1000)); // rAF timestamps can precede performance.now() after a long block
       this.last = t;
       this.frame(dt);
     };
@@ -186,6 +188,9 @@ export class Game {
     this.hud.drawMinimap(dt);
     if (this.rangeT > 0) { this.rangeT -= dt; if (this.rangeT <= 0) this.renderer.showRange(0, 0, 0); else if (you && w.me) this.renderer.showRange(you.x, you.y, w.me.st.rg + 0.6); }
     this.fps = this.fps * 0.95 + (1 / Math.max(dt, 0.001)) * 0.05;
+    // Slow device: suggest lighter settings once (after 12s under 25 fps).
+    this.slowT = this.fps < 25 ? (this.slowT || 0) + dt : 0;
+    if (this.slowT > 12 && !this.perfHinted) { this.perfHinted = true; this.perfHint(); }
     if (this.settings.showFps) this.fpsEl.textContent = `${Math.round(this.fps)} fps · ${this.app.offline ? 'offline' : `${this.app.ping} ms`}`;
     else if (this.fpsEl.textContent) this.fpsEl.textContent = '';
   }
@@ -218,17 +223,19 @@ export class Game {
       if (e.tm === this.world.team || (e.fl & F.DEAD) || !['hero', 'minion', 'monster'].includes(e.kind)) continue;
       const d = dist(you.x, you.y, e.x, e.y);
       if (d > range) continue;
-      const s = (e.kind === 'hero' ? 0 : 100) + d;
+      // Champions first (the weakest within reach), then the nearest minion or monster.
+      const s = (e.kind === 'hero' ? 0 : 100) + d + (e.kind === 'hero' && e.mh ? (e.hp / e.mh) * 6 : 0);
       if (s < bs) { bs = s; best = e; }
     }
     return best;
   }
 
-  castKey(slot) {
+  castKey(slot, aimed = null) {
     sfx.init();
     const you = this.world.you();
     let p, id;
-    if (this.input.isTouch && you) {
+    if (aimed) p = aimed; // touch drag-to-aim
+    else if (this.input.isTouch && you) {
       const info = this.myChamp();
       const range = slot === 'd' || slot === 'f' ? 6 : (info?.abilities[slot]?.range || 6) + 2;
       const t = this.autoTarget(Math.max(6, range));
@@ -242,6 +249,7 @@ export class Game {
     if (slot === 'd' || slot === 'f') return this.send({ t: 'summ', k: slot, x: round2(p.x), y: round2(p.y), id });
     const me = this.world.me;
     if (me && me.rk[slot] === 0) return this.ui.toast('Level this ability first (Ctrl + key or the + button).', 'warn', 1500);
+    if (this.input.isTouch) navigator.vibrate?.(12);
     this.send({ t: 'cast', sl: slot, x: round2(p.x), y: round2(p.y), id });
   }
 
@@ -270,6 +278,7 @@ export class Game {
       case 'lock': return this.toggleLock();
       case 'chat': return this.chat.focus();
       case 'help': return this.panels.toggle('help');
+      case 'emotes': return this.emotes?.toggle();
       case 'ping': { const p = this.cursorWorld(); const k = ev.ctrlKey ? 'danger' : ev.shiftKey ? 'help' : 'go'; return this.send({ t: 'mping', x: round2(p.x), y: round2(p.y), k }); }
       case 'zoom': this.renderer.zoom = Math.max(0.65, Math.min(1.5, this.renderer.zoom + ev * 0.07)); return;
       case 'escape': if (this.panels.current && this.panels.current !== 'end') return this.panels.close(); return this.panels.open('settings');
@@ -312,6 +321,7 @@ export class Game {
         at(key, { gap: ent.kind === 'hero' ? 0.05 : 0.15, vol: ent.kind === 'hero' ? (ev.id === you ? 1 : 0.7) : 0.25, rate: ent.kind === 'minion' ? 1.2 : 0.95 + Math.random() * 0.1 });
         break;
       }
+      case 'emote': this.labels.bubble(ev.id, EMOTE_ICON[ev.k] || '🙂'); at('ui_notify', { gap: 0.5, vol: 0.4 }); break;
       case 'cast':
         at(`${ev.c}_${ev.sl}`, { gap: 0.1, vol: ev.id === you ? 1 : 0.8 });
         if (ev.sl === 'r') this.champLine(ev.c, 'ult', ev.id, 0);
@@ -395,6 +405,15 @@ export class Game {
       const e = this.world.entities.get(id);
       if (e) sfx.playAt(key, e.x, e.y, { ...opts, vol: 0.85, range: 30 });
     }, delay);
+  }
+
+  perfHint() {
+    if (this.settings.models === false && this.settings.quality === 'low') return;
+    this.ui.prompt('The game is running slowly on this device. Switch to lighter graphics (Low quality, simple models)?', () => {
+      this.setSetting('quality', 'low');
+      this.setSetting('models', false);
+      this.ui.toast('Lighter graphics on. Detailed models return next match if you turn them back on in Settings.', 'info', 4500);
+    }, null, 20);
   }
 
   setSetting(k, v) {

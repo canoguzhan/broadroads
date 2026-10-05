@@ -10,6 +10,16 @@
   <meta property="og:description" content="Free 5v5 MOBA in your browser: ranked matchmaking, custom games, practice vs AI.">
   <meta property="og:url" content="https://broadroads.com">
   <meta property="og:type" content="website">
+  <meta property="og:site_name" content="BroadRoads">
+  <meta property="og:image" content="https://broadroads.com/og.jpg">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta property="og:image:alt" content="BroadRoads: a 5v5 teamfight in the Valley">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="BroadRoads — 5v5 Browser MOBA">
+  <meta name="twitter:description" content="Free 5v5 MOBA in your browser: ranked seasons, 3v3 Skirmish, replays. No download.">
+  <meta name="twitter:image" content="https://broadroads.com/og.jpg">
+  <link rel="apple-touch-icon" href="/portraits/garrok.webp">
   <link rel="canonical" href="https://broadroads.com/">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -21,6 +31,39 @@
   <canvas id="game-canvas" aria-label="Game view"></canvas>
   <div id="labels" aria-hidden="true"></div>
   <div id="hud" hidden></div>
+
+  <section id="screen-landing" class="screen" hidden>
+    <div class="ld-hero">
+      <div class="ld-hero-bg"></div>
+      <nav class="ld-nav"><span class="ld-logo">⚔️ BROADROADS</span><button class="btn btn-sm" data-landing="login">Log in</button></nav>
+      <div class="ld-hero-copy">
+        <h1>BROADROADS</h1>
+        <p class="ld-tag">A free 5v5 MOBA in your browser. Pick a champion, push the lanes, slay the Ember Wyrm and destroy the enemy Core.</p>
+        <div class="ld-ctas">
+          <button class="btn btn-primary btn-lg" data-landing="play">Play free now</button>
+          <button class="btn btn-lg" data-landing="offline">Play offline instantly</button>
+        </div>
+        <p class="ld-small">No download · Desktop &amp; phone · Free forever</p>
+      </div>
+    </div>
+    <div class="ld-champs" id="ld-champs"></div>
+    <div class="ld-features">
+      <div class="ld-card"><img src="/icons/misc/tier_gold.webp" alt=""><h3>Ranked seasons</h3><p>Climb from Bronze to Champion with Elo matchmaking, quarterly seasons and peak-tier rewards.</p></div>
+      <div class="ld-card"><img src="/icons/misc/streak.webp" alt=""><h3>Skirmish 3v3</h3><p>One lane, level 3 start, done in about ten minutes. Perfect on a phone or between meetings.</p></div>
+      <div class="ld-card"><img src="/portraits/lyra.webp" alt=""><h3>10 champions, real 3D</h3><p>Rigged, animated champions with voices, emotes and unlockable skins.</p></div>
+      <div class="ld-card"><img src="/icons/misc/trophy.webp" alt=""><h3>Watch &amp; share</h3><p>Spectate live matches, rewatch any game and share your best moments with one link.</p></div>
+      <div class="ld-card"><img src="/icons/misc/quest.webp" alt=""><h3>Daily quests</h3><p>Login streaks, first-win bonuses and quests earn shards for skins and profile pictures.</p></div>
+      <div class="ld-card"><img src="/icons/misc/shop.webp" alt=""><h3>Play with friends</h3><p>Friends list, parties of up to five, custom rooms with bots, and practice against AI any time.</p></div>
+    </div>
+    <div class="ld-gallery">
+      <img src="/landing/teamfight.webp" alt="A teamfight in the middle lane" loading="lazy">
+      <img src="/landing/champions.webp" alt="Champions with 3D previews and skins" loading="lazy">
+      <img src="/landing/select.webp" alt="Champion select" loading="lazy">
+      <img src="/landing/wyrm.webp" alt="The Ember Wyrm in the river" loading="lazy">
+    </div>
+    <div class="ld-final"><h2>Ready for the Valley?</h2><button class="btn btn-primary btn-lg" data-landing="play">Play free now</button></div>
+    <footer class="ld-foot">BroadRoads · <a href="https://github.com/canoguzhan/broadroads" target="_blank" rel="noopener">Open source on GitHub</a> · Built with Three.js</footer>
+  </section>
 
   <section id="screen-auth" class="screen">
     <div class="auth-bg"></div>

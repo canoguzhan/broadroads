@@ -20,7 +20,7 @@ const log = msg => console.log(`  ✓ ${msg}`);
 
 async function newPage(label, opts = {}) {
   const ctx = await browser.newContext({ viewport: { width: 1100, height: 680 }, ...opts });
-  await ctx.addInitScript(() => localStorage.setItem('broadroads_settings', JSON.stringify({ quality: 'low', volume: 0, showFps: false, models: false })));
+  await ctx.addInitScript(() => { localStorage.setItem('broadroads_settings', JSON.stringify({ quality: 'low', volume: 0, showFps: false, models: false })); localStorage.setItem('broadroads_seen_landing', '1'); });
   const page = await ctx.newPage();
   page.on('pageerror', e => errors.push(`[${label}] ${e.message}`));
   page.on('console', m => { if (m.type() === 'error' && !/favicon|fonts\.g/.test(m.text())) errors.push(`[${label}] ${m.text()}`); });

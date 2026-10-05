@@ -25,6 +25,7 @@ export function fileReplays(dataDir) {
       await fs.promises.writeFile(indexFile, JSON.stringify(index));
     },
     async list() { return index.slice(0, 20); },
+    meta(id) { return index.find(r => r.id === id) || null; },
     /** Absolute path of a stored replay, or null (ids are validated). */
     file(id) {
       if (!/^[a-z0-9]{6,24}$/.test(id)) return null;

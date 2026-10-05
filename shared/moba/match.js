@@ -1,5 +1,6 @@
 /* Authoritative 5v5 MOBA match simulation. */
 import { getValley, enemyOf, LANES, bushAt } from './map.js';
+export const EMOTES = ['dance', 'cheer', 'laugh'];
 import { CHAMPIONS, SLOTS, MAX_LEVEL, XP_TO_LEVEL, canRankUp, bonusAd } from './champions.js';
 import { ITEMS, INV_SLOTS, START_GOLD, SELL_RATIO, SPELLS, priceFor } from './items.js';
 import { Pathfinder } from './pathfind.js';
@@ -1165,6 +1166,13 @@ export class Match {
     if (!h || this.ended) return;
     const num = (v, d = 0) => (typeof v === 'number' && Number.isFinite(v) ? v : d);
     switch (msg.t) {
+      case 'emote': {
+        // Cosmetic only: everyone who can see the champion plays the animation.
+        if (h.dead || !EMOTES.includes(msg.k) || this.time - (h.emoteT ?? -9) < 2.5) return;
+        h.emoteT = this.time;
+        this.emit({ e: 'emote', id: h.id, k: msg.k });
+        return;
+      }
       case 'mv': {
         const x = num(msg.x, h.x), y = num(msg.y, h.y);
         if (msg.a) return this.setOrder(h, { type: 'amove', x, y });

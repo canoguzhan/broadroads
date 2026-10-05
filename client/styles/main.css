@@ -503,7 +503,7 @@ kbd { background: #2a2434; border: 1px solid #4a4058; border-bottom-width: 2px; 
 /* =====================================================================
    MOBA: lobby, champion select, in-match HUD
    ===================================================================== */
-.screen#screen-lobby, .screen#screen-select { display: block; }
+.screen#screen-lobby, .screen#screen-select, .screen#screen-landing { display: block; }
 .lob-header { position: sticky; top: 0; z-index: 2; display: flex; align-items: center; gap: 18px; padding: 10px 20px; background: rgba(10, 9, 14, .9); border-bottom: 1px solid var(--line); backdrop-filter: blur(6px); }
 .lob-brand { display: flex; gap: 8px; align-items: center; font-family: var(--display); color: var(--gold-2); font-size: 1.15rem; letter-spacing: .12em; }
 .lob-nav { display: flex; gap: 4px; flex: 1; }
@@ -950,3 +950,70 @@ select option { background: #15121c; }
 .fr-mid { flex: 1; min-width: 0; display: flex; flex-direction: column; font-size: .82rem; }
 .fr-mid small { font-size: .7rem; }
 .fr-rm { opacity: .6; }
+
+/* Emote wheel */
+.emote-wheel { position: absolute; left: 50%; top: 50%; width: 320px; height: 320px; transform: translate(-50%, -55%); border-radius: 50%; background: radial-gradient(circle, rgba(14, 11, 20, .92) 0 30%, rgba(14, 11, 20, .75) 31% 70%, transparent 71%); pointer-events: auto; z-index: 25; }
+.ew-item { position: absolute; transform: translate(-50%, -50%); display: flex; flex-direction: column; align-items: center; gap: 2px; width: 84px; padding: 6px 4px; border-radius: 12px; border: 1px solid rgba(212, 175, 55, .4); background: #15121c; color: #f4efe6; cursor: pointer; font-size: .7rem; }
+.ew-item:hover { border-color: var(--gold); background: #231c2e; }
+.ew-ic { font-size: 1.5rem; }
+.ew-close { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); width: 44px; height: 44px; border-radius: 50%; border: 1px solid var(--line); background: #1b1724; color: #ddd; cursor: pointer; }
+
+/* Phone polish: bigger buttons with icons and cooldowns, drag-to-aim */
+#hud, .touch-controls { touch-action: none; -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; }
+#hud.touch .touch-cluster { transform: none; }
+.touch-cluster.moba { width: 290px; height: 270px; }
+.touch-btn { overflow: hidden; padding: 0; display: grid; place-items: center; }
+.touch-btn .tb-ic { width: 100%; height: 100%; display: grid; place-items: center; border-radius: 50%; overflow: hidden; }
+.touch-btn .tb-ic .pic { border-radius: 50%; }
+.touch-btn .tb-cd { position: absolute; inset: 0; display: grid; place-items: center; font-size: 20px; font-weight: 900; color: #fff; text-shadow: 0 1px 4px #000; pointer-events: none; }
+.touch-btn.cooling .tb-ic { filter: brightness(.4) grayscale(.6); }
+.touch-btn.locked .tb-ic { filter: grayscale(1) brightness(.35); }
+.touch-cluster.moba .tb-attack { width: 96px; height: 96px; right: 0; bottom: 0; font-size: 36px; }
+.touch-cluster.moba .tb-q { width: 66px; height: 66px; right: 108px; bottom: 4px; }
+.touch-cluster.moba .tb-w { width: 66px; height: 66px; right: 112px; bottom: 82px; }
+.touch-cluster.moba .tb-e { width: 66px; height: 66px; right: 58px; bottom: 144px; }
+.touch-cluster.moba .tb-r { width: 70px; height: 70px; right: 0; bottom: 170px; }
+.touch-cluster.moba .tb-d { width: 52px; height: 52px; right: 190px; bottom: 6px; }
+.touch-cluster.moba .tb-f { width: 52px; height: 52px; right: 196px; bottom: 66px; }
+.joy-base { width: 150px; height: 150px; }
+.joy-knob { width: 64px; height: 64px; }
+#hud.touch .menu-buttons .icon-btn, #hud.touch .m-menu .icon-btn { width: 38px; height: 38px; font-size: 16px; }
+#hud.touch .mb-up { width: 26px; height: 26px; font-size: 16px; }
+@media (max-width: 700px) {
+  .touch-cluster.moba { transform: scale(.88) !important; transform-origin: bottom right; }
+}
+.touch-btn { overflow: visible; }
+.tb-up { position: absolute; top: -10px; right: -10px; width: 28px; height: 28px; border-radius: 50%; background: var(--gold); color: #1b1406; font-weight: 900; font-size: 18px; display: grid; place-items: center; box-shadow: 0 2px 8px rgba(0, 0, 0, .6); z-index: 2; }
+
+/* Highlights */
+.sp-track { position: relative; display: inline-flex; align-items: center; }
+.sp-mark { position: absolute; top: -6px; width: 8px; height: 8px; margin-left: -4px; border-radius: 50%; background: #f87171; box-shadow: 0 0 6px #f87171; cursor: pointer; }
+.rep-btns { margin: 8px 0; }
+.rep-wait { font-size: .8rem; }
+#hud.spectating .icon-btn[title^="Emotes"] { display: none; }
+
+/* Landing page */
+#screen-landing { overflow-y: auto; background: #0b0a10; }
+.ld-hero { position: relative; min-height: 92vh; display: flex; flex-direction: column; }
+.ld-hero-bg { position: absolute; inset: 0; background: linear-gradient(180deg, rgba(11, 10, 16, .35) 0%, rgba(11, 10, 16, .55) 55%, #0b0a10 100%), url('/landing/teamfight.webp') center / cover no-repeat; }
+.ld-nav { position: relative; display: flex; justify-content: space-between; align-items: center; padding: 16px max(16px, 4vw); }
+.ld-logo { font-family: var(--display); font-weight: 900; letter-spacing: .12em; color: var(--gold-2); }
+.ld-hero-copy { position: relative; margin: auto; text-align: center; padding: 0 16px; max-width: 760px; }
+.ld-hero-copy h1 { font-family: var(--display); font-size: clamp(2.6rem, 9vw, 6rem); letter-spacing: .12em; margin: 0; color: #f6e7b8; text-shadow: 0 6px 40px rgba(0, 0, 0, .8); }
+.ld-tag { font-size: clamp(1rem, 2.4vw, 1.3rem); color: #efe8da; text-shadow: 0 2px 12px #000; }
+.ld-ctas { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; margin: 18px 0 8px; }
+.ld-small { color: var(--muted); font-size: .85rem; }
+.ld-champs { display: flex; justify-content: center; flex-wrap: wrap; gap: 10px; padding: 8px 16px 28px; }
+.ld-champs img { width: 76px; height: 76px; border-radius: 50%; border: 2px solid rgba(212, 175, 55, .55); background: radial-gradient(circle at 50% 35%, #3a3150, #120f18); object-fit: cover; }
+.ld-features { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 14px; max-width: 1100px; margin: 0 auto; padding: 0 16px 32px; }
+.ld-card { background: var(--panel); border: 1px solid var(--line); border-radius: 14px; padding: 16px; }
+.ld-card img { width: 52px; height: 52px; border-radius: 10px; object-fit: cover; }
+.ld-card h3 { margin: 8px 0 4px; font-family: var(--display); color: var(--gold-2); }
+.ld-card p { margin: 0; color: #cfc8bb; font-size: .9rem; }
+.ld-gallery { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 12px; max-width: 1100px; margin: 0 auto; padding: 0 16px 32px; }
+.ld-gallery img { width: 100%; border-radius: 12px; border: 1px solid var(--line); display: block; }
+.ld-final { text-align: center; padding: 20px 16px 36px; }
+.ld-final h2 { font-family: var(--display); color: #f6e7b8; }
+.ld-foot { text-align: center; color: var(--muted); font-size: .8rem; padding: 20px 16px 30px; border-top: 1px solid var(--line); }
+.ld-foot a { color: var(--gold-2); }
+.ld-ctas .btn { width: auto; min-width: 230px; }

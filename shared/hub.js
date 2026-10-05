@@ -14,7 +14,7 @@ const ROLES = ['top', 'jungle', 'mid', 'bot', 'support'];
 const BOT_NAMES = ['Nyx', 'Talon', 'Ember', 'Sable', 'Quill', 'Onyx', 'Wren', 'Cinder', 'Jinx', 'Halcyon', 'Drift', 'Mirth', 'Pyre', 'Lark', 'Zephyr', 'Orrin', 'Kestrel', 'Morrow', 'Basil', 'Corvo'];
 const PARTY_MAX = 5;
 const SELECT_TIME = 40;
-const MATCH_CMDS = new Set(['mv', 'dir', 'stop', 'cast', 'summ', 'lvl', 'buy', 'sell', 'use', 'recall', 'ward']);
+const MATCH_CMDS = new Set(['mv', 'dir', 'stop', 'cast', 'summ', 'lvl', 'buy', 'sell', 'use', 'recall', 'ward', 'emote']);
 
 const num = (v, d = 0) => (typeof v === 'number' && Number.isFinite(v) ? v : d);
 const clean = s => String(s ?? '').replace(/[\u0000-\u001f\u007f]/g, '').trim().slice(0, CHAT_MAX);
@@ -143,25 +143,34 @@ export class Hub {
   }
 
   /* ================= tick ================= */
+  tickMatch(m, dt) {
+    m.update(dt);
+    for (const h of m.heroes) {
+      if (!h.session || h.session.view?.match !== m) continue;
+      h.session.send(m.snapshotFor(h.session.view));
+    }
+    for (const s of m.spectators) s.send(m.snapshotFor(s.view));
+    if (m.recorder && !m.recorderDone) m.recorder.capture();
+    m.flushFx();
+    if (m.ended && m.endT <= -6) this.closeMatch(m);
+    // Matches nobody is connected to are shut down after a grace period (players can rejoin before then).
+    else if (!m.ended) {
+      m.unattended = m.heroes.some(h => h.session) ? 0 : (m.unattended || 0) + dt;
+      if (m.unattended > (this.config.unattendedLimit ?? 180)) this.closeMatch(m);
+    }
+  }
+
   tick() {
     const t0 = Date.now();
     const dt = TICK;
     this.time += dt;
     for (const sel of [...this.selects.values()]) this.updateSelect(sel);
     for (const m of [...this.matches.values()]) {
-      m.update(dt);
-      for (const h of m.heroes) {
-        if (!h.session || h.session.view?.match !== m) continue;
-        h.session.send(m.snapshotFor(h.session.view));
-      }
-      for (const s of m.spectators) s.send(m.snapshotFor(s.view));
-      if (m.recorder && !m.recorderDone) m.recorder.capture();
-      m.flushFx();
-      if (m.ended && m.endT <= -6) this.closeMatch(m);
-      // Matches nobody is connected to are shut down after a grace period (players can rejoin before then).
-      else if (!m.ended) {
-        m.unattended = m.heroes.some(h => h.session) ? 0 : (m.unattended || 0) + dt;
-        if (m.unattended > (this.config.unattendedLimit ?? 180)) this.closeMatch(m);
+      try { this.tickMatch(m, dt); } catch (err) {
+        // One broken match must not take the server down: report it and close it.
+        this.log.error('match crashed', m.id, err);
+        this.onError?.(`match ${m.id} (${m.mode})`, err);
+        try { m.ended = true; this.closeMatch(m); } catch { this.matches.delete(m.id); }
       }
     }
     this.timers.score -= dt;
@@ -181,7 +190,9 @@ export class Hub {
     this.timers.party -= dt;
     if (this.timers.party <= 0) { this.timers.party = 3; for (const id of this.parties.keys()) this.updateParty(id); }
     this.stats.ticks++;
-    this.stats.tickMs = this.stats.tickMs * 0.95 + (Date.now() - t0) * 0.05;
+    const ms = Date.now() - t0;
+    this.stats.tickMs = this.stats.tickMs * 0.95 + ms * 0.05;
+    this.onTick?.(ms);
   }
 
   /* ================= messages ================= */
@@ -795,7 +806,12 @@ export class Hub {
     match.recorderDone = true;
     const { header, lines } = match.recorder.finish(result);
     match.recorder = null;
-    try { await this.replays.save(header, lines); } catch (err) { this.log.error('replay save failed', err); }
+    try { await this.replays.save(header, lines); } catch (err) { this.log.error('replay save failed', err); return; }
+    // Tell the match's players (and spectators) where their replay is, for the results screen.
+    const note = { t: 'replaySaved', id: header.id, highlights: header.highlights, duration: header.duration };
+    for (const h of match.heroes) if (h.session) h.session.send(note);
+    for (const s of match.spectators) s.send(note);
+    for (const p of result.players) { const s = this.byAccount.get(p.key); if (s && !match.heroes.some(h => h.session === s)) s.send(note); }
   }
 
   /* ================= spectating & replays ================= */

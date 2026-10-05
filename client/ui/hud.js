@@ -34,6 +34,7 @@ export class Hud {
     this.kdaEl = h('div.m-kda');
     this.root.append(h('div.m-tr', {}, this.kdaEl, h('div.m-menu', {},
       h('button.icon-btn', { title: 'Shop (P)', onclick: () => g.panels.toggle('shop') }, pic('misc/shop', '🛒')),
+      h('button.icon-btn', { title: 'Emotes & quick chat (G)', onclick: () => g.emotes?.toggle() }, '😊'),
       h('button.icon-btn', { title: 'Scoreboard (Tab)', onclick: () => g.panels.toggle('score') }, '📊'),
       h('button.icon-btn', { title: 'Camera lock (Y)', onclick: () => g.toggleLock() }, '🎥'),
       h('button.icon-btn', { title: 'Settings (Esc)', onclick: () => g.panels.toggle('settings') }, '⚙️'))));
@@ -107,15 +108,55 @@ export class Hud {
     const base = h('div.joy-base', {}, knob);
     g.input.bindJoystick(base, knob);
     const btn = (label, cls, down, up) => {
-      const b = h(`button.touch-btn.${cls}`, { text: label });
+      const b = h(`button.touch-btn.${cls}`, {}, h('span.tb-ic', { text: label }), h('span.tb-cd'));
       b.addEventListener('touchstart', e => { e.preventDefault(); down(); }, { passive: false });
       if (up) b.addEventListener('touchend', e => { e.preventDefault(); up(); });
       return b;
     };
+    // Abilities: tap to auto-target, or drag to aim (range ring + marker), release to cast.
+    const aimBtn = (slot, cls) => {
+      const b = h(`button.touch-btn.${cls}`, {}, h('span.tb-ic', { text: slot.toUpperCase() }), h('span.tb-cd'));
+      if (slot !== 'd' && slot !== 'f') {
+        // Level-up badge (phones have no ability bar with + buttons).
+        const up = h('span.tb-up', { hidden: true, text: '+' });
+        up.addEventListener('touchstart', e => { e.preventDefault(); e.stopPropagation(); g.send({ t: 'lvl', sl: slot }); g.sfxSkill(); }, { passive: false });
+        b.append(up);
+      }
+      let id = null, sx = 0, sy = 0, aim = null;
+      const range = () => (slot === 'd' || slot === 'f' ? 6 : g.myChamp()?.abilities[slot]?.range || 6);
+      const point = t => {
+        const you = g.world.you();
+        if (!you) return null;
+        const dx = t.clientX - sx, dy = t.clientY - sy, d = Math.hypot(dx, dy);
+        if (d < 14) return null;
+        // Screen-space drag mapped onto the ground around the champion (camera looks north).
+        const k = Math.min(1, d / 70) * range();
+        return { x: you.x + (dx / d) * k, y: you.y + (dy / d) * k };
+      };
+      b.addEventListener('touchstart', e => {
+        e.preventDefault();
+        const t = e.changedTouches[0]; id = t.identifier; sx = t.clientX; sy = t.clientY; aim = null;
+        const you = g.world.you();
+        if (you) g.renderer.showRange(you.x, you.y, range());
+      }, { passive: false });
+      b.addEventListener('touchmove', e => {
+        for (const t of e.changedTouches) if (t.identifier === id) { aim = point(t); g.renderer.showAim(aim); e.preventDefault(); }
+      }, { passive: false });
+      const end = e => {
+        for (const t of e.changedTouches) if (t.identifier === id) {
+          id = null;
+          g.renderer.showRange(0, 0, 0); g.renderer.showAim(null);
+          if (e.type === 'touchend') g.castKey(slot, aim);
+        }
+      };
+      b.addEventListener('touchend', end);
+      b.addEventListener('touchcancel', end);
+      return b;
+    };
+    this.touchBtns = { q: aimBtn('q', 'tb-q'), w: aimBtn('w', 'tb-w'), e: aimBtn('e', 'tb-e'), r: aimBtn('r', 'tb-r'), d: aimBtn('d', 'tb-d'), f: aimBtn('f', 'tb-f') };
     this.root.append(h('div.touch-controls', {}, base, h('div.touch-cluster.moba', {},
       btn('⚔️', 'tb-attack', () => { g.input.touch.attack = true; }, () => { g.input.touch.attack = false; }),
-      btn('Q', 'tb-q', () => g.castKey('q')), btn('W', 'tb-w', () => g.castKey('w')), btn('E', 'tb-e', () => g.castKey('e')), btn('R', 'tb-r', () => g.castKey('r')),
-      btn('D', 'tb-d', () => g.castKey('d')), btn('F', 'tb-f', () => g.castKey('f')))));
+      ...Object.values(this.touchBtns))));
     this.root.classList.add('touch');
   }
 
@@ -146,6 +187,7 @@ export class Hud {
 
   /* ---------------- per-frame ---------------- */
   setChampion(info) {
+    if (this.touchBtns) for (const s of ['q', 'w', 'e', 'r']) setPic(this.touchBtns[s].querySelector('.tb-ic'), abilityKey(info.id, s), s.toUpperCase());
     setPic(this.portrait.querySelector('.mb-icon'), champKey(info.id), info.icon);
     setPic(this.passiveEl, `passive/${info.id}`, '◆');
     this.passiveEl.title = `${info.passive.name}: ${info.passive.desc}`;
@@ -184,6 +226,18 @@ export class Hud {
       const pipKey = `${rank}/${MAX_RANK[s]}`;
       if (a.pips._k !== pipKey) { a.pips._k = pipKey; a.pips.innerHTML = ''; for (let i = 0; i < MAX_RANK[s]; i++) a.pips.append(h(`i${i < rank ? '.on' : ''}`)); }
       a.up.hidden = !canRankUp({ points: me.pts, ranks: me.rk, level: me.lv }, s);
+    }
+    if (this.touchBtns) {
+      for (const k of ['q', 'w', 'e', 'r', 'd', 'f']) {
+        const b = this.touchBtns[k], left = me.cd[k] || 0;
+        b.classList.toggle('locked', (k in me.rk) && me.rk[k] === 0);
+        const txt = left > 0.05 ? (left >= 1 ? Math.ceil(left) : left.toFixed(1)) : '';
+        const cd = b.querySelector('.tb-cd'); if (cd.textContent !== String(txt)) cd.textContent = txt;
+        b.classList.toggle('cooling', !!txt);
+        const up = b.querySelector('.tb-up');
+        if (up) up.hidden = !canRankUp({ points: me.pts, ranks: me.rk, level: me.lv }, k);
+        if ((k === 'd' || k === 'f') && me.sm[k]) setPic(b.querySelector('.tb-ic'), `spell/${me.sm[k]}`, k.toUpperCase());
+      }
     }
     for (const k of ['d', 'f']) {
       const sm = this.summ[k];

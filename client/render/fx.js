@@ -266,7 +266,7 @@ export class FxSystem {
     const n = Math.min(20, Math.ceil(len / 2));
     for (let i = 0; i <= n; i++) {
       const t = i / n;
-      this.sprite(x1 + dx * t, y, z1 + dz * t, { color, size: width * 2.2, grow: 1.5, life: life * 0.9 });
+      this.sprite(x1 + dx * t, y, z1 + dz * t, { color, size: width * 1.5, grow: 1.4, life: life * 0.9, opacity: 0.7 });
     }
     this.sparks(x2, z2, { y, color, count: 10, speed: 6 });
   }

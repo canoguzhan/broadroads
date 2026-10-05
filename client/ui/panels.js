@@ -5,6 +5,7 @@ import { CHAMPIONS } from '../../shared/moba/champions.js';
 import { sfx } from '../audio/sfx.js';
 import { pic, champKey } from './icons.js';
 import { QUESTS } from '../../shared/moba/progression.js';
+import { share } from './share.js';
 
 const CATS = [['rec', '⭐ Recommended'], ['basic', 'Basic'], ['boots', 'Boots'], ['attack', 'Attack'], ['magic', 'Magic'], ['defense', 'Defense'], ['consumable', 'Consumables']];
 const STAT = { ad: 'Attack Damage', ap: 'Ability Power', hp: 'Health', mp: 'Mana', armor: 'Armor', mr: 'Magic Resist', as: '% Attack Speed', crit: '% Crit Chance', ms: 'Move Speed', msPct: '% Move Speed', haste: 'Haste', lifesteal: '% Lifesteal', armorPen: '% Armor Pen', magicPen: 'Magic Pen', magicPenPct: '% Magic Pen', hpRegen: 'HP Regen /s', mpRegen: 'Mana Regen /s', tenacity: '% Tenacity' };
@@ -153,6 +154,17 @@ export class Panels {
     };
   }
 
+  replayButtons() {
+    const g = this.game, rep = g.app.lastReplay;
+    if (g.match.replay) return null;
+    if (!rep) return h('p.muted.rep-wait', { text: 'Saving the replay…' });
+    const best = [...(rep.highlights || [])].sort((a, b) => b.score - a.score)[0];
+    return h('div.btn-row.rep-btns', {},
+      h('button.btn', { onclick: () => { g.quit(); g.app.watchReplay(rep.id, best ? Math.max(0, best.t - 6) : 0); } }, '▶ Watch replay'),
+      best ? h('button.btn', { onclick: () => share(g.ui, { id: rep.id, t: best.t - 6, text: `${best.label} on BroadRoads!` }) }, `🔗 Share: ${best.label}`)
+        : h('button.btn', { onclick: () => share(g.ui, { id: rep.id, t: 0, text: 'Watch my BroadRoads match!' }) }, '🔗 Share replay'));
+  }
+
   render_end() {
     const g = this.game, r = g.endResult;
     if (!r) return { title: '', content: h('div') };
@@ -173,6 +185,7 @@ export class Panels {
         r.bonus && r.bonus.firstWin ? h('div.first-win', {}, pic('misc/firstwin', '☀️'), h('b', { text: 'First win of the day!' }), ' +100 💠 +200 XP') : null,
         watching ? null : h('p', {}, `+${r.xp} XP`, r.rated ? ` · Rating ${r.delta >= 0 ? '+' : ''}${r.delta} (${r.profile.rating})` : ' · Unranked'),
         r.profile && r.profile.quests ? h('div.end-quests', {}, ...r.profile.quests.list.map(q => { const d = QUESTS[q.id]; return d ? h(`span.eq${q.n >= d.goal ? '.done' : ''}`, { text: `${q.n >= d.goal ? '✓' : '📜'} ${d.text}: ${Math.min(q.n, d.goal).toLocaleString()}/${d.goal.toLocaleString()}` }) : null; }), h('span.eq.sh', { text: `💠 ${r.profile.shards} shards` })) : null,
+        this.replayButtons(),
         h('h4.t-blue', { text: 'Blue team' }), table('blue'), h('h4.t-red', { text: 'Red team' }), table('red'),
         h('button.btn.btn-primary', { onclick: () => g.quit() }, 'Return to lobby')),
     };

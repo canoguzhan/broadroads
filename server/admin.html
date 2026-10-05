@@ -1,0 +1,74 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<title>BroadRoads Admin</title>
+<style>
+  :root { --bg: #0e0b14; --panel: #17131f; --line: #2c2538; --text: #ece6da; --muted: #9b93a8; --gold: #d4af37; --bad: #f87171; --good: #4ade80; }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--text); font: 14px/1.45 system-ui, sans-serif; padding: 16px; }
+  h1 { font-size: 1.2rem; color: var(--gold); margin: 0 0 12px; display: flex; gap: 12px; align-items: center; flex-wrap: wrap; }
+  h2 { font-size: .9rem; text-transform: uppercase; letter-spacing: .08em; color: var(--muted); margin: 18px 0 8px; }
+  .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 10px; }
+  .card { background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 10px 12px; }
+  .card b { display: block; font-size: 1.4rem; }
+  .card span { color: var(--muted); font-size: .8rem; }
+  .warn b { color: var(--bad); }
+  table { width: 100%; border-collapse: collapse; background: var(--panel); border: 1px solid var(--line); border-radius: 12px; overflow: hidden; }
+  td, th { text-align: left; padding: 6px 8px; border-bottom: 1px solid var(--line); vertical-align: top; font-size: .82rem; }
+  th { color: var(--muted); font-weight: 600; }
+  pre { margin: 4px 0 0; white-space: pre-wrap; word-break: break-word; color: var(--muted); font-size: .72rem; max-height: 120px; overflow: auto; }
+  .muted { color: var(--muted); }
+  input, button { background: var(--panel); color: var(--text); border: 1px solid var(--line); border-radius: 8px; padding: 6px 10px; }
+  button { cursor: pointer; }
+  #login { max-width: 360px; margin: 20vh auto; display: flex; gap: 8px; }
+  #login input { flex: 1; }
+  .dot { width: 9px; height: 9px; border-radius: 50%; display: inline-block; background: var(--good); }
+  .dot.off { background: var(--bad); }
+</style>
+</head>
+<body>
+<form id="login" hidden><input id="token" type="password" placeholder="Admin token" autocomplete="current-password"><button>Open</button></form>
+<main id="app" hidden>
+  <h1><span>BroadRoads Admin</span><span class="dot" id="dot"></span><span class="muted" id="updated"></span><button id="logout" type="button">Forget token</button></h1>
+  <div class="grid" id="cards"></div>
+  <h2>Server errors</h2><div id="server"></div>
+  <h2>Client errors</h2><div id="client"></div>
+</main>
+<script>
+const $ = s => document.querySelector(s);
+const esc = s => String(s ?? '').replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+const ago = t => { const s = Math.round((Date.now() - t) / 1000); return s < 60 ? `${s}s ago` : s < 3600 ? `${Math.round(s / 60)}m ago` : `${Math.round(s / 3600)}h ago`; };
+const dur = s => s < 3600 ? `${Math.round(s / 60)}m` : s < 86400 ? `${(s / 3600).toFixed(1)}h` : `${(s / 86400).toFixed(1)}d`;
+let token = '';
+try { token = localStorage.getItem('br_admin') || ''; } catch {}
+$('#login').addEventListener('submit', e => { e.preventDefault(); token = $('#token').value.trim(); try { localStorage.setItem('br_admin', token); } catch {} load(); });
+$('#logout').addEventListener('click', () => { try { localStorage.removeItem('br_admin'); } catch {} location.reload(); });
+function table(rows, cols) {
+  if (!rows.length) return '<p class="muted">None 🎉</p>';
+  return `<table><tr>${cols.map(c => `<th>${c[0]}</th>`).join('')}</tr>${rows.map(r => `<tr>${cols.map(c => `<td>${c[1](r)}</td>`).join('')}</tr>`).join('')}</table>`;
+}
+async function load() {
+  if (!token) { $('#login').hidden = false; return; }
+  try {
+    const res = await fetch('/api/admin/metrics', { headers: { 'X-Admin-Token': token } });
+    if (res.status === 401) { $('#login').hidden = false; $('#app').hidden = true; return; }
+    const d = await res.json();
+    $('#login').hidden = true; $('#app').hidden = false; $('#dot').className = 'dot';
+    const m = d.metrics;
+    const card = (v, l, warn) => `<div class="card${warn ? ' warn' : ''}"><b>${esc(v)}</b><span>${esc(l)}</span></div>`;
+    $('#cards').innerHTML = [card(m.online, 'players online'), card(m.matches, 'live matches'), card(m.spectators, 'spectators'), card(m.queue, 'in queue'),
+      card(`${m.tickMs} ms`, `tick avg (max ${m.tickMaxMs})`, m.tickMs > 20), card(`${m.lagMs} ms`, 'event loop lag', m.lagMs > 50), card(`${m.rssMB} MB`, `memory (heap ${m.heapMB})`, m.rssMB > 900),
+      card(m.errorsLastHour, 'errors last hour', m.errorsLastHour > 10), card(dur(m.uptime), `uptime${m.crashedLastTime ? ' (after a crash)' : ''}`, m.crashedLastTime), card(m.counts.client, 'client errors since start'), card(m.counts.server, 'server errors since start')].join('');
+    $('#server').innerHTML = table(d.server, [['When', r => ago(r.at)], ['Where', r => esc(r.where)], ['Error', r => `${esc(r.message)}<pre>${esc(r.stack)}</pre>`]]);
+    $('#client').innerHTML = table(d.client, [['When', r => `${ago(r.at)}${r.count > 1 ? `<br><span class="muted">×${r.count}</span>` : ''}`], ['Error', r => `${esc(r.message)}<pre>${esc(r.stack)}</pre>`], ['Context', r => `${esc(r.context)}<br><span class="muted">${esc(r.ua)}</span>`]]);
+    $('#updated').textContent = `updated ${new Date().toLocaleTimeString()}`;
+  } catch { $('#dot').className = 'dot off'; $('#updated').textContent = 'server unreachable'; }
+}
+load();
+setInterval(() => { if (token && !$('#app').hidden) load(); }, 5000);
+</script>
+</body>
+</html>

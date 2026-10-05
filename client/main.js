@@ -4,6 +4,7 @@ import { OfflineConnection, offlineProfileName } from './net/offline.js';
 import { MobaRenderer } from './render/mobaRenderer.js';
 import { setModelsEnabled } from './render/assetModels.js';
 import { iconsReady } from './ui/icons.js';
+import './net/report.js';
 import { ReplayPlayer } from './game/spectate.js';
 import { Game } from './game/game.js';
 import { Lobby } from './ui/lobby.js';
@@ -140,6 +141,7 @@ class App {
       case 'friends': this.lobby?.setFriends(m); break;
       case 'replays': this.lobby?.setReplays(m.list); break;
       case 'replay': this.startReplay(m.header, m.lines); break;
+      case 'replaySaved': this.lastReplay = m; this.game?.panels.refresh(['end']); break;
       case 'party': this.lobby?.setParty(m.party); break;
       case 'invite': sfx.play('ui_notify'); this.ui.prompt(`${m.from} invites you to their party.`, () => this.send({ t: 'party', op: 'accept', party: m.party }), () => this.send({ t: 'party', op: 'decline', party: m.party })); break;
       case 'who': this.lobby?.setWho(m); break;
@@ -172,7 +174,8 @@ class App {
   }
 
   /* ---------------- replays ---------------- */
-  async watchReplay(id) {
+  async watchReplay(id, startAt = 0) {
+    this.replayStart = startAt;
     if (this.offline) return this.send({ t: 'replay', id }); // delivered inline by the offline hub
     try {
       const res = await fetch(`${import.meta.env.BASE_URL || '/'}replays/${id}.ndjson`);
@@ -184,11 +187,32 @@ class App {
 
   startReplay(header, lines) {
     this.startGame({ t: 'match', id: header.id, mode: header.mode, ranked: header.ranked, you: null, team: 'spectator', spectator: true, replay: true, time: 0, players: header.players });
-    if (this.game) this.game.replay = new ReplayPlayer(this.game, header, lines);
+    if (this.game) this.game.replay = new ReplayPlayer(this.game, header, lines, this.replayStart || 0);
+    this.replayStart = 0;
+  }
+
+  /** Shared link (?replay=id&t=s): watch without logging in. */
+  async openSharedReplay() {
+    const q = new URLSearchParams(location.search);
+    const id = q.get('replay');
+    if (!id) return false;
+    try {
+      if (!this.data) {
+        const d = await (await fetch(`${import.meta.env.BASE_URL || '/'}api/gamedata`)).json();
+        this.data = d;
+        this.champInfo = Object.fromEntries(d.champions.map(c => [c.id, c]));
+      }
+      await iconsReady;
+      this.guestReplay = !this.conn;
+      await this.watchReplay(id, Number(q.get('t')) || 0);
+      return true;
+    } catch { this.ui.toast('Could not open that replay.', 'warn'); return false; }
   }
 
   endReplay() {
     if (this.game) { this.game.destroy(); this.game = null; }
+    if (new URLSearchParams(location.search).has('replay')) history.replaceState(null, '', location.pathname);
+    if (this.guestReplay) { this.guestReplay = false; sfx.playMusic('music_lobby'); return this.show('screen-auth'); }
     sfx.playMusic('music_lobby');
     this.show('screen-lobby');
     this.lobby?.renderCenter();
@@ -210,6 +234,28 @@ class App {
     this.exit(null);
   }
 
+  /** Front page for first-time visitors; returning players and shared links skip it. */
+  landing(saved) {
+    let seen = false;
+    try { seen = localStorage.getItem('broadroads_seen_landing') === '1'; } catch { /* ignore */ }
+    const champs = $('#ld-champs');
+    if (champs && !champs.children.length) {
+      for (const id of ['garrok', 'lyra', 'kaelen', 'hale', 'thorne', 'mira', 'zarak', 'nyra', 'brakka', 'rook']) {
+        const img = document.createElement('img');
+        img.src = `${import.meta.env.BASE_URL || '/'}portraits/${id}.webp`; img.alt = id; img.title = id[0].toUpperCase() + id.slice(1); img.loading = 'lazy';
+        champs.append(img);
+      }
+    }
+    const go = mode => {
+      try { localStorage.setItem('broadroads_seen_landing', '1'); } catch { /* ignore */ }
+      this.show('screen-auth');
+      if (mode === 'offline') { this.setTab('offline'); $('#auth-form').requestSubmit(); }
+      else this.setTab(mode === 'login' ? 'login' : this.serverInfo ? 'register' : 'offline');
+    };
+    for (const b of $$('[data-landing]')) b.addEventListener('click', () => go(b.dataset.landing));
+    if (!seen && !(saved && saved.token) && !new URLSearchParams(location.search).has('replay')) this.show('screen-landing');
+  }
+
   async boot() {
     for (const b of $$('.auth-card .tab')) b.addEventListener('click', () => this.setTab(b.dataset.tab));
     $('#auth-form').addEventListener('submit', e => this.submit(e));
@@ -217,6 +263,7 @@ class App {
     await this.refreshServer();
     let saved = null;
     try { saved = JSON.parse(localStorage.getItem(TOKEN_KEY) || 'null'); } catch { /* ignore */ }
+    this.landing(saved);
     if (saved && saved.token && this.serverInfo) {
       $('#auth-user').value = saved.username;
       this.startSession(new OnlineConnection(saved.token), saved.username, false);
@@ -227,6 +274,7 @@ class App {
 
 const app = new App();
 app.boot();
+app.openSharedReplay(); // ?replay=<id>&t=<s> links open the replay right away
 
 // Read-only hooks used by the end-to-end browser tests.
 Object.defineProperty(window, '__broadroads', { get: () => app.game });

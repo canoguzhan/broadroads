@@ -4,7 +4,7 @@
 const KEYS = {
   KeyQ: 'q', KeyW: 'w', KeyE: 'e', KeyR: 'r', KeyD: 'd', KeyF: 'f', KeyB: 'recall', KeyT: 'ward', KeyA: 'amove', KeyS: 'stop',
   KeyP: 'shop', Tab: 'score', Space: 'center', KeyY: 'lock', Enter: 'chat', Escape: 'escape', KeyC: 'stats',
-  Digit1: 'item0', Digit2: 'item1', Digit3: 'item2', Digit4: 'item3', Digit5: 'item4', Digit6: 'item5', KeyH: 'help',
+  Digit1: 'item0', Digit2: 'item1', Digit3: 'item2', Digit4: 'item3', Digit5: 'item4', Digit6: 'item5', KeyH: 'help', KeyG: 'emotes',
 };
 
 export class Input {

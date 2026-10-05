@@ -138,7 +138,7 @@ export function attachModel(view, gltf, height, skin) {
   const actions = {};
   for (const clip of gltf.animations) {
     const a = mixer.clipAction(clip);
-    if (ONE_SHOT[clip.name] || clip.name === 'death') { a.setLoop(THREE.LoopOnce, 1); a.clampWhenFinished = true; }
+    if (ONE_SHOT[clip.name] || clip.name === 'death' || clip.name === 'cheer' || clip.name === 'laugh') { a.setLoop(THREE.LoopOnce, 1); a.clampWhenFinished = true; }
     if (ONE_SHOT[clip.name]) a.timeScale = clip.duration / ONE_SHOT[clip.name];
     actions[clip.name] = a;
   }
@@ -171,7 +171,9 @@ export function animateModel(view, e, dead, moving, dt, now) {
       view.oneShot = null;
     } else if (now >= anim.oneShotUntil) {
       if (!anim.actions.idle) anim.actions.run.timeScale = moving ? 1 : 0; // walk-only rigs freeze when standing
-      play(anim, moving ? 'run' : 'idle');
+      // Emotes play while standing still; moving cancels them.
+      if (view.emote && (moving || now > view.emote.until || !anim.actions[view.emote.k])) view.emote = null;
+      play(anim, view.emote ? view.emote.k : moving ? 'run' : 'idle', 0.2);
     }
     if (!anim.actions.attack) model.position.z = lunge * 0.35;
     anim.mixer.update(dt);

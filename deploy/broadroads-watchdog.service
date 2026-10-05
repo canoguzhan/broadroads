@@ -1,0 +1,7 @@
+[Unit]
+Description=BroadRoads health check (restarts the server if it stops responding)
+After=broadroads.service
+
+[Service]
+Type=oneshot
+ExecStart=/opt/broadroads/deploy/watchdog.sh

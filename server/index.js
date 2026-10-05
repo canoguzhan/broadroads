@@ -1,5 +1,8 @@
 /* BroadRoads game server: static client + REST auth API + WebSocket game gateway. */
 import http from 'node:http';
+import { CHAMPION_IDS, championInfo } from '../shared/moba/champions.js';
+import { ITEMS, SPELLS, SECOND_SPELLS } from '../shared/moba/items.js';
+import { Monitor } from './monitor.js';
 import { fileReplays } from './replays.js';
 import fs from 'node:fs';
 import path from 'node:path';
@@ -37,6 +40,8 @@ export function loadConfig(env = process.env) {
     selectTime: env.SELECT_TIME ? Number(env.SELECT_TIME) : undefined,
     queueBotWait: env.QUEUE_BOT_WAIT ? Number(env.QUEUE_BOT_WAIT) : undefined,
     quiet: env.QUIET === '1',
+    adminToken: env.ADMIN_TOKEN || '',
+    alertWebhook: env.ALERT_WEBHOOK || '',
   };
 }
 
@@ -103,8 +108,16 @@ export async function startServer(overrides = {}) {
   const hubConfig = {};
   for (const k of ['queueBotWait', 'selectTime']) if (cfg[k] !== undefined) hubConfig[k] = cfg[k];
   const replays = fileReplays(cfg.dataDir);
+  // Static game data for logged-out replay viewers (shared links).
+  const gameData = { champions: CHAMPION_IDS.map(championInfo), items: ITEMS, spells: SPELLS, second: SECOND_SPELLS };
   const hub = new Hub({ store, config: hubConfig, log, replays });
+  const monitor = new Monitor({ dataDir: cfg.dataDir, log, webhook: cfg.alertWebhook, hub });
+  hub.onError = (where, err) => monitor.serverError(where, err);
+  hub.onTick = ms => monitor.noteTick(ms);
   hub.start();
+  monitor.started();
+  const adminPage = fs.readFileSync(path.join(path.dirname(fileURLToPath(import.meta.url)), 'admin.html'));
+  const safeEqual = (a, b) => { const x = Buffer.from(String(a)), y = Buffer.from(String(b)); return x.length === y.length && crypto.timingSafeEqual(x, y); };
 
   const authLimiter = new RateLimiter(20, 10 * 60 * 1000);
   const sweep = setInterval(() => authLimiter.sweep(), 60 * 1000);
@@ -182,8 +195,23 @@ export async function startServer(overrides = {}) {
         res.writeHead(200, { 'Content-Type': 'application/x-ndjson; charset=utf-8', 'Content-Encoding': 'gzip', 'Cache-Control': 'public, max-age=86400' });
         return fs.createReadStream(file).pipe(res);
       }
+      if (p === '/admin') {
+        if (!cfg.adminToken) { res.writeHead(404); return res.end(); }
+        res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8', 'Cache-Control': 'no-store', 'X-Robots-Tag': 'noindex' });
+        return res.end(adminPage);
+      }
       if (p.startsWith('/api/')) {
         const cors = corsHeaders(req);
+        if (p === '/api/client-error' && req.method === 'POST') {
+          let body;
+          try { body = await readBody(req, 8 * 1024); } catch { return json(res, 400, { ok: false }, cors); }
+          monitor.clientError(clientIp(req), body || {});
+          return json(res, 200, { ok: true }, cors);
+        }
+        if (p === '/api/admin/metrics') {
+          if (!cfg.adminToken || !safeEqual(req.headers['x-admin-token'] || '', cfg.adminToken)) return json(res, 401, { error: 'Unauthorized' });
+          return json(res, 200, { metrics: monitor.metrics(), server: monitor.server, client: monitor.client });
+        }
         if (req.method === 'OPTIONS') { res.writeHead(204, cors); return res.end(); }
         if (p === '/api/health') {
           return json(res, 200, {
@@ -194,10 +222,30 @@ export async function startServer(overrides = {}) {
         if (p === '/api/auth/register' && req.method === 'POST') return await handleAuth(req, res, 'register');
         if (p === '/api/auth/login' && req.method === 'POST') return await handleAuth(req, res, 'login');
         if (p === '/api/leaderboard') return json(res, 200, { kind: url.searchParams.get('kind') || 'rating', rows: await hub.leaderboard(url.searchParams.get('kind') || 'rating') }, cors);
+        if (p === '/api/gamedata') return json(res, 200, gameData, { ...cors, 'Cache-Control': 'public, max-age=3600' });
         if (p === '/api/stats') return json(res, 200, { online: hub.sessions.size, matches: hub.matches.size, ...(await store.counts()) }, cors);
         return json(res, 404, { error: 'Not found' }, cors);
       }
       if (req.method !== 'GET' && req.method !== 'HEAD') { res.writeHead(405); return res.end(); }
+      // Shared replay links get their own link preview (title/description).
+      const rid = (p === '/' || p === '/index.html') && url.searchParams.get('replay');
+      if (rid && /^[a-z0-9]{6,24}$/.test(rid)) {
+        const meta = replays.meta(rid);
+        const index = path.join(cfg.staticDir, 'index.html');
+        if (meta && fs.existsSync(index)) {
+          const best = [...(meta.highlights || [])].sort((a, b) => b.score - a.score)[0];
+          const champ = best && best.champ ? `${best.champ[0].toUpperCase()}${best.champ.slice(1)}: ` : '';
+          const title = `${best ? `${champ}${best.label}` : 'Match replay'} — BroadRoads`;
+          const desc = `Watch this ${meta.mode} match on BroadRoads (${meta.kills.blue}–${meta.kills.red}, ${Math.round(meta.duration / 60)} min). Free 5v5 MOBA in your browser.`;
+          const esc = t => t.replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+          const html = fs.readFileSync(index, 'utf8')
+            .replace(/<title>[^<]*<\/title>/, `<title>${esc(title)}</title>`)
+            .replace(/(property="og:title" content=")[^"]*/, `$1${esc(title)}`).replace(/(name="twitter:title" content=")[^"]*/, `$1${esc(title)}`)
+            .replace(/(property="og:description" content=")[^"]*/, `$1${esc(desc)}`).replace(/(name="twitter:description" content=")[^"]*/, `$1${esc(desc)}`);
+          res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8', 'Cache-Control': 'no-cache' });
+          return res.end(html);
+        }
+      }
       serveStatic(req, res, p);
     } catch (err) {
       log.error('HTTP error', err);
@@ -278,9 +326,10 @@ export async function startServer(overrides = {}) {
     for (const ws of wss.clients) ws.close(1001, 'server shutting down');
     await new Promise(r => server.close(r));
     if (store.close) await store.close();
+    monitor.shutdown();
   }
 
-  return { server, hub, store, stop, port: address.port, config: cfg };
+  return { server, hub, store, stop, port: address.port, config: cfg, monitor };
 }
 
 function sameHost(origin, host) {
@@ -290,6 +339,9 @@ function sameHost(origin, host) {
 const isMain = process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url);
 if (isMain) {
   const app = await startServer();
+  // Crashes are logged (and alerted) before exiting; systemd restarts the server.
+  process.on('uncaughtException', err => { console.error('uncaught exception', err); app.monitor.serverError('uncaught exception', err); process.exit(1); });
+  process.on('unhandledRejection', err => { console.error('unhandled rejection', err); app.monitor.serverError('unhandled rejection', err); });
   for (const sig of ['SIGINT', 'SIGTERM']) {
     process.on(sig, async () => {
       console.info(`${sig} received, saving players and shutting down…`);

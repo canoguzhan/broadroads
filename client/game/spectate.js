@@ -4,6 +4,7 @@
    the chosen speed and supports seeking. */
 import { h, timeStr } from '../ui/dom.js';
 import { pic, champKey } from '../ui/icons.js';
+import { share } from '../ui/share.js';
 
 export class SpectatorBar {
   constructor(game) {
@@ -30,7 +31,7 @@ export class SpectatorBar {
 }
 
 export class ReplayPlayer {
-  constructor(game, header, lines) {
+  constructor(game, header, lines, startAt = 0) {
     this.game = game;
     this.header = header;
     this.frames = [];
@@ -44,6 +45,7 @@ export class ReplayPlayer {
     this.speed = 1;
     this.playing = true;
     this.buildControls();
+    if (startAt > 0) this.seek(Math.min(this.duration, startAt));
   }
 
   buildControls() {
@@ -55,7 +57,41 @@ export class ReplayPlayer {
     const speed = h('select.sp-speed', {}, ...[0.5, 1, 2, 4, 8].map(s => h('option', { value: s, text: `${s}×` })));
     speed.value = '1';
     speed.addEventListener('change', () => { this.speed = Number(speed.value); });
-    c.append(this.playBtn, this.slider, this.timeEl, speed);
+    // Highlight markers on the seek bar.
+    const hl = this.header.highlights || [];
+    const track = h('div.sp-track', {}, this.slider, ...hl.map(x => h('span.sp-mark', { title: `${timeStr(x.t)} · ${x.label}`, style: { left: `${(x.t / Math.max(1, this.duration)) * 100}%` }, onclick: () => this.seek(Math.max(0, x.t - 5)) })));
+    const next = h('button.btn.btn-sm', { title: 'Next highlight', hidden: !hl.length, onclick: () => { const n = hl.find(x => x.t - 5 > this.clock + 1) || hl[0]; if (n) this.seek(Math.max(0, n.t - 5)); } }, '⏭');
+    const shareBtn = h('button.btn.btn-sm', { title: 'Share this moment', onclick: () => share(this.game.ui, { id: this.header.id, t: this.clock, text: 'Watch this BroadRoads moment!' }) }, '🔗');
+    this.clipBtn = h('button.btn.btn-sm', { title: 'Download a 12-second video clip from here', hidden: typeof MediaRecorder === 'undefined', onclick: () => this.clip() }, '🎬');
+    c.append(this.playBtn, track, this.timeEl, speed, next, shareBtn, this.clipBtn);
+  }
+
+  /** Records 12 seconds of the canvas from the current moment into a downloadable WebM. */
+  clip() {
+    if (this.recording) return;
+    const canvas = this.game.renderer.renderer.domElement;
+    const types = ['video/webm;codecs=vp9', 'video/webm;codecs=vp8', 'video/webm', 'video/mp4'];
+    const mimeType = types.find(t => MediaRecorder.isTypeSupported?.(t));
+    let rec;
+    try { rec = new MediaRecorder(canvas.captureStream(30), mimeType ? { mimeType, videoBitsPerSecond: 5e6 } : undefined); } catch { return this.game.ui.toast('Clip recording is not supported in this browser.', 'warn'); }
+    const chunks = [];
+    rec.ondataavailable = e => { if (e.data.size) chunks.push(e.data); };
+    rec.onstop = () => {
+      this.recording = false;
+      this.clipBtn.textContent = '🎬';
+      const blob = new Blob(chunks, { type: rec.mimeType || 'video/webm' });
+      const a = h('a', { href: URL.createObjectURL(blob), download: `broadroads-${this.header.id}-${Math.round(this.clock)}s.${(rec.mimeType || '').includes('mp4') ? 'mp4' : 'webm'}` });
+      document.body.append(a); a.click(); a.remove();
+      setTimeout(() => URL.revokeObjectURL(a.href), 10000);
+      this.game.ui.toast('Clip saved to your downloads.', 'good');
+    };
+    this.recording = true;
+    this.speed = 1;
+    this.playing = true;
+    this.playBtn.textContent = '⏸';
+    this.clipBtn.textContent = '⏺';
+    rec.start(250);
+    setTimeout(() => rec.state !== 'inactive' && rec.stop(), 12000);
   }
 
   toggle() {

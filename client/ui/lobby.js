@@ -3,6 +3,7 @@ import { h, $, clear, timeStr } from './dom.js';
 import { pic, champKey, abilityKey } from './icons.js';
 import { championPreview } from '../render/preview.js';
 import { tutorialDone } from '../game/tutorial.js';
+import { share } from './share.js';
 import { QUESTS, SKINS, AVATARS, avatarUnlocked, avatarOf, ownsSkin, equippedSkin, tierOf, seasonOf, firstWinAvailable, FIRST_WIN_SHARDS, FIRST_WIN_XP, STREAK_REWARDS } from '../../shared/moba/progression.js';
 import { profileXpNeeded } from '../../shared/moba/profile.js';
 import { Chat } from './chat.js';
@@ -143,7 +144,8 @@ export class Lobby {
       ...reps.slice(0, 6).map(r => h('div.w-row', {},
         h('span.w-rep', { text: '⏵ REPLAY' }), faces(r.players, 'blue'), h('span.w-score', { text: `${r.kills.blue} – ${r.kills.red}` }), faces(r.players, 'red'),
         h('span.muted.w-meta', { text: `${r.winner === 'blue' ? 'Blue' : 'Red'} won · ${timeStr(r.duration)} · ${new Date(r.at).toLocaleDateString()}` }),
-        h('button.btn.btn-sm', { onclick: () => app.watchReplay(r.id) }, 'Watch'))));
+        h('button.btn.btn-sm', { onclick: () => app.watchReplay(r.id) }, 'Watch'),
+        h('button.btn.btn-sm', { title: 'Share', onclick: () => share(app.ui, { id: r.id, t: (r.highlights || []).length ? Math.max(0, [...r.highlights].sort((a, b) => b.score - a.score)[0].t - 6) : 0, text: 'Watch this BroadRoads match!' }) }, '🔗'))));
   }
 
   rankLine(p) {

@@ -46,6 +46,12 @@ export class MobaRenderer {
     this.moveMarker.position.y = 0.1;
     this.moveMarker.visible = false;
     this.scene.add(this.moveMarker);
+    // Touch drag-to-aim target marker.
+    this.aimMarker = new THREE.Mesh(new THREE.RingGeometry(0.55, 0.8, 32), new THREE.MeshBasicMaterial({ color: 0xfacc15, transparent: true, opacity: 0.9, side: THREE.DoubleSide, depthWrite: false }));
+    this.aimMarker.rotation.x = -Math.PI / 2;
+    this.aimMarker.position.y = 0.12;
+    this.aimMarker.visible = false;
+    this.scene.add(this.aimMarker);
     this.setQuality(quality);
     this.resize();
   }
@@ -326,6 +332,7 @@ export class MobaRenderer {
     const ent = ev.id ? world.entities.get(ev.id) : null;
     switch (ev.e) {
       case 'atk': this.trigger(ev.id); break;
+      case 'emote': { const v = this.views.get(ev.id); if (v) v.emote = { k: ev.k, until: performance.now() + (ev.k === 'dance' ? 8000 : 3800) }; break; }
       case 'cast': {
         this.trigger(ev.id, 'cast');
         const accent = (this.champInfo[ev.c] || {}).accent || 0xffffff, ult = ev.sl === 'r';
@@ -377,6 +384,8 @@ export class MobaRenderer {
   }
 
   shake(a) { this.shakeAmt = Math.min(1, this.shakeAmt + a); }
+
+  showAim(p) { this.aimMarker.visible = !!p; if (p) this.aimMarker.position.set(p.x, 0.12, p.y); }
 
   showMoveMarker(x, y, attack = false) {
     this.moveMarker.position.set(x, 0.1, y);

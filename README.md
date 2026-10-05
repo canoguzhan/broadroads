@@ -18,6 +18,7 @@ runs the same simulation locally, so practice vs AI always works offline.
 | **⚔️ Ranked 5v5** | Elo matchmaking. Parties of up to five queue together and are kept on one team. If the queue is quiet, bots fill empty seats after a short wait (those games are unranked). |
 | **🤖 Practice vs AI** | You and your party against bots, starting instantly. Easy / Normal / Hard difficulty. Works offline too. |
 | **🎓 Tutorial** | A guided first match: move, shop, learn and cast abilities, last-hit, push a tower and return home. Enemy champions stay home; the lobby highlights it for new players. |
+| **⚡ Skirmish 3v3** | One lane, level 3 start, faster gold and waves, sudden death after 10:00. About 10 minutes; parties of up to 3. |
 | **🏟️ Custom Game** | Create a room and share the 6-digit code. Pick teams, add bots per slot, choose bot difficulty, and start. |
 
 Every match goes **Champion Select** (40 s, no duplicate champions per team, pick a second battle spell)
@@ -26,6 +27,9 @@ If you disconnect or leave, a bot takes over your champion, and you can **reconn
 
 ## 🏅 Progression
 
+- **Ranked tiers and seasons:** Bronze → Silver → Gold → Platinum → Diamond → Master → Champion (four divisions each). Seasons follow calendar quarters; at the end your rating is soft-reset halfway to 1000 and you earn shards for your peak tier (5+ ranked games).
+- **Login streak** (7-day shard cycle) and **first win of the day** (+100 shards, +200 XP).
+- **Friends:** requests (also to offline players), online status, one-click party invites, and watching a friend's match.
 - **Daily quests:** three a day per player, for example "Win a game", "Last-hit 120 minions" or "Deal 15,000 damage to champions". Progress counts in every mode except the tutorial; claim each one for **shards** 💠.
 - **Shards** also come from every game (+10, +25 more for a win) and every account level (+150). Spend them on skins.
 - **Skins:** four colour variants per champion (Crimson, Frost, Shadow, Gilded). Preview them on the 3D model in the Champions tab and equip them per champion; everyone in the match sees them.
@@ -33,6 +37,8 @@ If you disconnect or leave, a bot takes over your champion, and you can **reconn
 - **After you die**, a death recap shows the last 15 seconds of damage by source (champion abilities and attacks, towers, minions, monsters), split into physical, magic and true damage.
 
 ## 👀 Spectating and replays
+
+- **Highlights:** multi-kills, team wipes, shutdowns and epic monster kills are marked on the replay's seek bar. The results screen offers **Watch replay** and **Share** (a link that opens the replay just before the best moment, no login needed, with its own link preview). Replays can be exported as a 12-second WebM clip.
 
 - **Watch live:** the lobby lists running matches; spectators get full vision, a free camera (edge pan, minimap) and can follow any champion.
 - **Replays:** every finished match (except tutorials) is recorded as a full-vision 10 Hz snapshot stream and kept on the server (the last 50, gzipped in `data/replays`, served at `/replays/<id>.ndjson`). Offline matches keep their last five replays in memory. Playback has pause, 0.5–8× speed and seeking.
@@ -143,9 +149,25 @@ node scripts/build-models.mjs                                             # pack
 
 API credits are bought in the Tripo platform console. They are separate from Tripo Studio subscriptions.
 
+## 😊 Emotes and quick chat
+
+Press **G** (or 😊) for the wheel: Dance, Cheer and Laugh play Tripo-animated emotes on your champion; quick chat sends "Good game!", "On my way!", "Careful!" and more.
+
+## 📱 Phones
+
+Touch controls show ability icons and cooldowns. Tap an ability to auto-target (weakest champion in range first), or drag from it to aim with a range ring and target marker. Level-up badges sit on the ability buttons. If the frame rate stays under 25, the game offers lighter graphics.
+
+## 🩺 Monitoring
+
+- Browser errors are reported to `/api/client-error` (deduplicated, rate-limited).
+- Server errors, and any match whose simulation throws, are logged to `data/logs/errors.ndjson`. A crashing match is closed without taking down the server.
+- `/admin` (set `ADMIN_TOKEN`) shows players online, matches, tick time, event-loop lag, memory and recent errors.
+- Set `ALERT_WEBHOOK` (Discord/Slack) for crash and error-spike alerts.
+- `deploy/broadroads-watchdog.timer` restarts the service if `/api/health` fails three checks in a row.
+
 ## 🤖 Bots
 
-Bots play with the same commands a player has. They:
+Bots play with the same commands a player has. They focus fire, peel for low teammates, retreat together and save ultimates for groups. They:
 
 - level abilities, shop their champion's build and last-hit in lane;
 - respect tower aggro, retreat and return home when low, and trade or all-in based on the odds;

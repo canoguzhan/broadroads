@@ -8,9 +8,12 @@
    "idle",
    "attack",
    "cast",
-   "stun"
+   "stun",
+   "dance",
+   "cheer",
+   "laugh"
   ],
-  "v": "muv2hqvo"
+  "v": "muv66ugy"
  },
  "lyra": {
   "file": "lyra.glb",
@@ -21,9 +24,12 @@
    "attack",
    "cast",
    "death",
-   "stun"
+   "stun",
+   "dance",
+   "cheer",
+   "laugh"
   ],
-  "v": "muv2hrox"
+  "v": "muv66vb4"
  },
  "kaelen": {
   "file": "kaelen.glb",
@@ -34,9 +40,12 @@
    "attack",
    "cast",
    "death",
-   "stun"
+   "stun",
+   "dance",
+   "cheer",
+   "laugh"
   ],
-  "v": "muv2hsfj"
+  "v": "muv66w4l"
  },
  "hale": {
   "file": "hale.glb",
@@ -47,9 +56,12 @@
    "cast",
    "death",
    "attack",
-   "stun"
+   "stun",
+   "dance",
+   "cheer",
+   "laugh"
   ],
-  "v": "muv2ht6g"
+  "v": "muv66wyn"
  },
  "thorne": {
   "file": "thorne.glb",
@@ -60,9 +72,12 @@
    "attack",
    "cast",
    "death",
-   "stun"
+   "stun",
+   "dance",
+   "cheer",
+   "laugh"
   ],
-  "v": "muv2htx4"
+  "v": "muv66xpx"
  },
  "mira": {
   "file": "mira.glb",
@@ -73,9 +88,12 @@
    "attack",
    "cast",
    "death",
-   "stun"
+   "stun",
+   "dance",
+   "cheer",
+   "laugh"
   ],
-  "v": "muv2huop"
+  "v": "muv66yh7"
  },
  "zarak": {
   "file": "zarak.glb",
@@ -86,9 +104,12 @@
    "attack",
    "cast",
    "death",
-   "stun"
+   "stun",
+   "dance",
+   "cheer",
+   "laugh"
   ],
-  "v": "muv2hvdq"
+  "v": "muv66z77"
  },
  "nyra": {
   "file": "nyra.glb",
@@ -99,9 +120,12 @@
    "cast",
    "death",
    "attack",
-   "stun"
+   "stun",
+   "dance",
+   "cheer",
+   "laugh"
   ],
-  "v": "muv2hw26"
+  "v": "muv66zwk"
  },
  "brakka": {
   "file": "brakka.glb",
@@ -112,9 +136,12 @@
    "attack",
    "cast",
    "death",
-   "stun"
+   "stun",
+   "dance",
+   "cheer",
+   "laugh"
   ],
-  "v": "muv2hws6"
+  "v": "muv670m9"
  },
  "rook": {
   "file": "rook.glb",
@@ -125,9 +152,12 @@
    "attack",
    "cast",
    "death",
-   "stun"
+   "stun",
+   "dance",
+   "cheer",
+   "laugh"
   ],
-  "v": "muv2hxi5"
+  "v": "muv671ci"
  },
  "minion_melee_blue": {
   "file": "minion_melee_blue.glb",
