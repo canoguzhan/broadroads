@@ -885,3 +885,28 @@ select option { background: #15121c; }
 .eq { font-size: .75rem; padding: 3px 8px; border-radius: 999px; background: rgba(255, 255, 255, .06); border: 1px solid rgba(255, 255, 255, .1); }
 .eq.done { border-color: #4ade80; color: #bbf7d0; }
 .eq.sh { color: #7dd3fc; font-weight: 800; }
+
+/* Watch: live matches and replays */
+.watch { display: flex; flex-direction: column; gap: 6px; margin-bottom: 14px; }
+.watch h4 { margin: 0 0 2px; }
+.w-row { display: flex; align-items: center; gap: 8px; padding: 6px 8px; border-radius: 10px; background: rgba(0, 0, 0, .25); flex-wrap: wrap; }
+.w-live { color: #f87171; font-weight: 800; font-size: .7rem; letter-spacing: .06em; }
+.w-rep { color: var(--gold-2); font-weight: 800; font-size: .7rem; letter-spacing: .06em; }
+.w-faces { display: flex; }
+.w-face { width: 24px; height: 24px; border-radius: 50%; overflow: hidden; margin-left: -4px; border: 1px solid rgba(0, 0, 0, .6); background: #1b1724; display: grid; place-items: center; font-size: .7rem; }
+.w-score { font-weight: 800; font-size: .85rem; }
+.w-meta { font-size: .72rem; flex: 1; text-align: right; }
+/* Spectator / replay bar */
+#hud.spectating .m-bottom, #hud.spectating .m-team, #hud.spectating .m-kda { display: none; }
+.spectator-bar { position: absolute; left: 50%; bottom: 16px; transform: translateX(-50%); display: flex; align-items: center; gap: 14px; background: rgba(14, 11, 20, .92); border: 1px solid var(--gold); border-radius: 14px; padding: 8px 12px; pointer-events: auto; max-width: calc(100vw - 32px); flex-wrap: wrap; justify-content: center; }
+.sp-team { display: flex; gap: 4px; }
+.sp-champ { width: 40px; height: 40px; border-radius: 50%; overflow: hidden; padding: 0; border: 2px solid transparent; background: #1b1724; cursor: pointer; }
+.sp-team.blue .sp-champ { border-color: #3b82f6; } .sp-team.red .sp-champ { border-color: #ef4444; }
+.sp-champ.active { box-shadow: 0 0 0 3px var(--gold); }
+.sp-mid { display: flex; flex-direction: column; align-items: center; gap: 5px; }
+.sp-label { font-size: .7rem; font-weight: 800; letter-spacing: .1em; text-transform: uppercase; color: var(--gold-2); }
+.sp-controls { display: flex; align-items: center; gap: 6px; }
+.sp-controls:empty { display: none; }
+.sp-seek { width: 220px; accent-color: var(--gold); }
+.sp-time { font-size: .75rem; font-variant-numeric: tabular-nums; min-width: 84px; text-align: center; }
+.sp-speed { background: #1b1724; color: #eee; border: 1px solid var(--line); border-radius: 6px; padding: 2px 4px; }

@@ -4,6 +4,7 @@ import { OfflineConnection, offlineProfileName } from './net/offline.js';
 import { MobaRenderer } from './render/mobaRenderer.js';
 import { setModelsEnabled } from './render/assetModels.js';
 import { iconsReady } from './ui/icons.js';
+import { ReplayPlayer } from './game/spectate.js';
 import { Game } from './game/game.js';
 import { Lobby } from './ui/lobby.js';
 import { Select } from './ui/select.js';
@@ -105,6 +106,7 @@ class App {
   }
 
   route(m) {
+    if (m.t === 'end' && m.profile) this.lobby?.setProfile(m.profile); // quests, shards, level from this match
     if (this.game && ['s', 'score', 'end'].includes(m.t)) return this.game.onMessage(m);
     switch (m.t) {
       case 'hello':
@@ -115,6 +117,7 @@ class App {
         break;
       case 'profile': this.lobby?.setProfile(m.profile); break;
       case 'lobby':
+        if (this.game?.match.replay) { this.lobby.setState(m); break; } // keep watching the replay
         if (this.game) { this.game.destroy(); this.game = null; }
         this.lobby.setState(m);
         this.show('screen-lobby');
@@ -133,6 +136,9 @@ class App {
         this.show('screen-select');
         break;
       case 'match': this.startGame(m); break;
+      case 'live': this.lobby?.setLive(m.list); break;
+      case 'replays': this.lobby?.setReplays(m.list); break;
+      case 'replay': this.startReplay(m.header, m.lines); break;
       case 'party': this.lobby?.setParty(m.party); break;
       case 'invite': sfx.play('ui_notify'); this.ui.prompt(`${m.from} invites you to their party.`, () => this.send({ t: 'party', op: 'accept', party: m.party }), () => this.send({ t: 'party', op: 'decline', party: m.party })); break;
       case 'who': this.lobby?.setWho(m); break;
@@ -160,7 +166,31 @@ class App {
     this.game = new Game({ app: this, renderer: this.renderer, settings: this.settings, ui: this.ui, data: this.data, match: m });
     this.game.start();
     $('#orientation-lock').classList.add('active');
-    this.ui.banner(m.mode === 'tutorial' ? 'TUTORIAL' : m.mode === 'practice' ? 'PRACTICE VS AI' : m.ranked ? 'RANKED MATCH' : '5V5 MATCH', `You are on the ${m.team === 'blue' ? 'Blue' : 'Red'} team`);
+    if (m.spectator) this.ui.banner(m.replay ? 'REPLAY' : 'SPECTATING', `${m.players.filter(p => p.team === 'blue').length}v${m.players.filter(p => p.team === 'red').length} · ${m.mode}`);
+    else this.ui.banner(m.mode === 'tutorial' ? 'TUTORIAL' : m.mode === 'practice' ? 'PRACTICE VS AI' : m.ranked ? 'RANKED MATCH' : '5V5 MATCH', `You are on the ${m.team === 'blue' ? 'Blue' : 'Red'} team`);
+  }
+
+  /* ---------------- replays ---------------- */
+  async watchReplay(id) {
+    if (this.offline) return this.send({ t: 'replay', id }); // delivered inline by the offline hub
+    try {
+      const res = await fetch(`${import.meta.env.BASE_URL || '/'}replays/${id}.ndjson`);
+      if (!res.ok) throw new Error('missing');
+      const lines = (await res.text()).split('\n');
+      this.startReplay(JSON.parse(lines[0]), lines.slice(1));
+    } catch { this.ui.toast('That replay is no longer available.', 'warn'); }
+  }
+
+  startReplay(header, lines) {
+    this.startGame({ t: 'match', id: header.id, mode: header.mode, ranked: header.ranked, you: null, team: 'spectator', spectator: true, replay: true, time: 0, players: header.players });
+    if (this.game) this.game.replay = new ReplayPlayer(this.game, header, lines);
+  }
+
+  endReplay() {
+    if (this.game) { this.game.destroy(); this.game = null; }
+    sfx.playMusic('music_lobby');
+    this.show('screen-lobby');
+    this.lobby?.renderCenter();
   }
 
   exit(reason) {

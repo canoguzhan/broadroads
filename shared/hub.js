@@ -6,6 +6,7 @@ import { CHAMPIONS, CHAMPION_IDS, championInfo } from './moba/champions.js';
 import { ITEMS, SPELLS, SECOND_SPELLS } from './moba/items.js';
 import { makeBrain } from './moba/bot.js';
 import { newProfile, normalizeProfile, profileXpNeeded, leaderboardRow } from './moba/profile.js';
+import { Recorder } from './moba/recorder.js';
 import { ensureQuests, questProgress, claimQuest, buySkin, equipSkin, avatarUnlocked, equippedSkin, SHARDS_PER_WIN, SHARDS_PER_GAME, SHARDS_PER_LEVEL } from './moba/progression.js';
 import { RNG } from './rng.js';
 
@@ -21,8 +22,9 @@ const clean = s => String(s ?? '').replace(/[\u0000-\u001f\u007f]/g, '').trim().
 export { leaderboardRow };
 
 export class Hub {
-  constructor({ store, config = {}, log = console, offline = false } = {}) {
+  constructor({ store, config = {}, log = console, offline = false, replays = null } = {}) {
     this.store = store;
+    this.replays = replays; // { save(header, lines), list(), load?(id) }
     this.log = log;
     this.offline = offline;
     this.config = { queueBotWait: offline ? 0 : 25, autosave: 60, selectTime: SELECT_TIME, ...config };
@@ -91,6 +93,7 @@ export class Hub {
 
   async disconnect(session) {
     if (!this.sessions.has(session.id)) return;
+    if (session.view?.spectator) session.view.match.spectators.delete(session);
     this.sessions.delete(session.id);
     if (this.byName.get(session.name.toLowerCase()) === session) this.byName.delete(session.name.toLowerCase());
     if (this.byAccount.get(session.accountId) === session) this.byAccount.delete(session.accountId);
@@ -143,6 +146,8 @@ export class Hub {
         if (!h.session || h.session.view?.match !== m) continue;
         h.session.send(m.snapshotFor(h.session.view));
       }
+      for (const s of m.spectators) s.send(m.snapshotFor(s.view));
+      if (m.recorder && !m.recorderDone) m.recorder.capture();
       m.flushFx();
       if (m.ended && m.endT <= -6) this.closeMatch(m);
       // Matches nobody is connected to are shut down after a grace period (players can rejoin before then).
@@ -157,6 +162,8 @@ export class Hub {
       for (const m of this.matches.values()) {
         const sb = m.scoreboard();
         for (const h of m.heroes) if (h.session && h.session.view?.match === m) h.session.send({ t: 'score', score: sb });
+        for (const s of m.spectators) s.send({ t: 'score', score: sb });
+        if (m.recorder && !m.recorderDone) m.recorder.push({ t: 'score', score: sb, time: Math.round(m.time * 100) / 100 });
       }
     }
     this.timers.queue -= dt;
@@ -178,12 +185,12 @@ export class Hub {
     }
     if (MATCH_CMDS.has(msg.t)) {
       const v = session.view;
-      if (!v) return;
+      if (!v || v.spectator) return;
       return v.match.command(v.match.get(v.heroId), msg);
     }
     switch (msg.t) {
-      case 'mping': { const v = session.view; if (v) v.match.command(v.match.get(v.heroId), { ...msg, t: 'ping' }); return; }
-      case 'ff': { const v = session.view; if (v) { const ok = v.match.surrenderVote(v.match.get(v.heroId), !!msg.yes); if (!ok) this.matchChat(v.match, null, `${session.name} voted to surrender${v.match.time < CFG.surrenderAfter ? ' (available after 10:00)' : ''}.`, v.team); } return; }
+      case 'mping': { const v = session.view; if (v && !v.spectator) v.match.command(v.match.get(v.heroId), { ...msg, t: 'ping' }); return; }
+      case 'ff': { const v = session.view; if (v && !v.spectator) { const ok = v.match.surrenderVote(v.match.get(v.heroId), !!msg.yes); if (!ok) this.matchChat(v.match, null, `${session.name} voted to surrender${v.match.time < CFG.surrenderAfter ? ' (available after 10:00)' : ''}.`, v.team); } return; }
       case 'queue': return this.joinQueue(session, msg);
       case 'cancel': return this.leaveQueue(session);
       case 'room': return this.roomOp(session, msg);
@@ -194,10 +201,14 @@ export class Hub {
       case 'lb': return this.sendLeaderboard(session, msg.kind);
       case 'prof': return this.sendProfile(session, msg.name);
       case 'claim': case 'skin': case 'avatar': return this.progressOp(session, msg);
-      case 'leave': if (session.view && session.view.match.ended) { this.detach(session); this.sendLobby(session); } return;
+      case 'live': return session.send({ t: 'live', list: this.liveMatches() });
+      case 'spectate': return this.spectate(session, msg.id);
+      case 'replays': case 'replay': return this.replayOp(session, msg);
+      case 'leave': if (session.view && (session.view.match.ended || session.view.spectator)) { this.detach(session); this.sendLobby(session); } return;
       case 'abandon': {
         // Leave a running match: the AI takes over, and the player can rejoin from the lobby.
         const v = session.view;
+        if (v?.spectator) { this.detach(session); return this.sendLobby(session); }
         if (!v || v.match.ended) return;
         const h = v.match.get(v.heroId);
         if (h) { h.session = null; h.wasHuman = true; h.bot = makeBrain({ role: h.botRole || guessRole(h.champ), skill: 0.7 }); h.ver++; }
@@ -605,6 +616,8 @@ export class Hub {
       hooks: { end: (m, result) => this.onMatchEnd(m, result), feed: () => {} },
     });
     for (const h of match.heroes) if (h.bot) h.bot.skill = skill;
+    match.spectators = new Set();
+    if (this.replays && sel.opts.mode !== 'tutorial') match.recorder = new Recorder(match);
     this.matches.set(id, match);
     for (const h of match.heroes) {
       if (h.session) { this.activeByAccount.set(h.session.accountId, { match, heroId: h.id }); this.attachToMatch(h.session, match, h.id); }
@@ -628,6 +641,7 @@ export class Hub {
   }
 
   detach(session) {
+    if (session.view?.spectator) { session.view.match.spectators.delete(session); session.view = null; session.state = 'lobby'; return; }
     if (session.view) {
       const h = session.view.match.get(session.view.heroId);
       if (h && h.session === session) h.session = null;
@@ -636,6 +650,8 @@ export class Hub {
   }
 
   onMatchEnd(match, result) {
+    for (const s of match.spectators) s.send({ t: 'end', result, spectator: true });
+    if (match.recorder) setTimeout(() => this.saveReplay(match, result), 3000);
     const humans = result.players.filter(p => !p.key.startsWith('bot:'));
     const hasBots = result.players.some(p => p.key.startsWith('bot:'));
     const rated = match.ranked && !hasBots;
@@ -683,7 +699,51 @@ export class Hub {
     } catch (err) { this.log.error('offline result failed', err); }
   }
 
+  async saveReplay(match, result) {
+    if (match.recorderDone || !this.replays) return;
+    match.recorderDone = true;
+    const { header, lines } = match.recorder.finish(result);
+    match.recorder = null;
+    try { await this.replays.save(header, lines); } catch (err) { this.log.error('replay save failed', err); }
+  }
+
+  /* ================= spectating & replays ================= */
+  liveMatches() {
+    return [...this.matches.values()].filter(m => !m.ended && m.mode !== 'tutorial').map(m => ({
+      id: m.id, mode: m.mode, time: Math.round(m.time), kills: m.kills, watchers: m.spectators.size,
+      players: m.heroes.map(h => ({ name: h.name, champ: h.champ, team: h.team, bot: !h.session && !h.wasHuman })),
+    }));
+  }
+
+  spectate(session, id) {
+    const match = this.matches.get(id);
+    if (!match || match.ended || session.view || session.state === 'select') return this.notice(session, 'That match is no longer running.', 'warn');
+    this.leaveQueue(session, true);
+    session.view = { match, heroId: null, team: 'spectator', known: new Map(), spectator: true };
+    session.state = 'game';
+    match.spectators.add(session);
+    session.send({
+      t: 'match', id: match.id, mode: match.mode, ranked: match.ranked, you: null, team: 'spectator', spectator: true, time: match.time,
+      players: match.heroes.map(x => ({ id: x.id, name: x.name, champ: x.champ, team: x.team, bot: !x.session, skin: x.skin || 'base' })),
+    });
+    session.send({ t: 'score', score: match.scoreboard() });
+  }
+
+  async replayOp(session, msg) {
+    if (!this.replays) return session.send({ t: 'replays', list: [] });
+    if (msg.t === 'replays') return session.send({ t: 'replays', list: await this.replays.list() });
+    // Offline replays are delivered inline; online clients download them over HTTP.
+    if (this.replays.load) {
+      const data = await this.replays.load(msg.id);
+      if (!data) return this.notice(session, 'That replay is no longer available.', 'warn');
+      session.send({ t: 'replay', ...data });
+    }
+  }
+
   closeMatch(match) {
+    if (match.recorder && match.ended) this.saveReplay(match, match.result);
+    for (const s of match.spectators) { s.view = null; s.state = 'lobby'; this.sendLobby(s); }
+    match.spectators.clear();
     this.matches.delete(match.id);
     for (const h of match.heroes) {
       const key = h.key;

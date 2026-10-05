@@ -60,7 +60,19 @@ export class Lobby {
     if (this.tab !== 'leaderboard') this.renderCenter();
   }
 
+  setLive(list) { this.live = list; if (this.tab === 'play') this.renderCenter(); }
+  setReplays(list) { this.replays = list; if (this.tab === 'play') this.renderCenter(); }
+
+  /** Asks for live matches and recent replays (on lobby entry and every 15s on the Play tab). */
+  refreshWatch() {
+    if (!this.app.offline) this.app.send({ t: 'live' });
+    this.app.send({ t: 'replays' });
+    clearTimeout(this.watchT);
+    this.watchT = setTimeout(() => { if (this.tab === 'play' && !this.app.game) this.refreshWatch(); }, 15000);
+  }
+
   setState(s) {
+    if (!this.state || this.state.state !== s.state || !this.watchT) this.refreshWatch();
     this.state = s;
     this.renderPlay();
     this.renderCenter();
@@ -111,6 +123,22 @@ export class Lobby {
     this.center.append(fn());
   }
 
+  watchView() {
+    const app = this.app, live = this.live || [], reps = this.replays || [];
+    if (!live.length && !reps.length) return null;
+    const faces = (players, team) => h('span.w-faces', {}, ...players.filter(p => p.team === team).map(p => h('span.w-face', { title: p.name }, pic(champKey(p.champ), app.champInfo[p.champ]?.icon || '?'))));
+    return h('div.card.watch', {},
+      h('h4', { text: 'Watch' }),
+      ...live.map(m => h('div.w-row', {},
+        h('span.w-live', { text: '● LIVE' }), faces(m.players, 'blue'), h('span.w-score', { text: `${m.kills.blue} – ${m.kills.red}` }), faces(m.players, 'red'),
+        h('span.muted.w-meta', { text: `${m.mode} · ${timeStr(m.time)}${m.watchers ? ` · ${m.watchers} watching` : ''}` }),
+        h('button.btn.btn-sm', { onclick: () => app.send({ t: 'spectate', id: m.id }) }, 'Watch'))),
+      ...reps.slice(0, 6).map(r => h('div.w-row', {},
+        h('span.w-rep', { text: '⏵ REPLAY' }), faces(r.players, 'blue'), h('span.w-score', { text: `${r.kills.blue} – ${r.kills.red}` }), faces(r.players, 'red'),
+        h('span.muted.w-meta', { text: `${r.winner === 'blue' ? 'Blue' : 'Red'} won · ${timeStr(r.duration)} · ${new Date(r.at).toLocaleDateString()}` }),
+        h('button.btn.btn-sm', { onclick: () => app.watchReplay(r.id) }, 'Watch'))));
+  }
+
   questsView(p) {
     const left = Math.max(0, Math.ceil((new Date(`${p.quests.day}T00:00:00Z`).getTime() + 86400000 - Date.now()) / 3600000));
     return h('div.card.quests', {},
@@ -138,6 +166,7 @@ export class Lobby {
         h('div.hb-icon', {}, pic(champKey(featured.id), featured.icon)),
         h('div', {}, h('div.hb-kicker', { text: 'Champion of the day' }), h('h2', { text: featured.name }), h('div.hb-title', { text: `${featured.title} · ${featured.role}` }), h('p', { text: featured.passive.desc }))) : null,
       p && p.quests ? this.questsView(p) : null,
+      this.watchView(),
       h('div.home-grid', {},
         h('div.card', {}, h('h4', { text: 'How to play' }), h('ul.howto', {},
           h('li', { text: 'Right-click to move and attack. Q W E R cast abilities at your cursor.' }),

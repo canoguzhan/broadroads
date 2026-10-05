@@ -1,5 +1,6 @@
 /* BroadRoads game server: static client + REST auth API + WebSocket game gateway. */
 import http from 'node:http';
+import { fileReplays } from './replays.js';
 import fs from 'node:fs';
 import path from 'node:path';
 import crypto from 'node:crypto';
@@ -101,7 +102,8 @@ export async function startServer(overrides = {}) {
   const secret = loadSecret(cfg);
   const hubConfig = {};
   for (const k of ['queueBotWait', 'selectTime']) if (cfg[k] !== undefined) hubConfig[k] = cfg[k];
-  const hub = new Hub({ store, config: hubConfig, log });
+  const replays = fileReplays(cfg.dataDir);
+  const hub = new Hub({ store, config: hubConfig, log, replays });
   hub.start();
 
   const authLimiter = new RateLimiter(20, 10 * 60 * 1000);
@@ -173,6 +175,13 @@ export async function startServer(overrides = {}) {
     try {
       const url = new URL(req.url, 'http://localhost');
       const p = url.pathname;
+      const rp = /^\/replays\/([a-z0-9]+)\.ndjson$/.exec(p);
+      if (rp) {
+        const file = replays.file(rp[1]);
+        if (!file) { res.writeHead(404); return res.end(); }
+        res.writeHead(200, { 'Content-Type': 'application/x-ndjson; charset=utf-8', 'Content-Encoding': 'gzip', 'Cache-Control': 'public, max-age=86400' });
+        return fs.createReadStream(file).pipe(res);
+      }
       if (p.startsWith('/api/')) {
         const cors = corsHeaders(req);
         if (req.method === 'OPTIONS') { res.writeHead(204, cors); return res.end(); }

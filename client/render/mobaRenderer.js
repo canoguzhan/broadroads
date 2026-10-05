@@ -90,7 +90,7 @@ export class MobaRenderer {
     this.fogMesh.renderOrder = 5;
     this.scene.add(this.fogMesh);
     this.fogT = 0;
-    const f = valley.teams[team].fountain;
+    const f = team === 'spectator' ? { x: valley.size / 2, y: valley.size / 2 } : valley.teams[team].fountain;
     this.camTarget.set(f.x, 0, f.y);
   }
 
@@ -128,7 +128,7 @@ export class MobaRenderer {
     }
     const v = { root: built.root, parts: built.parts, kind: e.kind, phase: Math.random() * 10, attackT: 0, mats: [], spin: built.spin, color: built.color, fiery: built.fiery };
     if (e.kind === 'hero' || e.kind === 'minion' || e.kind === 'monster') built.root.traverse(o => { if (o.material && o.material.emissive) v.mats.push({ m: o.material, base: o.material.emissive.clone(), bi: o.material.emissiveIntensity }); });
-    if (e.kind === 'hero' && built.parts.ring) built.parts.ring.material.color.set(e.id === this.youId ? 0xfacc15 : e.tm === this.team ? 0x3b82f6 : 0xef4444);
+    if (e.kind === 'hero' && built.parts.ring) built.parts.ring.material.color.set(e.id === this.youId ? 0xfacc15 : this.team === 'spectator' ? TEAM_HEX[e.tm] : e.tm === this.team ? 0x3b82f6 : 0xef4444);
     built.root.position.set(e.x, 0, e.y);
     if (e.kind === 'area' && e.s.startsWith('beam:')) built.root.rotation.y = -e.f + Math.PI / 2;
     this.scene.add(built.root);
@@ -291,6 +291,7 @@ export class MobaRenderer {
   /* ---------------- fog ---------------- */
   updateFog(world, dt) {
     if (!this.fogCanvas) return;
+    if (this.team === 'spectator') { this.fogMesh.visible = false; return; } // spectators and replays see everything
     this.fogT -= dt;
     if (this.fogT > 0) return;
     this.fogT = 0.15;

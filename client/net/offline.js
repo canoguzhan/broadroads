@@ -24,12 +24,22 @@ export function offlineProfileName() {
   try { return localStorage.getItem('broadroads_offline_name') || ''; } catch { return ''; }
 }
 
+/* Offline replays live in memory for the session (the last few matches). */
+function memoryReplays(keep = 5) {
+  const items = [];
+  return {
+    async save(header, lines) { items.unshift({ header, lines }); items.length = Math.min(items.length, keep); },
+    async list() { return items.map(({ header: { t, v, ...meta } }) => meta); },
+    async load(id) { const r = items.find(x => x.header.id === id); return r ? { header: r.header, lines: r.lines } : null; },
+  };
+}
+
 export class OfflineConnection extends Emitter {
   constructor(name) {
     super();
     this.name = name;
     this.offline = true;
-    this.hub = new Hub({ store: new LocalStore(), offline: true, config: { selectTime: 25 } });
+    this.hub = new Hub({ store: new LocalStore(), offline: true, config: { selectTime: 25 }, replays: memoryReplays() });
     this.session = null;
     this.bytesIn = 0;
   }

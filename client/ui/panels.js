@@ -157,6 +157,7 @@ export class Panels {
     const g = this.game, r = g.endResult;
     if (!r) return { title: '', content: h('div') };
     const res = r.result;
+    const watching = r.spectator || g.spectating;
     const win = res.winner === g.world.team;
     const table = team => h('table.sb-table', {},
       h('tr', {}, h('th', { text: '' }), h('th', { text: 'Player' }), h('th', { text: 'K / D / A' }), h('th', { text: 'CS' }), h('th', { text: 'Gold' }), h('th', { text: 'Damage' }), h('th', { text: 'Items' })),
@@ -165,11 +166,11 @@ export class Panels {
         h('td', { text: `${p.kills} / ${p.deaths} / ${p.assists}` }), h('td', { text: p.cs }), h('td', { text: p.gold }), h('td', { text: p.dmg }),
         h('td.sb-items', {}, ...p.items.map(i => h('span.sb-item', {}, i ? pic(`item/${i}`, g.data.items[i].icon) : ''))))));
     return {
-      title: `${win ? 'Victory' : 'Defeat'} · ${timeStr(res.duration)}`,
+      title: watching ? `${res.winner === 'blue' ? 'Blue' : 'Red'} team wins · ${timeStr(res.duration)}` : `${win ? 'Victory' : 'Defeat'} · ${timeStr(res.duration)}`,
       wide: true,
       content: h('div.result', {},
-        h(`h2.${win ? 'win' : 'loss'}`, { text: win ? 'VICTORY' : 'DEFEAT' }),
-        h('p', {}, `+${r.xp} XP`, r.rated ? ` · Rating ${r.delta >= 0 ? '+' : ''}${r.delta} (${r.profile.rating})` : ' · Unranked'),
+        watching ? h('h2.win', { text: `${res.winner === 'blue' ? 'BLUE' : 'RED'} TEAM WINS` }) : h(`h2.${win ? 'win' : 'loss'}`, { text: win ? 'VICTORY' : 'DEFEAT' }),
+        watching ? null : h('p', {}, `+${r.xp} XP`, r.rated ? ` · Rating ${r.delta >= 0 ? '+' : ''}${r.delta} (${r.profile.rating})` : ' · Unranked'),
         r.profile && r.profile.quests ? h('div.end-quests', {}, ...r.profile.quests.list.map(q => { const d = QUESTS[q.id]; return d ? h(`span.eq${q.n >= d.goal ? '.done' : ''}`, { text: `${q.n >= d.goal ? '✓' : '📜'} ${d.text}: ${Math.min(q.n, d.goal).toLocaleString()}/${d.goal.toLocaleString()}` }) : null; }), h('span.eq.sh', { text: `💠 ${r.profile.shards} shards` })) : null,
         h('h4.t-blue', { text: 'Blue team' }), table('blue'), h('h4.t-red', { text: 'Red team' }), table('red'),
         h('button.btn.btn-primary', { onclick: () => g.quit() }, 'Return to lobby')),

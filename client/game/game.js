@@ -1,5 +1,6 @@
 /* In-match client controller. */
 import { ClientWorld } from './world.js';
+import { SpectatorBar } from './spectate.js';
 import { Tutorial } from './tutorial.js';
 import { setModelsEnabled } from '../render/assetModels.js';
 import { Labels } from '../ui/labels.js';
@@ -55,6 +56,8 @@ export class Game {
     this.world.on('remove', (e, replaced) => { this.renderer.removeEntity(e, replaced); this.labels.remove(e); });
     this.world.on('fx', ev => this.onFx(ev));
     if (match.mode === 'tutorial') this.tutorial = new Tutorial(this);
+    this.spectating = !!match.spectator;
+    if (this.spectating) { this.renderer.locked = false; this.spectator = new SpectatorBar(this); }
   }
 
   get name() { return this.app.name; }
@@ -116,6 +119,7 @@ export class Game {
     this.panels.close();
     this.chat.destroy();
     this.tutorial?.close();
+    this.spectator?.destroy();
     this.hud.root.hidden = true;
     this.hud.root.replaceChildren();
     document.body.classList.remove('is-dead');
@@ -141,6 +145,8 @@ export class Game {
   frame(dt) {
     const w = this.world;
     this.tutorial?.update(dt);
+    this.replay?.update(dt);
+    if (this.spectating) return this.spectatorFrame(dt);
     // Direct movement (arrow keys / joystick) and basic-attack button.
     const dir = this.input.arrows();
     const at = this.input.touch.attack;
@@ -182,6 +188,18 @@ export class Game {
     this.fps = this.fps * 0.95 + (1 / Math.max(dt, 0.001)) * 0.05;
     if (this.settings.showFps) this.fpsEl.textContent = `${Math.round(this.fps)} fps · ${this.app.offline ? 'offline' : `${this.app.ping} ms`}`;
     else if (this.fpsEl.textContent) this.fpsEl.textContent = '';
+  }
+
+  /* Spectating / replays: free camera (edge pan, minimap) or follow a champion. */
+  spectatorFrame(dt) {
+    const w = this.world;
+    w.update(dt);
+    const followed = this.followId ? w.entities.get(this.followId) : null;
+    const pan = followed ? null : this.input.edgePan(this.renderer.width, this.renderer.height);
+    sfx.listener = followed || { x: this.renderer.camTarget.x, y: this.renderer.camTarget.z };
+    this.renderer.frame(dt, w, followed, pan);
+    this.labels.update(w, this.renderer, dt);
+    this.hud.drawMinimap(dt);
   }
 
   issueMove(attackMove = false, quiet = false) {
@@ -236,6 +254,7 @@ export class Game {
 
   action(a, ev) {
     sfx.init();
+    if (this.spectating && !['score', 'scoreUp', 'zoom', 'escape', 'help', 'chat'].includes(a)) return; // watching: camera and panels only
     switch (a) {
       case 'rclick': this.rmbT = 0.15; return this.issueMove(false);
       case 'lclick': if (this.amovePending) { this.amovePending = false; this.issueMove(true); } return;
@@ -259,6 +278,7 @@ export class Game {
   }
 
   onFx(ev) {
+    if (this.muteFx) return; // replay seeking
     this.tutorial?.onEvent(ev);
     const w = this.world;
     this.renderer.handleFx(ev, w);
@@ -387,7 +407,8 @@ export class Game {
   }
 
   quit() {
-    if (this.endResult) this.send({ t: 'leave' });
+    if (this.match.replay) return this.app.endReplay();
+    if (this.endResult || this.spectating) this.send({ t: 'leave' });
     else this.send({ t: 'abandon' });
   }
 }

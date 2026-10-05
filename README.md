@@ -17,11 +17,25 @@ runs the same simulation locally, so practice vs AI always works offline.
 | --- | --- |
 | **⚔️ Ranked 5v5** | Elo matchmaking. Parties of up to five queue together and are kept on one team. If the queue is quiet, bots fill empty seats after a short wait (those games are unranked). |
 | **🤖 Practice vs AI** | You and your party against bots, starting instantly. Easy / Normal / Hard difficulty. Works offline too. |
+| **🎓 Tutorial** | A guided first match: move, shop, learn and cast abilities, last-hit, push a tower and return home. Enemy champions stay home; the lobby highlights it for new players. |
 | **🏟️ Custom Game** | Create a room and share the 6-digit code. Pick teams, add bots per slot, choose bot difficulty, and start. |
 
 Every match goes **Champion Select** (40 s, no duplicate champions per team, pick a second battle spell)
 → **Match** → **Results** (KDA, CS, gold, damage, MVP, rating change, profile XP).
 If you disconnect or leave, a bot takes over your champion, and you can **reconnect** from the lobby.
+
+## 🏅 Progression
+
+- **Daily quests:** three a day per player, for example "Win a game", "Last-hit 120 minions" or "Deal 15,000 damage to champions". Progress counts in every mode except the tutorial; claim each one for **shards** 💠.
+- **Shards** also come from every game (+10, +25 more for a win) and every account level (+150). Spend them on skins.
+- **Skins:** four colour variants per champion (Crimson, Frost, Shadow, Gilded). Preview them on the 3D model in the Champions tab and equip them per champion; everyone in the match sees them.
+- **Profile pictures:** portraits rendered from the 3D models. Champions unlock by playing them; creatures (wolf, toad, Duskwing, Ember Wyrm, Abyss Titan and more) unlock by account level.
+- **After you die**, a death recap shows the last 15 seconds of damage by source (champion abilities and attacks, towers, minions, monsters), split into physical, magic and true damage.
+
+## 👀 Spectating and replays
+
+- **Watch live:** the lobby lists running matches; spectators get full vision, a free camera (edge pan, minimap) and can follow any champion.
+- **Replays:** every finished match (except tutorials) is recorded as a full-vision 10 Hz snapshot stream and kept on the server (the last 50, gzipped in `data/replays`, served at `/replays/<id>.ndjson`). Offline matches keep their last five replays in memory. Playback has pause, 0.5–8× speed and seeking.
 
 ## 🗺️ The Valley
 
@@ -81,6 +95,7 @@ All 135 sounds were generated with the [ElevenLabs](https://elevenlabs.io) API a
 - **Abilities:** all 40 champion abilities and the battle spells.
 - **Monsters:** roars for the Ember Wyrm and the Abyss Titan.
 - **Other:** pings, victory and defeat stingers, lobby music, valley ambience.
+- **Champion voices:** each champion has their own ElevenLabs voice with lines for lock-in, ultimate, kills and death.
 - **Announcer:** a full voice pack ("Welcome to the Valley", "First strike!", "Triple takedown!", "Enemy spire destroyed", "Victory!" and more), resolved from your team's point of view.
 
 To regenerate or add sounds, edit the lists in `scripts/generate-audio.mjs` and run:
@@ -111,6 +126,8 @@ The 38 assets are listed with their prompts in `scripts/model-catalog.mjs`:
 | | Howler (wolf), Ember Wyrm, Duskwing (bat), Bogtoad | static with procedural stride, hover or hop |
 | Structures | towers, Spires, Cores, fountains (one per team) | static |
 | Environment | pine, oak and fir trees, grass bushes | static, instanced across the map |
+
+Portraits for the UI are rendered from the models (`node scripts/render-portraits.mjs`), and the 99 item, spell, ability and interface icons come from Tripo text-to-image, nine per 3×3 sheet, cropped automatically (`TRIPO_API_KEY=… node scripts/generate-icons.mjs`).
 
 Terrain and water are procedural: a painted ground texture baked from the map, and an animated river shader with depth tint, ripples and foam.
 

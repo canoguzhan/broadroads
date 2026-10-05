@@ -1373,6 +1373,20 @@ export class Match {
     }
   }
 
+  /** This tick's effect events a viewer may see. */
+  fxFor(team, heroId) {
+    const all = team === 'spectator';
+    const fx = [];
+    for (const ev of this.fx) {
+      if (ev.to !== undefined && ev.to !== heroId) continue;
+      if (ev.team && ev.e === 'ping' && ev.team !== team) continue;
+      if (ev.e === 'ann' && ev.priv && ev.team !== team) continue;
+      if (!all && ev.id && ev.e !== 'kill' && ev.e !== 'ann') { const src = this.get(ev.id); if (src && src.team !== team && src.vis && !src.vis[team]) continue; }
+      fx.push(ev);
+    }
+    return fx;
+  }
+
   visibleTo(e, team) {
     if (!e.vis) return true;
     return team === 'neutral' || e.vis[team];
@@ -1514,11 +1528,12 @@ export class Match {
 
   snapshotFor(view) {
     const { team, heroId, known } = view;
+    const all = team === 'spectator'; // spectators and replays see everything
     const add = [], upd = [], seen = new Set();
     for (const e of this.entities.values()) {
       const structure = e.kind === 'tower' || e.kind === 'spire' || e.kind === 'core';
-      if (!structure && e.team !== team && e.vis && !e.vis[team]) continue;
-      if (e.kind === 'trap' && e.team !== team) continue;
+      if (!all && !structure && e.team !== team && e.vis && !e.vis[team]) continue;
+      if (!all && e.kind === 'trap' && e.team !== team) continue;
       if (e.kind === 'hero' && e.dead && e.id !== heroId) continue;
       seen.add(e.id);
       const hp = e.hp !== undefined ? Math.ceil(e.hp) : 0;
@@ -1543,14 +1558,7 @@ export class Match {
     }
     const rem = [];
     for (const id of known.keys()) if (!seen.has(id)) { rem.push(id); known.delete(id); }
-    const fx = [];
-    for (const ev of this.fx) {
-      if (ev.to !== undefined && ev.to !== heroId) continue;
-      if (ev.team && ev.e === 'ping' && ev.team !== team) continue;
-      if (ev.e === 'ann' && ev.priv && ev.team !== team) continue;
-      if (ev.id && ev.e !== 'kill' && ev.e !== 'ann') { const src = this.get(ev.id); if (src && src.team !== team && src.vis && !src.vis[team]) continue; }
-      fx.push(ev);
-    }
+    const fx = this.fxFor(team, heroId);
     const s = { t: 's', time: r2(this.time) };
     const me = this.get(heroId);
     if (me) s.me = this.selfState(me);
