@@ -100,7 +100,7 @@ The client (`client/audio/sfx.js`):
 ## 🧍 3D models (Tripo3D)
 
 Every unit, building and tree is a 3D model generated with the [Tripo3D](https://developers.tripo3d.ai) v3 API.
-The 46 assets are listed with their prompts in `scripts/model-catalog.mjs`:
+The 38 assets are listed with their prompts in `scripts/model-catalog.mjs`:
 
 | Group | Assets | Animation |
 | --- | --- | --- |
