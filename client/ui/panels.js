@@ -4,6 +4,7 @@ import { priceFor } from '../../shared/moba/items.js';
 import { CHAMPIONS } from '../../shared/moba/champions.js';
 import { sfx } from '../audio/sfx.js';
 import { pic, champKey } from './icons.js';
+import { QUESTS } from '../../shared/moba/progression.js';
 
 const CATS = [['rec', '⭐ Recommended'], ['basic', 'Basic'], ['boots', 'Boots'], ['attack', 'Attack'], ['magic', 'Magic'], ['defense', 'Defense'], ['consumable', 'Consumables']];
 const STAT = { ad: 'Attack Damage', ap: 'Ability Power', hp: 'Health', mp: 'Mana', armor: 'Armor', mr: 'Magic Resist', as: '% Attack Speed', crit: '% Crit Chance', ms: 'Move Speed', msPct: '% Move Speed', haste: 'Haste', lifesteal: '% Lifesteal', armorPen: '% Armor Pen', magicPen: 'Magic Pen', magicPenPct: '% Magic Pen', hpRegen: 'HP Regen /s', mpRegen: 'Mana Regen /s', tenacity: '% Tenacity' };
@@ -68,7 +69,8 @@ export class Panels {
         oncontextmenu: ev => { ev.preventDefault(); g.send({ t: 'buy', item: id }); },
         onmouseenter: ev => g.ui.showTip(ev.currentTarget, this.itemTooltip(id)),
         onmouseleave: () => g.ui.hideTip(),
-      }, h('div.sc-icon', {}, pic(`item/${id}`, d.icon)), h('div.sc-name', { text: d.name }), h('div.sc-price', { text: `🪙 ${price}` }));
+      }, this.shopCat === 'rec' ? h(`div.sc-step${me && me.it.some(it => it && it.id === id) ? '.owned' : ''}`, { text: me && me.it.some(it => it && it.id === id) ? '✓' : rec.indexOf(id) || '•' }) : null,
+      h('div.sc-icon', {}, pic(`item/${id}`, d.icon)), h('div.sc-name', { text: d.name }), h('div.sc-price', { text: `🪙 ${price}` }));
     }));
     const sel = this.selectedItem && items[this.selectedItem];
     const detail = sel ? h('div.shop-detail', {},
@@ -168,6 +170,7 @@ export class Panels {
       content: h('div.result', {},
         h(`h2.${win ? 'win' : 'loss'}`, { text: win ? 'VICTORY' : 'DEFEAT' }),
         h('p', {}, `+${r.xp} XP`, r.rated ? ` · Rating ${r.delta >= 0 ? '+' : ''}${r.delta} (${r.profile.rating})` : ' · Unranked'),
+        r.profile && r.profile.quests ? h('div.end-quests', {}, ...r.profile.quests.list.map(q => { const d = QUESTS[q.id]; return d ? h(`span.eq${q.n >= d.goal ? '.done' : ''}`, { text: `${q.n >= d.goal ? '✓' : '📜'} ${d.text}: ${Math.min(q.n, d.goal).toLocaleString()}/${d.goal.toLocaleString()}` }) : null; }), h('span.eq.sh', { text: `💠 ${r.profile.shards} shards` })) : null,
         h('h4.t-blue', { text: 'Blue team' }), table('blue'), h('h4.t-red', { text: 'Red team' }), table('red'),
         h('button.btn.btn-primary', { onclick: () => g.quit() }, 'Return to lobby')),
     };

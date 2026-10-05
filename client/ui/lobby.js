@@ -2,6 +2,9 @@
 import { h, $, clear, timeStr } from './dom.js';
 import { pic, champKey, abilityKey } from './icons.js';
 import { championPreview } from '../render/preview.js';
+import { tutorialDone } from '../game/tutorial.js';
+import { QUESTS, SKINS, AVATARS, avatarUnlocked, avatarOf, ownsSkin, equippedSkin } from '../../shared/moba/progression.js';
+import { profileXpNeeded } from '../../shared/moba/profile.js';
 import { Chat } from './chat.js';
 
 const ROLE_ICON = { Tank: '🛡️', Fighter: '🪓', Assassin: '🗡️', Mage: '🔮', Marksman: '🏹', Support: '💖' };
@@ -49,8 +52,12 @@ export class Lobby {
 
   setProfile(p) {
     this.profile = p;
-    clear(this.profileChip).append(h('span.lp-name', { text: p.name }), h('span.lp-lvl', { text: `Lv ${p.level}` }), h('span.lp-rating', { text: `🏆 ${p.rating}` }));
-    if (this.tab === 'profile' || this.tab === 'play') this.renderCenter();
+    const xpPct = Math.min(100, (p.xp / profileXpNeeded(p.level)) * 100);
+    clear(this.profileChip).append(
+      h('span.lp-avatar', {}, pic(avatarOf(p), '👤')),
+      h('span.lp-mid', {}, h('span.lp-name', { text: p.name }), h('span.lp-xp', { title: `${p.xp} / ${profileXpNeeded(p.level)} XP to level ${p.level + 1}` }, h('i', { style: { width: `${xpPct}%` } }))),
+      h('span.lp-lvl', { text: `Lv ${p.level}` }), h('span.lp-shards', { title: 'Shards: earned from quests, games and level-ups; spend them on skins' }, h('span.sh-ic', { text: '💠' }), String(p.shards || 0)), h('span.lp-rating', { text: `🏆 ${p.rating}` }));
+    if (this.tab !== 'leaderboard') this.renderCenter();
   }
 
   setState(s) {
@@ -85,6 +92,12 @@ export class Lobby {
         h('p', { text: 'Create a room and share the code with friends, or join one.' }),
         h('div.row', {}, h('button.btn', { disabled: s.state === 'queue', onclick: () => app.send({ t: 'room', op: 'create' }) }, 'Create Room')),
         h('div.row', {}, code, h('button.btn', { disabled: s.state === 'queue', onclick: () => app.send({ t: 'room', op: 'join', code: code.value.trim() }) }, 'Join'))),
+      // Last in the DOM (tests address cards by position); CSS lifts it to the top for new players.
+      h(`div.play-card.tutorial-card${tutorialDone() ? '' : '.new'}`, {},
+        tutorialDone() ? null : h('div.tc-badge', { text: 'New here? Start with this' }),
+        h('div.pc-title', { text: '🎓 Tutorial' }),
+        h('p', { text: 'A guided first match: moving, abilities, items, last-hitting, towers and returning home. About 5 minutes.' }),
+        h(`button.btn.btn-lg${tutorialDone() ? '' : '.btn-primary'}`, { disabled: busy, onclick: () => app.send({ t: 'queue', mode: 'tutorial' }) }, tutorialDone() ? 'Replay Tutorial' : 'Start Tutorial')),
       s.state === 'queue' && s.queue ? h('div.queue-box', {},
         h('div.qb-title', { text: `Searching for a match… ${timeStr(s.queue.since)}` }), h('div.spinner.small'),
         h('button.btn.btn-sm', { onclick: () => app.send({ t: 'cancel' }) }, 'Cancel')) : null);
@@ -98,6 +111,24 @@ export class Lobby {
     this.center.append(fn());
   }
 
+  questsView(p) {
+    const left = Math.max(0, Math.ceil((new Date(`${p.quests.day}T00:00:00Z`).getTime() + 86400000 - Date.now()) / 3600000));
+    return h('div.card.quests', {},
+      h('div.q-head', {}, h('h4', { text: 'Daily quests' }), h('span.muted', { text: `New quests in ${left}h` })),
+      ...p.quests.list.map(q => {
+        const d = QUESTS[q.id];
+        if (!d) return null;
+        const done = q.n >= d.goal;
+        return h(`div.quest${q.claimed ? '.claimed' : done ? '.done' : ''}`, {},
+          h('span.q-ic', {}, pic('misc/quest', '📜')),
+          h('div.q-mid', {}, h('div.q-text', { text: d.text }),
+            h('div.q-bar', {}, h('i', { style: { width: `${Math.min(100, (q.n / d.goal) * 100)}%` } })),
+            h('div.q-prog', { text: `${Math.min(q.n, d.goal).toLocaleString()} / ${d.goal.toLocaleString()}` })),
+          q.claimed ? h('span.q-claimed', { text: '✓ Claimed' })
+            : h('button.btn.btn-sm' + (done ? '.btn-primary' : ''), { disabled: !done, onclick: () => this.app.send({ t: 'claim', id: q.id }) }, `💠 ${d.reward}`));
+      }));
+  }
+
   homeView() {
     const app = this.app, p = this.profile;
     const champs = app.data ? app.data.champions : [];
@@ -106,6 +137,7 @@ export class Lobby {
       featured ? h('div.hero-banner', { style: { '--c': '#' + featured.color.toString(16).padStart(6, '0'), '--a': '#' + featured.accent.toString(16).padStart(6, '0') } },
         h('div.hb-icon', {}, pic(champKey(featured.id), featured.icon)),
         h('div', {}, h('div.hb-kicker', { text: 'Champion of the day' }), h('h2', { text: featured.name }), h('div.hb-title', { text: `${featured.title} · ${featured.role}` }), h('p', { text: featured.passive.desc }))) : null,
+      p && p.quests ? this.questsView(p) : null,
       h('div.home-grid', {},
         h('div.card', {}, h('h4', { text: 'How to play' }), h('ul.howto', {},
           h('li', { text: 'Right-click to move and attack. Q W E R cast abilities at your cursor.' }),
@@ -131,8 +163,27 @@ export class Lobby {
   }
 
   preview(c) {
-    championPreview.show(c.id, c);
-    return championPreview.mount();
+    const p = this.profile;
+    const skin = this.previewSkin && this.previewSkin.champ === c.id ? this.previewSkin.skin : equippedSkin(p, c.id);
+    championPreview.show(c.id, c, skin);
+    return h('div.preview-wrap', {}, championPreview.mount(), p ? this.skinPicker(c, skin) : null);
+  }
+
+  skinPicker(c, shown) {
+    const p = this.profile, eq = equippedSkin(p, c.id);
+    const sw = (id, name, tint, price) => {
+      const owned = ownsSkin(p, c.id, id);
+      return h(`button.skin-sw${shown === id ? '.active' : ''}${owned ? '' : '.locked'}`, {
+        title: `${name}${owned ? '' : ` (${price} shards)`}`,
+        onclick: () => { this.previewSkin = { champ: c.id, skin: id }; this.renderCenter(); },
+      }, h('i', { style: { background: tint ? `#${tint.toString(16).padStart(6, '0')}` : 'linear-gradient(135deg,#d6c7a1,#6b5a3e)' } }), h('span', { text: name }), id === eq ? h('b.sw-eq', { text: '✓' }) : null);
+    };
+    const s = SKINS[shown], owned = ownsSkin(p, c.id, shown);
+    return h('div.skins', {},
+      h('div.skin-row', {}, sw('base', 'Classic', null, 0), ...Object.entries(SKINS).map(([id, d]) => sw(id, d.name, d.tint, d.price))),
+      shown === eq ? h('div.skin-note.muted', { text: 'Equipped' })
+        : owned ? h('button.btn.btn-sm.btn-primary', { onclick: () => this.app.send({ t: 'skin', op: 'equip', champ: c.id, skin: shown }) }, 'Equip')
+        : h('button.btn.btn-sm.btn-primary', { disabled: (p.shards || 0) < s.price, onclick: () => this.app.send({ t: 'skin', op: 'buy', champ: c.id, skin: shown }) }, `Unlock for 💠 ${s.price}${(p.shards || 0) < s.price ? ' (not enough shards)' : ''}`));
   }
 
   lbView() {
@@ -140,7 +191,7 @@ export class Lobby {
     return h('div.card', {},
       h('div.tabs.small', {}, ...kinds.map(([k, l]) => h(`button.tab${this.lbKind === k ? '.active' : ''}`, { onclick: () => { this.lbKind = k; this.app.send({ t: 'lb', kind: k }); this.renderCenter(); } }, l))),
       this.lb && this.lb.kind === this.lbKind ? h('table.lb-table', {}, h('tr', {}, h('th', { text: '#' }), h('th', { text: 'Player' }), h('th', { text: 'Level' }), h('th', { text: 'Rating' }), h('th', { text: 'W / L' })),
-        ...this.lb.rows.map((r, i) => h(`tr${r.name === this.app.name ? '.me' : ''}`, {}, h('td', { text: i + 1 }), h('td', { text: r.name }), h('td', { text: r.level }), h('td', { text: r.rating }), h('td', { text: `${r.wins} / ${r.losses}` }))))
+        ...this.lb.rows.map((r, i) => h(`tr${r.name === this.app.name ? '.me' : ''}`, {}, h('td', { text: i + 1 }), h('td.lb-name', {}, h('span.lb-av', {}, pic(r.avatar || 'portrait/minion_melee_blue', '👤')), r.name), h('td', { text: r.level }), h('td', { text: r.rating }), h('td', { text: `${r.wins} / ${r.losses}` }))))
         : h('p.muted', { text: 'Loading…' }));
   }
 
@@ -153,7 +204,19 @@ export class Lobby {
       h('div.card', {}, h('h4', { text: p.name }), stat('Level', p.level), stat('Rating', p.rating), stat('Games', p.games), stat('Wins / Losses', `${p.wins} / ${p.losses}`),
         stat('Win rate', p.games ? `${Math.round(p.wins / p.games * 100)}%` : '—'), stat('Avg KDA', p.games ? `${(p.kills / p.games).toFixed(1)} / ${(p.deaths / p.games).toFixed(1)} / ${(p.assists / p.games).toFixed(1)}` : '—'),
         h('h4', { text: 'Champions' }), ...champs.slice(0, 6).map(([id, s]) => stat(h('span.stat-champ', {}, h('span.hr-icon', {}, pic(champKey(id), this.app.champInfo[id]?.icon || '')), this.app.champInfo[id]?.name || id), `${s.games} games · ${Math.round(s.wins / s.games * 100)}% WR`))),
+      this.avatarsView(p),
       h('div.card', {}, h('h4', { text: 'Match history' }), p.history.length ? h('div.history', {}, ...p.history.map(m => this.historyRow(m))) : h('p.muted', { text: 'No matches yet.' })));
+  }
+
+  avatarsView(p) {
+    if (p.name !== this.app.name) return null;
+    const cur = avatarOf(p);
+    return h('div.card.avatars', {}, h('h4', { text: 'Profile picture' }),
+      h('div.av-grid', {}, ...AVATARS.map(a => {
+        const open = avatarUnlocked(p, a.id);
+        return h(`button.av${cur === a.id ? '.active' : ''}${open ? '' : '.locked'}`, { title: open ? 'Use this picture' : a.need, disabled: !open, onclick: () => this.app.send({ t: 'avatar', id: a.id }) },
+          pic(a.id, '👤'), open ? null : h('span.av-lock', { text: '🔒' }));
+      })));
   }
 
   roomView(room) {

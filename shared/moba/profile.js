@@ -4,6 +4,7 @@ export function newProfile(name) {
   return {
     v: 3, name, level: 1, xp: 0, rating: 1000, games: 0, wins: 0, losses: 0,
     kills: 0, deaths: 0, assists: 0, champs: {}, history: [], createdAt: Date.now(),
+    shards: 200, skins: [], equipped: {}, avatar: null, quests: null,
   };
 }
 
@@ -11,7 +12,7 @@ export function newProfile(name) {
 export function normalizeProfile(name, data) {
   if (!data || data.v !== 3) return newProfile(name);
   const base = newProfile(name);
-  return { ...base, ...data, name, champs: { ...(data.champs || {}) }, history: Array.isArray(data.history) ? data.history.slice(0, 20) : [] };
+  return { ...base, ...data, name, champs: { ...(data.champs || {}) }, history: Array.isArray(data.history) ? data.history.slice(0, 20) : [], skins: Array.isArray(data.skins) ? data.skins : [], equipped: { ...(data.equipped || {}) } };
 }
 
 export const profileXpNeeded = level => 400 + level * 150;
@@ -25,5 +26,5 @@ export function leaderboardRow(p, kind) {
     case 'kills': value = prof.kills; break;
     default: value = prof.rating;
   }
-  return { name: prof.name, level: prof.level, rating: prof.rating, wins: prof.wins, losses: prof.losses, value };
+  return { name: prof.name, level: prof.level, rating: prof.rating, wins: prof.wins, losses: prof.losses, value, avatar: prof.avatar || null };
 }

@@ -131,7 +131,7 @@ export class Match {
     const a = (idx / 5) * Math.PI * 0.6 + (p.team === 'blue' ? -Math.PI / 2 : Math.PI / 2) + 0.2;
     const sx = T.fountain.x + Math.cos(a) * 3, sy = T.fountain.y + Math.sin(a) * 3;
     const h = this.add({
-      kind: 'hero', key: p.key, name: p.name, team: p.team, champ: c.id, c, x: sx, y: sy, r: 0.6, facing: p.team === 'blue' ? -Math.PI / 4 : Math.PI * 0.75,
+      kind: 'hero', key: p.key, name: p.name, team: p.team, champ: c.id, skin: p.skin || 'base', c, x: sx, y: sy, r: 0.6, facing: p.team === 'blue' ? -Math.PI / 4 : Math.PI * 0.75,
       spawn: { x: sx, y: sy },
       level: 1, xp: 0, gold: START_GOLD, goldEarned: START_GOLD, points: 1,
       ranks: { q: 0, w: 0, e: 0, r: 0 },
@@ -142,7 +142,7 @@ export class Match {
       order: { type: 'idle' }, path: [], pathT: 0, dir: { mx: 0, my: 0 }, atkKey: false,
       atkT: 0, windup: null, dash: null, disp: null, recall: null, pendingCast: null,
       dead: false, respawnAt: 0, kills: 0, deaths: 0, assists: 0, cs: 0, streak: 0, multi: { n: 0, t: -99 },
-      dmgToHeroes: 0, dmgTaken: 0, healed: 0, lastHitBy: new Map(), callHelpT: -99, lastDamagedT: -99,
+      dmgToHeroes: 0, dmgTaken: 0, healed: 0, recent: [], recap: null, lastHitBy: new Map(), callHelpT: -99, lastDamagedT: -99,
       session: p.session || null, bot: p.bot ? makeBrain(p) : null, botRole: p.role || null,
       sight: CFG.heroSight, passiveShieldT: 0,
     });
@@ -371,6 +371,7 @@ export class Match {
     const hero = this.heroOf(src);
     if (tgt.kind === 'hero') {
       tgt.dmgTaken += total;
+      if (total >= 1) this.recordDamage(tgt, src, opts, type, total);
       tgt.lastDamagedT = this.time;
       tgt.recall = null;
       if (hero) tgt.lastHitBy.set(hero.id, this.time);
@@ -435,6 +436,34 @@ export class Match {
     for (const h of near) this.addXp(h, each);
   }
 
+  /* Death recap: damage a champion took in the last 15s, grouped by source. */
+  recordDamage(tgt, src, opts, type, total) {
+    const hero = this.heroOf(src);
+    let key, info;
+    if (src && src.kind === 'hero') { key = `${src.id}:${opts.ability ? 'a' : opts.attack ? 'b' : 'o'}`; info = { k: 'hero', c: src.champ, n: src.name, l: opts.ability ? 'Abilities' : opts.attack ? 'Basic attacks' : 'Effects' }; }
+    else if (src && (src.kind === 'tower' || src.kind === 'spire' || src.kind === 'core')) { key = 'tower'; info = { k: 'tower', n: 'Tower', l: 'Tower shots' }; }
+    else if (src && src.kind === 'minion') { key = 'minion'; info = { k: 'minion', n: 'Minions', l: 'Attacks' }; }
+    else if (src && src.kind === 'monster') { key = `mon:${src.mtype}`; info = { k: 'monster', n: src.name, l: 'Attacks', m: src.mtype }; }
+    else if (hero) { key = `${hero.id}:o`; info = { k: 'hero', c: hero.champ, n: hero.name, l: 'Effects' }; }
+    else { key = 'other'; info = { k: 'other', n: 'Unknown', l: '' }; }
+    tgt.recent.push({ t: this.time, key, info, type: type[0], v: total });
+    while (tgt.recent.length && this.time - tgt.recent[0].t > 15) tgt.recent.shift();
+  }
+
+  deathRecap(tgt, killer) {
+    const rows = new Map();
+    for (const r of tgt.recent) {
+      if (this.time - r.t > 15) continue;
+      const row = rows.get(r.key) || { ...r.info, v: 0, p: 0, m: 0, tr: 0 };
+      row.v += r.v;
+      if (r.type === 'p') row.p += r.v; else if (r.type === 'm') row.m += r.v; else row.tr += r.v;
+      rows.set(r.key, row);
+    }
+    tgt.recent = [];
+    const list = [...rows.values()].sort((a, b) => b.v - a.v).slice(0, 6).map(r => ({ ...r, v: Math.round(r.v), p: Math.round(r.p), m: Math.round(r.m), tr: Math.round(r.tr) }));
+    return { by: killer ? { n: killer.name, c: killer.champ } : null, total: list.reduce((a, r) => a + r.v, 0), rows: list, at: Math.round(this.time) };
+  }
+
   kill(tgt, src) {
     if (tgt.dead) return;
     tgt.dead = true;
@@ -448,6 +477,7 @@ export class Match {
       killer = best;
     }
     this.emit({ e: 'death', id: tgt.id, x: tgt.x, y: tgt.y, k: tgt.kind });
+    if (tgt.kind === 'hero') tgt.recap = this.deathRecap(tgt, killer);
     switch (tgt.kind) {
       case 'hero': return this.heroKilled(tgt, killer, src);
       case 'minion': {
@@ -1543,7 +1573,7 @@ export class Match {
       it: h.items, wd: h.wards, wdt: r2(h.wardT), sm: h.spells,
       st: { ad: Math.round(st.ad), ap: Math.round(st.ap), ar: Math.round(st.armor), mr: Math.round(st.mr), as: r2(st.as), ms: r2(st.ms), cr: Math.round(st.crit), ha: Math.round(st.haste), rg: st.range },
       k: h.kills, d: h.deaths, a: h.assists, cs: h.cs,
-      dead: h.dead ? 1 : 0, rs: h.dead ? r2(h.respawnAt - this.time) : 0,
+      dead: h.dead ? 1 : 0, rs: h.dead ? r2(h.respawnAt - this.time) : 0, dr: h.dead && h.recap && h.recapSent !== h.deadT ? ((h.recapSent = h.deadT), h.recap) : undefined, // once per death
       rc: h.recall ? r2(1 - h.recall.t / h.recall.max) : 0,
       shop: this.canShop(h) ? 1 : 0,
       b: h.buffs.filter(b => b.dur >= 1 && !b.id.startsWith('slow')).map(b => [b.id, Math.ceil(b.t)]),

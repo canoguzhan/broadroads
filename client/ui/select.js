@@ -5,6 +5,7 @@ import { sfx } from '../audio/sfx.js';
 import { pic, champKey } from './icons.js';
 import { championPreview } from '../render/preview.js';
 import { preloadModels } from '../render/assetModels.js';
+import { equippedSkin } from '../../shared/moba/progression.js';
 
 const ROLES = ['All', 'Tank', 'Fighter', 'Assassin', 'Mage', 'Marksman', 'Support'];
 
@@ -52,13 +53,13 @@ export class Select {
       return h(`button.champ-card${me.champ === c.id ? '.sel' : ''}${taken ? '.taken' : ''}`, {
         disabled: taken || me.locked,
         onclick: () => app.send({ t: 'pick', champ: c.id }),
-        onmouseenter: () => { this.hovered = c.id; this.renderDetail(shownDetail, c); championPreview.show(c.id, c); },
-        onmouseleave: () => { this.hovered = null; if (me.champ) championPreview.show(me.champ, app.champInfo[me.champ]); },
+        onmouseenter: () => { this.hovered = c.id; this.renderDetail(shownDetail, c); championPreview.show(c.id, c, equippedSkin(app.lobby?.profile, c.id)); },
+        onmouseleave: () => { this.hovered = null; if (me.champ) championPreview.show(me.champ, app.champInfo[me.champ], equippedSkin(app.lobby?.profile, me.champ)); },
       }, h('div.cc-ic', {}, pic(champKey(c.id), c.icon)), h('div.cc-n', { text: c.name }), h('div.cc-r', { text: c.role }));
     }));
     const shownDetail = h('div.sel-detail');
     const previewId = this.hovered || me.champ;
-    if (previewId) championPreview.show(previewId, app.champInfo[previewId]);
+    if (previewId) championPreview.show(previewId, app.champInfo[previewId], equippedSkin(app.lobby?.profile, previewId));
     const preview = championPreview.mount();
     preview.hidden = !previewId;
     if (shown) this.renderDetail(shownDetail, shown);
@@ -66,7 +67,7 @@ export class Select {
       ...app.data.second.map(s => { const d = app.data.spells[s]; return h(`button.summ-btn${me.summ === s ? '.active' : ''}`, { title: `${d.name}: ${d.desc}`, disabled: me.locked, onclick: () => app.send({ t: 'csumm', spell: s }) }, h('span.summ-ic', {}, pic(`spell/${s}`, d.icon)), d.name); }));
     clear(this.root);
     this.root.append(h('div.auth-bg'), h('div.sel-wrap', {},
-      h('div.sel-top', {}, h('div.sel-mode', { text: `${sel.mode === 'practice' ? 'Practice vs AI' : sel.mode === 'custom' ? 'Custom Game' : sel.ranked ? 'Ranked 5v5' : 'Matchmade 5v5'} · Choose your champion` }), h('div.sel-timer', { text: sel.timeLeft })),
+      h('div.sel-top', {}, h('div.sel-mode', { text: `${sel.mode === 'tutorial' ? 'Tutorial' : sel.mode === 'practice' ? 'Practice vs AI' : sel.mode === 'custom' ? 'Custom Game' : sel.ranked ? 'Ranked 5v5' : 'Matchmade 5v5'} · Choose your champion` }), h('div.sel-timer', { text: sel.timeLeft })),
       h('div.sel-main', {},
         teamList(myTeam, true),
         h('div.sel-center', {},

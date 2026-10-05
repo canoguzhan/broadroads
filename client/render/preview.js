@@ -4,7 +4,7 @@
    One shared canvas; it only renders while attached to the page. */
 import * as THREE from 'three';
 import { clone as cloneSkinned } from 'three/examples/jsm/utils/SkeletonUtils.js';
-import { loadModel, modelsEnabled } from './assetModels.js';
+import { loadModel, modelsEnabled, applySkin } from './assetModels.js';
 import { h } from '../ui/dom.js';
 import { pic, champKey } from '../ui/icons.js';
 
@@ -64,9 +64,14 @@ class ChampionPreview {
   }
 
   /** Shows a champion; info gives its accent colour and portrait fallback. */
-  show(id, info) {
-    if (id === this.id) return;
+  show(id, info, skin = 'base') {
+    if (id === this.id) {
+      if (skin !== this.skin && this.model) { this.skin = skin; applySkin(this.model, skin); this.flourish('cast'); }
+      return;
+    }
     this.id = id;
+    this.skin = skin;
+    this.model = null;
     this.fallback.replaceChildren(pic(champKey(id), info?.icon || ''));
     const use3d = modelsEnabled() && this.init();
     this.el.classList.toggle('flat', !use3d);
@@ -84,7 +89,9 @@ class ChampionPreview {
       const s = 2.2 / Math.max(0.01, box.max.y - box.min.y);
       model.scale.setScalar(s);
       model.position.y = -box.min.y * s;
-      model.traverse(o => { if (o.isMesh) o.frustumCulled = false; });
+      model.traverse(o => { if (o.isMesh) { o.frustumCulled = false; o.material = o.material.clone(); } });
+      applySkin(model, this.skin);
+      this.model = model;
       this.holder.add(model);
       this.mixer = new THREE.AnimationMixer(model);
       this.actions = Object.fromEntries(gltf.animations.map(c => [c.name, this.mixer.clipAction(c)]));

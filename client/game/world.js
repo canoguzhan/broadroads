@@ -54,7 +54,7 @@ export class ClientWorld {
         this.listeners.remove.forEach(fn => fn(e));
       }
     }
-    if (s.me) this.me = s.me;
+    if (s.me) { this.me = s.me; if (s.me.dr) this.recap = s.me.dr; } // the death recap arrives once per death
     if (s.fx) for (const ev of s.fx) this.listeners.fx.forEach(fn => fn(ev));
     this.time = s.time;
   }

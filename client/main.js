@@ -160,7 +160,7 @@ class App {
     this.game = new Game({ app: this, renderer: this.renderer, settings: this.settings, ui: this.ui, data: this.data, match: m });
     this.game.start();
     $('#orientation-lock').classList.add('active');
-    this.ui.banner(m.mode === 'practice' ? 'PRACTICE VS AI' : m.ranked ? 'RANKED MATCH' : '5V5 MATCH', `You are on the ${m.team === 'blue' ? 'Blue' : 'Red'} team`);
+    this.ui.banner(m.mode === 'tutorial' ? 'TUTORIAL' : m.mode === 'practice' ? 'PRACTICE VS AI' : m.ranked ? 'RANKED MATCH' : '5V5 MATCH', `You are on the ${m.team === 'blue' ? 'Blue' : 'Red'} team`);
   }
 
   exit(reason) {

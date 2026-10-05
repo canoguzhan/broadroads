@@ -9,6 +9,7 @@ import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import { MeshoptDecoder } from 'three/examples/jsm/libs/meshopt_decoder.module.js';
 import { clone as cloneSkinned } from 'three/examples/jsm/utils/SkeletonUtils.js';
 import { F } from '../../shared/constants.js';
+import { SKINS } from '../../shared/moba/progression.js';
 
 const BASE = `${import.meta.env.BASE_URL || '/'}models/`;
 const ONE_SHOT = { attack: 0.55, cast: 0.75 }; // seconds each one-shot clip is squeezed into
@@ -95,26 +96,41 @@ function fit(model, height) {
   model.position.y = -box.min.y * s;
 }
 
-function adopt(view, model) {
+/** Champion skins: a colour tint (and glow) over the model's textures. Materials must already be per-instance. */
+export function applySkin(model, skin) {
+  const s = SKINS[skin];
+  model.traverse(o => {
+    if (!o.isMesh || !o.material) return;
+    const m = o.material;
+    if (!m.userData.base) m.userData.base = { color: m.color.getHex(), emissive: m.emissive ? m.emissive.getHex() : 0, metalness: m.metalness, roughness: m.roughness };
+    const b = m.userData.base;
+    m.color.setHex(s ? s.tint : b.color);
+    if (m.emissive) m.emissive.setHex(s ? s.emissive : b.emissive);
+    if ('metalness' in m) { m.metalness = skin === 'gilded' ? 0.65 : b.metalness; m.roughness = skin === 'gilded' ? 0.35 : b.roughness; }
+  });
+}
+
+function adopt(view, model, skin) {
   model.traverse(o => {
     if (!o.isMesh) return;
     o.material = o.material.clone();
     o.castShadow = true;
     o.frustumCulled = false;
-    if (o.material.emissive) view.mats.push({ m: o.material, base: o.material.emissive.clone(), bi: o.material.emissiveIntensity });
   });
+  if (skin && skin !== 'base') applySkin(model, skin);
+  model.traverse(o => { if (o.isMesh && o.material.emissive) view.mats.push({ m: o.material, base: o.material.emissive.clone(), bi: o.material.emissiveIntensity }); });
   // Hide the procedural body; keep the selection ring and glow sprites (team colour).
   for (const c of view.root.children) if (c !== view.parts.ring && !c.isSprite) c.visible = false;
   view.root.add(model);
 }
 
 /** Replaces a procedural entity with its Tripo model. */
-export function attachModel(view, gltf, height) {
+export function attachModel(view, gltf, height, skin) {
   const animated = gltf.animations.length > 0;
   const model = animated ? cloneSkinned(gltf.scene) : gltf.scene.clone();
   model.rotation.y = gltf.userData.yaw ?? (animated ? RIG_YAW : 0);
   fit(model, height);
-  adopt(view, model);
+  adopt(view, model, skin);
   view.model = model;
   view.modelY = model.position.y;
   if (!animated) return;

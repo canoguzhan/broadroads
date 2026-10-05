@@ -4,8 +4,10 @@ import { TILE } from '../../shared/tiles.js';
 import { F } from '../../shared/constants.js';
 import { canRankUp, MAX_RANK } from '../../shared/moba/champions.js';
 import { pic, setPic, champKey, abilityKey, canvasImage } from './icons.js';
+import { nextBuy } from './build.js';
 
 const SLOT_KEYS = { q: 'Q', w: 'W', e: 'E', r: 'R' };
+const MONSTER_PORTRAIT = { mossback: 'mob_mossback', brute: 'mob_brute', stonehulk: 'mob_stonehulk', pebblet: 'mob_stonehulk', wolf: 'mob_wolf', pup: 'mob_wolf', duskwing: 'mob_bat', duskling: 'mob_bat', bogtoad: 'mob_toad', wyrm: 'mob_wyrm', titan: 'mob_titan' };
 const MINI = { [TILE.TREE]: '#14200f', [TILE.ROAD]: '#8a7756', [TILE.GRASS]: '#33502a', [TILE.RIVER]: '#2a6a8a', [TILE.PLAZA]: '#5f6370', [TILE.RUG]: '#808594', [TILE.BUSH]: '#2c5a22' };
 export const TEAM_CSS = { blue: '#3b82f6', red: '#ef4444', neutral: '#d4d4d4' };
 
@@ -72,12 +74,15 @@ export class Hud {
     this.wardEl = h('div.mb-item.ward', { title: 'Ward (T)', onclick: () => g.castKey('ward') }, h('span.mb-iic', {}, pic('misc/ward', '👁️')), h('span.mb-ik', { text: 'T' }), h('span.mb-in'));
     items.append(this.wardEl);
     this.goldEl = h('button.mb-gold', { onclick: () => g.panels.toggle('shop'), title: 'Shop (P)' });
+    // One-click "buy the next item in my build".
+    this.nextEl = h('button.mb-next', { onclick: () => this.buyNext(), onmouseenter: ev => this.next && g.ui.showTip(ev.currentTarget, g.panels.itemTooltip(this.next.id)), onmouseleave: () => g.ui.hideTip() },
+      h('span.mn-ic'), h('span.mn-txt'));
     this.recallBtn = h('button.mb-recall', { onclick: () => g.send({ t: 'recall' }), title: 'Return home (B)' }, '🏠');
     this.root.append(h('div.m-bottom', {},
       this.statsEl,
       h('div.mb-left', {}, this.portrait, this.xpRing),
       h('div.mb-center', {}, h('div.mb-row', {}, abilRow, summRow), this.hpBar, this.mpBar),
-      h('div.mb-right', {}, items, h('div.mb-goldrow', {}, this.goldEl, this.recallBtn))));
+      h('div.mb-right', {}, items, h('div.mb-goldrow', {}, this.nextEl, this.goldEl, this.recallBtn))));
 
     // Minimap.
     this.mini = h('canvas.m-mini', { width: 220, height: 220 });
@@ -88,8 +93,9 @@ export class Hud {
 
     this.annEl = h('div.m-ann');
     this.deathEl = h('div.m-death', { hidden: true });
+    this.recapEl = h('div.m-recap', { hidden: true });
     this.recallEl = h('div.m-recall', { hidden: true }, h('div.mr-fill'), h('span', { text: 'Returning home…' }));
-    this.root.append(this.annEl, this.deathEl, this.recallEl);
+    this.root.append(this.annEl, this.deathEl, this.recapEl, this.recallEl);
     this.chatRoot = h('div.m-chat');
     this.root.append(this.chatRoot);
     if (g.input.isTouch) this.buildTouch();
@@ -202,14 +208,61 @@ export class Hud {
     const gold = `🪙 ${me.g}`;
     if (this.goldEl.textContent !== gold) this.goldEl.textContent = gold;
     this.goldEl.classList.toggle('canshop', !!me.shop);
+    const nb = nextBuy(g.myChampId(), me.it, me.g);
+    const nbKey = nb ? `${nb.id}|${nb.price}|${me.shop}|${me.g >= nb.price}` : 'none';
+    if (this._next !== nbKey) {
+      this._next = nbKey;
+      this.next = nb;
+      this.nextEl.hidden = !nb;
+      if (nb) {
+        setPic(this.nextEl.querySelector('.mn-ic'), `item/${nb.id}`, g.data.items[nb.id].icon);
+        this.nextEl.querySelector('.mn-txt').textContent = `${nb.price}`;
+        this.nextEl.title = `Next in your build: ${g.data.items[nb.id].name}${nb.id !== nb.target ? ` (toward ${g.data.items[nb.target].name})` : ''}`;
+        this.nextEl.classList.toggle('ready', !!me.shop && me.g >= nb.price);
+      }
+    }
     const kda = `⚔️ ${me.k} / ${me.d} / ${me.a}   🗡️ ${me.cs} CS`;
     if (this.kdaEl.textContent !== kda) this.kdaEl.textContent = kda;
     // Death & recall.
     this.deathEl.hidden = !me.dead;
     if (me.dead) this.deathEl.textContent = `Respawning in ${Math.ceil(me.rs)}`;
+    this.updateRecap(me.dead ? g.world.recap : null);
     document.body.classList.toggle('is-dead', !!me.dead);
     this.recallEl.hidden = !me.rc;
     if (me.rc) this.recallEl.querySelector('.mr-fill').style.width = `${me.rc * 100}%`;
+  }
+
+  /** Death recap: who killed you and where the damage came from. */
+  updateRecap(rc) {
+    if (rc === this._recap) return;
+    this._recap = rc;
+    this.recapEl.hidden = !rc;
+    if (!rc) return;
+    const g = this.game, enemy = g.world.team === 'blue' ? 'red' : 'blue';
+    const iconOf = r => r.k === 'hero' ? pic(champKey(r.c), g.champInfo[r.c]?.icon || '?')
+      : r.k === 'tower' ? pic('misc/tower', '🏰')
+      : r.k === 'minion' ? pic(`portrait/minion_melee_${enemy}`, '👾')
+      : r.k === 'monster' ? pic(`portrait/${MONSTER_PORTRAIT[r.m] || ''}`, '🐺') : document.createTextNode('?');
+    const max = Math.max(1, ...rc.rows.map(r => r.v));
+    this.recapEl.replaceChildren(
+      h('div.rc-head', {},
+        rc.by ? h('span.rc-by', {}, h('span.rc-ic', {}, pic(champKey(rc.by.c), g.champInfo[rc.by.c]?.icon || '?')), h('span', {}, 'Killed by ', h('b', { text: rc.by.n }))) : h('span.rc-by', { text: 'You were slain' }),
+        h('span.rc-total', { text: `${rc.total} damage in the last 15s` })),
+      ...rc.rows.map(r => h('div.rc-row', {},
+        h('span.rc-ic', {}, iconOf(r)),
+        h('div.rc-mid', {},
+          h('div.rc-name', {}, h('b', { text: r.n }), r.l ? h('span.muted', { text: ` · ${r.l}` }) : null),
+          h('div.rc-bar', { style: { width: `${(r.v / max) * 100}%` } },
+            r.p ? h('i.rc-p', { style: { flex: r.p } }) : null, r.m ? h('i.rc-m', { style: { flex: r.m } }) : null, r.tr ? h('i.rc-t', { style: { flex: r.tr } }) : null)),
+        h('span.rc-v', { text: r.v }))),
+      h('div.rc-legend', {}, h('i.rc-p'), 'Physical', h('i.rc-m'), 'Magic', h('i.rc-t'), 'True'));
+  }
+
+  buyNext() {
+    const me = this.game.world.me;
+    if (!this.next || !me) return;
+    if (me.shop && me.g >= this.next.price) this.game.send({ t: 'buy', item: this.next.id });
+    else this.game.panels.toggle('shop');
   }
 
   setScore(sc) {

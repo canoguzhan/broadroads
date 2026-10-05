@@ -6,6 +6,7 @@ import { CHAMPIONS, CHAMPION_IDS, championInfo } from './moba/champions.js';
 import { ITEMS, SPELLS, SECOND_SPELLS } from './moba/items.js';
 import { makeBrain } from './moba/bot.js';
 import { newProfile, normalizeProfile, profileXpNeeded, leaderboardRow } from './moba/profile.js';
+import { ensureQuests, questProgress, claimQuest, buySkin, equipSkin, avatarUnlocked, equippedSkin, SHARDS_PER_WIN, SHARDS_PER_GAME, SHARDS_PER_LEVEL } from './moba/progression.js';
 import { RNG } from './rng.js';
 
 const ROLES = ['top', 'jungle', 'mid', 'bot', 'support'];
@@ -71,6 +72,7 @@ export class Hub {
     try { data = await this.store.getCharacter(accountId); } catch (err) { this.log.error('load profile failed', err); }
     if (!this.sessions.has(session.id)) return session;
     session.profile = normalizeProfile(name, data);
+    ensureQuests(session.profile);
     send({
       t: 'hello', v: PROTOCOL_VERSION, name, offline: this.offline,
       champions: CHAMPION_IDS.map(championInfo), items: ITEMS, spells: SPELLS, second: SECOND_SPELLS,
@@ -191,6 +193,7 @@ export class Hub {
       case 'who': return this.who(session);
       case 'lb': return this.sendLeaderboard(session, msg.kind);
       case 'prof': return this.sendProfile(session, msg.name);
+      case 'claim': case 'skin': case 'avatar': return this.progressOp(session, msg);
       case 'leave': if (session.view && session.view.match.ended) { this.detach(session); this.sendLobby(session); } return;
       case 'abandon': {
         // Leave a running match: the AI takes over, and the player can rejoin from the lobby.
@@ -275,6 +278,25 @@ export class Hub {
     session.send({ t: 'prof', profile: s.profile });
   }
 
+  /* ================= progression: quests, skins, profile pictures ================= */
+  progressOp(session, msg) {
+    const prof = session.profile;
+    if (!prof) return;
+    let err = null;
+    if (msg.t === 'claim') {
+      const got = claimQuest(prof, msg.id);
+      if (!got) err = 'That quest is not complete yet.';
+      else this.notice(session, `Quest complete: +${got} shards!`);
+    } else if (msg.t === 'skin') {
+      err = msg.op === 'buy' ? buySkin(prof, msg.champ, msg.skin) : equipSkin(prof, msg.champ, msg.skin);
+    } else if (msg.t === 'avatar') {
+      if (avatarUnlocked(prof, msg.id)) prof.avatar = msg.id; else err = 'That profile picture is still locked.';
+    }
+    if (err) return this.notice(session, err, 'warn');
+    session.send({ t: 'profile', profile: prof });
+    this.saveProfile(session);
+  }
+
   /* ================= parties ================= */
   partyOp(session, msg) {
     const name = clean(msg.name);
@@ -350,12 +372,14 @@ export class Hub {
 
   joinQueue(session, msg) {
     if (session.view || session.state === 'select') return;
-    const mode = msg.mode === 'practice' ? 'practice' : 'ranked';
+    const mode = msg.mode === 'practice' || msg.mode === 'tutorial' ? msg.mode : 'ranked';
     const party = this.parties.get(session.partyId);
     if (party && party.leader !== session.name) return this.notice(session, 'Only the party leader can start matchmaking.', 'warn');
     const group = this.partySessions(session);
     for (const s of group) this.leaveQueue(s, true);
     if (session.roomCode) this.roomOp(session, { op: 'leave' });
+    // The tutorial is solo: just you, friendly bots and enemy bots that stay home.
+    if (mode === 'tutorial') return this.startSelect({ blue: [session], red: [] }, { mode: 'tutorial', ranked: false, difficulty: 'easy' });
     if (mode === 'practice' || this.offline) {
       const difficulty = ['easy', 'normal', 'hard'].includes(msg.difficulty) ? msg.difficulty : 'normal';
       return this.startSelect({ blue: group, red: [] }, { mode: 'practice', ranked: false, difficulty });
@@ -575,7 +599,7 @@ export class Hub {
   startMatch(sel) {
     const id = `m${this.nextId++}`;
     const skill = { easy: 0.45, normal: 0.7, hard: 0.92 }[sel.opts.difficulty] ?? 0.7;
-    const players = sel.players.map(p => ({ key: p.key, name: p.name, team: p.team, champ: p.champ, spell: p.summ, bot: !p.session, role: p.role, skill, session: p.session }));
+    const players = sel.players.map(p => ({ key: p.key, name: p.name, team: p.team, champ: p.champ, spell: p.summ, bot: !p.session, role: p.role, skill, session: p.session, skin: p.session ? equippedSkin(p.session.profile, p.champ) : 'base' }));
     const match = new Match({
       id, mode: sel.opts.mode, ranked: sel.opts.ranked, players,
       hooks: { end: (m, result) => this.onMatchEnd(m, result), feed: () => {} },
@@ -598,7 +622,7 @@ export class Hub {
     session.state = 'game';
     session.send({
       t: 'match', id: match.id, mode: match.mode, ranked: match.ranked, you: heroId, team: h.team, time: match.time,
-      players: match.heroes.map(x => ({ id: x.id, name: x.name, champ: x.champ, team: x.team, bot: !x.session })),
+      players: match.heroes.map(x => ({ id: x.id, name: x.name, champ: x.champ, team: x.team, bot: !x.session, skin: x.skin || 'base' })),
     });
     session.send({ t: 'score', score: match.scoreboard() });
   }
@@ -621,14 +645,16 @@ export class Hub {
       const mine = p.team === 'blue' ? rb : rr, theirs = p.team === 'blue' ? rr : rb;
       const exp = 1 / (1 + Math.pow(10, (theirs - mine) / 400));
       const delta = rated ? Math.round(32 * ((p.win ? 1 : 0) - exp)) : 0;
-      const xp = (p.win ? 150 : 90) + p.kills * 10 + p.assists * 5 + (match.mode === 'practice' ? -40 : 0);
+      const xp = (p.win ? 150 : 90) + p.kills * 10 + p.assists * 5 + (match.mode === 'practice' || match.mode === 'tutorial' ? -40 : 0);
       this.applyResult(p.key, prof => {
         prof.games++;
         if (p.win) prof.wins++; else prof.losses++;
         prof.kills += p.kills; prof.deaths += p.deaths; prof.assists += p.assists;
         if (rated) prof.rating = Math.max(0, prof.rating + delta);
         prof.xp += xp;
-        while (prof.xp >= profileXpNeeded(prof.level)) { prof.xp -= profileXpNeeded(prof.level); prof.level++; }
+        while (prof.xp >= profileXpNeeded(prof.level)) { prof.xp -= profileXpNeeded(prof.level); prof.level++; prof.shards = (prof.shards || 0) + SHARDS_PER_LEVEL; }
+        if (match.mode !== 'tutorial') prof.shards = (prof.shards || 0) + SHARDS_PER_GAME + (p.win ? SHARDS_PER_WIN : 0);
+        questProgress(prof, p, match.mode);
         const c = prof.champs[p.champ] || { games: 0, wins: 0 };
         c.games++; if (p.win) c.wins++;
         prof.champs[p.champ] = c;

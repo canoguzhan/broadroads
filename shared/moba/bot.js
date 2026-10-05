@@ -295,6 +295,8 @@ function defendBase(m, h) {
 
 export function botThink(m, h, dt) {
   const b = h.bot;
+  // Tutorial: enemy champions stay at their fountain so the new player can learn in peace.
+  if (m.mode === 'tutorial' && h.team === 'red') { h.path = []; h.target = null; return; }
   b.thinkT -= dt;
   if (b.thinkT > 0) return;
   b.thinkT = 0.2 + (1 - b.skill) * 0.25;

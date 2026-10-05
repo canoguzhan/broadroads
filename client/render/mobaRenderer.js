@@ -134,7 +134,8 @@ export class MobaRenderer {
     this.scene.add(built.root);
     this.views.set(e.id, v);
     const asset = assetFor(e, e.kind === 'hero' ? 1.9 * (built.parts.body.scale.x / 1.15) : 0);
-    if (asset) loadModel(asset[0]).then(gltf => { if (gltf && this.views.get(e.id) === v) attachModel(v, gltf, asset[1]); });
+    const skin = e.kind === 'hero' && this.skins ? this.skins.get(e.id) : null;
+    if (asset) loadModel(asset[0]).then(gltf => { if (gltf && this.views.get(e.id) === v) attachModel(v, gltf, asset[1], skin); });
   }
 
   champColorFromStyle(style) {

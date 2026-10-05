@@ -1,5 +1,6 @@
 /* In-match client controller. */
 import { ClientWorld } from './world.js';
+import { Tutorial } from './tutorial.js';
 import { setModelsEnabled } from '../render/assetModels.js';
 import { Labels } from '../ui/labels.js';
 import { Hud } from '../ui/hud.js';
@@ -28,6 +29,7 @@ export class Game {
     this.world.setMatch(getValley(), match.you, match.team);
     this.renderer.setMatch(this.world.valley, match.team, this.champInfo);
     this.renderer.youId = match.you;
+    this.renderer.skins = new Map(match.players.map(p => [p.id, p.skin]));
     this.renderer.locked = settings.cameraLock !== false;
     this.pings = [];
     this.hover = null;
@@ -52,6 +54,7 @@ export class Game {
     this.world.on('add', e => { this.renderer.addEntity(e); this.labels.add(e, this.world); });
     this.world.on('remove', (e, replaced) => { this.renderer.removeEntity(e, replaced); this.labels.remove(e); });
     this.world.on('fx', ev => this.onFx(ev));
+    if (match.mode === 'tutorial') this.tutorial = new Tutorial(this);
   }
 
   get name() { return this.app.name; }
@@ -112,6 +115,7 @@ export class Game {
     this.renderer.clear();
     this.panels.close();
     this.chat.destroy();
+    this.tutorial?.close();
     this.hud.root.hidden = true;
     this.hud.root.replaceChildren();
     document.body.classList.remove('is-dead');
@@ -136,6 +140,7 @@ export class Game {
 
   frame(dt) {
     const w = this.world;
+    this.tutorial?.update(dt);
     // Direct movement (arrow keys / joystick) and basic-attack button.
     const dir = this.input.arrows();
     const at = this.input.touch.attack;
@@ -254,6 +259,7 @@ export class Game {
   }
 
   onFx(ev) {
+    this.tutorial?.onEvent(ev);
     const w = this.world;
     this.renderer.handleFx(ev, w);
     const you = w.youId;
