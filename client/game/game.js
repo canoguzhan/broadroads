@@ -1,5 +1,6 @@
 /* In-match client controller. */
 import { ClientWorld } from './world.js';
+import { setModelsEnabled } from '../render/assetModels.js';
 import { Labels } from '../ui/labels.js';
 import { Hud } from '../ui/hud.js';
 import { Panels } from '../ui/panels.js';
@@ -285,7 +286,10 @@ export class Game {
         at(key, { gap: ent.kind === 'hero' ? 0.05 : 0.15, vol: ent.kind === 'hero' ? (ev.id === you ? 1 : 0.7) : 0.25, rate: ent.kind === 'minion' ? 1.2 : 0.95 + Math.random() * 0.1 });
         break;
       }
-      case 'cast': at(`${ev.c}_${ev.sl}`, { gap: 0.1, vol: ev.id === you ? 1 : 0.8 }); break;
+      case 'cast':
+        at(`${ev.c}_${ev.sl}`, { gap: 0.1, vol: ev.id === you ? 1 : 0.8 });
+        if (ev.sl === 'r') this.champLine(ev.c, 'ult', ev.id, 0);
+        break;
       case 'summ': at(SPELL_SOUND[ev.k] || 'blink', { gap: 0.2 }); break;
       case 'dash': at('dash', { gap: 0.2, vol: 0.8 }); break;
       case 'blink': at('blink', { gap: 0.3 }); break;
@@ -304,6 +308,10 @@ export class Game {
       case 'kill': {
         this.hud.feed(ev.k, ev.v, ev.a);
         const victim = this.players.get(ev.v);
+        // The champions speak after the announcer's callout.
+        const killer = this.players.get(ev.k);
+        if (killer) this.champLine(killer.champ, 'kill', ev.k, 1300);
+        if (victim && ev.v === you) this.champLine(victim.champ, 'death', ev.v, 1300);
         const line = ev.v === you ? 'vo_you_slain' : ev.k === you ? 'vo_you_killed' : victim && victim.team === w.team ? 'vo_ally_slain' : 'vo_enemy_slain';
         // Defer so a bigger callout from the same tick (first strike, multi-kill) can win.
         this.pendingKillLine = { key: line, priority: ev.v === you || ev.k === you ? 3 : 1 };
@@ -352,10 +360,22 @@ export class Game {
 
   near(ev) { const y = this.world.you(); return !y || ev.x === undefined || dist(y.x, y.y, ev.x, ev.y) < 18; }
 
+  /** A champion voice line: full volume for your own champion, positional for others. */
+  champLine(champ, kind, id, delay) {
+    if (!champ) return;
+    setTimeout(() => {
+      const key = `cv_${champ}_${kind}`, opts = { bus: 'voice', gap: 1.5, late: true };
+      if (id === this.world.youId) return sfx.play(key, opts);
+      const e = this.world.entities.get(id);
+      if (e) sfx.playAt(key, e.x, e.y, { ...opts, vol: 0.85, range: 30 });
+    }, delay);
+  }
+
   setSetting(k, v) {
     this.settings[k] = v;
     this.app.saveSettings();
     if (k === 'quality') this.renderer.setQuality(v);
+    if (k === 'models') setModelsEnabled(v);
     if (k === 'volume') sfx.setVolume(v);
     if (k === 'musicVolume') sfx.setMusicVolume(v);
   }

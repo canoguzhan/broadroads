@@ -3,6 +3,7 @@ import { h, $, clear, timeStr } from './dom.js';
 import { TILE } from '../../shared/tiles.js';
 import { F } from '../../shared/constants.js';
 import { canRankUp, MAX_RANK } from '../../shared/moba/champions.js';
+import { pic, setPic, champKey, abilityKey, canvasImage } from './icons.js';
 
 const SLOT_KEYS = { q: 'Q', w: 'W', e: 'E', r: 'R' };
 const MINI = { [TILE.TREE]: '#14200f', [TILE.ROAD]: '#8a7756', [TILE.GRASS]: '#33502a', [TILE.RIVER]: '#2a6a8a', [TILE.PLAZA]: '#5f6370', [TILE.RUG]: '#808594', [TILE.BUSH]: '#2c5a22' };
@@ -30,7 +31,7 @@ export class Hud {
     // Top-right: personal stats.
     this.kdaEl = h('div.m-kda');
     this.root.append(h('div.m-tr', {}, this.kdaEl, h('div.m-menu', {},
-      h('button.icon-btn', { title: 'Shop (P)', onclick: () => g.panels.toggle('shop') }, '🛒'),
+      h('button.icon-btn', { title: 'Shop (P)', onclick: () => g.panels.toggle('shop') }, pic('misc/shop', '🛒')),
       h('button.icon-btn', { title: 'Scoreboard (Tab)', onclick: () => g.panels.toggle('score') }, '📊'),
       h('button.icon-btn', { title: 'Camera lock (Y)', onclick: () => g.toggleLock() }, '🎥'),
       h('button.icon-btn', { title: 'Settings (Esc)', onclick: () => g.panels.toggle('settings') }, '⚙️'))));
@@ -68,7 +69,7 @@ export class Hud {
       this.itemEls.push(el);
       items.append(el);
     }
-    this.wardEl = h('div.mb-item.ward', { title: 'Ward (T)', onclick: () => g.castKey('ward') }, h('span.mb-iic', { text: '👁️' }), h('span.mb-ik', { text: 'T' }), h('span.mb-in'));
+    this.wardEl = h('div.mb-item.ward', { title: 'Ward (T)', onclick: () => g.castKey('ward') }, h('span.mb-iic', {}, pic('misc/ward', '👁️')), h('span.mb-ik', { text: 'T' }), h('span.mb-in'));
     items.append(this.wardEl);
     this.goldEl = h('button.mb-gold', { onclick: () => g.panels.toggle('shop'), title: 'Shop (P)' });
     this.recallBtn = h('button.mb-recall', { onclick: () => g.send({ t: 'recall' }), title: 'Return home (B)' }, '🏠');
@@ -119,7 +120,7 @@ export class Hud {
     const a = info.abilities[s];
     const rank = this.game.world.me?.rk[s] || 0;
     this.game.ui.showTip(ev.currentTarget, h('div', {},
-      h('div.tip-title', { text: `${a.icon} ${a.name}` }),
+      h('div.tip-title', {}, h('span.tip-ic', {}, pic(abilityKey(info.id, s), a.icon)), a.name),
       h('div.tip-sub', { text: `Rank ${rank}/${MAX_RANK[s]} · Cooldown ${a.cd.join('/')}s${a.mana.some(Boolean) ? ` · Mana ${a.mana.join('/')}` : ''}${a.range ? ` · Range ${a.range}` : ''}` }),
       h('div.tip-desc', { text: a.desc })));
   }
@@ -128,7 +129,7 @@ export class Hud {
     const sp = this.game.world.me?.sm?.[k];
     const d = this.game.data.spells[sp];
     if (!d) return;
-    this.game.ui.showTip(ev.currentTarget, h('div', {}, h('div.tip-title', { text: `${d.icon} ${d.name}` }), h('div.tip-sub', { text: `Cooldown ${d.cd}s` }), h('div.tip-desc', { text: d.desc })));
+    this.game.ui.showTip(ev.currentTarget, h('div', {}, h('div.tip-title', {}, h('span.tip-ic', {}, pic(`spell/${sp}`, d.icon)), d.name), h('div.tip-sub', { text: `Cooldown ${d.cd}s` }), h('div.tip-desc', { text: d.desc })));
   }
 
   itemTip(ev, i) {
@@ -139,10 +140,10 @@ export class Hud {
 
   /* ---------------- per-frame ---------------- */
   setChampion(info) {
-    this.portrait.querySelector('.mb-icon').textContent = info.icon;
-    this.passiveEl.textContent = '◆';
+    setPic(this.portrait.querySelector('.mb-icon'), champKey(info.id), info.icon);
+    setPic(this.passiveEl, `passive/${info.id}`, '◆');
     this.passiveEl.title = `${info.passive.name}: ${info.passive.desc}`;
-    for (const s of ['q', 'w', 'e', 'r']) this.abil[s].el.querySelector('.mb-ic').textContent = info.abilities[s].icon;
+    for (const s of ['q', 'w', 'e', 'r']) setPic(this.abil[s].el.querySelector('.mb-ic'), abilityKey(info.id, s), info.abilities[s].icon);
   }
 
   updateSelf(me) {
@@ -181,7 +182,7 @@ export class Hud {
     for (const k of ['d', 'f']) {
       const sm = this.summ[k];
       const sp = g.data.spells[me.sm[k]];
-      sm.el.querySelector('.mb-ic').textContent = sp ? sp.icon : '?';
+      setPic(sm.el.querySelector('.mb-ic'), sp ? `spell/${me.sm[k]}` : null, sp ? sp.icon : '?');
       const left = me.cd[k], max = me.cdm[k] || (sp ? sp.cd : 1);
       if (left > 0.05) { sm.cd.style.background = `conic-gradient(rgba(0,0,0,0.75) ${(left / max) * 360}deg, transparent 0deg)`; sm.cdt.textContent = Math.ceil(left); }
       else if (sm.cdt.textContent) { sm.cd.style.background = ''; sm.cdt.textContent = ''; }
@@ -191,7 +192,7 @@ export class Hud {
       this._items = itemsKey;
       me.it.forEach((it, i) => {
         const el = this.itemEls[i];
-        el.querySelector('.mb-iic').textContent = it ? g.data.items[it.id].icon : '';
+        setPic(el.querySelector('.mb-iic'), it ? `item/${it.id}` : null, it ? g.data.items[it.id].icon : '');
         el.querySelector('.mb-in').textContent = it && it.n > 1 ? it.n : '';
         el.classList.toggle('empty', !it);
       });
@@ -223,7 +224,7 @@ export class Hud {
       const pct = e && !p.dead ? Math.max(0, e.hp / e.mh) * 100 : 0;
       const info = g.champInfo[p.c];
       this.teamEl.append(h(`div.m-ally${p.dead ? '.dead' : ''}`, { title: p.name },
-        h('div.ma-icon', { text: info ? info.icon : '?' }, h('span.ma-lvl', { text: p.l })),
+        h('div.ma-icon', {}, pic(champKey(p.c), info ? info.icon : '?'), h('span.ma-lvl', { text: p.l })),
         h('div.ma-bar', {}, h('div.ma-fill', { style: { width: `${pct}%` } })),
         p.dead ? h('div.ma-rs', { text: p.rs }) : null));
     }
@@ -231,10 +232,10 @@ export class Hud {
 
   feed(killer, victim, assists) {
     const g = this.game;
-    const ci = id => { const p = g.players.get(id); return p ? (g.champInfo[p.champ]?.icon || '?') : '☠️'; };
+    const ci = id => { const p = g.players.get(id); return p ? pic(champKey(p.champ), g.champInfo[p.champ]?.icon || '?') : pic('misc/kill', '☠️'); };
     const team = id => g.players.get(id)?.team;
     const row = h(`div.feed-row.${team(killer) === g.world.team ? 'ally' : team(killer) ? 'enemy' : 'neutral'}`, {},
-      h('span.fr-c', { text: killer ? ci(killer) : '🏰' }), h('span.fr-x', { text: assists && assists.length ? `+${assists.length} ⚔️` : '⚔️' }), h('span.fr-c', { text: ci(victim) }));
+      h('span.fr-c', {}, killer ? ci(killer) : pic('misc/tower', '🏰')), h('span.fr-x', { text: assists && assists.length ? `+${assists.length} ⚔️` : '⚔️' }), h('span.fr-c', {}, ci(victim)));
     this.feedEl.prepend(row);
     while (this.feedEl.children.length > 6) this.feedEl.lastChild.remove();
     setTimeout(() => row.remove(), 9000);
@@ -306,16 +307,22 @@ export class Hud {
     for (const e of w.entities.values()) {
       if (e.kind !== 'hero' || (e.fl & F.DEAD)) continue;
       const x = e.x * k, y = e.y * k;
-      ctx.beginPath(); ctx.arc(x, y, e.id === w.youId ? 6.5 : 5.5, 0, Math.PI * 2);
+      const r = e.id === w.youId ? 7.5 : 6.5;
+      ctx.beginPath(); ctx.arc(x, y, r, 0, Math.PI * 2);
       ctx.fillStyle = TEAM_CSS[e.tm];
       ctx.fill();
+      const img = canvasImage(champKey(e.c));
+      if (img && img.complete && img.naturalWidth) {
+        ctx.save(); ctx.beginPath(); ctx.arc(x, y, r - 1, 0, Math.PI * 2); ctx.clip();
+        ctx.drawImage(img, x - r, y - r, r * 2, r * 2); ctx.restore();
+      } else {
+        ctx.font = '9px sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+        ctx.fillText(g.champInfo[e.c]?.icon || '', x, y + 0.5);
+      }
+      ctx.beginPath(); ctx.arc(x, y, r, 0, Math.PI * 2);
       ctx.lineWidth = 2;
-      ctx.strokeStyle = e.id === w.youId ? '#facc15' : '#000';
+      ctx.strokeStyle = e.id === w.youId ? '#facc15' : TEAM_CSS[e.tm];
       ctx.stroke();
-      ctx.font = '9px sans-serif';
-      ctx.textAlign = 'center';
-      ctx.textBaseline = 'middle';
-      ctx.fillText(g.champInfo[e.c]?.icon || '', x, y + 0.5);
     }
     for (const p of g.pings) { ctx.strokeStyle = p.color; ctx.lineWidth = 2; ctx.beginPath(); ctx.arc(p.x * k, p.y * k, 4 + (1 - p.t / 3) * 8, 0, Math.PI * 2); ctx.stroke(); }
     // Camera frustum.

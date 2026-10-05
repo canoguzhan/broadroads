@@ -1,0 +1,46 @@
+<!doctype html>
+<!-- Renders one model portrait for scripts/render-portraits.mjs (served from the repo root). -->
+<html><body style="margin:0;background:transparent">
+<script type="importmap">{"imports":{"three":"/node_modules/three/build/three.module.js","three/addons/":"/node_modules/three/examples/jsm/"}}</script>
+<script type="module">
+import * as THREE from 'three';
+import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+import { MeshoptDecoder } from 'three/addons/libs/meshopt_decoder.module.js';
+import { clone } from 'three/addons/utils/SkeletonUtils.js';
+
+const q = new URLSearchParams(location.search);
+const id = q.get('id'), frame = q.get('frame') || 'bust', yaw = q.get('yaw') !== null ? +q.get('yaw') : null, S = +(q.get('size') || 512);
+const r = new THREE.WebGLRenderer({ antialias: true, alpha: true, preserveDrawingBuffer: true });
+r.setSize(S, S); r.setClearColor(0x000000, 0); r.outputColorSpace = THREE.SRGBColorSpace; r.toneMapping = THREE.ACESFilmicToneMapping; r.toneMappingExposure = 1.35;
+document.body.append(r.domElement);
+const scene = new THREE.Scene();
+scene.add(new THREE.HemisphereLight(0xfff4e0, 0x404a60, 2.2));
+const key = new THREE.DirectionalLight(0xffffff, 3); key.position.set(2, 3, 4); scene.add(key);
+const rim = new THREE.DirectionalLight(0x9ec5ff, 2.5); rim.position.set(-3, 2, -3); scene.add(rim);
+
+new GLTFLoader().setMeshoptDecoder(MeshoptDecoder).load(`/public/models/${id}.glb?${Date.now()}`, g => {
+  const animated = g.animations.length > 0;
+  const m = animated ? clone(g.scene) : g.scene.clone();
+  m.rotation.y = (yaw ?? (animated ? -Math.PI / 2 : 0)) + 0.35; // face the camera, slight 3/4 turn
+  scene.add(m);
+  const idle = g.animations.find(a => a.name === 'idle') || g.animations.find(a => a.name === 'run');
+  if (idle) { const mx = new THREE.AnimationMixer(m); mx.clipAction(idle).play(); mx.setTime(idle.name === 'idle' ? 0.4 : 0); if (idle.name !== 'idle') mx.timeScale = 0; }
+  scene.updateMatrixWorld(true);
+  const box = new THREE.Box3();
+  m.traverse(o => { if (o.isMesh) box.expandByObject(o, true); });
+  const size = box.getSize(new THREE.Vector3()), c = box.getCenter(new THREE.Vector3());
+  // bust: top ~45% of the body (head and shoulders); full: whole model.
+  let head = null;
+  m.traverse(o => { if (o.isBone && /^Head$/i.test(o.name)) head = o; });
+  const hp = head ? head.getWorldPosition(new THREE.Vector3()) : new THREE.Vector3(c.x, box.max.y - size.y * 0.15, c.z);
+  const h = frame === 'bust' ? size.y * 0.44 : Math.max(size.y, size.x * 0.9) * 1.04;
+  const cy = frame === 'bust' ? hp.y - h * 0.02 : c.y;
+  if (frame === 'bust') { c.x = hp.x; c.z = hp.z; }
+  const cam = new THREE.PerspectiveCamera(30, 1, 0.01, 100);
+  const dist = (h / 2) / Math.tan(THREE.MathUtils.degToRad(15)) * 1.08;
+  cam.position.set(c.x, cy + h * 0.08, c.z + dist);
+  cam.lookAt(c.x, cy, c.z);
+  r.render(scene, cam);
+  window.ready = true;
+}, undefined, e => { window.ready = 'error ' + e.message; });
+</script></body></html>

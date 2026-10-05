@@ -126,7 +126,7 @@ export class MobaRenderer {
       case 'area': built = buildMobaArea(e.s, e.rad, e.len, e.w, e.tm !== this.team); break;
       default: return;
     }
-    const v = { root: built.root, parts: built.parts, kind: e.kind, phase: Math.random() * 10, attackT: 0, mats: [], spin: built.spin };
+    const v = { root: built.root, parts: built.parts, kind: e.kind, phase: Math.random() * 10, attackT: 0, mats: [], spin: built.spin, color: built.color, fiery: built.fiery };
     if (e.kind === 'hero' || e.kind === 'minion' || e.kind === 'monster') built.root.traverse(o => { if (o.material && o.material.emissive) v.mats.push({ m: o.material, base: o.material.emissive.clone(), bi: o.material.emissiveIntensity }); });
     if (e.kind === 'hero' && built.parts.ring) built.parts.ring.material.color.set(e.id === this.youId ? 0xfacc15 : e.tm === this.team ? 0x3b82f6 : 0xef4444);
     built.root.position.set(e.x, 0, e.y);
@@ -145,6 +145,7 @@ export class MobaRenderer {
   removeEntity(e, replaced) {
     const v = this.views.get(e.id);
     if (!v) return;
+    if (e.kind === 'proj' && !replaced) this.fx.impact(v.root.position.x, v.root.position.z, { y: v.root.position.y, color: v.color || 0xffffff, big: v.fiery });
     this.views.delete(e.id);
     if (!replaced && (e.kind === 'minion' || e.kind === 'monster') && (e.fl & F.DEAD)) this.dying.push({ view: v, t: 0 });
     else if (!replaced && (e.kind === 'minion' || e.kind === 'monster') && e.hp <= 0) this.dying.push({ view: v, t: 0 });
@@ -197,6 +198,8 @@ export class MobaRenderer {
           root.position.set(e.x, 1.1, e.y);
           root.rotation.y = Math.PI / 2 - e.f;
           if (v.spin) v.parts.core.rotation.y += dt * 20;
+          v.trailT = (v.trailT || 0) - dt;
+          if (v.trailT <= 0) { v.trailT = 0.025; this.fx.trail(e.x, 1.1, e.y, v.color || 0xffffff, v.fiery ? 0.8 : 0.5); if (v.fiery && Math.random() < 0.3) this.fx.smoke(e.x, e.y, { count: 1, radius: 0.3, life: 0.6 }); }
           break;
         case 'area': {
           root.position.set(e.x, 0, e.y);
@@ -206,6 +209,7 @@ export class MobaRenderer {
           if (p.edge && e.s === 'whirl') p.edge.rotation.z += dt * 10;
           if (p.plane) p.plane.material.opacity = 0.15 + prog * 0.45;
           if (p.glow) p.glow.material.opacity = 0.4 + Math.sin(v.phase * 8) * 0.2;
+          if (p.rune) p.rune.rotation.z += dt * 0.8;
           break;
         }
         default:
@@ -251,8 +255,8 @@ export class MobaRenderer {
     const stunned = (e.fl & (F.STUN | F.AIRBORNE)) !== 0;
     if (stunned && !v.stars) {
       v.stars = new THREE.Group();
-      for (let i = 0; i < 3; i++) { const s = new THREE.Mesh(new THREE.OctahedronGeometry(0.09), new THREE.MeshBasicMaterial({ color: 0xfde047 })); s.position.set(Math.cos(i * 2.1) * 0.4, 0, Math.sin(i * 2.1) * 0.4); v.stars.add(s); }
-      v.stars.position.y = e.kind === 'monster' && e.ep ? 4.5 : 2.3;
+      for (let i = 0; i < 3; i++) { const s = new THREE.Mesh(new THREE.OctahedronGeometry(0.15), new THREE.MeshBasicMaterial({ color: 0xfde047 })); s.position.set(Math.cos(i * 2.1) * 0.4, 0, Math.sin(i * 2.1) * 0.4); v.stars.add(s); }
+      v.stars.position.y = e.kind === 'monster' && e.ep ? 4.5 : e.kind === 'hero' ? 2.6 : 2.3;
       v.root.add(v.stars);
     }
     if (v.stars) { v.stars.visible = stunned; v.stars.rotation.y += 0.15; }
@@ -320,10 +324,19 @@ export class MobaRenderer {
     const ent = ev.id ? world.entities.get(ev.id) : null;
     switch (ev.e) {
       case 'atk': this.trigger(ev.id); break;
-      case 'cast': this.trigger(ev.id, 'cast'); if (ent) fx.glow(ent.x, ent.y, { color: (this.champInfo[ev.c] || {}).accent || 0xffffff, size: 2, life: 0.25 }); break;
-      case 'nova': fx.ring(ev.x, ev.y, { color: c, radius: ev.r, life: 0.45 }); fx.disc(ev.x, ev.y, { color: c, radius: ev.r, opacity: 0.35 }); fx.burst(ev.x, ev.y, { color: c, count: 22, speed: 6 }); break;
-      case 'shock': fx.ring(ev.x, ev.y, { color: c, radius: ev.r, life: 0.55 }); fx.disc(ev.x, ev.y, { color: c, radius: ev.r }); fx.burst(ev.x, ev.y, { color: c, count: 36, speed: 8, life: 0.7 }); this.shake(0.25); break;
-      case 'boom': fx.explosion(ev.x, ev.y, ev.r, c); break;
+      case 'cast': {
+        this.trigger(ev.id, 'cast');
+        const accent = (this.champInfo[ev.c] || {}).accent || 0xffffff, ult = ev.sl === 'r';
+        const x = ent ? ent.x : ev.x, y = ent ? ent.y : ev.y;
+        fx.runes(x, y, { color: accent, radius: ult ? 2.4 : 1.4, life: ult ? 1 : 0.6, spin: ult ? 3 : 2 });
+        fx.glow(x, y, { color: accent, size: ult ? 3.5 : 2, life: 0.3 });
+        fx.sparks(x, y, { y: 1.2, color: accent, count: ult ? 16 : 6, speed: 3, life: 0.5 });
+        if (ult) { fx.shockwave(x, y, { color: accent, radius: 2.5, height: 2, life: 0.5 }); if (ev.id === this.youId) this.shake(0.15); }
+        break;
+      }
+      case 'nova': fx.ring(ev.x, ev.y, { color: c, radius: ev.r, life: 0.45 }); fx.disc(ev.x, ev.y, { color: c, radius: ev.r, opacity: 0.35 }); fx.shockwave(ev.x, ev.y, { color: c, radius: ev.r, height: 1.2 }); fx.sparks(ev.x, ev.y, { y: 0.8, color: c, count: 18, speed: ev.r * 3 }); break;
+      case 'shock': fx.ring(ev.x, ev.y, { color: c, radius: ev.r, life: 0.55 }); fx.disc(ev.x, ev.y, { color: c, radius: ev.r }); fx.shockwave(ev.x, ev.y, { color: c, radius: ev.r * 1.1, height: 2, life: 0.55 }); fx.sparks(ev.x, ev.y, { y: 0.5, color: c, count: 24, speed: 9, life: 0.6 }); fx.smoke(ev.x, ev.y, { count: 4, radius: ev.r * 0.5, color: 0x6b5a48 }); fx.scorch(ev.x, ev.y, ev.r * 0.7); this.shake(0.25); break;
+      case 'boom': fx.blast(ev.x, ev.y, ev.r, c); break;
       case 'cone': {
         const steps = 6;
         for (let i = -steps; i <= steps; i++) { const a = ev.a + i * 0.08; fx.burst(ev.x + Math.cos(a) * ev.r * 0.6, ev.y + Math.sin(a) * ev.r * 0.6, { color: c, count: 3, speed: 3, life: 0.4 }); }
@@ -331,20 +344,19 @@ export class MobaRenderer {
         break;
       }
       case 'beam': {
-        const n = 14;
-        for (let i = 0; i <= n; i++) { const t = i / n; fx.glow(ev.x + (ev.x2 - ev.x) * t, ev.y + (ev.y2 - ev.y) * t, { color: ev.c === 'spark' ? 0xfef08a : 0xfbbf24, size: ev.w * 2.5, life: 0.35 }); }
+        fx.beam(ev.x, ev.y, ev.x2, ev.y2, { width: ev.w, color: ev.c === 'spark' ? 0xfef08a : 0xfbbf24, life: 0.45 });
         this.shake(0.2);
         break;
       }
-      case 'healfx': fx.ring(ev.x, ev.y, { color: 0x4ade80, radius: ev.r, life: 0.6 }); fx.burst(ev.x, ev.y, { color: 0x4ade80, count: 16, speed: 2, up: 3, gravity: -1, life: 0.9 }); break;
-      case 'heal': if (ent) fx.burst(ent.x, ent.y, { color: 0x4ade80, count: 8, speed: 1, up: 3, gravity: -1, life: 0.7 }); break;
+      case 'healfx': fx.ring(ev.x, ev.y, { color: 0x4ade80, radius: ev.r, life: 0.6 }); fx.runes(ev.x, ev.y, { color: 0x4ade80, radius: ev.r, life: 0.9, spin: 1 }); fx.burst(ev.x, ev.y, { color: 0x86efac, count: 20, speed: 1.5, up: 3, gravity: -1.5, life: 1.1, size: 0.25 }); break;
+      case 'heal': if (ent) { fx.burst(ent.x, ent.y, { color: 0x86efac, count: 10, speed: 0.8, up: 3, gravity: -1.5, life: 0.9, size: 0.22 }); fx.glow(ent.x, ent.y, { y: 1, color: 0x4ade80, size: 1.8, life: 0.4 }); } break;
       case 'shield': if (ent) fx.ring(ent.x, ent.y, { color: 0xe0f2fe, radius: 1.3, life: 0.4 }); break;
       case 'buff': if (ent) fx.pillar(ent.x, ent.y, c, 0.6, 3); break;
       case 'glint': fx.glow(ev.x, ev.y, { color: c, size: 2.5, life: 0.25 }); break;
       case 'dash': fx.burst(ev.x, ev.y, { color: 0xffffff, count: 8, speed: 2, up: 0.5, life: 0.35 }); break;
-      case 'blink': fx.glow(ev.x, ev.y, { color: 0xfef9c3, size: 2.5, life: 0.3 }); fx.glow(ev.x2, ev.y2, { color: 0xfef9c3, size: 2.5, life: 0.3 }); fx.burst(ev.x2, ev.y2, { color: 0xfef9c3, count: 12 }); break;
-      case 'impact': fx.burst(ev.x, ev.y, { y: 1, color: 0xffffff, count: 5, speed: 3, life: 0.3 }); break;
-      case 'death': fx.burst(ev.x, ev.y, { color: ev.k === 'hero' ? 0xef4444 : ev.k === 'tower' || ev.k === 'spire' || ev.k === 'core' ? 0xfbbf24 : 0x9ca3af, count: ev.k === 'hero' || ev.k === 'tower' ? 40 : 14, speed: 5, life: 0.9 }); if (ev.k === 'tower' || ev.k === 'core' || ev.k === 'spire') { fx.explosion(ev.x, ev.y, 4, 0xfbbf24); this.shake(0.6); } break;
+      case 'blink': fx.glow(ev.x, ev.y, { color: 0xfef9c3, size: 2.5, life: 0.3 }); fx.sparks(ev.x, ev.y, { color: 0xfef9c3, count: 10, speed: 3 }); fx.glow(ev.x2, ev.y2, { color: 0xfef9c3, size: 3, life: 0.35 }); fx.runes(ev.x2, ev.y2, { color: 0xfde68a, radius: 1, life: 0.4, spin: 4 }); fx.sparks(ev.x2, ev.y2, { color: 0xfef9c3, count: 12, speed: 4 }); break;
+      case 'impact': fx.impact(ev.x, ev.y, { color: 0xffffff }); break;
+      case 'death': fx.burst(ev.x, ev.y, { color: ev.k === 'hero' ? 0xef4444 : ev.k === 'tower' || ev.k === 'spire' || ev.k === 'core' ? 0xfbbf24 : 0x9ca3af, count: ev.k === 'hero' || ev.k === 'tower' ? 40 : 14, speed: 5, life: 0.9 }); if (ev.k === 'tower' || ev.k === 'core' || ev.k === 'spire') { fx.blast(ev.x, ev.y, 4, 0xfbbf24); fx.smoke(ev.x, ev.y, { count: 10, radius: 3, color: 0x57534e, life: 2.5 }); this.shake(0.6); } if (ev.k === 'hero') fx.sprite(ev.x, 1.2, ev.y, { color: 0xc4b5fd, size: 1.4, grow: 0.6, life: 1.6, rise: 2.2 }); break;
       case 'levelup': fx.pillar(ev.x, ev.y, 0xfacc15, 1, 5); break;
       case 'respawn': fx.pillar(ev.x, ev.y, 0x60a5fa, 0.8, 4); break;
       case 'recall': fx.pillar(ev.x, ev.y, 0x60a5fa, 0.6, 5); break;

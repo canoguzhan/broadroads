@@ -321,10 +321,12 @@ export function upgradeValley(terrain, valley, loadModel) {
       const model = gltf.scene.clone();
       model.updateMatrixWorld(true);
       const box = new THREE.Box3().setFromObject(model), ext = box.getSize(new THREE.Vector3());
-      const k = 8 / Math.max(ext.x, ext.z);
-      model.scale.setScalar(k);
+      const k = 7 / Math.max(ext.x, ext.z);
+      model.scale.set(k, k * 0.7, k);
       const f = valley.teams[team].fountain;
-      model.position.set(f.x - (box.min.x + box.max.x) / 2 * k, -box.min.y * k, f.y - (box.min.z + box.max.z) / 2 * k);
+      // Sits behind the spawn point, toward the base corner, so champions aren't hidden inside it.
+      const back = team === 'blue' ? [-3.2, 3.2] : [3.2, -3.2];
+      model.position.set(f.x + back[0] - (box.min.x + box.max.x) / 2 * k, -box.min.y * k * 0.7, f.y + back[1] - (box.min.z + box.max.z) / 2 * k);
       model.traverse(o => { if (o.isMesh) o.receiveShadow = o.castShadow = true; });
       // Only this team's pillar is replaced.
       const pillar = terrain.fountainGroup.children.find(c => Math.abs(c.position.x - f.x) < 0.1 && Math.abs(c.position.z - f.y) < 0.1);

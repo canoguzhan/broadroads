@@ -16,7 +16,7 @@ const BEAST = 'stylized fantasy MOBA jungle monster, full body, standing in a ne
 const PROP = 'stylized fantasy MOBA game environment asset, hand-painted textures, single isolated object, no ground plane, no background';
 
 const ATTACK = { punch: 'preset:biped:box_01', slash: 'preset:biped:slash', shoot: 'preset:biped:fire', cast: 'preset:biped:cast_a_spell', chop: 'preset:biped:chop' };
-const heroClips = style => ({ idle: 'preset:biped:idle', run: 'preset:biped:run', attack: ATTACK[style], cast: 'preset:biped:cast_a_spell', death: 'preset:biped:fall' });
+const heroClips = style => ({ idle: 'preset:biped:idle', run: 'preset:biped:run', attack: ATTACK[style], cast: 'preset:biped:cast_a_spell', death: 'preset:biped:fall', stun: 'preset:biped:hurt' });
 const minionClips = style => ({ run: 'preset:biped:walk', attack: ATTACK[style], death: 'preset:biped:fall' });
 const beastClips = style => ({ idle: 'preset:biped:idle', run: 'preset:biped:walk', attack: ATTACK[style], death: 'preset:biped:fall' });
 const WALK = { run: 'preset:quadruped:walk' };

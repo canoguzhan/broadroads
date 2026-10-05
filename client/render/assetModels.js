@@ -8,6 +8,7 @@ import * as THREE from 'three';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import { MeshoptDecoder } from 'three/examples/jsm/libs/meshopt_decoder.module.js';
 import { clone as cloneSkinned } from 'three/examples/jsm/utils/SkeletonUtils.js';
+import { F } from '../../shared/constants.js';
 
 const BASE = `${import.meta.env.BASE_URL || '/'}models/`;
 const ONE_SHOT = { attack: 0.55, cast: 0.75 }; // seconds each one-shot clip is squeezed into
@@ -19,6 +20,7 @@ let enabled = true;
 
 /** Settings toggle: when off, everything keeps its lightweight procedural look. */
 export function setModelsEnabled(on) { enabled = on; }
+export const modelsEnabled = () => enabled;
 
 function getManifest() {
   if (!manifest) manifest = fetch(`${BASE}manifest.json`).then(r => (r.ok ? r.json() : {})).catch(() => ({}));
@@ -36,6 +38,31 @@ export function loadModel(id) {
     }));
   }
   return cache.get(id);
+}
+
+/* ---------------- preloading ---------------- */
+// Models every match uses, fetched during champion select.
+const COMMON = ['tower', 'spire', 'core', 'fountain'].flatMap(k => [`${k}_blue`, `${k}_red`])
+  .concat(['melee', 'caster', 'super', 'siege'].flatMap(t => [`minion_${t}_blue`, `minion_${t}_red`]))
+  .concat(['tree_pine', 'tree_oak', 'tree_fir', 'bush', 'mob_mossback', 'mob_brute', 'mob_stonehulk', 'mob_wolf', 'mob_bat', 'mob_toad', 'mob_wyrm', 'mob_titan']);
+const queue = [];
+let pumping = false;
+
+/** Queues models to load one at a time (champions first), without blocking the page. */
+export function preloadModels(ids, { common = false, first = false } = {}) {
+  if (!enabled) return;
+  const add = common ? [...ids, ...COMMON] : ids;
+  for (const id of add) if (!cache.has(id) && !queue.includes(id)) first ? queue.unshift(id) : queue.push(id);
+  if (pumping) return;
+  pumping = true;
+  (async () => {
+    while (queue.length && enabled) {
+      const id = queue.shift();
+      if (!cache.has(id)) await loadModel(id);
+      await new Promise(r => setTimeout(r, 30)); // let the page breathe between parses
+    }
+    pumping = false;
+  })();
 }
 
 /* ---------------- which model an entity uses ---------------- */
@@ -113,13 +140,15 @@ function play(anim, name, fade = 0.15, restart = false) {
   anim.current = next;
 }
 
-/** Per-frame update for a unit with a model: death > attack/cast > run > idle.
-    Missing clips fall back to procedural motion (lunge, hover, hop). */
+/** Per-frame update for a unit with a model: death > stun > attack/cast > run > idle.
+    Missing clips fall back to procedural motion (lunge, hover, hop, wobble). */
 export function animateModel(view, e, dead, moving, dt, now) {
   const anim = view.anim, model = view.model;
   const lunge = view.attackT > 0 ? Math.sin(view.attackT * Math.PI) : 0;
+  const stunned = !dead && (e.fl & F.STUN) !== 0;
   if (anim) {
     if (dead) play(anim, 'death', 0.1);
+    else if (stunned && anim.actions.stun) { play(anim, 'stun', 0.12); view.oneShot = null; anim.oneShotUntil = 0; }
     else if (view.oneShot) {
       const name = anim.actions[view.oneShot] ? view.oneShot : 'attack';
       if (anim.actions[name]) { play(anim, name, 0.08, true); anim.oneShotUntil = now + ONE_SHOT[name] * 1000; }
@@ -143,6 +172,11 @@ export function animateModel(view, e, dead, moving, dt, now) {
     model.position.z = lunge * (e.t === 'wyrm' ? 0.8 : 0.4);
     model.rotation.x = style === 'hop' ? -step * 0.15 : style === 'stride' && moving ? Math.sin(t * 9) * 0.03 : 0;
   }
+  // Stun wobble for models without a stun clip, and a quick backward flinch when hit.
+  model.rotation.z = stunned && !anim?.actions.stun ? Math.sin(view.phase * 9) * 0.1 : 0;
+  const age = e.hitT ? now - e.hitT : 1e9;
+  if (age < 160) model.rotation.x = (model.rotation.x || 0) * 0.5 - 0.14 * (1 - age / 160);
+  else if (anim) model.rotation.x = 0;
   if (view.attackT > 0) view.attackT = Math.max(0, view.attackT - dt * 4);
 }
 

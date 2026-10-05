@@ -3,6 +3,7 @@ import { h, $, clear, timeStr } from './dom.js';
 import { priceFor } from '../../shared/moba/items.js';
 import { CHAMPIONS } from '../../shared/moba/champions.js';
 import { sfx } from '../audio/sfx.js';
+import { pic, champKey } from './icons.js';
 
 const CATS = [['rec', '⭐ Recommended'], ['basic', 'Basic'], ['boots', 'Boots'], ['attack', 'Attack'], ['magic', 'Magic'], ['defense', 'Defense'], ['consumable', 'Consumables']];
 const STAT = { ad: 'Attack Damage', ap: 'Ability Power', hp: 'Health', mp: 'Mana', armor: 'Armor', mr: 'Magic Resist', as: '% Attack Speed', crit: '% Crit Chance', ms: 'Move Speed', msPct: '% Move Speed', haste: 'Haste', lifesteal: '% Lifesteal', armorPen: '% Armor Pen', magicPen: 'Magic Pen', magicPenPct: '% Magic Pen', hpRegen: 'HP Regen /s', mpRegen: 'Mana Regen /s', tenacity: '% Tenacity' };
@@ -41,7 +42,7 @@ export class Panels {
     const me = this.game.world.me;
     const price = me && !owned ? priceFor(id, me.it).price : d.cost;
     return h('div.item-tip', {},
-      h('div.tip-title', { text: `${d.icon} ${d.name}` }),
+      h('div.tip-title', {}, h('span.tip-ic', {}, pic(`item/${id}`, d.icon)), d.name),
       h('div.tip-sub', { text: owned ? `Sells for ${Math.floor(d.cost * 0.7)} gold` : `Cost ${price} gold${price !== d.cost ? ` (total ${d.cost})` : ''}` }),
       ...Object.entries(d.stats).map(([k, v]) => h('div.tip-stat', { text: `+${k === 'ms' ? Math.round(v * 70) : v} ${STAT[k] || k}` })),
       d.passive ? h('div.tip-desc', { text: d.passive }) : null,
@@ -67,18 +68,18 @@ export class Panels {
         oncontextmenu: ev => { ev.preventDefault(); g.send({ t: 'buy', item: id }); },
         onmouseenter: ev => g.ui.showTip(ev.currentTarget, this.itemTooltip(id)),
         onmouseleave: () => g.ui.hideTip(),
-      }, h('div.sc-icon', { text: d.icon }), h('div.sc-name', { text: d.name }), h('div.sc-price', { text: `🪙 ${price}` }));
+      }, h('div.sc-icon', {}, pic(`item/${id}`, d.icon)), h('div.sc-name', { text: d.name }), h('div.sc-price', { text: `🪙 ${price}` }));
     }));
     const sel = this.selectedItem && items[this.selectedItem];
     const detail = sel ? h('div.shop-detail', {},
       this.itemTooltip(this.selectedItem),
-      sel.from ? h('div.build-path', {}, ...sel.from.map(f => h('div.bp-item', { title: items[f].name, onclick: () => { this.selectedItem = f; this.render(); } }, items[f].icon))) : null,
+      sel.from ? h('div.build-path', {}, ...sel.from.map(f => h('div.bp-item', { title: items[f].name, onclick: () => { this.selectedItem = f; this.render(); } }, pic(`item/${f}`, items[f].icon)))) : null,
       h('button.btn.btn-primary', { disabled: !canShop || me.g < priceFor(this.selectedItem, me.it).price, onclick: () => g.send({ t: 'buy', item: this.selectedItem }) }, canShop ? `Buy (${priceFor(this.selectedItem, me.it).price})` : 'Return to base to shop'))
       : h('p.muted', { text: 'Select an item. Double-click or right-click to buy instantly.' });
     const inv = h('div.shop-inv', {}, ...(me ? me.it : []).map((it, i) => h(`div.mb-item${it ? '' : '.empty'}`, {
       title: it ? `${items[it.id].name} — click to sell for ${Math.floor(items[it.id].cost * 0.7 * (it.n || 1))}` : '',
       onclick: () => { if (it && canShop) g.send({ t: 'sell', slot: i }); },
-    }, h('span.mb-iic', { text: it ? items[it.id].icon : '' }), h('span.mb-in', { text: it && it.n > 1 ? it.n : '' }))));
+    }, h('span.mb-iic', {}, it ? pic(`item/${it.id}`, items[it.id].icon) : ''), h('span.mb-in', { text: it && it.n > 1 ? it.n : '' }))));
     return {
       title: `🛒 Shop · 🪙 ${me ? me.g : 0}${canShop ? '' : ' · (shop only at your base or while dead)'}`,
       wide: true,
@@ -92,10 +93,10 @@ export class Panels {
     const table = team => h('table.sb-table', {},
       h('tr', {}, h('th', { text: '' }), h('th', { text: 'Player' }), h('th', { text: 'Lv' }), h('th', { text: 'K / D / A' }), h('th', { text: 'CS' }), h('th', { text: 'Items' })),
       ...sc.players.filter(p => p.tm === team).map(p => h(`tr${p.id === g.world.youId ? '.me' : ''}${p.dead ? '.dead' : ''}`, {},
-        h('td.sb-c', { text: g.champInfo[p.c]?.icon || '?' }),
+        h('td.sb-c', {}, h('span.sb-pic', {}, pic(champKey(p.c), g.champInfo[p.c]?.icon || '?'))),
         h('td', {}, `${p.name}${p.bot ? ' 🤖' : ''}`, p.dead ? h('small', { text: ` (${p.rs}s)` }) : null),
         h('td', { text: p.l }), h('td', { text: `${p.k} / ${p.d} / ${p.a}` }), h('td', { text: p.cs }),
-        h('td.sb-items', { text: p.it.map(i => (i ? g.data.items[i].icon : '·')).join(' ') }))));
+        h('td.sb-items', {}, ...p.it.map(i => h('span.sb-item', {}, i ? pic(`item/${i}`, g.data.items[i].icon) : ''))))));
     return {
       title: `📊 ${timeStr(sc.time)} · Blue ${sc.kills.blue} – ${sc.kills.red} Red`,
       wide: true,
@@ -158,9 +159,9 @@ export class Panels {
     const table = team => h('table.sb-table', {},
       h('tr', {}, h('th', { text: '' }), h('th', { text: 'Player' }), h('th', { text: 'K / D / A' }), h('th', { text: 'CS' }), h('th', { text: 'Gold' }), h('th', { text: 'Damage' }), h('th', { text: 'Items' })),
       ...res.players.filter(p => p.team === team).map(p => h(`tr${p.id === r.you ? '.me' : ''}`, {},
-        h('td.sb-c', { text: g.champInfo[p.champ]?.icon || '?' }), h('td', {}, p.name, p.id === res.mvp ? h('span.mvp', { text: ' MVP' }) : null),
+        h('td.sb-c', {}, h('span.sb-pic', {}, pic(champKey(p.champ), g.champInfo[p.champ]?.icon || '?'))), h('td', {}, p.name, p.id === res.mvp ? h('span.mvp', { text: ' MVP' }) : null),
         h('td', { text: `${p.kills} / ${p.deaths} / ${p.assists}` }), h('td', { text: p.cs }), h('td', { text: p.gold }), h('td', { text: p.dmg }),
-        h('td.sb-items', { text: p.items.map(i => (i ? g.data.items[i].icon : '·')).join(' ') }))));
+        h('td.sb-items', {}, ...p.items.map(i => h('span.sb-item', {}, i ? pic(`item/${i}`, g.data.items[i].icon) : ''))))));
     return {
       title: `${win ? 'Victory' : 'Defeat'} · ${timeStr(res.duration)}`,
       wide: true,

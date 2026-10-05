@@ -3,6 +3,7 @@ import { api, checkServer, OnlineConnection } from './net/connection.js';
 import { OfflineConnection, offlineProfileName } from './net/offline.js';
 import { MobaRenderer } from './render/mobaRenderer.js';
 import { setModelsEnabled } from './render/assetModels.js';
+import { iconsReady } from './ui/icons.js';
 import { Game } from './game/game.js';
 import { Lobby } from './ui/lobby.js';
 import { Select } from './ui/select.js';
@@ -16,6 +17,7 @@ const TOKEN_KEY = 'broadroads_token';
 class App {
   constructor() {
     this.settings = this.loadSettings();
+    setModelsEnabled(this.settings.models !== false);
     sfx.setVolume(this.settings.volume);
     sfx.setMusicVolume(this.settings.musicVolume);
     this.ui = new UI();
@@ -93,6 +95,7 @@ class App {
     conn.on('*', m => this.route(m));
     conn.on('disconnect', m => { if (!m.byUs) this.exit(this.kickedReason || 'Disconnected from the server.'); });
     try {
+      await iconsReady; // tiny manifests; the lobby renders portraits and icons
       await conn.connect();
     } catch (err) {
       this.exit(err.message);
@@ -153,7 +156,6 @@ class App {
       try { this.renderer = new MobaRenderer($('#game-canvas'), this.settings.quality); } catch (err) { console.error(err); this.ui.toast('WebGL is not available in this browser.', 'bad'); return; }
       window.addEventListener('resize', () => this.renderer.resize());
     }
-    setModelsEnabled(this.settings.models !== false);
     this.show('game');
     this.game = new Game({ app: this, renderer: this.renderer, settings: this.settings, ui: this.ui, data: this.data, match: m });
     this.game.start();

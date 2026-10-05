@@ -1,5 +1,7 @@
 /* Home lobby: play modes, custom rooms, party, champions, leaderboards, profile. */
 import { h, $, clear, timeStr } from './dom.js';
+import { pic, champKey, abilityKey } from './icons.js';
+import { championPreview } from '../render/preview.js';
 import { Chat } from './chat.js';
 
 const ROLE_ICON = { Tank: '🛡️', Fighter: '🪓', Assassin: '🗡️', Mage: '🔮', Marksman: '🏹', Support: '💖' };
@@ -102,7 +104,7 @@ export class Lobby {
     const featured = champs[Math.floor(Date.now() / 86400000) % Math.max(1, champs.length)];
     return h('div.home', {},
       featured ? h('div.hero-banner', { style: { '--c': '#' + featured.color.toString(16).padStart(6, '0'), '--a': '#' + featured.accent.toString(16).padStart(6, '0') } },
-        h('div.hb-icon', { text: featured.icon }),
+        h('div.hb-icon', {}, pic(champKey(featured.id), featured.icon)),
         h('div', {}, h('div.hb-kicker', { text: 'Champion of the day' }), h('h2', { text: featured.name }), h('div.hb-title', { text: `${featured.title} · ${featured.role}` }), h('p', { text: featured.passive.desc }))) : null,
       h('div.home-grid', {},
         h('div.card', {}, h('h4', { text: 'How to play' }), h('ul.howto', {},
@@ -115,7 +117,7 @@ export class Lobby {
 
   historyRow(m) {
     const c = this.app.champInfo[m.champ];
-    return h(`div.hist-row.${m.win ? 'win' : 'loss'}`, {}, h('span.hr-icon', { text: c ? c.icon : '?' }), h('span', { text: c ? c.name : m.champ }), h('span', { text: `${m.k}/${m.d}/${m.a}` }),
+    return h(`div.hist-row.${m.win ? 'win' : 'loss'}`, {}, h('span.hr-icon', {}, pic(champKey(m.champ), c ? c.icon : '?')), h('span', { text: c ? c.name : m.champ }), h('span', { text: `${m.k}/${m.d}/${m.a}` }),
       h('span.muted', { text: `${m.mode} · ${timeStr(m.dur)}` }), h('b', { text: m.win ? 'Victory' : 'Defeat' }), m.delta ? h('span', { text: `${m.delta > 0 ? '+' : ''}${m.delta}` }) : null);
   }
 
@@ -124,8 +126,13 @@ export class Lobby {
     const sel = champs.find(c => c.id === this.selectedChamp) || champs[0];
     return h('div.champ-view', {},
       h('div.champ-grid', {}, ...champs.map(c => h(`button.champ-card${sel && c.id === sel.id ? '.sel' : ''}`, { onclick: () => { this.selectedChamp = c.id; this.renderCenter(); } },
-        h('div.cc-ic', { text: c.icon }), h('div.cc-n', { text: c.name }), h('div.cc-r', { text: `${ROLE_ICON[c.role] || ''} ${c.role}` })))),
-      sel ? championDetail(sel) : null);
+        h('div.cc-ic', {}, pic(champKey(c.id), c.icon)), h('div.cc-n', { text: c.name }), h('div.cc-r', { text: `${ROLE_ICON[c.role] || ''} ${c.role}` })))),
+      sel ? h('div.champ-side', {}, this.preview(sel), championDetail(sel)) : null);
+  }
+
+  preview(c) {
+    championPreview.show(c.id, c);
+    return championPreview.mount();
   }
 
   lbView() {
@@ -141,11 +148,11 @@ export class Lobby {
     const p = this.profile;
     if (!p) return h('p', { text: 'Loading…' });
     const champs = Object.entries(p.champs).sort((a, b) => b[1].games - a[1].games);
-    const stat = (l, v) => h('div.stat-row', {}, h('span', { text: l }), h('b', { text: v }));
+    const stat = (l, v) => h('div.stat-row', {}, h('span.stat-l', {}, l), h('b', { text: v }));
     return h('div.home-grid', {},
       h('div.card', {}, h('h4', { text: p.name }), stat('Level', p.level), stat('Rating', p.rating), stat('Games', p.games), stat('Wins / Losses', `${p.wins} / ${p.losses}`),
         stat('Win rate', p.games ? `${Math.round(p.wins / p.games * 100)}%` : '—'), stat('Avg KDA', p.games ? `${(p.kills / p.games).toFixed(1)} / ${(p.deaths / p.games).toFixed(1)} / ${(p.assists / p.games).toFixed(1)}` : '—'),
-        h('h4', { text: 'Champions' }), ...champs.slice(0, 6).map(([id, s]) => stat(`${this.app.champInfo[id]?.icon || ''} ${this.app.champInfo[id]?.name || id}`, `${s.games} games · ${Math.round(s.wins / s.games * 100)}% WR`))),
+        h('h4', { text: 'Champions' }), ...champs.slice(0, 6).map(([id, s]) => stat(h('span.stat-champ', {}, h('span.hr-icon', {}, pic(champKey(id), this.app.champInfo[id]?.icon || '')), this.app.champInfo[id]?.name || id), `${s.games} games · ${Math.round(s.wins / s.games * 100)}% WR`))),
       h('div.card', {}, h('h4', { text: 'Match history' }), p.history.length ? h('div.history', {}, ...p.history.map(m => this.historyRow(m))) : h('p.muted', { text: 'No matches yet.' })));
   }
 
@@ -199,8 +206,8 @@ const LANE_NAME = { top: 'Top', jungle: 'Jungle', mid: 'Mid', bot: 'Bot lane', s
 export function championDetail(c) {
   const s = c.base;
   return h('div.champ-detail', { style: { '--c': '#' + c.color.toString(16).padStart(6, '0'), '--a': '#' + c.accent.toString(16).padStart(6, '0') } },
-    h('div.cd-head', {}, h('div.cd-icon', { text: c.icon }), h('div', {}, h('h3', { text: c.name }), h('div.cd-title', { text: c.title }), h('div.cd-role', { text: `${ROLE_ICON[c.role] || ''} ${c.role} · ${c.ranged ? 'Ranged' : 'Melee'} · ${c.roles.map(r => LANE_NAME[r] || r).join(' / ')}` }))),
+    h('div.cd-head', {}, h('div.cd-icon', {}, pic(champKey(c.id), c.icon)), h('div', {}, h('h3', { text: c.name }), h('div.cd-title', { text: c.title }), h('div.cd-role', { text: `${ROLE_ICON[c.role] || ''} ${c.role} · ${c.ranged ? 'Ranged' : 'Melee'} · ${c.roles.map(r => LANE_NAME[r] || r).join(' / ')}` }))),
     h('div.cd-stats', { text: `HP ${s.hp} · Mana ${s.mp} · AD ${s.ad} · Armor ${s.armor} · AS ${s.as} · Range ${c.range}` }),
-    h('div.cd-abil', {}, h('div.cd-ai', { text: '◆' }), h('div', {}, h('b', { text: `Passive — ${c.passive.name}` }), h('p', { text: c.passive.desc }))),
-    ...['q', 'w', 'e', 'r'].map(k => { const a = c.abilities[k]; return h('div.cd-abil', {}, h('div.cd-ai', { text: a.icon }), h('div', {}, h('b', { text: `${k.toUpperCase()} — ${a.name}` }), h('small.muted', { text: ` ${a.cd[0]}s${a.mana[0] ? ` · ${a.mana[0]} mana` : ''}` }), h('p', { text: a.desc }))); }));
+    h('div.cd-abil', {}, h('div.cd-ai', {}, pic(`passive/${c.id}`, '◆')), h('div', {}, h('b', { text: `Passive — ${c.passive.name}` }), h('p', { text: c.passive.desc }))),
+    ...['q', 'w', 'e', 'r'].map(k => { const a = c.abilities[k]; return h('div.cd-abil', {}, h('div.cd-ai', {}, pic(abilityKey(c.id, k), a.icon)), h('div', {}, h('b', { text: `${k.toUpperCase()} — ${a.name}` }), h('small.muted', { text: ` ${a.cd[0]}s${a.mana[0] ? ` · ${a.mana[0]} mana` : ''}` }), h('p', { text: a.desc }))); }));
 }

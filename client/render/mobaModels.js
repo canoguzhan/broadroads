@@ -3,6 +3,7 @@
 import * as THREE from 'three';
 import { geo, std, basic, mesh, glowSprite, buildHero, buildMonster } from './models.js';
 import { TEAM_HEX } from './valley.js';
+import { runeTexture } from './glow.js';
 
 const CHAMP_MODEL = {
   garrok: { cls: 'paladin', scale: 1.35 }, brakka: { cls: 'paladin', scale: 1.3, horns: true }, thorne: { cls: 'paladin', scale: 1.15 },
@@ -199,7 +200,7 @@ export function buildMobaProjectile(style, team, champColor) {
   const glow = glowSprite(color, size * 9);
   root.add(core, glow);
   root.position.y = 1.1;
-  return { root, parts: { core, glow }, spin: style === 'shuriken' || style === 'axe' };
+  return { root, parts: { core, glow }, spin: style === 'shuriken' || style === 'axe', color, fiery: style === 'fire' || style === 'cannon' || style === 'rock' };
 }
 
 const AREA_COLORS = { telegraph: 0xef4444, solarwell: 0xfef9c3, star: 0x7dd3fc, eclipse: 0xa78bfa, inferno: 0xf97316, whirl: 0x84cc16, reap: 0xdc2626, wrath: 0x22c55e };
@@ -230,6 +231,15 @@ export function buildMobaArea(style, radius, len, width, hostile) {
   fill.scale.setScalar(style === 'telegraph' || style === 'reap' || style === 'wrath' || style === 'star' ? 0.01 : radius);
   root.add(edge, fill);
   parts.edge = edge; parts.fill = fill;
+  if (style !== 'telegraph' && style !== 'reap') {
+    // Rotating magic circle under ability zones.
+    const rune = new THREE.Mesh(geo('aRune', () => new THREE.PlaneGeometry(2, 2)), new THREE.MeshBasicMaterial({ map: runeTexture(), color, transparent: true, opacity: 0.55, depthWrite: false, blending: THREE.AdditiveBlending }));
+    rune.rotation.x = -Math.PI / 2;
+    rune.position.y = 0.1;
+    rune.scale.set(radius, radius, 1);
+    root.add(rune);
+    parts.rune = rune;
+  }
   if (style === 'inferno' || style === 'solarwell' || style === 'eclipse') {
     const glow = glowSprite(color, radius * 2);
     glow.position.y = 0.5;

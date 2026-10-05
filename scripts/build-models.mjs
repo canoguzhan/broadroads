@@ -27,7 +27,7 @@ const io = new NodeIO().registerExtensions(ALL_EXTENSIONS).registerDependencies(
 
 // Tripo's slash/chop/cast presets are multi-second combos; keep one strike.
 // Keyed by Tripo's clip name, in seconds (picked from rendered filmstrips).
-const WINDOWS = { box_01: [0, 1.3], slash: [1.1, 2.4], chop: [1.1, 2.4], cast_a_spell: [0.4, 2.5] };
+const WINDOWS = { box_01: [0, 1.3], slash: [1.1, 2.4], chop: [1.1, 2.4], cast_a_spell: [0.4, 2.5], hurt: [0, 3.5] };
 
 function trim(doc, input, output, [t0, t1]) {
   const t = input.getArray(), size = output.getElementSize(), v = output.getArray();

@@ -169,6 +169,20 @@ const VOICE = [
   ['vo_choose', 'Choose your champion.'],
 ];
 
+// Champion voice lines: [champion, voice id, pick, ultimate, kill, death].
+const CHAMP_VOICES = [
+  ['garrok', 'pNInz6obpgDQGcFmaJgB', 'The mountain stands with you.', 'Avalanche!', 'Crumbled.', 'I return... to stone.'],
+  ['lyra', 'pFZP5JQG7iQjIQuC4Bku', 'Dawn breaks for those who fight.', 'Behold, the daybreak!', 'The light finds you.', 'The sun... sets.'],
+  ['kaelen', 'N2lVS1w4EtoT3dr4eOWO', 'No one sees the knife coming.', 'Your verdict is final.', 'Quiet now.', 'Caught... in the light.'],
+  ['hale', 'EXAVITQu4vr4xnSDxMaL', 'The hunt begins in silence.', "Feel winter's bite!", 'Clean shot.', 'The cold... takes me.'],
+  ['thorne', 'SOYHLrjzK2X1ezoPC6cr', 'Iron does not bend.', 'Your execution is now!', 'Bleed for me.', 'Even iron... breaks.'],
+  ['mira', 'Xb7hH8MSUJpSbSDYk0k2', 'The moon watches over us.', 'Hear the lunar hymn!', 'Rest beneath the stars.', 'The moon... dims.'],
+  ['zarak', 'TX3LPaxmHKxFdv7VOQHJ', "Let's light this place up!", 'Meteor, incoming!', 'Too hot to handle!', 'Aw... burned out.'],
+  ['nyra', 'FGY2WhTYpPnrIDTdsKH5', 'Badge on. Safety off.', 'Dead eye. Dead you.', 'Bounty collected.', "Should've seen that coming."],
+  ['brakka', 'IKne3meq5aSn9XLyUdCD', 'The herd charges as one!', 'Iron hide! Bring it on!', 'Trampled!', 'The herd... will remember.'],
+  ['rook', 'CwhRBWXzGAHq8TQ4Fs17', 'The storm answers my call.', 'Tempest, rage!', 'Swept away.', 'The storm... passes.'],
+];
+
 async function post(url, body, attempt = 1) {
   const res = await fetch(url, { method: 'POST', headers: { 'xi-api-key': KEY, 'Content-Type': 'application/json', Accept: 'audio/mpeg' }, body: JSON.stringify(body) });
   if (res.ok) return Buffer.from(await res.arrayBuffer());
@@ -196,6 +210,15 @@ for (const [key, text] of VOICE) {
   jobs.push({ key, run: () => post(`https://api.elevenlabs.io/v1/text-to-speech/${ANNOUNCER_VOICE}?output_format=mp3_44100_128`, {
     text, model_id: 'eleven_multilingual_v2', voice_settings: { stability: 0.45, similarity_boost: 0.8, style: 0.55, use_speaker_boost: true },
   }) });
+}
+for (const [champ, voice, ...lines] of CHAMP_VOICES) {
+  ['pick', 'ult', 'kill', 'death'].forEach((kind, i) => {
+    const key = `cv_${champ}_${kind}`, text = lines[i];
+    manifest[key] = { file: `${key}.mp3`, kind: 'voice', vol: 0.85, text };
+    jobs.push({ key, run: () => post(`https://api.elevenlabs.io/v1/text-to-speech/${voice}?output_format=mp3_44100_128`, {
+      text, model_id: 'eleven_multilingual_v2', voice_settings: { stability: 0.35, similarity_boost: 0.8, style: 0.7, use_speaker_boost: true },
+    }) });
+  });
 }
 
 let done = 0, made = 0, failed = 0;

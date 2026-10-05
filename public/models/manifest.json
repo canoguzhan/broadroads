@@ -7,9 +7,10 @@
    "run",
    "idle",
    "attack",
-   "cast"
+   "cast",
+   "stun"
   ],
-  "v": "muuhn297"
+  "v": "muv2hqvo"
  },
  "lyra": {
   "file": "lyra.glb",
@@ -19,9 +20,10 @@
    "run",
    "attack",
    "cast",
-   "death"
+   "death",
+   "stun"
   ],
-  "v": "muuhn31t"
+  "v": "muv2hrox"
  },
  "kaelen": {
   "file": "kaelen.glb",
@@ -31,9 +33,10 @@
    "run",
    "attack",
    "cast",
-   "death"
+   "death",
+   "stun"
   ],
-  "v": "muuhn3rt"
+  "v": "muv2hsfj"
  },
  "hale": {
   "file": "hale.glb",
@@ -43,9 +46,10 @@
    "run",
    "cast",
    "death",
-   "attack"
+   "attack",
+   "stun"
   ],
-  "v": "muuhn4id"
+  "v": "muv2ht6g"
  },
  "thorne": {
   "file": "thorne.glb",
@@ -55,9 +59,10 @@
    "run",
    "attack",
    "cast",
-   "death"
+   "death",
+   "stun"
   ],
-  "v": "muuhn573"
+  "v": "muv2htx4"
  },
  "mira": {
   "file": "mira.glb",
@@ -67,9 +72,10 @@
    "run",
    "attack",
    "cast",
-   "death"
+   "death",
+   "stun"
   ],
-  "v": "muuhn5wp"
+  "v": "muv2huop"
  },
  "zarak": {
   "file": "zarak.glb",
@@ -79,9 +85,10 @@
    "run",
    "attack",
    "cast",
-   "death"
+   "death",
+   "stun"
   ],
-  "v": "muuhn6lx"
+  "v": "muv2hvdq"
  },
  "nyra": {
   "file": "nyra.glb",
@@ -91,9 +98,10 @@
    "run",
    "cast",
    "death",
-   "attack"
+   "attack",
+   "stun"
   ],
-  "v": "muuhn7bh"
+  "v": "muv2hw26"
  },
  "brakka": {
   "file": "brakka.glb",
@@ -103,9 +111,10 @@
    "run",
    "attack",
    "cast",
-   "death"
+   "death",
+   "stun"
   ],
-  "v": "muuhn827"
+  "v": "muv2hws6"
  },
  "rook": {
   "file": "rook.glb",
@@ -115,9 +124,10 @@
    "run",
    "attack",
    "cast",
-   "death"
+   "death",
+   "stun"
   ],
-  "v": "muuhn8th"
+  "v": "muv2hxi5"
  },
  "minion_melee_blue": {
   "file": "minion_melee_blue.glb",

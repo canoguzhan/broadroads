@@ -762,3 +762,40 @@ select option { background: #15121c; }
 #hud.touch .m-team { gap: 3px; }
 #hud.touch .touch-controls { z-index: 2; }
 #hud.touch .m-minimap { left: 124px; }
+
+/* ---------------- images (portraits rendered from the 3D models, generated icons) ---------------- */
+.pic { width: 100%; height: 100%; object-fit: cover; display: block; border-radius: inherit; pointer-events: none; user-select: none; -webkit-user-drag: none; }
+.cc-ic { width: 72px; height: 72px; border-radius: 12px; overflow: hidden; display: grid; place-items: center; background: radial-gradient(circle at 50% 35%, #3a3150, #120f18); }
+.cd-icon, .sp-icon, .ma-icon, .mb-passive, .bp-item, .mb-item .mb-iic { overflow: hidden; }
+.cd-icon .pic { background: radial-gradient(circle at 50% 35%, #3a3150, #120f18); }
+.sp-icon .pic, .ma-icon .pic { background: radial-gradient(circle at 50% 35%, #3a3150, #120f18); }
+.cd-ai { overflow: hidden; }
+.mb-icon { width: 100%; height: 100%; border-radius: 50%; overflow: hidden; display: grid; place-items: center; }
+.mb-ic { width: 100%; height: 100%; overflow: hidden; display: grid; place-items: center; }
+.mb-ic .pic { border-radius: 10px; }
+.mb-item .mb-iic { width: 100%; height: 100%; border-radius: 6px; display: grid; place-items: center; }
+.sc-icon { width: 44px; height: 44px; border-radius: 8px; overflow: hidden; display: grid; place-items: center; }
+.hb-icon { flex: none; width: 180px; height: 180px; border-radius: 50%; overflow: hidden; border: 3px solid var(--gold); background: radial-gradient(circle at 50% 35%, #3a3150, #120f18); display: grid; place-items: center; }
+.hr-icon { width: 30px; height: 30px; border-radius: 8px; overflow: hidden; display: inline-grid; place-items: center; flex: none; }
+.tip-ic { display: inline-grid; place-items: center; width: 24px; height: 24px; border-radius: 6px; overflow: hidden; vertical-align: middle; margin-right: 7px; }
+.tip-title { display: flex; align-items: center; }
+.summ-ic { display: inline-grid; place-items: center; width: 22px; height: 22px; border-radius: 5px; overflow: hidden; vertical-align: middle; margin-right: 5px; }
+.sp-summ { display: flex; gap: 3px; }
+.sp-summ .pic { width: 20px; height: 20px; border-radius: 5px; }
+.sb-pic { display: inline-grid; place-items: center; width: 30px; height: 30px; border-radius: 50%; overflow: hidden; background: #1b1724; }
+.sb-items { white-space: nowrap; }
+.sb-item { display: inline-grid; place-items: center; width: 24px; height: 24px; border-radius: 5px; overflow: hidden; margin-right: 2px; background: rgba(0, 0, 0, .35); vertical-align: middle; }
+.fr-c { display: inline-grid; place-items: center; width: 30px; height: 30px; border-radius: 50%; overflow: hidden; background: #1b1724; }
+.icon-btn .pic { width: 22px; height: 22px; border-radius: 5px; margin: auto; }
+
+/* 3D champion preview */
+.champ-preview { position: relative; height: 300px; border-radius: 14px; overflow: hidden; background: radial-gradient(ellipse at 50% 70%, rgba(212, 175, 55, .18), transparent 65%), linear-gradient(180deg, #1d1828, #0d0b12); border: 1px solid var(--line); }
+.champ-preview canvas { position: absolute; inset: 0; width: 100%; height: 100%; cursor: grab; touch-action: none; }
+.champ-preview canvas:active { cursor: grabbing; }
+.champ-preview .cp-fallback { display: none; position: absolute; inset: 20px; place-items: center; }
+.champ-preview .cp-fallback .pic { width: 220px; height: 220px; object-fit: contain; }
+.champ-preview.flat canvas { display: none; }
+.champ-preview.flat .cp-fallback { display: grid; }
+.champ-side { display: flex; flex-direction: column; gap: 12px; }
+.champ-side .champ-preview { height: 340px; }
+.stat-champ { display: inline-flex; align-items: center; gap: 8px; }

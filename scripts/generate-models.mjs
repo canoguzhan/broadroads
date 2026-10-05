@@ -66,6 +66,7 @@ async function download(url, dest, label) {
 async function generate(asset) {
   const { id } = asset;
   const file = path.join(OUT, `${id}.glb`);
+  if (state[id]?.done && !force) state[id].done = false; // adding clips
   if (force) { delete state[id]; fs.rmSync(file, { force: true }); fs.rmSync(path.join(OUT, id), { recursive: true, force: true }); }
   console.log(`▶ ${id}`);
   const model = await step(id, 'model', () => api('POST', '/generation/text-to-model', {
@@ -113,7 +114,9 @@ async function generate(asset) {
 
 const cost = a => (a.kind === 'static' ? 20 : 45 + 10 * Object.keys(a.clips).length);
 const list = CATALOG.filter(a => !only.length || only.includes(a.id) || only.includes(a.group));
-const todo = list.filter(a => force || !state[a.id]?.done);
+// Also picks up clips added to the catalog after an asset was generated.
+const missingClips = a => a.kind !== 'static' && state[a.id]?.kind !== 'static' && Object.keys(a.clips || {}).some(c => c !== state[a.id]?.base && !fs.existsSync(path.join(OUT, a.id, `${c}.glb`)));
+const todo = list.filter(a => force || !state[a.id]?.done || missingClips(a));
 const { balance, frozen } = await api('GET', '/account/balance');
 console.log(`Balance: ${balance} credits (${frozen} frozen). ${todo.length} asset(s) to generate, about ${todo.reduce((n, a) => n + cost(a), 0)} credits.`);
 if (dryRun) { for (const a of todo) console.log(`  ${a.id.padEnd(20)} ${a.kind.padEnd(10)} ${cost(a)}`); process.exit(0); }

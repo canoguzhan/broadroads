@@ -710,5 +710,245 @@
   "kind": "voice",
   "vol": 0.9,
   "text": "Choose your champion."
+ },
+ "cv_garrok_pick": {
+  "file": "cv_garrok_pick.mp3",
+  "kind": "voice",
+  "vol": 0.85,
+  "text": "The mountain stands with you."
+ },
+ "cv_garrok_ult": {
+  "file": "cv_garrok_ult.mp3",
+  "kind": "voice",
+  "vol": 0.85,
+  "text": "Avalanche!"
+ },
+ "cv_garrok_kill": {
+  "file": "cv_garrok_kill.mp3",
+  "kind": "voice",
+  "vol": 0.85,
+  "text": "Crumbled."
+ },
+ "cv_garrok_death": {
+  "file": "cv_garrok_death.mp3",
+  "kind": "voice",
+  "vol": 0.85,
+  "text": "I return... to stone."
+ },
+ "cv_lyra_pick": {
+  "file": "cv_lyra_pick.mp3",
+  "kind": "voice",
+  "vol": 0.85,
+  "text": "Dawn breaks for those who fight."
+ },
+ "cv_lyra_ult": {
+  "file": "cv_lyra_ult.mp3",
+  "kind": "voice",
+  "vol": 0.85,
+  "text": "Behold, the daybreak!"
+ },
+ "cv_lyra_kill": {
+  "file": "cv_lyra_kill.mp3",
+  "kind": "voice",
+  "vol": 0.85,
+  "text": "The light finds you."
+ },
+ "cv_lyra_death": {
+  "file": "cv_lyra_death.mp3",
+  "kind": "voice",
+  "vol": 0.85,
+  "text": "The sun... sets."
+ },
+ "cv_kaelen_pick": {
+  "file": "cv_kaelen_pick.mp3",
+  "kind": "voice",
+  "vol": 0.85,
+  "text": "No one sees the knife coming."
+ },
+ "cv_kaelen_ult": {
+  "file": "cv_kaelen_ult.mp3",
+  "kind": "voice",
+  "vol": 0.85,
+  "text": "Your verdict is final."
+ },
+ "cv_kaelen_kill": {
+  "file": "cv_kaelen_kill.mp3",
+  "kind": "voice",
+  "vol": 0.85,
+  "text": "Quiet now."
+ },
+ "cv_kaelen_death": {
+  "file": "cv_kaelen_death.mp3",
+  "kind": "voice",
+  "vol": 0.85,
+  "text": "Caught... in the light."
+ },
+ "cv_hale_pick": {
+  "file": "cv_hale_pick.mp3",
+  "kind": "voice",
+  "vol": 0.85,
+  "text": "The hunt begins in silence."
+ },
+ "cv_hale_ult": {
+  "file": "cv_hale_ult.mp3",
+  "kind": "voice",
+  "vol": 0.85,
+  "text": "Feel winter's bite!"
+ },
+ "cv_hale_kill": {
+  "file": "cv_hale_kill.mp3",
+  "kind": "voice",
+  "vol": 0.85,
+  "text": "Clean shot."
+ },
+ "cv_hale_death": {
+  "file": "cv_hale_death.mp3",
+  "kind": "voice",
+  "vol": 0.85,
+  "text": "The cold... takes me."
+ },
+ "cv_thorne_pick": {
+  "file": "cv_thorne_pick.mp3",
+  "kind": "voice",
+  "vol": 0.85,
+  "text": "Iron does not bend."
+ },
+ "cv_thorne_ult": {
+  "file": "cv_thorne_ult.mp3",
+  "kind": "voice",
+  "vol": 0.85,
+  "text": "Your execution is now!"
+ },
+ "cv_thorne_kill": {
+  "file": "cv_thorne_kill.mp3",
+  "kind": "voice",
+  "vol": 0.85,
+  "text": "Bleed for me."
+ },
+ "cv_thorne_death": {
+  "file": "cv_thorne_death.mp3",
+  "kind": "voice",
+  "vol": 0.85,
+  "text": "Even iron... breaks."
+ },
+ "cv_mira_pick": {
+  "file": "cv_mira_pick.mp3",
+  "kind": "voice",
+  "vol": 0.85,
+  "text": "The moon watches over us."
+ },
+ "cv_mira_ult": {
+  "file": "cv_mira_ult.mp3",
+  "kind": "voice",
+  "vol": 0.85,
+  "text": "Hear the lunar hymn!"
+ },
+ "cv_mira_kill": {
+  "file": "cv_mira_kill.mp3",
+  "kind": "voice",
+  "vol": 0.85,
+  "text": "Rest beneath the stars."
+ },
+ "cv_mira_death": {
+  "file": "cv_mira_death.mp3",
+  "kind": "voice",
+  "vol": 0.85,
+  "text": "The moon... dims."
+ },
+ "cv_zarak_pick": {
+  "file": "cv_zarak_pick.mp3",
+  "kind": "voice",
+  "vol": 0.85,
+  "text": "Let's light this place up!"
+ },
+ "cv_zarak_ult": {
+  "file": "cv_zarak_ult.mp3",
+  "kind": "voice",
+  "vol": 0.85,
+  "text": "Meteor, incoming!"
+ },
+ "cv_zarak_kill": {
+  "file": "cv_zarak_kill.mp3",
+  "kind": "voice",
+  "vol": 0.85,
+  "text": "Too hot to handle!"
+ },
+ "cv_zarak_death": {
+  "file": "cv_zarak_death.mp3",
+  "kind": "voice",
+  "vol": 0.85,
+  "text": "Aw... burned out."
+ },
+ "cv_nyra_pick": {
+  "file": "cv_nyra_pick.mp3",
+  "kind": "voice",
+  "vol": 0.85,
+  "text": "Badge on. Safety off."
+ },
+ "cv_nyra_ult": {
+  "file": "cv_nyra_ult.mp3",
+  "kind": "voice",
+  "vol": 0.85,
+  "text": "Dead eye. Dead you."
+ },
+ "cv_nyra_kill": {
+  "file": "cv_nyra_kill.mp3",
+  "kind": "voice",
+  "vol": 0.85,
+  "text": "Bounty collected."
+ },
+ "cv_nyra_death": {
+  "file": "cv_nyra_death.mp3",
+  "kind": "voice",
+  "vol": 0.85,
+  "text": "Should've seen that coming."
+ },
+ "cv_brakka_pick": {
+  "file": "cv_brakka_pick.mp3",
+  "kind": "voice",
+  "vol": 0.85,
+  "text": "The herd charges as one!"
+ },
+ "cv_brakka_ult": {
+  "file": "cv_brakka_ult.mp3",
+  "kind": "voice",
+  "vol": 0.85,
+  "text": "Iron hide! Bring it on!"
+ },
+ "cv_brakka_kill": {
+  "file": "cv_brakka_kill.mp3",
+  "kind": "voice",
+  "vol": 0.85,
+  "text": "Trampled!"
+ },
+ "cv_brakka_death": {
+  "file": "cv_brakka_death.mp3",
+  "kind": "voice",
+  "vol": 0.85,
+  "text": "The herd... will remember."
+ },
+ "cv_rook_pick": {
+  "file": "cv_rook_pick.mp3",
+  "kind": "voice",
+  "vol": 0.85,
+  "text": "The storm answers my call."
+ },
+ "cv_rook_ult": {
+  "file": "cv_rook_ult.mp3",
+  "kind": "voice",
+  "vol": 0.85,
+  "text": "Tempest, rage!"
+ },
+ "cv_rook_kill": {
+  "file": "cv_rook_kill.mp3",
+  "kind": "voice",
+  "vol": 0.85,
+  "text": "Swept away."
+ },
+ "cv_rook_death": {
+  "file": "cv_rook_death.mp3",
+  "kind": "voice",
+  "vol": 0.85,
+  "text": "The storm... passes."
  }
 }
