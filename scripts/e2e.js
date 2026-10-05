@@ -20,7 +20,7 @@ const log = msg => console.log(`  ✓ ${msg}`);
 
 async function newPage(label, opts = {}) {
   const ctx = await browser.newContext({ viewport: { width: 1100, height: 680 }, ...opts });
-  await ctx.addInitScript(() => localStorage.setItem('broadroads_settings', JSON.stringify({ quality: 'low', volume: 0, showFps: false })));
+  await ctx.addInitScript(() => localStorage.setItem('broadroads_settings', JSON.stringify({ quality: 'low', volume: 0, showFps: false, models: false })));
   const page = await ctx.newPage();
   page.on('pageerror', e => errors.push(`[${label}] ${e.message}`));
   page.on('console', m => { if (m.type() === 'error' && !/favicon|fonts\.g/.test(m.text())) errors.push(`[${label}] ${m.text()}`); });
@@ -87,8 +87,9 @@ try {
   }
   await shot(a, 'select');
   for (const p of [a, b]) await p.click('.sel-center .btn-primary');
-  await waitFor(a, (app, g) => g && g.world.me);
-  await waitFor(b, (app, g) => g && g.world.me);
+  // Two software-rendered browsers share one GPU process here; match setup can take a while.
+  await waitFor(a, (app, g) => g && g.world.me, null, 90000);
+  await waitFor(b, (app, g) => g && g.world.me, null, 90000);
   const ids = [await evalIn(a, (app, g) => g.match.id), await evalIn(b, (app, g) => g.match.id)];
   if (ids[0] !== ids[1]) throw new Error('players are in different matches');
   log('champion select locked in; both players loaded into the same match');

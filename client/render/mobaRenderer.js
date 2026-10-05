@@ -1,9 +1,9 @@
 /* Three.js scene for a MOBA match: terrain, entities, fog of war, FX, camera. */
 import * as THREE from 'three';
-import { buildValley, TEAM_HEX } from './valley.js';
+import { buildValley, upgradeValley, TEAM_HEX } from './valley.js';
 import { buildChampion, buildMinion, buildTower, buildSpire, buildCore, buildWard, buildTrap, buildMobaMonster, buildMobaProjectile, buildMobaArea } from './mobaModels.js';
 import { FxSystem } from './fx.js';
-import { loadChampModel, attachChampModel, animateChamp } from './champModels.js';
+import { loadModel, assetFor, attachModel, animateModel, animateDying } from './assetModels.js';
 import { F } from '../../shared/constants.js';
 
 const SIGHT = { hero: 11, minion: 7, tower: 9.5, ward: 8, spire: 7, core: 8 };
@@ -76,6 +76,7 @@ export class MobaRenderer {
     this.champInfo = champInfo;
     this.terrain = buildValley(valley, this.quality);
     this.scene.add(this.terrain.group);
+    upgradeValley(this.terrain, valley, loadModel);
     // Fog of war overlay above the terrain.
     this.fogCanvas = document.createElement('canvas');
     this.fogCanvas.width = valley.size; this.fogCanvas.height = valley.size;
@@ -132,11 +133,8 @@ export class MobaRenderer {
     if (e.kind === 'area' && e.s.startsWith('beam:')) built.root.rotation.y = -e.f + Math.PI / 2;
     this.scene.add(built.root);
     this.views.set(e.id, v);
-    if (e.kind === 'hero') {
-      loadChampModel(e.c).then(gltf => {
-        if (gltf && this.views.get(e.id) === v) attachChampModel(v, gltf, 1.9 * (built.parts.body.scale.x / 1.15));
-      });
-    }
+    const asset = assetFor(e, e.kind === 'hero' ? 1.9 * (built.parts.body.scale.x / 1.15) : 0);
+    if (asset) loadModel(asset[0]).then(gltf => { if (gltf && this.views.get(e.id) === v) attachModel(v, gltf, asset[1]); });
   }
 
   champColorFromStyle(style) {
@@ -167,20 +165,8 @@ export class MobaRenderer {
         case 'hero': case 'minion': case 'monster': {
           root.position.set(e.x, (e.fl & F.AIRBORNE) ? 0.8 + Math.sin(v.phase * 8) * 0.1 : 0, e.y);
           root.rotation.y = Math.PI / 2 - e.f;
-          const body = v.parts.body;
-          if (v.anim) animateChamp(v, dead, e.moving > 0.2, dt, now);
-          else if (body) {
-            body.rotation.x = THREE.MathUtils.lerp(body.rotation.x, dead ? -Math.PI / 2 : 0, dt * 8);
-            if (!dead) body.position.y = e.moving > 0.2 ? Math.abs(Math.sin(v.phase * 11)) * 0.08 : 0;
-          }
-          if (v.parts.legs) v.parts.legs.forEach((l, i) => { l.rotation.x = e.moving > 0.2 ? Math.sin(v.phase * 10 + i * Math.PI) * 0.5 : 0; });
-          if (v.parts.wings) { const a = Math.sin(v.phase * (e.kind === 'monster' && e.md === 'wyrm' ? 4 : 20)) * 0.6; v.parts.wings[0].rotation.y = a; v.parts.wings[1].rotation.y = -a; }
-          if (v.parts.spin) v.parts.spin.rotation.y += dt * 1.5;
-          if (v.parts.handR) {
-            if (v.attackT > 0) { v.attackT = Math.max(0, v.attackT - dt * 5); v.parts.handR.rotation.y = -Math.sin(v.attackT * Math.PI) * 1.6; }
-            else v.parts.handR.rotation.y = THREE.MathUtils.lerp(v.parts.handR.rotation.y, 0, dt * 10);
-          }
-          if (v.parts.arm && v.attackT > 0) { v.attackT = Math.max(0, v.attackT - dt * 4); v.parts.arm.rotation.x = -Math.sin(v.attackT * Math.PI) * 1.4; }
+          if (v.model) animateModel(v, e, dead, e.moving > 0.2, dt, now);
+          else this.animateProcedural(v, e, dead, dt);
           if (v.parts.ring) { v.parts.ring.material.opacity = dead ? 0.15 : 0.75; v.parts.ring.visible = !(e.fl & F.BUSH) || e.tm === this.team; }
           this.status(v, e, now);
           // Allies in a bush render translucent (stealthed) for their own team.
@@ -228,10 +214,32 @@ export class MobaRenderer {
     for (let i = this.dying.length - 1; i >= 0; i--) {
       const d = this.dying[i];
       d.t += dt;
+      if (animateDying(d.view, dt)) {
+        // Rigged units play their death clip, then sink.
+        if (d.t > 0.9) d.view.root.position.y -= dt * 1.5;
+        if (d.t < 1.6) continue;
+        this.disposeView(d.view); this.dying.splice(i, 1); continue;
+      }
       d.view.root.position.y -= dt;
       d.view.root.scale.multiplyScalar(1 - dt * 0.9);
       if (d.t > 0.9) { this.disposeView(d.view); this.dying.splice(i, 1); }
     }
+  }
+
+  animateProcedural(v, e, dead, dt) {
+    const body = v.parts.body;
+    if (body) {
+      body.rotation.x = THREE.MathUtils.lerp(body.rotation.x, dead ? -Math.PI / 2 : 0, dt * 8);
+      if (!dead) body.position.y = e.moving > 0.2 ? Math.abs(Math.sin(v.phase * 11)) * 0.08 : 0;
+    }
+    if (v.parts.legs) v.parts.legs.forEach((l, i) => { l.rotation.x = e.moving > 0.2 ? Math.sin(v.phase * 10 + i * Math.PI) * 0.5 : 0; });
+    if (v.parts.wings) { const a = Math.sin(v.phase * (e.kind === 'monster' && e.md === 'wyrm' ? 4 : 20)) * 0.6; v.parts.wings[0].rotation.y = a; v.parts.wings[1].rotation.y = -a; }
+    if (v.parts.spin) v.parts.spin.rotation.y += dt * 1.5;
+    if (v.parts.handR) {
+      if (v.attackT > 0) { v.attackT = Math.max(0, v.attackT - dt * 5); v.parts.handR.rotation.y = -Math.sin(v.attackT * Math.PI) * 1.6; }
+      else v.parts.handR.rotation.y = THREE.MathUtils.lerp(v.parts.handR.rotation.y, 0, dt * 10);
+    }
+    if (v.parts.arm && v.attackT > 0) { v.attackT = Math.max(0, v.attackT - dt * 4); v.parts.arm.rotation.x = -Math.sin(v.attackT * Math.PI) * 1.4; }
   }
 
   status(v, e, now) {
@@ -380,7 +388,7 @@ export class MobaRenderer {
     this.camera.lookAt(this.camTarget.x + sx, 0, this.camTarget.z + sy);
     this.sun.position.set(this.camTarget.x - 12, 30, this.camTarget.z + 10);
     this.sun.target.position.copy(this.camTarget);
-    if (this.terrain) this.terrain.waterMat.emissiveIntensity = 0.8 + Math.sin(this.time * 1.5) * 0.25;
+    if (this.terrain) this.terrain.water.uniforms.uTime.value = this.time;
     if (this.moveMarkerT > 0) { this.moveMarkerT -= dt; this.moveMarker.scale.setScalar(1 + (0.5 - this.moveMarkerT)); this.moveMarker.material.opacity = this.moveMarkerT * 2; if (this.moveMarkerT <= 0) this.moveMarker.visible = false; }
     this.update(world, dt);
     this.updateFog(world, dt);

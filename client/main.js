@@ -2,6 +2,7 @@
 import { api, checkServer, OnlineConnection } from './net/connection.js';
 import { OfflineConnection, offlineProfileName } from './net/offline.js';
 import { MobaRenderer } from './render/mobaRenderer.js';
+import { setModelsEnabled } from './render/assetModels.js';
 import { Game } from './game/game.js';
 import { Lobby } from './ui/lobby.js';
 import { Select } from './ui/select.js';
@@ -29,7 +30,7 @@ class App {
   }
 
   loadSettings() {
-    const d = { quality: matchMedia('(pointer: coarse)').matches ? 'low' : 'medium', volume: 0.6, musicVolume: 0.4, showFps: false, cameraLock: true, difficulty: 'normal' };
+    const d = { quality: matchMedia('(pointer: coarse)').matches ? 'low' : 'medium', volume: 0.6, musicVolume: 0.4, showFps: false, cameraLock: true, difficulty: 'normal', models: true };
     try { return { ...d, ...JSON.parse(localStorage.getItem('broadroads_settings') || '{}') }; } catch { return d; }
   }
   saveSettings() { try { localStorage.setItem('broadroads_settings', JSON.stringify(this.settings)); } catch { /* ignore */ } }
@@ -152,6 +153,7 @@ class App {
       try { this.renderer = new MobaRenderer($('#game-canvas'), this.settings.quality); } catch (err) { console.error(err); this.ui.toast('WebGL is not available in this browser.', 'bad'); return; }
       window.addEventListener('resize', () => this.renderer.resize());
     }
+    setModelsEnabled(this.settings.models !== false);
     this.show('game');
     this.game = new Game({ app: this, renderer: this.renderer, settings: this.settings, ui: this.ui, data: this.data, match: m });
     this.game.start();

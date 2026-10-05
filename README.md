@@ -97,19 +97,32 @@ The client (`client/audio/sfx.js`):
 - crossfades music and ambience;
 - has master and music volume controls in Settings.
 
-## 🧍 3D champion models (Tripo3D)
+## 🧍 3D models (Tripo3D)
 
-`scripts/generate-champions.mjs` creates rigged, animated champions with the [Tripo3D](https://developers.tripo3d.ai) v3 API.
-For each champion it runs text-to-model, rig-check and rig (biped), then one retarget per clip: idle, run, attack, cast and death.
-That costs about 95 credits per champion. The script saves its progress, so reruns resume without paying twice.
-`scripts/build-models.mjs` then merges the clips into one ~1 MB GLB per champion in `public/models/`, with WebP textures and meshopt compression.
-In game, champions without a model keep their procedural look.
+Every unit, building and tree is a 3D model generated with the [Tripo3D](https://developers.tripo3d.ai) v3 API.
+The 46 assets are listed with their prompts in `scripts/model-catalog.mjs`:
+
+| Group | Assets | Animation |
+| --- | --- | --- |
+| Champions | all 10 | rigged: idle, run, attack, cast, death |
+| Minions | melee, caster, juggernaut (one per team) | rigged: walk, attack, death |
+| | siege cart (one per team) | static |
+| Jungle | Mossback Golem, Ironhide Brute, Stonehulk, Abyss Titan | rigged: idle, walk, attack, death |
+| | Howler (wolf), Ember Wyrm, Duskwing (bat), Bogtoad | static with procedural stride, hover or hop |
+| Structures | towers, Spires, Cores, fountains (one per team) | static |
+| Environment | pine, oak and fir trees, grass bushes | static, instanced across the map |
+
+Terrain and water are procedural: a painted ground texture baked from the map, and an animated river shader with depth tint, ripples and foam.
 
 ```bash
-TRIPO_API_KEY=your_key node scripts/generate-champions.mjs --dry-run   # show balance and cost
-TRIPO_API_KEY=your_key node scripts/generate-champions.mjs garrok      # one champion
-node scripts/build-models.mjs                                         # merge + compress into public/models
+TRIPO_API_KEY=your_key node scripts/generate-models.mjs --dry-run          # balance and cost per asset
+TRIPO_API_KEY=your_key node scripts/generate-models.mjs minion tree_oak    # by group or id
+node scripts/build-models.mjs                                             # pack into public/models
 ```
+
+- **Generation** (`generate-models.mjs`): runs text-to-model; for rigged assets, also rig-check, rig, and one retarget per clip. Progress is saved, so reruns resume without paying twice.
+- **Packing** (`build-models.mjs`): merges each asset's clips into one GLB and trims long attack combos to a single strike. It also pins root drift and simplifies meshes to their triangle budget, then compresses everything with WebP textures and meshopt.
+- **In game:** anything without a model keeps its procedural look. Settings has a "Detailed 3D models" toggle for slow devices. Low quality keeps the cheap cone forest.
 
 API credits are bought in the Tripo platform console. They are separate from Tripo Studio subscriptions.
 

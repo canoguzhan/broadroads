@@ -1,6 +1,7 @@
 {
  "garrok": {
   "file": "garrok.glb",
+  "group": "champion",
   "clips": [
    "death",
    "run",
@@ -8,10 +9,11 @@
    "attack",
    "cast"
   ],
-  "v": "muuc5gyi"
+  "v": "muuhn297"
  },
  "lyra": {
   "file": "lyra.glb",
+  "group": "champion",
   "clips": [
    "idle",
    "run",
@@ -19,10 +21,11 @@
    "cast",
    "death"
   ],
-  "v": "muuc4x2e"
+  "v": "muuhn31t"
  },
  "kaelen": {
   "file": "kaelen.glb",
+  "group": "champion",
   "clips": [
    "idle",
    "run",
@@ -30,10 +33,11 @@
    "cast",
    "death"
   ],
-  "v": "muuc4xv3"
+  "v": "muuhn3rt"
  },
  "hale": {
   "file": "hale.glb",
+  "group": "champion",
   "clips": [
    "idle",
    "run",
@@ -41,10 +45,11 @@
    "death",
    "attack"
   ],
-  "v": "muuc4ynf"
+  "v": "muuhn4id"
  },
  "thorne": {
   "file": "thorne.glb",
+  "group": "champion",
   "clips": [
    "idle",
    "run",
@@ -52,10 +57,11 @@
    "cast",
    "death"
   ],
-  "v": "muuc4ze8"
+  "v": "muuhn573"
  },
  "mira": {
   "file": "mira.glb",
+  "group": "champion",
   "clips": [
    "idle",
    "run",
@@ -63,10 +69,11 @@
    "cast",
    "death"
   ],
-  "v": "muuc5060"
+  "v": "muuhn5wp"
  },
  "zarak": {
   "file": "zarak.glb",
+  "group": "champion",
   "clips": [
    "idle",
    "run",
@@ -74,10 +81,11 @@
    "cast",
    "death"
   ],
-  "v": "muuc50vl"
+  "v": "muuhn6lx"
  },
  "nyra": {
   "file": "nyra.glb",
+  "group": "champion",
   "clips": [
    "idle",
    "run",
@@ -85,10 +93,11 @@
    "death",
    "attack"
   ],
-  "v": "muuc51l1"
+  "v": "muuhn7bh"
  },
  "brakka": {
   "file": "brakka.glb",
+  "group": "champion",
   "clips": [
    "idle",
    "run",
@@ -96,10 +105,11 @@
    "cast",
    "death"
   ],
-  "v": "muuc5hsp"
+  "v": "muuhn827"
  },
  "rook": {
   "file": "rook.glb",
+  "group": "champion",
   "clips": [
    "idle",
    "run",
@@ -107,6 +117,223 @@
    "cast",
    "death"
   ],
-  "v": "muuc532j"
+  "v": "muuhn8th"
+ },
+ "minion_melee_blue": {
+  "file": "minion_melee_blue.glb",
+  "group": "minion",
+  "clips": [
+   "run",
+   "attack",
+   "death"
+  ],
+  "v": "muudlkcj"
+ },
+ "minion_caster_blue": {
+  "file": "minion_caster_blue.glb",
+  "group": "minion",
+  "clips": [
+   "run",
+   "attack",
+   "death"
+  ],
+  "v": "muudlkv5"
+ },
+ "minion_super_blue": {
+  "file": "minion_super_blue.glb",
+  "group": "minion",
+  "clips": [
+   "run",
+   "attack",
+   "death"
+  ],
+  "v": "muudllb4"
+ },
+ "minion_siege_blue": {
+  "file": "minion_siege_blue.glb",
+  "group": "minion",
+  "yaw": 1.5708,
+  "clips": [],
+  "v": "muueslkf"
+ },
+ "minion_melee_red": {
+  "file": "minion_melee_red.glb",
+  "group": "minion",
+  "clips": [
+   "run",
+   "attack",
+   "death"
+  ],
+  "v": "muudlm6u"
+ },
+ "minion_caster_red": {
+  "file": "minion_caster_red.glb",
+  "group": "minion",
+  "clips": [
+   "run",
+   "attack",
+   "death"
+  ],
+  "v": "muudlmmg"
+ },
+ "minion_super_red": {
+  "file": "minion_super_red.glb",
+  "group": "minion",
+  "clips": [
+   "run",
+   "attack",
+   "death"
+  ],
+  "v": "muudln27"
+ },
+ "minion_siege_red": {
+  "file": "minion_siege_red.glb",
+  "group": "minion",
+  "clips": [],
+  "v": "muudlney"
+ },
+ "mob_mossback": {
+  "file": "mob_mossback.glb",
+  "group": "monster",
+  "clips": [
+   "idle",
+   "run",
+   "attack",
+   "death"
+  ],
+  "v": "muudlnw9"
+ },
+ "mob_brute": {
+  "file": "mob_brute.glb",
+  "group": "monster",
+  "clips": [
+   "idle",
+   "run",
+   "attack",
+   "death"
+  ],
+  "v": "muudlofc"
+ },
+ "mob_stonehulk": {
+  "file": "mob_stonehulk.glb",
+  "group": "monster",
+  "clips": [
+   "idle",
+   "run",
+   "attack",
+   "death"
+  ],
+  "v": "muudlow5"
+ },
+ "mob_titan": {
+  "file": "mob_titan.glb",
+  "group": "monster",
+  "clips": [
+   "idle",
+   "run",
+   "attack",
+   "death"
+  ],
+  "v": "muuhn9ib"
+ },
+ "mob_wolf": {
+  "file": "mob_wolf.glb",
+  "group": "monster",
+  "yaw": 3.1416,
+  "clips": [],
+  "v": "muueslz6"
+ },
+ "mob_wyrm": {
+  "file": "mob_wyrm.glb",
+  "group": "monster",
+  "yaw": 0,
+  "clips": [],
+  "v": "muuhna51"
+ },
+ "mob_bat": {
+  "file": "mob_bat.glb",
+  "group": "monster",
+  "yaw": -1.5708,
+  "clips": [],
+  "v": "muuesmwr"
+ },
+ "mob_toad": {
+  "file": "mob_toad.glb",
+  "group": "monster",
+  "yaw": -1.5708,
+  "clips": [],
+  "v": "muuesna0"
+ },
+ "tower_blue": {
+  "file": "tower_blue.glb",
+  "group": "structure",
+  "clips": [],
+  "v": "muuhnatl"
+ },
+ "spire_blue": {
+  "file": "spire_blue.glb",
+  "group": "structure",
+  "clips": [],
+  "v": "muuhnbdx"
+ },
+ "core_blue": {
+  "file": "core_blue.glb",
+  "group": "structure",
+  "clips": [],
+  "v": "muuhnbyn"
+ },
+ "fountain_blue": {
+  "file": "fountain_blue.glb",
+  "group": "structure",
+  "clips": [],
+  "v": "muuhnci7"
+ },
+ "tower_red": {
+  "file": "tower_red.glb",
+  "group": "structure",
+  "clips": [],
+  "v": "muuhnd16"
+ },
+ "spire_red": {
+  "file": "spire_red.glb",
+  "group": "structure",
+  "clips": [],
+  "v": "muuhndmb"
+ },
+ "core_red": {
+  "file": "core_red.glb",
+  "group": "structure",
+  "clips": [],
+  "v": "muuhne7n"
+ },
+ "fountain_red": {
+  "file": "fountain_red.glb",
+  "group": "structure",
+  "clips": [],
+  "v": "muuhnerq"
+ },
+ "tree_pine": {
+  "file": "tree_pine.glb",
+  "group": "prop",
+  "clips": [],
+  "v": "muueogx3"
+ },
+ "tree_oak": {
+  "file": "tree_oak.glb",
+  "group": "prop",
+  "clips": [],
+  "v": "muueoh6c"
+ },
+ "tree_fir": {
+  "file": "tree_fir.glb",
+  "group": "prop",
+  "clips": [],
+  "v": "muueohdk"
+ },
+ "bush": {
+  "file": "bush.glb",
+  "group": "prop",
+  "clips": [],
+  "v": "muueogmx"
  }
 }
