@@ -260,3 +260,18 @@ describe('match rules', () => {
     assert.ok(junglers.every(h => h.cs > 20), 'junglers clear camps');
   });
 });
+
+describe('damage reflection', () => {
+  test('two reflect buffs do not bounce damage back and forth forever', () => {
+    const m = makeMatch(['zarak'], ['borrin']);
+    const z = m.heroes.find(h => h.champ === 'zarak');
+    const b = m.heroes.find(h => h.champ === 'borrin');
+    b.x = z.x + 1; b.y = z.y;
+    CHAMPIONS.zarak.abilities.e.cast(m, z, 1); // Ember Ward: burns whoever damages Zarak
+    CHAMPIONS.borrin.abilities.w.cast(m, b, 1); // Barkskin: thorns against champions
+    const bHp = b.hp + b.shields.reduce((a, s) => a + s.amt, 0);
+    assert.doesNotThrow(() => m.damage(b, z, 40, 'physical', { attack: true }));
+    assert.ok(b.hp + b.shields.reduce((a, s) => a + s.amt, 0) < bHp, 'the attacker takes the reflected damage');
+    assert.doesNotThrow(() => m.damage(z, b, 40, 'physical', { attack: true }));
+  });
+});

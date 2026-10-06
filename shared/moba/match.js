@@ -402,7 +402,7 @@ export class Match {
       tgt.recall = null;
       if (hero) tgt.lastHitBy.set(hero.id, this.time);
       if (hero && src.kind === 'hero') hero.callHelpT = this.time;
-      for (const b of tgt.buffs) if (b.onDamaged) b.onDamaged(src);
+      for (const b of tgt.buffs) if (b.onDamaged && !opts.reflect) b.onDamaged(src, opts); // reflected damage is never reflected again (two reflect buffs would ping-pong forever)
       if (opts.attack && tgt.stats.thorns && src && src.kind === 'hero' && !opts.reflect) this.damage(tgt, src, 15 + tgt.stats.armor * 0.12, 'magic', { reflect: true });
     }
     if (hero) {

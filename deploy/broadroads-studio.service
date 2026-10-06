@@ -1,0 +1,40 @@
+# The social studio (social.broadroads.com): admin-only page that renders highlight videos
+# and Shorts from simulated matches and uploads them to YouTube. Runs beside the game server
+# at low CPU/IO priority so live matches always come first. Set up with deploy/studio-setup.sh.
+[Unit]
+Description=BroadRoads social studio
+After=network-online.target broadroads.service
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=broadroads
+WorkingDirectory=/opt/broadroads
+# Game env (ADMIN_TOKEN, TOKEN_SECRET) plus the studio's own keys (ELEVENLABS_API_KEY, YOUTUBE_*).
+EnvironmentFile=/opt/broadroads/.env
+EnvironmentFile=-/etc/broadroads/studio.env
+Environment=NODE_ENV=production
+Environment=STUDIO_DIR=/var/lib/broadroads-studio
+Environment=STUDIO_TOOLS=/opt/broadroads-studio-tools
+Environment=PLAYWRIGHT_BROWSERS_PATH=/opt/broadroads-studio-tools/browsers
+ExecStart=/usr/bin/node server/studio/index.js
+Restart=always
+RestartSec=5
+TimeoutStopSec=15
+# Videos and voice clips live here (kept out of the game's nightly data backup).
+StateDirectory=broadroads-studio
+StateDirectoryMode=0750
+# Rendering is heavy: lowest priority, capped memory, first to go if memory runs out.
+Nice=19
+CPUWeight=10
+IOWeight=10
+MemoryHigh=3G
+MemoryMax=4G
+OOMScoreAdjust=900
+NoNewPrivileges=true
+ProtectSystem=full
+ProtectHome=true
+PrivateTmp=true
+
+[Install]
+WantedBy=multi-user.target
