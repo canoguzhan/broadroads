@@ -1,0 +1,85 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<title>BroadRoads Dev Console</title>
+<link rel="stylesheet" href="/app.css">
+<script src="/app.js" defer></script>
+</head>
+<body>
+<header>
+  <h1>BroadRoads <span>Dev Console</span></h1>
+  <span id="status" class="pill">loading…</span>
+  <span id="updated" class="muted"></span>
+  <span class="spacer"></span>
+  <label class="muted"><input type="checkbox" id="auto" checked> auto-refresh</label>
+  <button type="button" id="refresh">Refresh</button>
+  <form method="post" action="/logout"><button type="submit">Sign out</button></form>
+</header>
+<nav>
+  <a href="#overview">Overview</a><a href="#services">Services</a><a href="#api">API</a><a href="#websocket">WebSocket</a>
+  <a href="#game">Game</a><a href="#database">Database</a><a href="#ops">Storage &amp; ops</a><a href="#analytics">Analytics</a>
+  <a href="#settings">Settings</a><a href="#errors">Errors</a><a href="#security">Access log</a>
+</nav>
+<main>
+  <section id="overview"><h2>Overview</h2><div class="tiles" id="tiles"></div></section>
+
+  <section id="services"><h2>Services</h2>
+    <div id="services-table"></div>
+    <h3>Integrations</h3><div id="integrations"></div>
+    <h3>TLS certificates</h3><div id="certs"></div>
+  </section>
+
+  <section id="api"><h2>API</h2>
+    <p class="muted" id="api-note"></p>
+    <figure><figcaption>Requests per minute, last hour</figcaption><div class="chart" id="chart-req"></div></figure>
+    <h3>Endpoints</h3><div id="api-table"></div>
+    <h3>Other traffic</h3><div id="api-other"></div>
+    <h3>Status codes</h3><div id="api-status"></div>
+  </section>
+
+  <section id="websocket"><h2>WebSocket gateway</h2><div class="tiles" id="ws-tiles"></div>
+    <figure><figcaption>WebSocket messages sent per minute, last hour</figcaption><div class="chart" id="chart-ws"></div></figure>
+    <h3>Close codes</h3><div id="ws-close"></div>
+  </section>
+
+  <section id="game"><h2>Game hub</h2><div class="tiles" id="game-tiles"></div>
+    <h3>Live matches</h3><div id="matches"></div>
+    <h3>Effective game config</h3><div id="hub-config"></div>
+  </section>
+
+  <section id="database"><h2>Database</h2><div class="tiles" id="db-tiles"></div><div id="db-tables"></div></section>
+
+  <section id="ops"><h2>Storage &amp; ops</h2>
+    <div class="tiles" id="ops-tiles"></div>
+    <div class="cols"><div><h3>Latest backup</h3><div id="backup"></div></div><div><h3>Recent deploys</h3><div id="deploys"></div></div></div>
+  </section>
+
+  <section id="analytics"><h2>Analytics (30 days)</h2>
+    <div class="cols">
+      <figure><figcaption>Daily unique players</figcaption><div class="chart" id="chart-players"></div></figure>
+      <figure><figcaption>Matches per day</figcaption><div class="chart" id="chart-matches"></div></figure>
+    </div>
+    <h3>Player funnel</h3><div id="funnel"></div>
+    <h3>Champion balance</h3><p class="muted">Win rate counts all games; “Human WR” only games played by people.</p><div id="champs"></div>
+    <div class="cols"><div><h3>Items</h3><div id="items"></div></div><div><h3>Keystones</h3><div id="keystones"></div></div></div>
+  </section>
+
+  <section id="settings"><h2>Settings</h2>
+    <p class="muted">Secrets are never sent to this page: they show as set / not set, URLs only by host.</p>
+    <div class="cols"><div><h3>Effective server config</h3><div id="effective"></div></div><div><h3>Environment</h3><div id="env"></div></div></div>
+  </section>
+
+  <section id="errors"><h2>Errors &amp; reports</h2>
+    <h3>Server errors</h3><div id="err-server"></div>
+    <h3>Client errors</h3><div id="err-client"></div>
+    <h3>Player reports</h3><div id="reports"></div>
+  </section>
+
+  <section id="security"><h2>Dev console access log</h2><div id="access"></div></section>
+</main>
+<div id="tip" role="tooltip" hidden></div>
+</body>
+</html>

@@ -6,6 +6,8 @@ import { encodeSnapshot } from '../shared/protocol.js';
 import { CHAMPION_IDS, championInfo } from '../shared/moba/champions.js';
 import { ITEMS, SPELLS, SECOND_SPELLS } from '../shared/moba/items.js';
 import { Monitor } from './monitor.js';
+import { devConsole, API_CATALOG } from './devconsole.js';
+import { Usage, routeKey } from './usage.js';
 import { fileReplays } from './replays.js';
 import fs from 'node:fs';
 import path from 'node:path';
@@ -127,6 +129,10 @@ export async function startServer(overrides = {}) {
   hub.onTick = ms => monitor.noteTick(ms);
   hub.start();
   monitor.started();
+  const usage = new Usage();
+  const knownApi = new Set(API_CATALOG.map(r => r.path));
+  let wss = null;
+  const dev = devConsole({ cfg, root: ROOT, hub, store, monitor, analytics, usage, reports, wsClients: () => wss.clients.size, secret, log, clientIp });
   const adminPage = fs.readFileSync(path.join(path.dirname(fileURLToPath(import.meta.url)), 'admin.html'));
   const safeEqual = (a, b) => { const x = Buffer.from(String(a)), y = Buffer.from(String(b)); return x.length === y.length && crypto.timingSafeEqual(x, y); };
 
@@ -214,9 +220,15 @@ export async function startServer(overrides = {}) {
   }
 
   const server = http.createServer(async (req, res) => {
+    const t0 = performance.now(), sent0 = req.socket.bytesWritten;
     try {
       const url = new URL(req.url, 'http://localhost');
       const p = url.pathname;
+      if (dev.owns(req)) {
+        res.on('finish', () => usage.http(req.method, `dev console`, res.statusCode, performance.now() - t0, req.socket.bytesWritten - sent0));
+        return await dev.handle(req, res, url);
+      }
+      res.on('finish', () => usage.http(req.method, routeKey(p, knownApi), res.statusCode, performance.now() - t0, req.socket.bytesWritten - sent0));
       const rp = /^\/replays\/([a-z0-9]+)\.ndjson$/.exec(p);
       if (rp) {
         const file = replays.file(rp[1]);
@@ -286,11 +298,12 @@ export async function startServer(overrides = {}) {
   });
 
   // permessage-deflate: ~55% smaller frames; context takeover keeps the dictionary between snapshots.
-  const wss = new WebSocketServer({ noServer: true, maxPayload: 8 * 1024, perMessageDeflate: { threshold: 128, zlibDeflateOptions: { level: 4, memLevel: 7 }, concurrencyLimit: 4 } });
+  wss = new WebSocketServer({ noServer: true, maxPayload: 8 * 1024, perMessageDeflate: { threshold: 128, zlibDeflateOptions: { level: 4, memLevel: 7 }, concurrencyLimit: 4 } });
   server.on('upgrade', (req, socket, head) => {
     const url = new URL(req.url, 'http://localhost');
     const origin = req.headers.origin;
-    if (url.pathname !== '/ws' || (origin && !cfg.allowedOrigins.includes(origin) && !sameHost(origin, req.headers.host))) {
+    if (url.pathname !== '/ws' || dev.owns(req) || (origin && !cfg.allowedOrigins.includes(origin) && !sameHost(origin, req.headers.host))) {
+      usage.ws.refused++;
       socket.write('HTTP/1.1 403 Forbidden\r\n\r\n');
       socket.destroy();
       return;
@@ -303,38 +316,45 @@ export async function startServer(overrides = {}) {
     let msgCount = 0;
     let windowStart = Date.now();
     ws.isAlive = true;
+    usage.ws.opened++;
     ws.on('pong', () => { ws.isAlive = true; });
     // Snapshots go out as compact binary frames; everything else as JSON text.
     const send = msg => {
       if (ws.readyState !== 1) return;
-      if (ws.bufferedAmount > 512 * 1024 && msg.t === 's' && !msg.fx) return; // slow link: skip a movement frame rather than queue it
-      ws.send(msg.t === 's' ? encodeSnapshot(msg) : JSON.stringify(msg));
+      // A slow link skips a movement frame rather than queueing it.
+      if (ws.bufferedAmount > 512 * 1024 && msg.t === 's' && !msg.fx) { usage.ws.skipped++; return; }
+      const data = msg.t === 's' ? encodeSnapshot(msg) : JSON.stringify(msg);
+      usage.wsMessageOut(data.length);
+      ws.send(data);
     };
     const authTimer = setTimeout(() => { if (!session) ws.close(4001, 'auth timeout'); }, 10000);
 
     ws.on('message', async raw => {
       const now = Date.now();
       if (now - windowStart > 1000) { windowStart = now; msgCount = 0; }
-      if (++msgCount > 120) return; // drop floods
+      usage.wsMessageIn(raw.length);
+      if (++msgCount > 120) { usage.ws.flooded++; return; } // drop floods
       let msg;
       try { msg = JSON.parse(raw); } catch { return; }
       if (!session) {
         if (msg.t !== 'auth' || session === undefined) return;
         const tok = verifyToken(secret, msg.token);
-        if (!tok) { send({ t: 'authFail', error: 'Session expired. Please log in again.' }); ws.close(4003, 'bad token'); return; }
+        if (!tok) { usage.ws.authFailed++; send({ t: 'authFail', error: 'Session expired. Please log in again.' }); ws.close(4003, 'bad token'); return; }
         if (hub.isFull() && !hub.byAccount.has(tok.a) && !hub.activeByAccount.has(tok.a)) { ws.close(4005, 'server full'); return; } // players in a match can always come back
         clearTimeout(authTimer);
         session = undefined; // authenticating
         const s = await hub.connect({ accountId: tok.a, name: tok.n, send, meta: { ip: clientIp(req) } });
         s.close = () => ws.close(4000, 'replaced');
         session = s;
+        usage.ws.authed++;
         if (ws.readyState !== 1) hub.disconnect(s);
         return;
       }
       try { hub.handle(session, msg); } catch (err) { log.error('handle error', msg && msg.t, err); }
     });
 
-    ws.on('close', () => {
+    ws.on('close', code => {
+      usage.wsClosed(code);
       clearTimeout(authTimer);
       if (session) hub.disconnect(session);
     });
@@ -368,7 +388,7 @@ export async function startServer(overrides = {}) {
     analytics.flush();
   }
 
-  return { server, hub, store, stop, port: address.port, config: cfg, monitor };
+  return { server, hub, store, stop, port: address.port, config: cfg, monitor, usage };
 }
 
 function sameHost(origin, host) {
