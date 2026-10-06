@@ -1,7 +1,7 @@
 /* Browser notifications while the tab is in the background: match found,
    party invites, friend requests, friends coming online, whispers.
    Permission is asked once, the first time the player queues for a game. */
-const ICON = '/portraits/garrok.webp';
+const ICON = '/icon-192.png';
 const supported = () => typeof Notification !== 'undefined';
 
 export const notifyPermission = () => (supported() ? Notification.permission : 'unsupported');

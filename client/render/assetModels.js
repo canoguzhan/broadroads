@@ -22,6 +22,9 @@ let enabled = true;
 /** Settings toggle: when off, everything keeps its lightweight procedural look. */
 export function setModelsEnabled(on) { enabled = on; }
 export const modelsEnabled = () => enabled;
+let lowDetail = false;
+/** Phones and Low quality load the lighter `.lo.glb` twins. */
+export function setLowDetail(on) { lowDetail = on; }
 
 function getManifest() {
   if (!manifest) manifest = fetch(`${BASE}manifest.json`).then(r => (r.ok ? r.json() : {})).catch(() => ({}));
@@ -35,7 +38,7 @@ export function loadModel(id) {
     cache.set(id, getManifest().then(m => {
       const entry = m[id];
       if (!entry) return null;
-      return new Promise(resolve => loader.load(`${BASE}${entry.file}?v=${entry.v}`, g => { g.userData.yaw = entry.yaw; resolve(g); }, undefined, err => { console.warn(`model ${id}:`, err.message || err); resolve(null); }));
+      return new Promise(resolve => loader.load(`${BASE}${lowDetail && entry.lo ? entry.lo : entry.file}?v=${entry.v}`, g => { g.userData.yaw = entry.yaw; resolve(g); }, undefined, err => { console.warn(`model ${id}:`, err.message || err); resolve(null); }));
     }));
   }
   return cache.get(id);

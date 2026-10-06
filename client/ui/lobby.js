@@ -31,6 +31,7 @@ export class Lobby {
     const nav = h('nav.lob-nav', {}, ...[['play', 'Play'], ['champions', 'Champions'], ['leaderboard', 'Leaderboard'], ['profile', 'Profile']].map(([id, label]) =>
       h(`button.lob-tab${this.tab === id ? '.active' : ''}`, { dataset: { tab: id }, onclick: () => this.setTab(id) }, label)));
     this.header = h('header.lob-header', {}, h('div.lob-brand', {}, h('span', { text: '⚔️' }), h('b', { text: 'BROADROADS' })), nav, this.profileChip,
+      h('button.btn.btn-sm.install-btn', { type: 'button', hidden: true, title: 'Install BroadRoads as an app' }, '📲 Install'),
       h('button.btn.btn-sm', { onclick: () => app.logout() }, app.offline ? 'Exit' : 'Log out'));
     this.playPanel = h('div.lob-play');
     this.center = h('div.lob-center');
@@ -43,6 +44,7 @@ export class Lobby {
     this.renderPlay();
     this.renderCenter();
     this.renderParty();
+    app.syncInstall?.();
   }
 
   setTab(t) {

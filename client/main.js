@@ -2,11 +2,12 @@
 import { api, checkServer, OnlineConnection } from './net/connection.js';
 import { OfflineConnection, offlineProfileName } from './net/offline.js';
 import { MobaRenderer } from './render/mobaRenderer.js';
-import { setModelsEnabled } from './render/assetModels.js';
+import { setModelsEnabled, setLowDetail } from './render/assetModels.js';
 import { iconsReady } from './ui/icons.js';
 import './net/report.js';
 import { ReplayPlayer } from './game/spectate.js';
 import { notify, askNotifyPermission } from './ui/notify.js';
+import { initPwa, canInstall, onInstallChange, promptInstall } from './ui/install.js';
 import { Game } from './game/game.js';
 import { Lobby } from './ui/lobby.js';
 import { Select } from './ui/select.js';
@@ -21,6 +22,7 @@ class App {
   constructor() {
     this.settings = this.loadSettings();
     setModelsEnabled(this.settings.models !== false);
+    setLowDetail(this.settings.quality === 'low' || matchMedia('(pointer: coarse)').matches);
     sfx.setVolume(this.settings.volume);
     sfx.setMusicVolume(this.settings.musicVolume);
     this.ui = new UI();
@@ -32,6 +34,13 @@ class App {
     this.ping = 0;
     this.tab = 'login';
     this.serverInfo = null;
+    initPwa();
+    // Every element with .install-btn shows only while installing is possible.
+    const syncInstall = () => document.querySelectorAll('.install-btn').forEach(b => { b.hidden = !canInstall(); });
+    onInstallChange(syncInstall);
+    document.addEventListener('click', e => { if (e.target.closest?.('.install-btn')) promptInstall(t => this.ui.toast(t, 'info', 8000)); });
+    this.syncInstall = syncInstall;
+    syncInstall();
   }
 
   loadSettings() {

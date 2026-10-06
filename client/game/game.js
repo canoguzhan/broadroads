@@ -5,7 +5,7 @@ import { canRankUp } from '../../shared/moba/champions.js';
 import { SpectatorBar } from './spectate.js';
 import { EmoteWheel, EMOTE_ICON } from './emotes.js';
 import { Tutorial } from './tutorial.js';
-import { setModelsEnabled } from '../render/assetModels.js';
+import { setModelsEnabled, setLowDetail } from '../render/assetModels.js';
 import { Labels } from '../ui/labels.js';
 import { Hud } from '../ui/hud.js';
 import { Panels } from '../ui/panels.js';
@@ -452,6 +452,7 @@ export class Game {
     this.app.saveSettings();
     if (k === 'quality') this.renderer.setQuality(v);
     if (k === 'models') setModelsEnabled(v);
+    if (k === 'quality') setLowDetail(v === 'low' || this.input.isTouch);
     if (k === 'volume') sfx.setVolume(v);
     if (k === 'musicVolume') sfx.setMusicVolume(v);
   }

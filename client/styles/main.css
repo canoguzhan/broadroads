@@ -1082,3 +1082,6 @@ body.is-dead #hud.touch .m-ann { top: auto; bottom: 26%; }
 .acc-linked { color: #4ade80; font-size: .85rem; font-weight: 700; }
 .acc-msg { font-size: .8rem; min-height: 1em; }
 .server-status .label { position: static; text-shadow: none; white-space: normal; will-change: auto; }
+
+.ld-nav-r { display: flex; gap: 8px; align-items: center; }
+.install-btn[hidden] { display: none; }

@@ -107,8 +107,20 @@ for (const [id, s] of Object.entries(state)) {
   );
   const out = path.join(OUT, `${id}.glb`);
   await io.write(out, doc);
+  // Low-detail twin for phones and Low quality: ~35% of the triangles, 256px textures.
+  let lo = null;
+  if (asset.group !== 'prop') {
+    const ld = await io.read(out);
+    await ld.transform(
+      simplify({ simplifier: MeshoptSimplifier, ratio: 0.35, error: 0.05 }),
+      textureCompress({ encoder: sharp, targetFormat: 'webp', resize: [256, 256], quality: 75 }),
+      meshopt({ encoder: MeshoptEncoder, level: 'medium' }),
+    );
+    lo = `${id}.lo.glb`;
+    await io.write(path.join(OUT, lo), ld);
+  }
   const box = root.listMeshes()[0].listPrimitives()[0].getAttribute('POSITION');
-  manifest[id] = { file: `${id}.glb`, group: asset.group, ...(asset.yaw !== undefined ? { yaw: +asset.yaw.toFixed(4) } : {}), clips: root.listAnimations().map(a => a.getName()), v: Date.now().toString(36) };
-  console.log(`✓ ${id}: ${(fs.statSync(out).size / 1048576).toFixed(2)} MB, clips ${manifest[id].clips.join(', ')}, ${box.getCount()} verts`);
+  manifest[id] = { file: `${id}.glb`, ...(lo ? { lo } : {}), group: asset.group, ...(asset.yaw !== undefined ? { yaw: +asset.yaw.toFixed(4) } : {}), clips: root.listAnimations().map(a => a.getName()), v: Date.now().toString(36) };
+  console.log(`✓ ${id}: ${(fs.statSync(out).size / 1048576).toFixed(2)} MB${lo ? ` (low ${(fs.statSync(path.join(OUT, lo)).size / 1048576).toFixed(2)} MB)` : ''}, clips ${manifest[id].clips.join(', ')}, ${box.getCount()} verts`);
 }
 fs.writeFileSync(path.join(OUT, 'manifest.json'), JSON.stringify(manifest, null, 1));

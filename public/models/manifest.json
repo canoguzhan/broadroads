@@ -1,6 +1,7 @@
 {
  "garrok": {
   "file": "garrok.glb",
+  "lo": "garrok.lo.glb",
   "group": "champion",
   "clips": [
    "death",
@@ -13,10 +14,11 @@
    "cheer",
    "laugh"
   ],
-  "v": "muv66ugy"
+  "v": "muvx9aap"
  },
  "lyra": {
   "file": "lyra.glb",
+  "lo": "lyra.lo.glb",
   "group": "champion",
   "clips": [
    "idle",
@@ -29,10 +31,11 @@
    "cheer",
    "laugh"
   ],
-  "v": "muv66vb4"
+  "v": "muvx9bde"
  },
  "kaelen": {
   "file": "kaelen.glb",
+  "lo": "kaelen.lo.glb",
   "group": "champion",
   "clips": [
    "idle",
@@ -45,10 +48,11 @@
    "cheer",
    "laugh"
   ],
-  "v": "muv66w4l"
+  "v": "muvx9cf1"
  },
  "hale": {
   "file": "hale.glb",
+  "lo": "hale.lo.glb",
   "group": "champion",
   "clips": [
    "idle",
@@ -61,10 +65,11 @@
    "cheer",
    "laugh"
   ],
-  "v": "muv66wyn"
+  "v": "muvx9df6"
  },
  "thorne": {
   "file": "thorne.glb",
+  "lo": "thorne.lo.glb",
   "group": "champion",
   "clips": [
    "idle",
@@ -77,10 +82,11 @@
    "cheer",
    "laugh"
   ],
-  "v": "muv66xpx"
+  "v": "muvx9eag"
  },
  "mira": {
   "file": "mira.glb",
+  "lo": "mira.lo.glb",
   "group": "champion",
   "clips": [
    "idle",
@@ -93,10 +99,11 @@
    "cheer",
    "laugh"
   ],
-  "v": "muv66yh7"
+  "v": "muvx9f5y"
  },
  "zarak": {
   "file": "zarak.glb",
+  "lo": "zarak.lo.glb",
   "group": "champion",
   "clips": [
    "idle",
@@ -109,10 +116,11 @@
    "cheer",
    "laugh"
   ],
-  "v": "muv66z77"
+  "v": "muvx9g1g"
  },
  "nyra": {
   "file": "nyra.glb",
+  "lo": "nyra.lo.glb",
   "group": "champion",
   "clips": [
    "idle",
@@ -125,10 +133,11 @@
    "cheer",
    "laugh"
   ],
-  "v": "muv66zwk"
+  "v": "muvx9gzo"
  },
  "brakka": {
   "file": "brakka.glb",
+  "lo": "brakka.lo.glb",
   "group": "champion",
   "clips": [
    "idle",
@@ -141,10 +150,11 @@
    "cheer",
    "laugh"
   ],
-  "v": "muv670m9"
+  "v": "muvx9hx7"
  },
  "rook": {
   "file": "rook.glb",
+  "lo": "rook.lo.glb",
   "group": "champion",
   "clips": [
    "idle",
@@ -157,83 +167,92 @@
    "cheer",
    "laugh"
   ],
-  "v": "muv671ci"
+  "v": "muvx9iv4"
  },
  "minion_melee_blue": {
   "file": "minion_melee_blue.glb",
+  "lo": "minion_melee_blue.lo.glb",
   "group": "minion",
   "clips": [
    "run",
    "attack",
    "death"
   ],
-  "v": "muudlkcj"
+  "v": "muvx9jd2"
  },
  "minion_caster_blue": {
   "file": "minion_caster_blue.glb",
+  "lo": "minion_caster_blue.lo.glb",
   "group": "minion",
   "clips": [
    "run",
    "attack",
    "death"
   ],
-  "v": "muudlkv5"
+  "v": "muvx9jr2"
  },
  "minion_super_blue": {
   "file": "minion_super_blue.glb",
+  "lo": "minion_super_blue.lo.glb",
   "group": "minion",
   "clips": [
    "run",
    "attack",
    "death"
   ],
-  "v": "muudllb4"
+  "v": "muvx9kad"
  },
  "minion_siege_blue": {
   "file": "minion_siege_blue.glb",
+  "lo": "minion_siege_blue.lo.glb",
   "group": "minion",
   "yaw": 1.5708,
   "clips": [],
-  "v": "muueslkf"
+  "v": "muvx9kon"
  },
  "minion_melee_red": {
   "file": "minion_melee_red.glb",
+  "lo": "minion_melee_red.lo.glb",
   "group": "minion",
   "clips": [
    "run",
    "attack",
    "death"
   ],
-  "v": "muudlm6u"
+  "v": "muvx9l5f"
  },
  "minion_caster_red": {
   "file": "minion_caster_red.glb",
+  "lo": "minion_caster_red.lo.glb",
   "group": "minion",
   "clips": [
    "run",
    "attack",
    "death"
   ],
-  "v": "muudlmmg"
+  "v": "muvx9lm0"
  },
  "minion_super_red": {
   "file": "minion_super_red.glb",
+  "lo": "minion_super_red.lo.glb",
   "group": "minion",
   "clips": [
    "run",
    "attack",
    "death"
   ],
-  "v": "muudln27"
+  "v": "muvx9m4h"
  },
  "minion_siege_red": {
   "file": "minion_siege_red.glb",
+  "lo": "minion_siege_red.lo.glb",
   "group": "minion",
   "clips": [],
-  "v": "muudlney"
+  "v": "muvx9mjd"
  },
  "mob_mossback": {
   "file": "mob_mossback.glb",
+  "lo": "mob_mossback.lo.glb",
   "group": "monster",
   "clips": [
    "idle",
@@ -241,10 +260,11 @@
    "attack",
    "death"
   ],
-  "v": "muudlnw9"
+  "v": "muvx9n1g"
  },
  "mob_brute": {
   "file": "mob_brute.glb",
+  "lo": "mob_brute.lo.glb",
   "group": "monster",
   "clips": [
    "idle",
@@ -252,10 +272,11 @@
    "attack",
    "death"
   ],
-  "v": "muudlofc"
+  "v": "muvx9nkt"
  },
  "mob_stonehulk": {
   "file": "mob_stonehulk.glb",
+  "lo": "mob_stonehulk.lo.glb",
   "group": "monster",
   "clips": [
    "idle",
@@ -263,10 +284,11 @@
    "attack",
    "death"
   ],
-  "v": "muudlow5"
+  "v": "muvx9o1s"
  },
  "mob_titan": {
   "file": "mob_titan.glb",
+  "lo": "mob_titan.lo.glb",
   "group": "monster",
   "clips": [
    "idle",
@@ -274,110 +296,123 @@
    "attack",
    "death"
   ],
-  "v": "muuhn9ib"
+  "v": "muvx9osn"
  },
  "mob_wolf": {
   "file": "mob_wolf.glb",
+  "lo": "mob_wolf.lo.glb",
   "group": "monster",
   "yaw": 3.1416,
   "clips": [],
-  "v": "muueslz6"
+  "v": "muvx9p6y"
  },
  "mob_wyrm": {
   "file": "mob_wyrm.glb",
+  "lo": "mob_wyrm.lo.glb",
   "group": "monster",
   "yaw": 0,
   "clips": [],
-  "v": "muuhna51"
+  "v": "muvx9pvg"
  },
  "mob_bat": {
   "file": "mob_bat.glb",
+  "lo": "mob_bat.lo.glb",
   "group": "monster",
   "yaw": -1.5708,
   "clips": [],
-  "v": "muuesmwr"
+  "v": "muvx9q9l"
  },
  "mob_toad": {
   "file": "mob_toad.glb",
+  "lo": "mob_toad.lo.glb",
   "group": "monster",
   "yaw": -1.5708,
   "clips": [],
-  "v": "muuesna0"
+  "v": "muvx9qnl"
  },
  "tower_blue": {
   "file": "tower_blue.glb",
+  "lo": "tower_blue.lo.glb",
   "group": "structure",
   "clips": [],
-  "v": "muuhnatl"
+  "v": "muvx9rbv"
  },
  "spire_blue": {
   "file": "spire_blue.glb",
+  "lo": "spire_blue.lo.glb",
   "group": "structure",
   "clips": [],
-  "v": "muuhnbdx"
+  "v": "muvx9rx9"
  },
  "core_blue": {
   "file": "core_blue.glb",
+  "lo": "core_blue.lo.glb",
   "group": "structure",
   "clips": [],
-  "v": "muuhnbyn"
+  "v": "muvx9sje"
  },
  "fountain_blue": {
   "file": "fountain_blue.glb",
+  "lo": "fountain_blue.lo.glb",
   "group": "structure",
   "clips": [],
-  "v": "muuhnci7"
+  "v": "muvx9t6n"
  },
  "tower_red": {
   "file": "tower_red.glb",
+  "lo": "tower_red.lo.glb",
   "group": "structure",
   "clips": [],
-  "v": "muuhnd16"
+  "v": "muvx9ttm"
  },
  "spire_red": {
   "file": "spire_red.glb",
+  "lo": "spire_red.lo.glb",
   "group": "structure",
   "clips": [],
-  "v": "muuhndmb"
+  "v": "muvx9uim"
  },
  "core_red": {
   "file": "core_red.glb",
+  "lo": "core_red.lo.glb",
   "group": "structure",
   "clips": [],
-  "v": "muuhne7n"
+  "v": "muvx9v7j"
  },
  "fountain_red": {
   "file": "fountain_red.glb",
+  "lo": "fountain_red.lo.glb",
   "group": "structure",
   "clips": [],
-  "v": "muuhnerq"
+  "v": "muvx9vuf"
  },
  "tree_pine": {
   "file": "tree_pine.glb",
   "group": "prop",
   "clips": [],
-  "v": "muueogx3"
+  "v": "muvx9wbx"
  },
  "tree_oak": {
   "file": "tree_oak.glb",
   "group": "prop",
   "clips": [],
-  "v": "muueoh6c"
+  "v": "muvx9wjk"
  },
  "tree_fir": {
   "file": "tree_fir.glb",
   "group": "prop",
   "clips": [],
-  "v": "muueohdk"
+  "v": "muvx9wqc"
  },
  "bush": {
   "file": "bush.glb",
   "group": "prop",
   "clips": [],
-  "v": "muueogmx"
+  "v": "muvx9w3a"
  },
  "thessa": {
   "file": "thessa.glb",
+  "lo": "thessa.lo.glb",
   "group": "champion",
   "clips": [
    "idle",
@@ -390,10 +425,11 @@
    "cheer",
    "laugh"
   ],
-  "v": "muvg6vym"
+  "v": "muvx9xmq"
  },
  "borrin": {
   "file": "borrin.glb",
+  "lo": "borrin.lo.glb",
   "group": "champion",
   "clips": [
    "idle",
@@ -406,6 +442,6 @@
    "cheer",
    "laugh"
   ],
-  "v": "muvg6wye"
+  "v": "muvx9yks"
  }
 }
