@@ -183,6 +183,26 @@ FFMPEG=/path/to/ffmpeg node scripts/trailer/make-trailer.mjs        # or --only 
 ```
 `scripts/higgsfield.mjs` is the shared Higgsfield client (official `@higgsfield/client` SDK plus uploads).
 
+## 📺 Social studio (social.broadroads.com)
+
+An admin-only page that turns simulated matches into YouTube highlight videos and Shorts, on demand or on an autopilot schedule (`server/studio/`, its own service on port 8090):
+
+1. **Simulate** (`sim.js`, in a worker thread): a full 5v5 bot match, seeded. Pass 1 records only events and picks the best non-overlapping fights (kills, multi-kills, wipes, objectives, ultimates). Pass 2 replays the same seed and records a replay plus a camera track for just those windows.
+2. **Script** (`commentary.js`, `voice.js`): caster lines anchored to the moments (engage, ultimates by name, kills, multi-kills, objectives, the verdict), voiced by **ElevenLabs v4** with word timestamps, scheduled so lines never overlap. With `ANTHROPIC_API_KEY` set, Claude (`claude.js`) can write the lines and titles instead; the built-in writer is the fallback.
+3. **Render** (`render.js`): headless Chromium opens the replay with `?studio=landscape|portrait`. `client/game/studio.js` stops the real-time loop and steps one frame per video frame on a virtual clock. It also adds an auto-director camera, a broadcast overlay (score, kill feed, callouts, word-by-word captions and a hook for Shorts) and logs every game sound instead of playing it. Frames stream into ffmpeg.
+4. **Edit** (`mixer.js`, `edit.js`): the logged game sounds, the commentary and a music bed (generated once with ElevenLabs Music) are mixed in PCM with ducking and normalized to −14 LUFS. The episode is intro card → fights → outro card with chapters; each fight also becomes a vertical Short (≤ 58 s); the thumbnail is rendered from the best fight's peak frame.
+5. **Upload** (`youtube.js`): YouTube Data API v3 resumable uploads (episode first, then Shorts linking to it), with titles, descriptions, tags and the thumbnail. Metadata can be reviewed and edited on the page before uploading.
+
+Security: one admin token (`STUDIO_TOKEN`, else `ADMIN_TOKEN`) is exchanged for a signed HttpOnly `__Host-` cookie (12 h, SameSite=Strict). Logins are rate-limited per IP and globally. Mutations need a same-origin `Origin` and the `X-Studio` header. Every response carries a strict CSP, `frame-ancestors 'none'` and `noindex`. The YouTube refresh token is stored AES-GCM-encrypted.
+
+```bash
+sh deploy/studio-setup.sh   # once, as root: tools, /etc/broadroads/studio.env, the service, Caddy
+# DNS: an A record for social.broadroads.com → this server
+# Google Cloud: enable "YouTube Data API v3", create an OAuth client (Web application) with the
+# redirect URI https://social.broadroads.com/oauth/youtube/callback, put its id/secret in studio.env
+```
+Rendering is software WebGL (SwiftShader): about 1 s per 1080p frame, so an episode with 3 fights takes roughly 1–2 hours at the lowest CPU priority. The autopilot also waits while many live matches are running. Until the Google API project passes YouTube's audit, uploads from it are locked to **private**.
+
 ## 😊 Emotes and quick chat
 
 Press **G** (or 😊) for the wheel: Dance, Cheer and Laugh play Tripo-animated emotes on your champion; quick chat sends "Good game!", "On my way!", "Careful!" and more.

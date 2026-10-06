@@ -1,0 +1,278 @@
+import { test, describe, before, after } from 'node:test';
+import assert from 'node:assert/strict';
+import fs from 'node:fs';
+import os from 'node:os';
+import path from 'node:path';
+import { findFights, pickFights, lineup } from '../server/studio/sim.js';
+import { writeCommentary, schedule, spoken } from '../server/studio/commentary.js';
+import { wordsFromAlignment, captionChunks } from '../server/studio/voice.js';
+import { shortMeta, episodeMeta, tagList } from '../server/studio/metadata.js';
+import { makeAuth } from '../server/studio/auth.js';
+import { YouTube } from '../server/studio/youtube.js';
+import { cleanSettings, DEFAULT_SETTINGS, startStudio } from '../server/studio/index.js';
+import { Mix, thinSounds } from '../server/studio/mixer.js';
+
+const hit = (t, s, v, n = 100, hp = 50) => ({ t, e: 'hit', s, v, n, hp, x: 50, y: 50 });
+const kill = (t, k, v, team, a = []) => ({ t, e: 'kill', k, v, a, team });
+
+function fixtureFight() {
+  const events = [
+    hit(100, 'garrok', 'lyra'), hit(101, 'lyra', 'garrok'), { t: 101.5, e: 'cast', c: 'garrok', sl: 'r', x: 50, y: 50 },
+    kill(104, 'garrok', 'lyra', 'blue'), { t: 104, e: 'ann', key: 'first_strike', team: null, killer: 'garrok', victim: 'lyra' },
+    hit(105, 'hale', 'garrok', 200, 8), kill(107, 'garrok', 'hale', 'blue', ['rook']),
+    { t: 107, e: 'ann', key: 'multi2', team: null, killer: 'garrok', victim: 'hale' },
+  ];
+  return { n: 1, start: 96, end: 111, champs: ['garrok', 'lyra', 'hale', 'rook'], kills: 2, best: 'multi2', score: 12, events, before: { blue: 3, red: 4 }, replayEnd: 118, track: [] };
+}
+
+describe('fight detection', () => {
+  test('clusters kills into fights with build-up and scores multi-kills higher', () => {
+    const events = [hit(90, 'a', 'b'), kill(100, 'a', 'b', 'blue'), kill(105, 'a', 'c', 'blue'), { t: 105, e: 'ann', key: 'multi2' }, kill(300, 'd', 'e', 'red')];
+    const fights = findFights(events, { duration: 600 });
+    assert.equal(fights.length, 2);
+    assert.equal(fights[0].kills, 2);
+    assert.ok(fights[0].start < 100 && fights[0].start >= 100 - 8, 'keeps the build-up');
+    assert.equal(fights[0].end, 109);
+    assert.ok(fights[0].score > fights[1].score);
+  });
+
+  test('picks the best fights without overlaps, in match order', () => {
+    const f = [{ start: 10, end: 40, score: 5 }, { start: 30, end: 60, score: 9 }, { start: 100, end: 130, score: 7 }, { start: 200, end: 205, score: 99 }];
+    const picked = pickFights(f, 3);
+    assert.deepEqual(picked.map(x => x.start), [30, 100]); // the 5 s one is too short, 10–40 overlaps 30–60
+  });
+
+  test('the lineup is deterministic per seed', () => {
+    assert.deepEqual(lineup(42), lineup(42));
+    assert.notDeepEqual(lineup(42).map(p => p.champ), lineup(43).map(p => p.champ));
+    assert.equal(new Set(lineup(7).map(p => p.champ)).size, 10);
+  });
+});
+
+describe('commentary', () => {
+  test('writes an opener, kill calls, a multi-kill and a closer from the events', () => {
+    const lines = writeCommentary(fixtureFight(), { summary: { seed: 1 } });
+    const text = lines.map(l => spoken(l.text)).join(' | ');
+    assert.ok(lines.every(l => /^\[[a-z ]+\] /.test(l.text)), 'every line has a delivery tag');
+    assert.match(text, /Garrok/);
+    assert.match(text, /Avalanche Charge/, 'calls the ultimate by name');
+    assert.ok(lines.some(l => l.kind === 'multi'), 'the double replaces the plain kill line');
+    assert.ok(lines.some(l => l.kind === 'close'));
+    assert.deepEqual([...lines].sort((a, b) => a.at - b.at), lines);
+  });
+
+  test('schedule never overlaps lines and drops late low-priority ones', () => {
+    const lines = [
+      { at: 0, dur: 3, priority: 3, maxDelay: 1.5 },
+      { at: 1, dur: 1, priority: 1, maxDelay: 0.8 }, // would start at 3.15: too late, dropped
+      { at: 2.5, dur: 2, priority: 9, maxDelay: 1.2 }, // important: starts at 3.15
+      { at: 20, dur: 5, priority: 5, maxDelay: 2 }, // past the end: dropped
+    ];
+    const kept = schedule(lines, { until: 22 });
+    assert.equal(kept.length, 2);
+    for (let i = 1; i < kept.length; i++) assert.ok(kept[i].start >= kept[i - 1].start + kept[i - 1].dur);
+    assert.equal(kept[1].priority, 9);
+  });
+
+  test('a big moment replaces the line that would block it', () => {
+    const kept = schedule([{ at: 0, dur: 4, priority: 2, maxDelay: 1 }, { at: 1, dur: 1, priority: 9, maxDelay: 0.5 }]);
+    assert.deepEqual(kept.map(l => l.priority), [9]);
+  });
+});
+
+describe('voice timing', () => {
+  const al = s => ({ characters: [...s], character_start_times_seconds: [...s].map((_, i) => i * 0.1), character_end_times_seconds: [...s].map((_, i) => i * 0.1 + 0.1) });
+  test('word timings skip delivery tags', () => {
+    const w = wordsFromAlignment(al('[excited] Big play!'));
+    assert.deepEqual(w.map(x => x.w), ['Big', 'play!']);
+    assert.equal(w[0].s, 1);
+  });
+  test('captions are chunked, offset to match time and held between words', () => {
+    const words = [{ w: 'One', s: 0, e: 0.3 }, { w: 'two,', s: 0.4, e: 0.7 }, { w: 'three', s: 0.8, e: 1 }, { w: 'four', s: 1.1, e: 1.3 }];
+    const c = captionChunks(100, words, 3);
+    assert.equal(c.length, 2); // breaks at the comma
+    assert.equal(c[0].start, 100);
+    assert.equal(c[0].end, 100.8 - 0.01);
+    assert.equal(c[1].words[0].s, 100.8);
+  });
+});
+
+describe('metadata', () => {
+  test('short titles fit YouTube and are marked #Shorts; tags stay under 500 characters', () => {
+    const m = shortMeta(fixtureFight(), { seed: 3 });
+    assert.ok(m.title.length <= 100 && /#Shorts$/.test(m.title));
+    assert.match(m.description, /broadroads\.com/);
+    assert.match(m.description, /AI/);
+    assert.ok(m.hook.length > 3);
+    assert.ok(m.tags.join(',').length <= 500);
+  });
+  test('the episode description carries chapters starting at 0:00', () => {
+    const f = fixtureFight();
+    const summary = { seed: 1, duration: 1300, winner: 'blue', kills: { blue: 30, red: 20 }, players: lineup(1).map(p => ({ ...p, name: p.champ })) };
+    const m = episodeMeta({ fights: [f], summary, seed: 1, chapters: [{ at: 0, label: 'Intro' }, { at: 5, label: 'Fight 1' }, { at: 40, label: 'Outro' }] });
+    assert.match(m.description, /^0:00 Intro$/m);
+    assert.match(m.description, /^0:05 Fight 1$/m);
+    assert.ok(m.title.length <= 100);
+  });
+  test('tag lists drop duplicates and characters YouTube rejects', () => {
+    const t = tagList(['a<b>', 'BROADROADS', ...Array.from({ length: 80 }, (_, i) => `long tag number ${i}`)]);
+    assert.ok(!t.some(x => /[<>]/.test(x)));
+    assert.equal(t.filter(x => x.toLowerCase() === 'broadroads').length, 1);
+    assert.ok(t.join(',').length <= 500);
+  });
+});
+
+describe('studio auth', () => {
+  const req = (cookie, extra = {}) => ({ headers: { cookie, ...extra } });
+  test('a session cookie is issued for the right token only and cannot be forged', () => {
+    const a = makeAuth({ token: 'x'.repeat(20), secret: 's' });
+    assert.equal(a.login('1.1.1.1', 'wrong').ok, false);
+    const r = a.login('1.1.1.1', 'x'.repeat(20));
+    assert.ok(r.ok);
+    assert.match(r.cookie, /^__Host-studio=.+; Path=\/; HttpOnly; SameSite=Strict; Max-Age=\d+; Secure$/);
+    const value = r.cookie.split(';')[0];
+    assert.ok(a.session(req(value)));
+    const [name, v] = value.split('=');
+    const [payload, sig] = v.split('.');
+    const forged = Buffer.from(JSON.stringify({ exp: Date.now() + 1e12, e: 1, n: 'x' })).toString('base64url');
+    assert.equal(a.session(req(`${name}=${forged}.${sig}`)), null);
+    assert.equal(a.session(req(`${name}=${payload}.AAAA`)), null);
+    a.signOutEveryone();
+    assert.equal(a.session(req(value)), null, 'sign out everywhere invalidates old cookies');
+  });
+  test('sessions expire', () => {
+    let now = 1e12;
+    const a = makeAuth({ token: 'y'.repeat(20), now: () => now });
+    const c = a.login('ip', 'y'.repeat(20)).cookie.split(';')[0];
+    now += 13 * 3600e3;
+    assert.equal(a.session(req(c)), null);
+  });
+  test('failed logins are rate-limited per address', () => {
+    const a = makeAuth({ token: 'z'.repeat(20) });
+    for (let i = 0; i < 5; i++) assert.equal(a.login('9.9.9.9', 'nope').status, 401);
+    const blocked = a.login('9.9.9.9', 'z'.repeat(20));
+    assert.equal(blocked.status, 429, 'even the right token is refused while blocked');
+    assert.ok(a.login('8.8.8.8', 'z'.repeat(20)).ok, 'other addresses are unaffected');
+  });
+  test('weak tokens are refused', () => assert.throws(() => makeAuth({ token: 'short' })));
+  test('mutations need the studio header and a same-origin Origin', () => {
+    const a = makeAuth({ token: 'q'.repeat(20) });
+    assert.equal(a.sameOrigin({ headers: {} }, 'https://social.broadroads.com'), false);
+    assert.equal(a.sameOrigin({ headers: { 'x-studio': '1', origin: 'https://evil.example' } }, 'https://social.broadroads.com'), false);
+    assert.equal(a.sameOrigin({ headers: { 'x-studio': '1', origin: 'https://social.broadroads.com' } }, 'https://social.broadroads.com'), true);
+  });
+});
+
+describe('settings', () => {
+  test('values are clamped and unknown keys ignored', () => {
+    const s = cleanSettings(DEFAULT_SETTINGS, { fights: 99, privacy: 'everyone', quality: 'high', voiceId: '../etc', evil: 1, autopilot: 1 });
+    assert.equal(s.fights, 5);
+    assert.equal(s.privacy, DEFAULT_SETTINGS.privacy);
+    assert.equal(s.quality, 'high');
+    assert.equal(s.voiceId, DEFAULT_SETTINGS.voiceId);
+    assert.equal(s.autopilot, true);
+    assert.equal(s.evil, undefined);
+  });
+});
+
+describe('audio mix', () => {
+  test('mixes, ducks and limits into a valid WAV', () => {
+    const mix = new Mix(1);
+    const tone = new Float32Array(48000 * 2).fill(0.9);
+    mix.add(tone, 0, { bus: 'music', gain: 1 });
+    mix.add(tone, 0.5, { bus: 'voice', gain: 1 });
+    const wav = mix.master();
+    assert.equal(wav.toString('ascii', 0, 4), 'RIFF');
+    assert.equal(wav.readUInt32LE(24), 48000);
+    const peak = Math.max(...Array.from({ length: 1000 }, (_, i) => Math.abs(wav.readInt16LE(44 + (30000 + i) * 4))));
+    assert.ok(peak < 32767, 'limited, not clipped');
+  });
+  test('thins out sound spam but keeps loud cues', () => {
+    const sounds = Array.from({ length: 50 }, (_, i) => ({ t: 1 + i / 100, v: 0.1 })).concat([{ t: 1.5, v: 0.9 }, { t: 1.6, v: 0.01 }]);
+    const kept = thinSounds(sounds);
+    assert.ok(kept.length <= 15);
+    assert.ok(kept.some(s => s.v === 0.9));
+  });
+});
+
+describe('YouTube upload', () => {
+  test('uploads with a resumable session and the right metadata', async () => {
+    const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'yt-'));
+    const video = path.join(dir, 'v.mp4');
+    fs.writeFileSync(video, Buffer.alloc(1024, 1));
+    const calls = [];
+    const fakeFetch = async (url, opts = {}) => {
+      calls.push({ url: String(url), opts });
+      if (String(url).includes('oauth2.googleapis.com/token')) return new Response(JSON.stringify({ access_token: 'AT', expires_in: 3600, refresh_token: 'RT' }), { status: 200 });
+      if (String(url).includes('/channels')) return new Response(JSON.stringify({ items: [{ id: 'UC1', snippet: { title: 'BroadRoads', thumbnails: {} } }] }), { status: 200 });
+      if (String(url).includes('uploadType=resumable')) return new Response('', { status: 200, headers: { location: 'https://upload.example/session1' } });
+      if (String(url) === 'https://upload.example/session1') {
+        if (opts.body) for await (const _ of opts.body) { /* drain */ }
+        return new Response(JSON.stringify({ id: 'VID123', status: { privacyStatus: 'unlisted' } }), { status: 200 });
+      }
+      return new Response('{}', { status: 404 });
+    };
+    const yt = new YouTube({ clientId: 'cid', clientSecret: 'cs', redirectUri: 'https://x/cb', tokenFile: path.join(dir, 'tok'), secret: 'sec', fetchImpl: fakeFetch });
+    assert.ok(yt.authUrl('state1').includes('access_type=offline'));
+    const ch = await yt.exchange('code');
+    assert.equal(ch.title, 'BroadRoads');
+    assert.ok(!fs.readFileSync(path.join(dir, 'tok'), 'utf8').includes('RT'), 'the refresh token is encrypted at rest');
+    assert.equal(yt.connected, true);
+    const r = await yt.upload(video, { title: 'T', description: 'D', tags: ['a'], privacy: 'unlisted' });
+    assert.equal(r.id, 'VID123');
+    const init = calls.find(c => c.url.includes('uploadType=resumable'));
+    const body = JSON.parse(init.opts.body);
+    assert.equal(body.snippet.categoryId, '20');
+    assert.equal(body.status.privacyStatus, 'unlisted');
+    assert.equal(body.status.selfDeclaredMadeForKids, false);
+    fs.rmSync(dir, { recursive: true, force: true });
+  });
+});
+
+describe('studio server', () => {
+  let studio, base, dir;
+  before(async () => {
+    dir = fs.mkdtempSync(path.join(os.tmpdir(), 'studio-'));
+    studio = await startStudio({ port: 0, dir, staticDir: path.resolve('public'), publicUrl: 'http://127.0.0.1', token: 'test-token-0123456789', secret: 'sec' });
+    base = `http://127.0.0.1:${studio.port}`;
+  });
+  after(async () => { await studio.close(); fs.rmSync(dir, { recursive: true, force: true }); });
+  const post = (p, body, headers = {}) => fetch(base + p, { method: 'POST', headers: { 'Content-Type': 'application/json', 'X-Studio': '1', ...headers }, body: JSON.stringify(body), redirect: 'manual' });
+
+  test('everything but the login page needs a session', async () => {
+    const page = await fetch(`${base}/`, { redirect: 'manual' });
+    assert.equal(page.status, 302);
+    assert.equal(page.headers.get('location'), '/login');
+    assert.equal((await fetch(`${base}/api/state`)).status, 401);
+    assert.equal((await fetch(`${base}/media/20261006-abcde/episode.mp4`)).status, 401);
+    assert.equal((await fetch(`${base}/studio.js`, { redirect: 'manual' })).status, 302);
+    const login = await fetch(`${base}/login`);
+    assert.equal(login.status, 200);
+    assert.match(login.headers.get('content-security-policy'), /frame-ancestors 'none'/);
+    assert.equal(login.headers.get('x-robots-tag'), 'noindex, nofollow');
+  });
+
+  test('login sets a session; mutations without the studio header are refused', async () => {
+    assert.equal((await post('/api/login', { token: 'wrong-token-0123456789' })).status, 401);
+    const ok = await post('/api/login', { token: 'test-token-0123456789' });
+    assert.equal(ok.status, 200);
+    const cookie = ok.headers.get('set-cookie').split(';')[0];
+    const state = await fetch(`${base}/api/state`, { headers: { cookie } });
+    assert.equal(state.status, 200);
+    const j = await state.json();
+    assert.equal(j.youtube.connected, false);
+    assert.deepEqual(j.episodes, []);
+    const csrf = await fetch(`${base}/api/settings`, { method: 'POST', headers: { cookie, 'Content-Type': 'application/json' }, body: '{"autopilot":true}' });
+    assert.equal(csrf.status, 403);
+    const s = await post('/api/settings', { fights: 2 }, { cookie });
+    assert.equal((await s.json()).settings.fights, 2);
+    assert.equal((await fetch(`${base}/media/..%2F..%2Fetc/passwd`, { headers: { cookie } })).status, 404);
+    assert.equal((await fetch(`${base}/api/episodes/nope`, { headers: { cookie } })).status, 404);
+  });
+
+  test('the OAuth callback rejects a missing or forged state', async () => {
+    const r = await fetch(`${base}/oauth/youtube/callback?code=x&state=y`, { redirect: 'manual' });
+    assert.equal(r.status, 200);
+    assert.match(await r.text(), /youtube=state/);
+  });
+});

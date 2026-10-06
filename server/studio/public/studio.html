@@ -1,0 +1,90 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex, nofollow">
+  <title>BroadRoads Studio</title>
+  <link rel="stylesheet" href="/studio.css">
+  <script src="/studio.js" type="module"></script>
+</head>
+<body>
+  <header class="top">
+    <div class="brand"><span class="brand-mark">BR</span><div><b>BroadRoads</b><span>Studio</span></div></div>
+    <div class="top-right">
+      <span id="yt-pill" class="pill">YouTube: …</span>
+      <button id="logout" class="btn ghost">Sign out</button>
+    </div>
+  </header>
+  <div id="banner" class="banner" hidden></div>
+  <main class="grid">
+    <section class="panel hero">
+      <h2>Make a highlights video</h2>
+      <p class="muted">Simulates a 5v5 bot match, finds the best fights, records them from the spectator camera, voices live commentary (ElevenLabs), cuts a full episode plus one Short per fight, and writes titles, descriptions and tags.</p>
+      <div class="row">
+        <button id="run" class="btn primary">Start a new episode</button>
+        <label class="check"><input type="checkbox" id="run-upload"> Upload to YouTube when done</label>
+      </div>
+      <p id="run-note" class="muted small"></p>
+    </section>
+
+    <section class="panel">
+      <h2>Autopilot</h2>
+      <label class="switch"><input type="checkbox" id="s-autopilot"><span>Make an episode automatically</span></label>
+      <div class="field-row">
+        <label>Every <input id="s-everyHours" type="number" min="1" max="168" class="num"> hours</label>
+      </div>
+      <label class="switch"><input type="checkbox" id="s-autoUpload"><span>Upload finished episodes and Shorts</span></label>
+      <p id="auto-next" class="muted small"></p>
+    </section>
+
+    <section class="panel">
+      <h2>YouTube</h2>
+      <div id="yt-body"></div>
+    </section>
+
+    <section class="panel wide">
+      <h2>Settings</h2>
+      <div class="settings">
+        <label>Privacy on upload
+          <select id="s-privacy"><option value="public">Public</option><option value="unlisted">Unlisted</option><option value="private">Private</option></select>
+        </label>
+        <label>Fights per episode (= Shorts)
+          <input id="s-fights" type="number" min="1" max="5" class="num">
+        </label>
+        <label>Commentator voice
+          <select id="s-voiceId"></select>
+        </label>
+        <label>Render quality
+          <select id="s-quality"><option value="low">Low (fast)</option><option value="medium">Medium</option><option value="high">High (slow)</option></select>
+        </label>
+        <label>Frame rate
+          <select id="s-fps"><option value="24">24 fps</option><option value="30">30 fps</option><option value="60">60 fps (slow)</option></select>
+        </label>
+        <label>Parallel renders
+          <input id="s-renderWorkers" type="number" min="1" max="4" class="num">
+        </label>
+        <label>Pause while this many live matches run
+          <input id="s-busyMatches" type="number" min="1" max="100" class="num">
+        </label>
+        <label>Keep files of the last N episodes
+          <input id="s-keepEpisodes" type="number" min="3" max="100" class="num">
+        </label>
+        <label class="check"><input type="checkbox" id="s-useClaude"> Claude writes commentary and titles <span id="claude-key" class="muted small"></span></label>
+        <label class="check"><input type="checkbox" id="s-synthetic"> Label uploads as altered/synthetic content</label>
+      </div>
+      <p id="keys" class="muted small"></p>
+    </section>
+
+    <section class="panel wide">
+      <div class="panel-head"><h2>Episodes</h2><span id="queue" class="muted small"></span></div>
+      <div id="episodes" class="episodes"></div>
+    </section>
+  </main>
+
+  <dialog id="detail" class="detail">
+    <div class="detail-head"><h2 id="d-title">Episode</h2><button class="btn ghost" id="d-close" aria-label="Close">✕</button></div>
+    <div id="d-body"></div>
+  </dialog>
+</body>
+</html>

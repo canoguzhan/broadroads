@@ -225,6 +225,12 @@ class App {
     this.startGame({ t: 'match', id: header.id, mode: header.mode, ranked: header.ranked, you: null, team: 'spectator', spectator: true, replay: true, time: 0, players: header.players });
     if (this.game) this.game.replay = new ReplayPlayer(this.game, header, lines, this.replayStart || 0);
     this.replayStart = 0;
+    // The social studio's headless renderer (server/studio) drives the replay frame by frame.
+    const studio = new URLSearchParams(location.search).get('studio');
+    if (studio && this.game) {
+      const game = this.game;
+      import('./game/studio.js').then(m => m.attachStudio(game, studio === 'portrait' ? 'portrait' : 'landscape'));
+    }
   }
 
   /** Shared link (?replay=id&t=s): watch without logging in. */

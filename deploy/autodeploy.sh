@@ -52,7 +52,8 @@ install() {
     npm prune --omit=dev --no-audit --no-fund --loglevel=error &&
     $G checkout -q -- package-lock.json &&
     chown -R broadroads:broadroads "$APP" &&
-    systemctl restart broadroads
+    systemctl restart broadroads &&
+    { systemctl try-restart broadroads-studio || true; }
 }
 healthy() {
   i=0
