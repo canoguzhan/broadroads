@@ -17,7 +17,7 @@ Environment=NODE_ENV=production
 Environment=STUDIO_DIR=/var/lib/broadroads-studio
 Environment=STUDIO_TOOLS=/opt/broadroads-studio-tools
 Environment=PLAYWRIGHT_BROWSERS_PATH=/opt/broadroads-studio-tools/browsers
-ExecStart=/usr/bin/node server/studio/index.js
+ExecStart=/usr/bin/env node server/studio/index.js
 Restart=always
 RestartSec=5
 TimeoutStopSec=15
