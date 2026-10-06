@@ -1,0 +1,11 @@
+[Unit]
+Description=BroadRoads nightly backup (database tables + data folder)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+EnvironmentFile=/opt/broadroads/.env
+Environment=BACKUP_DIR=/var/backups/broadroads BACKUP_KEEP=14
+WorkingDirectory=/opt/broadroads
+ExecStart=/usr/local/bin/node scripts/backup.mjs

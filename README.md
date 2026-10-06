@@ -19,11 +19,18 @@ runs the same simulation locally, so practice vs AI always works offline.
 | **🤖 Practice vs AI** | You and your party against bots, starting instantly. Easy / Normal / Hard difficulty. Works offline too. |
 | **🎓 Tutorial** | A guided first match: move, shop, learn and cast abilities, last-hit, push a tower and return home. Enemy champions stay home; the lobby highlights it for new players. |
 | **⚡ Skirmish 3v3** | One lane, level 3 start, faster gold and waves, sudden death after 10:00. About 10 minutes; parties of up to 3. |
+| **🥊 Brawl 5v5** | Featured mode: five against five on one lane with random champions (no duplicates per team), level 3 start, fighting from the first second. Bring your whole party. |
 | **🏟️ Custom Game** | Create a room and share the 6-digit code. Pick teams, add bots per slot, choose bot difficulty, and start. |
 
-Every match goes **Champion Select** (40 s, no duplicate champions per team, pick a second battle spell)
+Every match goes **Champion Select** (40 s, no duplicate champions per team, pick a second battle spell and a keystone)
 → **Match** → **Results** (KDA, CS, gold, damage, MVP, rating change, profile XP).
 If you disconnect or leave, a bot takes over your champion, and you can **reconnect** from the lobby.
+
+**Parties** move together: when the leader creates or joins a custom room, everyone in the party is brought into it automatically (on the same team when there is room).
+
+**Ranked extras:** a ban phase before picks (each team votes; the most-voted champion is banned), **placements** (the first 5 games of a season move your rating twice as fast), and escalating queue lockouts (5 / 15 / 30 minutes) for dodging champion select, abandoning a ranked game or going AFK.
+
+**Behavior:** players idle for 90 s get a warning and the AI takes over at 120 s. Chat is filtered (English, Turkish, Spanish), any player can be muted on your device, and reports (with reason and match) appear on the admin page.
 
 ## 🏅 Progression
 
@@ -69,15 +76,26 @@ If you disconnect or leave, a bot takes over your champion, and you can **reconn
 | 🎯 **Nyra**, the Desert Marshal | Marksman | Longshot · Snare Trap · Bola Shot · Dead Eye |
 | 🐂 **Brakka**, the Stampede | Tank / Support | Earthbreaker · Horn Charge · War Bellow · Iron Hide |
 | 🌪️ **Rook**, the Storm Blade | Fighter | Cyclone · Axe Hurl · Skyfall Strike · Tempest Wrath |
+| 🌊 **Thessa**, the Tidecaller | Mage | Tidal Lance · Riptide · Pearl Bubble · Tsunami |
+| 🌳 **Borrin**, the Thornwarden | Tank | Bramble Lash · Barkskin · Briar Patch · Overgrowth |
 
 Each champion also has a passive. Levels go 1–18 with one ability point per level; the ultimate unlocks at 6, 11 and 16.
 Stats include attack, ability power, armor, magic resist, attack speed, crit, haste, lifesteal, armor and magic
 penetration, and tenacity. Damage is physical, magic or true.
 
-**Items**: 35 original items with a recipe system (owned components are discounted), boot upgrades, potions and
+**Items**: 36 original items with a recipe system (owned components are discounted), boot upgrades, potions and
 item passives (Spiked Plate, Emberplate Aegis, Frostbound Orb, Archmage's Crown, Starforged Edge, Grove Charm and more).
 
 **Battle spells**: Blink, plus Mend, Scorch, Hunter's Strike, Haste or Bulwark.
+
+**Keystones** (one per match, remembered per player): **Warpath** (stacking damage against champions), **Starfall** (abilities call down a star), **Ironroot** (bonus health and a low-health shield), **Swiftwind** (movement speed, more out of combat).
+
+## 👤 Accounts, languages and the app
+
+- **Password reset by email** and **Google / Discord sign-in** (also linkable from the Account card). Each switches on when configured: `SMTP_URL` + `MAIL_FROM`; `GOOGLE_CLIENT_ID` / `GOOGLE_CLIENT_SECRET`; `DISCORD_CLIENT_ID` / `DISCORD_CLIENT_SECRET`. OAuth redirect URI: `https://broadroads.com/api/auth/oauth/<google|discord>/callback`. Without SMTP, reset links go to the server log.
+- **Languages:** English, Türkçe and Español (picked from the browser, changeable from the landing page, lobby and settings), including the announcer voice. Strings live in `client/i18n/`; text is written in English and translated as it renders, so missing entries simply stay English (`?i18n-collect` lists them via `__i18nMisses()`).
+- **Notifications** while the tab is in the background: match found, invites, friend requests, friends online, whispers.
+- **Installable app:** web manifest, service worker (hashed assets and models cached on the device, offline shell) and an Install button. Phones and Low quality load simplified models (`*.lo.glb`, ~35% of the triangles) first.
 
 ## 🕹️ Controls
 
@@ -176,6 +194,7 @@ Touch controls show ability icons and cooldowns. Tap an ability to auto-target (
 - `/admin` (set `ADMIN_TOKEN`) shows players online, matches, tick time, event-loop lag, memory and recent errors.
 - Set `ALERT_WEBHOOK` (Discord/Slack) for crash and error-spike alerts.
 - `deploy/broadroads-watchdog.timer` restarts the service if `/api/health` fails three checks in a row.
+- The admin page also shows the **player funnel** (new players, tutorial started/finished, first and second game, next-day return), **champion, item and keystone win rates** (14 days) and player reports. Analytics are daily counters only, stored in `data/analytics`; nothing goes to third parties.
 
 ## 🤖 Bots
 
@@ -222,6 +241,23 @@ docker compose up -d --build
 Point the DNS A records of `broadroads.com` and `www` at the server. With `DATABASE_URL` set (any Postgres),
 profiles are stored in `br_accounts` / `br_characters`. Without it, a JSON file in `DATA_DIR` is used.
 
+### Automatic deploys, backups and load tests
+
+- **CI** (`.github/workflows/ci.yml`) runs the unit tests, the build and the browser test on every push.
+- **Auto-deploy** (`deploy/broadroads-autodeploy.timer`, every 5 min): pulls `main` once every GitHub check on the new commit has passed, waits for live matches to end (up to 45 min), rebuilds, restarts and checks `/api/health`. If the server doesn't come up it rolls back and skips that commit. No secrets needed. Log: `journalctl -u broadroads-autodeploy`.
+- **Backups** (`deploy/broadroads-backup.timer`, nightly 04:15): `scripts/backup.mjs` saves every `br_*` table and the data folder to `/var/backups/broadroads/<date>/`, keeping 14 days. `--restore <dir> --dry-run` checks a backup; `--restore <dir> --yes` restores it.
+- **Load test** (`scripts/loadtest.mjs`): synthetic players that each start a match and move around, plus optional real headless browsers. Run it from another machine to include the network:
+  ```bash
+  node scripts/loadtest.mjs --url https://broadroads.com --clients 30 --duration 120 --browsers 2
+  node scripts/loadtest.mjs --local --clients 60      # throwaway server on this machine
+  ```
+  It reports time to match, snapshot rate and gaps, ping and server tick time, and exits non-zero if play wasn't smooth.
+
+```bash
+sudo cp deploy/broadroads-{autodeploy,backup}.{service,timer} /etc/systemd/system/
+sudo systemctl daemon-reload && sudo systemctl enable --now broadroads-autodeploy.timer broadroads-backup.timer
+```
+
 ## 🏗️ Architecture
 
 ```
@@ -229,7 +265,8 @@ shared/                 runs on the server AND in the browser (offline mode)
   hub.js                lobby: sessions, parties, ranked queue, custom rooms, champion select,
                         matches, reconnect, results/Elo, chat, leaderboards
   moba/match.js         authoritative 20 Hz match simulation
-  moba/champions.js     10 champions (passives + Q/W/E/R)
+  moba/champions.js     12 champions (passives + Q/W/E/R)
+  moba/keystones.js     keystones
   moba/items.js         items, recipes, battle spells
   moba/bot.js           hero AI
   moba/map.js           the Valley (mirrored 3-lane map)
