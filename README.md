@@ -169,7 +169,7 @@ API credits are bought in the Tripo platform console. They are separate from Tri
 
 ## 🎬 Trailer (Higgsfield + ElevenLabs)
 
-`scripts/trailer/make-trailer.mjs` builds the ~30 s trailer from the in-game champions:
+`scripts/trailer/make-trailer.mjs` builds the trailer (~45–55 s, one storyteller narrating in the third person) from the in-game champions:
 champion portraits → photoreal 16:9 key frames (Higgsfield, Qwen Image 3 edit) → shots animated with
 **Seedance 2.5** image-to-video → champion and narrator lines in each champion's voice (**ElevenLabs v4**),
 a timed orchestral score (ElevenLabs Music) and sound effects → an ffmpeg cut with a title card.

@@ -1,4 +1,4 @@
-/* Builds the BroadRoads trailer (about 30 s) from the in-game champions:
+/* Builds the BroadRoads trailer (about 46 s) from the in-game champions:
      1. key frames: each champion portrait → a photoreal 16:9 still (Higgsfield, Qwen Image 3 edit)
      2. shots: every still animated with Seedance 2.5 image-to-video (Higgsfield)
      3. audio: champion and narrator lines (ElevenLabs v4, each champion's in-game voice),
@@ -21,13 +21,20 @@ const OUT = path.resolve(process.env.TRAILER_OUT || 'public/trailer');
 fs.mkdirSync(SRC, { recursive: true });
 fs.mkdirSync(OUT, { recursive: true });
 const FFMPEG = process.env.FFMPEG || 'ffmpeg';
+/** Clip length in seconds (read from ffmpeg's own report, so no ffprobe is needed). */
+const durationOf = file => {
+  let out = '';
+  try { execFileSync(FFMPEG, ['-hide_banner', '-i', file], { stdio: 'pipe' }); } catch (err) { out = String(err.stderr); }
+  const m = /Duration: (\d+):(\d+):([\d.]+)/.exec(out);
+  return m ? Number(m[1]) * 3600 + Number(m[2]) * 60 + Number(m[3]) : SHOT;
+};
 const XI = process.env.ELEVENLABS_API_KEY;
 const only = (() => { const i = process.argv.indexOf('--only'); return i > 0 ? process.argv[i + 1] : null; })();
 const step = s => !only || only === s;
-const SHOT = 5; // seconds per generated shot
+const SHOT = 6; // seconds per shot (shorter clips are slowed down to fit)
 const XF = 0.4; // crossfade
-const TOTAL = 30;
-const shotStart = i => i * (SHOT - XF); // 0, 4.6, 9.2, 13.8, 18.4, 23.0
+const shotStart = i => i * (SHOT - XF); // 0, 4.6, 9.2, …
+const TITLE = 4.6; // the title card holds this long after the last shot
 
 const LOOK = 'photorealistic live-action fantasy film still, cinematic lighting, anamorphic lens, shallow depth of field, volumetric light and atmosphere, highly detailed real materials and skin, epic scale, color graded like a blockbuster trailer, 16:9';
 const NEG = 'modern objects, asphalt, guardrail, cars, power lines, buildings from today, cartoon, anime, 3d render, video game graphics, plastic, toy, text, letters, logo, watermark, subtitles, extra limbs, blurry, low quality';
@@ -45,45 +52,83 @@ const SHOTS = [
     motion: 'The golden-armored priestess unleashes a blinding beam of sunlight forward while the teal-haired sorceress sweeps her arms and a massive tidal wave surges past them, spray and light flares fill the air, hair and cloth whip in the wind, camera slowly pushes in, epic fantasy film' },
   { id: 's4_kaelen_hale', refs: ['kaelen', 'hale'],
     still: 'Night in a moonlit snowy pine forest: in the foreground the hooded assassin from image 1 (deep hood hiding the face in shadow, layered dark brown and purple leather armor) crouches with twin curved daggers; in the background the winter huntress from image 2 (blue hair, ice-crystal crown, white fur collar, blue and steel armor) draws a bow with an arrow made of glowing ice. Falling snow, cold blue moonlight. Keep both characters\' designs and colors',
-    motion: 'The hooded assassin vanishes into a swirl of shadow smoke and reappears closer to the camera with daggers flashing, while behind him the winter huntress releases a glowing ice arrow that streaks across the frame leaving frost in the air, snow swirls, fast dramatic camera move, slow motion on the arrow' },
+    motion: 'In a moonlit snowy forest the hooded figure in dark leather slowly rises from a crouch as swirling shadow smoke curls around him, while behind him the blue-haired winter huntress draws her bow and releases a glowing ice arrow high into the night sky, leaving a trail of frost and sparkling light, snow drifting, slow cinematic push-in, fantasy film' },
   { id: 's5_wyrm', refs: ['thorne', 'brakka', 'rook'],
     still: 'A battlefield of lava and ash under a burning sky: a gigantic ember dragon looms in the background breathing fire; in the foreground three champions charge toward it: the knight from image 1 (black and crimson spiked full plate armor, closed horned helmet, huge axe), the minotaur warrior from image 2 (bull head with great curved horns, heavy black and bronze armor) and the warrior from image 3 (sleek green and silver armor with a horned green helmet, crackling with lightning). Keep all three designs and colors',
     motion: 'The colossal fire dragon roars and sweeps a torrent of flame across the battlefield as the three armored champions charge through the fire toward it, the minotaur lowers his horns, lightning crackles around the green-armored warrior, the knight raises his axe, embers fly past the camera, low tracking shot, epic slow motion' },
+  { id: 's7_titan', refs: [], still: null,
+    motion: 'Deep underground in a vast dark cavern of black rock and glowing violet crystals, a colossal ancient titan made of obsidian stone and violet magma slowly opens its glowing eyes and rises, dust and boulders falling from its shoulders, ominous purple light, the camera slowly tilts up to its face, photorealistic epic fantasy film, no text' },
+  { id: 's8_clash', refs: [], still: null,
+    motion: 'Epic wide battle: two armies of fantasy champions under blue and red banners collide on an ancient stone road between stone watchtowers, fire, lightning and light spells explode, warriors in armor clash, ranks of small armored soldiers march along the road, dust and sparks fill the air, dynamic sweeping camera, photorealistic epic fantasy film, no text' },
+  { id: 's9_core', refs: [], still: null,
+    motion: 'Inside a stone fortress a giant glowing red crystal core cracks under attack, beams of red light burst through the cracks and it shatters in a massive slow-motion explosion of red energy and crystal shards, a shockwave blows dust outward across the courtyard, photorealistic epic fantasy film, no text' },
   { id: 's6_finale', refs: ['borrin', 'mira', 'nyra'],
     still: 'Sunset on a hilltop above the valley with three stone roads leading to an enemy fortress with a glowing red crystal core in the distance: a heroic group stands facing it: the ancient tree guardian from image 1 (a giant humanoid made of twisting wood and bright green leaves), the moon priestess from image 2 (silver crescent halo, blue and silver armor) and the marksman from image 3 (wide brown cowboy hat, long dark hair, brown leather duster coat, rifle). Wind, golden backlight, banners. Keep all three designs and colors',
     motion: 'The heroes stand on the hilltop as the camera slowly rises and circles behind them to reveal the vast valley and the distant enemy fortress glowing red at sunset, their capes, leaves and hair blow in the wind, the marksman tips her hat, the tree guardian\'s leaves glow, epic final shot of a fantasy film trailer' },
 ];
 
-/* Lines: [start second, voice, text]. Voices are the champions' in-game ElevenLabs voices. */
-const NARRATOR = 'nPczCjzI2devNBz1zQrb';
-const VOICES = { garrok: 'pNInz6obpgDQGcFmaJgB', lyra: 'pFZP5JQG7iQjIQuC4Bku', thessa: 'cgSgspJ2msm6clMCkdW9', kaelen: 'N2lVS1w4EtoT3dr4eOWO', brakka: 'IKne3meq5aSn9XLyUdCD' };
+/* Story narration: one storyteller (ElevenLabs "George", eleven_v4) reads the whole trailer in the
+   third person, one line per shot, plus the closing line over the title card. */
+const NARRATOR = 'JBFqnCBsd6RMkjVDRZzb';
+const STORY = {
+  s1_valley: 'Three roads cross the Valley. Every one of them leads to war.',
+  s2_garrok: 'Garrok, the Mountain Heart, wakes when the earth is threatened.',
+  s3_lyra_thessa: 'Lyra calls the dawn. Thessa commands the tide.',
+  s4_kaelen_hale: 'In the frozen woods, Kaelen strikes unseen, and Hale never misses.',
+  s5_wyrm: 'When the Ember Wyrm rises, Thorne, Brakka and Rook charge in.',
+  s7_titan: 'Far below, the Abyss Titan stirs.',
+  s8_clash: 'Five against five, lane by lane, tower by tower...',
+  s9_core: '...until one Core falls.',
+  s6_finale: 'Borrin, Mira and Nyra stand ready. The Valley is waiting.',
+  title: 'Choose your champion. BroadRoads. Play free, in your browser.',
+};
+const VOICE_STYLE = '[warm, captivating storyteller, epic fantasy trailer narration] ';
+const FX = {
+  s1_valley: ['fx_wind', 'cinematic deep wind over a vast valley, distant birds, low rumble, trailer atmosphere', 5],
+  s2_garrok: ['fx_stomp', 'giant stone golem footsteps shaking the ground, rocks cracking and exploding, heavy cinematic impacts', 4.5],
+  s3_lyra_thessa: ['fx_wave', 'massive magical tidal wave crashing with a shimmering light beam blast, cinematic', 4.5],
+  s4_kaelen_hale: ['fx_blade', 'shadow teleport whoosh then twin daggers slashing, an ice arrow whistling past and freezing', 4.5],
+  s5_wyrm: ['fx_dragon', 'colossal dragon roar with a torrent of fire breath and crackling lightning, epic battle', 4.8],
+  s7_titan: ['fx_titan', 'colossal stone titan awakening deep underground, earth-shaking rumble, cracking rock, low monstrous growl, cinematic', 4.8],
+  s8_clash: ['fx_clash', 'epic fantasy battle, two armies clashing, swords and shields, magic explosions, war cries, cinematic', 4.8],
+  s9_core: ['fx_core', 'giant crystal cracking then shattering in a huge magical explosion with a deep shockwave, cinematic slow motion', 4.8],
+  s6_finale: ['fx_finale', 'wind on a hilltop, banners flapping, a rising heroic orchestral swell of air, cinematic', 4.8],
+};
+// The cut uses every shot that has a clip or at least a key frame (missing ones are left out
+// with their narration, e.g. while credits run out) — timings and the score follow from it.
+const have = f => fs.existsSync(f) && fs.statSync(f).size > 0;
+const CUT = SHOTS.filter(s => have(path.join(SRC, `${s.id}.mp4`)) || have(path.join(SRC, `${s.id}.png`)));
+const ORDER = CUT.map(s => s.id);
+const lastStart = shotStart(CUT.length - 1);
+const TITLE_AT = lastStart + SHOT - 0.4; // title fades in as the last shot ends
+const TOTAL = Math.round((TITLE_AT + TITLE) * 10) / 10;
 const LINES = [
-  { id: 'vo1', at: 0.6, voice: NARRATOR, text: '[deep, epic trailer voice] Three roads. One valley.' },
-  { id: 'vo2', at: 5.4, voice: VOICES.garrok, text: '[growling] The mountain... stands with you.' },
-  { id: 'vo3', at: 9.6, voice: VOICES.lyra, text: '[commanding] Dawn breaks for those who fight!' },
-  { id: 'vo4', at: 12.4, voice: VOICES.thessa, text: '[fierce] Rise, ocean!' },
-  { id: 'vo5', at: 14.4, voice: VOICES.kaelen, text: '[whispering] No one sees the knife coming.' },
-  { id: 'vo6', at: 19.4, voice: VOICES.brakka, text: '[battle cry] The herd charges as one!' },
-  { id: 'vo7', at: 24.4, voice: NARRATOR, text: '[deep, epic trailer voice] Choose your champion. BroadRoads. Play free, in your browser.' },
+  ...ORDER.map((id, i) => ({ id: `n_${id}`, at: shotStart(i) + 0.2, voice: NARRATOR, text: VOICE_STYLE + STORY[id] })),
+  { id: 'n_title', at: TITLE_AT + 0.3, voice: NARRATOR, text: VOICE_STYLE + STORY.title },
 ];
 const SFX = [
-  { id: 'fx_wind', at: 0, text: 'cinematic deep wind over a vast valley, distant birds, low rumble, trailer atmosphere', dur: 5 },
-  { id: 'fx_stomp', at: 4.8, text: 'giant stone golem footsteps shaking the ground, rocks cracking and exploding, heavy cinematic impacts', dur: 4.5 },
-  { id: 'fx_wave', at: 9.4, text: 'massive magical tidal wave crashing with a shimmering light beam blast, cinematic', dur: 4.5 },
-  { id: 'fx_blade', at: 14.0, text: 'shadow teleport whoosh then twin daggers slashing, an ice arrow whistling past and freezing', dur: 4.5 },
-  { id: 'fx_dragon', at: 18.6, text: 'colossal dragon roar with a torrent of fire breath and crackling lightning, epic battle', dur: 4.8 },
-  { id: 'fx_boom', at: 27.0, text: 'huge cinematic trailer logo hit, deep boom with reverb tail', dur: 2.4 },
+  ...ORDER.map((id, i) => ({ id: FX[id][0], at: shotStart(i) + 0.05, text: FX[id][1], dur: FX[id][2] })),
+  { id: 'fx_boom', at: TITLE_AT, text: 'huge cinematic trailer logo hit, deep boom with reverb tail', dur: 2.4 },
 ];
 // Timed sections so the build and the final hit land on the cut.
+const ms = x => Math.round(x * 1000);
+const MUSIC_FILE = `music_${TOTAL}s.mp3`; // re-scored whenever the cut's length changes
 const MUSIC_PLAN = {
-  positive_global_styles: ['epic orchestral fantasy trailer', 'cinematic', 'choir', 'taiko drums', 'brass', 'instrumental'],
+  positive_global_styles: ['epic orchestral fantasy trailer', 'cinematic', 'choir', 'taiko drums', 'brass', 'instrumental', 'storytelling'],
   negative_global_styles: ['vocals with lyrics', 'pop', 'electronic', 'lo-fi'],
-  sections: [
-    { section_name: 'Intro', positive_local_styles: ['quiet, mysterious', 'low strings', 'soft choir pad', 'distant horn'], negative_local_styles: ['drums'], duration_ms: 5000, lines: [] },
-    { section_name: 'Build', positive_local_styles: ['heavy taiko drums enter', 'pulsing strings ostinato', 'rising brass', 'tension builds'], negative_local_styles: [], duration_ms: 10000, lines: [] },
-    { section_name: 'Climax', positive_local_styles: ['full orchestra and choir', 'heroic brass melody', 'driving percussion', 'intense'], negative_local_styles: [], duration_ms: 12000, lines: [] },
-    { section_name: 'Final hit', positive_local_styles: ['one massive final orchestral hit and boom', 'long reverb tail', 'silence after'], negative_local_styles: ['melody continues'], duration_ms: 3000, lines: [] },
-  ],
+  sections: (() => {
+    // Section boundaries at shot starts: intro, the champions, the war (titan onward), the finale, the title.
+    const at = id => { const i = ORDER.indexOf(id); return i < 0 ? null : shotStart(i); };
+    const war = at('s7_titan') ?? at('s5_wyrm') ?? shotStart(Math.max(1, CUT.length - 3));
+    const fin = shotStart(CUT.length - 1);
+    return [
+      { section_name: 'Once upon a time', positive_local_styles: ['quiet, mysterious', 'low strings', 'soft choir pad', 'distant horn'], negative_local_styles: ['drums'], duration_ms: ms(shotStart(1)), lines: [] },
+      { section_name: 'The champions', positive_local_styles: ['taiko drums enter', 'pulsing strings ostinato', 'rising brass', 'heroic, building'], negative_local_styles: [], duration_ms: ms(war - shotStart(1)), lines: [] },
+      { section_name: 'War', positive_local_styles: ['full orchestra and choir', 'driving percussion', 'intense battle', 'climax'], negative_local_styles: [], duration_ms: ms(fin - war), lines: [] },
+      { section_name: 'The Valley is waiting', positive_local_styles: ['heroic resolve', 'soaring brass theme', 'choir swell'], negative_local_styles: [], duration_ms: ms(TITLE_AT - fin), lines: [] },
+      { section_name: 'Title', positive_local_styles: ['one massive final orchestral hit and boom', 'long reverb tail', 'silence after'], negative_local_styles: ['melody continues'], duration_ms: ms(TOTAL - TITLE_AT), lines: [] },
+    ];
+  })(),
 };
 
 const exists = f => fs.existsSync(f) && fs.statSync(f).size > 0;
@@ -137,6 +182,7 @@ async function shots() {
   const reqs = exists(reqFile) ? JSON.parse(fs.readFileSync(reqFile, 'utf8')) : {};
   const save = () => fs.writeFileSync(reqFile, JSON.stringify(reqs, null, 1));
   const onlyIds = process.env.SHOT_IDS?.split(',');
+  const failed = [];
   for (const s of SHOTS.filter(x => !onlyIds || onlyIds.includes(x.id))) {
     const file = path.join(SRC, `${s.id}.mp4`);
     if (exists(file)) continue;
@@ -153,9 +199,12 @@ async function shots() {
       console.log(`✓ shot ${s.id}`);
     } catch (err) {
       if (err.terminal) { delete reqs[s.id]; save(); } // failed requests are refunded; submit fresh next time
-      throw new Error(`shot ${s.id}: ${err.message}`);
+      console.error(`✗ shot ${s.id}: ${err.message}`);
+      failed.push(s.id);
+      if (/balance is too low|not_enough_credits/.test(err.message)) break; // the rest would fail too
     }
   }
+  if (failed.length) throw new Error(`shots not generated: ${failed.join(', ')}`);
 }
 
 /* 3. audio */
@@ -164,13 +213,13 @@ async function audio() {
   const jobs = [];
   for (const l of LINES) {
     const f = path.join(SRC, `${l.id}.mp3`);
-    if (!exists(f)) jobs.push(() => xi(`/v1/text-to-speech/${l.voice}?output_format=mp3_44100_192`, { text: l.text, model_id: 'eleven_v4' }, f).then(() => console.log(`✓ ${l.id}`)));
+    if (!exists(f)) jobs.push(() => xi(`/v1/text-to-speech/${l.voice}?output_format=mp3_44100_192`, { text: l.text, model_id: 'eleven_v4', voice_settings: { stability: 0.5, similarity_boost: 0.8, style: 0.35, use_speaker_boost: true } }, f).then(() => console.log(`✓ ${l.id}`)));
   }
   for (const s of SFX) {
     const f = path.join(SRC, `${s.id}.mp3`);
     if (!exists(f)) jobs.push(() => xi('/v1/sound-generation', { text: s.text, duration_seconds: s.dur, prompt_influence: 0.5 }, f).then(() => console.log(`✓ ${s.id}`)));
   }
-  const mf = path.join(SRC, 'music.mp3');
+  const mf = path.join(SRC, MUSIC_FILE);
   if (!exists(mf)) jobs.push(() => xi('/v1/music', { composition_plan: MUSIC_PLAN, model_id: 'music_v1', respect_sections_durations: true }, mf).then(() => console.log('✓ music')));
   for (let i = 0; i < jobs.length; i += 3) await Promise.all(jobs.slice(i, i + 3).map(j => j()));
 }
@@ -207,35 +256,38 @@ async function cut() {
     console.log(`  ${s.id}: using a push-in on the key frame (no generated clip yet)`);
     return still;
   };
-  const vin = SHOTS.flatMap((s, i) => ['-i', clip(s, i)]);
-  const lastIdx = SHOTS.length - 1;
-  let fc = SHOTS.map((_, i) => `[${i}:v]scale=1920:1080:force_original_aspect_ratio=increase,crop=1920:1080,trim=0:${SHOT},setpts=PTS-STARTPTS,fps=30,settb=1/30${i === lastIdx ? `,tpad=stop_mode=clone:stop_duration=${(TOTAL - shotStart(lastIdx) - SHOT + 0.1).toFixed(2)}` : ''},format=yuv420p[v${i}]`).join(';');
+  const vin = CUT.flatMap((s, i) => ['-i', clip(s, i)]);
+  const lastIdx = CUT.length - 1;
+  const clips = CUT.map((s, i) => vin[i * 2 + 1]);
+  // Every clip is fitted to SHOT seconds: a 5 s clip plays in gentle slow motion.
+  const stretch = clips.map(f => Math.max(1, SHOT / durationOf(f)).toFixed(4));
+  let fc = CUT.map((_, i) => `[${i}:v]scale=1920:1080:force_original_aspect_ratio=increase,crop=1920:1080,setpts=${stretch[i]}*(PTS-STARTPTS),trim=0:${SHOT},setpts=PTS-STARTPTS,fps=30,settb=1/30${i === lastIdx ? `,tpad=stop_mode=clone:stop_duration=${(TOTAL - shotStart(lastIdx) - SHOT + 0.1).toFixed(2)}` : ''},format=yuv420p[v${i}]`).join(';');
   let last = 'v0';
-  SHOTS.slice(1).forEach((_, k) => {
+  CUT.slice(1).forEach((_, k) => {
     const i = k + 1;
     fc += `;[${last}][v${i}]xfade=transition=fade:duration=${XF}:offset=${shotStart(i).toFixed(2)}[x${i}]`;
     last = `x${i}`;
   });
-  const titleAt = total - 3; // with the music's final hit
+  const titleAt = TITLE_AT; // with the music's final hit
   const title = path.join(SRC, 'title.png');
   await titleCard(title);
-  vin.push('-loop', '1', '-t', '3', '-i', title);
+  vin.push('-loop', '1', '-t', String(TITLE + 0.5), '-i', title);
   fc += `;[${last}]trim=0:${total},fade=t=out:st=${titleAt}:d=0.8:color=black[dim]`; // picture fades out under the title
-  fc += `;[${SHOTS.length}:v]format=rgba,fade=t=in:st=0.4:d=0.7:alpha=1,setpts=PTS-STARTPTS+${titleAt}/TB[title];[dim][title]overlay=0:0:eof_action=pass,format=yuv420p[vout]`;
+  fc += `;[${CUT.length}:v]format=rgba,fade=t=in:st=0.4:d=0.7:alpha=1,setpts=PTS-STARTPTS+${titleAt}/TB[title];[dim][title]overlay=0:0:eof_action=pass,format=yuv420p[vout]`;
 
   // Audio: music bed (ducked under voices), sfx, voice lines at their times.
-  const ain = [['music', 0], ...SFX.map(s => [s.id, s.at]), ...LINES.map(l => [l.id, l.at])];
+  const ain = [[MUSIC_FILE.replace('.mp3', ''), 0], ...SFX.map(s => [s.id, s.at]), ...LINES.map(l => [l.id, l.at])];
   const aArgs = ain.flatMap(([id]) => ['-i', path.join(SRC, `${id}.mp3`)]);
-  const base = SHOTS.length + 1; // after the shots and the title card
+  const base = CUT.length + 1; // after the shots and the title card
   const parts = [];
   ain.forEach(([id, at], k) => {
     const idx = base + k;
-    const isVo = id.startsWith('vo'), isMusic = id === 'music';
+    const isVo = id.startsWith('n_'), isMusic = id.startsWith('music');
     const vol = isMusic ? 0.55 : isVo ? 1.6 : 0.7;
-    parts.push(`[${idx}:a]aresample=44100,aformat=channel_layouts=stereo,volume=${vol},adelay=${Math.round(at * 1000)}|${Math.round(at * 1000)}${isMusic ? `,afade=t=out:st=${total - 1.2}:d=1.2` : ''}[a${k}]`);
+    parts.push(`[${idx}:a]aresample=44100,aformat=channel_layouts=stereo,${isVo ? 'atempo=1.04,' : ''}volume=${vol},adelay=${Math.round(at * 1000)}|${Math.round(at * 1000)}${isMusic ? `,afade=t=out:st=${total - 1.2}:d=1.2` : ''}[a${k}]`);
   });
-  const voIdx = ain.map(([id], k) => (id.startsWith('vo') ? `[a${k}]` : '')).join('');
-  const otherIdx = ain.map(([id], k) => (!id.startsWith('vo') && id !== 'music' ? `[a${k}]` : '')).join('');
+  const voIdx = ain.map(([id], k) => (id.startsWith('n_') ? `[a${k}]` : '')).join('');
+  const otherIdx = ain.map(([id], k) => (!id.startsWith('n_') && !id.startsWith('music') ? `[a${k}]` : '')).join('');
   const voCount = LINES.length, fxCount = SFX.length;
   parts.push(`${voIdx}amix=inputs=${voCount}:normalize=0,asplit=2[vo][vokey]`);
   parts.push(`[a0][vokey]sidechaincompress=threshold=0.05:ratio=6:attack=20:release=400[musicd]`);
@@ -246,7 +298,7 @@ async function cut() {
   const full = path.join(OUT, 'broadroads-trailer.mp4');
   ff([...vin, ...aArgs, '-filter_complex', fc, '-map', '[vout]', '-map', '[aout]', '-c:v', 'libx264', '-preset', 'slow', '-crf', '19', '-pix_fmt', 'yuv420p', '-c:a', 'aac', '-b:a', '192k', '-movflags', '+faststart', '-t', String(total), full]);
   // Landing page background: muted, 720p, no title card (the page has its own headline), loops cleanly.
-  const bgLen = total - 3;
+  const bgLen = Math.round(TITLE_AT * 10) / 10; // everything before the title card
   ff(['-i', full, '-t', String(bgLen), '-an', '-vf', `scale=1280:720,fade=t=in:st=0:d=0.6,fade=t=out:st=${bgLen - 0.6}:d=0.6`, '-c:v', 'libx264', '-preset', 'slow', '-crf', '27', '-pix_fmt', 'yuv420p', '-movflags', '+faststart', path.join(OUT, 'bg.mp4')]);
   ff(['-ss', '6.5', '-i', full, '-frames:v', '1', '-vf', 'scale=1280:720', '-q:v', '4', path.join(OUT, 'poster.jpg')]);
   for (const f of ['broadroads-trailer.mp4', 'bg.mp4', 'poster.jpg']) console.log(`✓ ${f} ${(fs.statSync(path.join(OUT, f)).size / 1048576).toFixed(1)} MB`);
