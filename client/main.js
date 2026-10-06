@@ -6,6 +6,7 @@ import { setModelsEnabled } from './render/assetModels.js';
 import { iconsReady } from './ui/icons.js';
 import './net/report.js';
 import { ReplayPlayer } from './game/spectate.js';
+import { notify, askNotifyPermission } from './ui/notify.js';
 import { Game } from './game/game.js';
 import { Lobby } from './ui/lobby.js';
 import { Select } from './ui/select.js';
@@ -41,13 +42,19 @@ class App {
 
   show(id) { for (const s of $$('.screen')) s.hidden = s.id !== id; $('#hud').hidden = id !== 'game'; if (id === 'game') for (const s of $$('.screen')) s.hidden = true; }
 
-  send(msg) { if (this.conn) this.conn.send(msg); }
+  send(msg) {
+    if (msg.t === 'queue') askNotifyPermission(); // so 'match found' can reach a background tab
+    if (this.conn) this.conn.send(msg);
+  }
 
   /* ---------------- auth screen ---------------- */
   setTab(t) {
     this.tab = t;
     for (const b of $$('.auth-card .tab')) b.classList.toggle('active', b.dataset.tab === t);
     $('#pass-field').hidden = t === 'offline';
+    $('#email-field').hidden = t !== 'register';
+    $('#forgot-btn').hidden = t !== 'login';
+    $('#oauth-row').hidden = t === 'offline' || !this.providers || !(this.providers.google || this.providers.discord);
     $('#auth-pass').required = t !== 'offline';
     $('#auth-submit').textContent = t === 'register' ? 'Create Account' : t === 'offline' ? 'Play Offline vs AI' : 'Enter the Valley';
     $('#auth-hint').textContent = t === 'offline' ? 'Offline mode runs the full game in your browser against bots. Your profile is saved on this device.' : t === 'register' ? 'Your account name is your player name. 3–16 letters, numbers or _.' : '';
@@ -76,7 +83,7 @@ class App {
     btn.disabled = true;
     try {
       if (this.tab === 'offline') return await this.startSession(new OfflineConnection(name), name, true);
-      const res = await api(this.tab === 'register' ? '/api/auth/register' : '/api/auth/login', { username: name, password: pass });
+      const res = await api(this.tab === 'register' ? '/api/auth/register' : '/api/auth/login', { username: name, password: pass, ...(this.tab === 'register' && $('#auth-email').value.trim() ? { email: $('#auth-email').value.trim() } : {}) });
       try { localStorage.setItem(TOKEN_KEY, JSON.stringify({ token: res.token, username: res.username })); } catch { /* ignore */ }
       $('#auth-pass').value = '';
       await this.startSession(new OnlineConnection(res.token), res.username, false);
@@ -133,6 +140,7 @@ class App {
         if (!this.inSelect) {
           this.inSelect = true;
           sfx.play('queue_found', { late: true });
+          notify('Match found!', 'Champion select has started — come back to pick.', 'match');
           if (m.select.mode === 'ranked') sfx.announce('vo_match_found', 3);
           sfx.announce('vo_choose', 2);
         }
@@ -145,15 +153,22 @@ class App {
         else this.startGame(m);
         break;
       case 'live': this.lobby?.setLive(m.list); break;
-      case 'friends': this.lobby?.setFriends(m); break;
+      case 'friends': {
+        const was = new Set((this.lobby?.friends?.list || []).filter(f => f.online).map(f => f.name));
+        if (this.lobby?.friends) for (const f of m.list) if (f.online && !was.has(f.name)) notify(`${f.name} is online`, 'Invite them to a party from the lobby.', `friend-${f.name}`);
+        for (const r of m.reqs) if (!(this.lobby?.friends?.reqs || []).includes(r)) notify('Friend request', `${r} wants to be friends.`, `freq-${r}`);
+        this.lobby?.setFriends(m);
+        break;
+      }
       case 'replays': this.lobby?.setReplays(m.list); break;
       case 'replay': this.startReplay(m.header, m.lines); break;
       case 'replaySaved': this.lastReplay = m; this.game?.panels.refresh(['end']); break;
       case 'party': this.lobby?.setParty(m.party); break;
-      case 'invite': sfx.play('ui_notify'); this.ui.prompt(`${m.from} invites you to their party.`, () => this.send({ t: 'party', op: 'accept', party: m.party }), () => this.send({ t: 'party', op: 'decline', party: m.party })); break;
+      case 'invite': sfx.play('ui_notify'); notify('Party invite', `${m.from} invites you to their party.`, 'invite'); this.ui.prompt(`${m.from} invites you to their party.`, () => this.send({ t: 'party', op: 'accept', party: m.party }), () => this.send({ t: 'party', op: 'decline', party: m.party })); break;
       case 'who': this.lobby?.setWho(m); break;
       case 'lb': this.lobby?.setLeaderboard(m); break;
       case 'chat':
+        if (m.ch === 'whisper' && m.from !== this.name) notify(`Whisper from ${m.from}`, m.text, `w-${m.from}`);
         if (this.game) this.game.onMessage(m);
         else { this.lobby?.chat.add(m); if (m.from && m.from !== this.name) sfx.play('chat_msg', { gap: 0.3 }); }
         break;
@@ -263,7 +278,67 @@ class App {
     if (!seen && !(saved && saved.token) && !new URLSearchParams(location.search).has('replay')) this.show('screen-landing');
   }
 
+  /* ---------------- account recovery & social sign-in ---------------- */
+  get token() { try { return JSON.parse(localStorage.getItem(TOKEN_KEY) || 'null')?.token || null; } catch { return null; } }
+
+  signedIn(token, username) {
+    try { localStorage.setItem(TOKEN_KEY, JSON.stringify({ token, username })); } catch { /* ignore */ }
+    this.startSession(new OnlineConnection(token), username, false);
+  }
+
+  dialog(title, fields, submitLabel, onSubmit) {
+    const wrap = document.createElement('div');
+    wrap.className = 'report-dlg';
+    const card = document.createElement('form');
+    card.className = 'rd-card';
+    card.innerHTML = `<h3></h3>${fields.map(f => `<label class="field"><span>${f.label}</span><input name="${f.name}" type="${f.type || 'text'}" autocomplete="${f.auto || 'off'}" ${f.min ? `minlength="${f.min}"` : ''} required></label>`).join('')}<p class="auth-error"></p><div class="btn-row"><button class="btn btn-primary" type="submit"></button><button class="btn" type="button" data-cancel>Cancel</button></div>`;
+    card.querySelector('h3').textContent = title;
+    card.querySelector('[type=submit]').textContent = submitLabel;
+    card.querySelector('[data-cancel]').onclick = () => wrap.remove();
+    card.onsubmit = async e => {
+      e.preventDefault();
+      const data = Object.fromEntries(new FormData(card));
+      try { await onSubmit(data, wrap); } catch (err) { card.querySelector('.auth-error').textContent = err.message; }
+    };
+    wrap.append(card);
+    document.body.append(wrap);
+    card.querySelector('input')?.focus();
+  }
+
+  forgot() {
+    this.dialog('Reset your password', [{ name: 'login', label: 'Player name or email' }], 'Send reset link', async (d, wrap) => {
+      await api('/api/auth/forgot', { login: d.login });
+      wrap.remove();
+      this.ui.toast('If that account has an email address, a reset link is on its way.', 'good', 6000);
+    });
+  }
+
+  /** ?reset=TOKEN links, #oauth=TOKEN&user=NAME after Google/Discord, #oauthError=… on failure. */
+  async handleAuthLinks() {
+    const q = new URLSearchParams(location.search), hash = new URLSearchParams(location.hash.slice(1));
+    if (hash.get('oauth')) { history.replaceState(null, '', location.pathname); this.signedIn(hash.get('oauth'), hash.get('user')); return true; }
+    if (hash.get('oauthError')) { history.replaceState(null, '', location.pathname); this.ui.toast(hash.get('oauthError'), 'warn', 5000); }
+    if (q.get('reset')) {
+      const token = q.get('reset');
+      history.replaceState(null, '', location.pathname);
+      this.show('screen-auth');
+      this.dialog('Choose a new password', [{ name: 'password', label: 'New password', type: 'password', auto: 'new-password', min: 6 }], 'Save and log in', async (d, wrap) => {
+        const res = await api('/api/auth/reset', { token, password: d.password });
+        wrap.remove();
+        this.signedIn(res.token, res.username);
+      });
+      return true;
+    }
+    return false;
+  }
+
   async boot() {
+    $('#forgot-btn').addEventListener('click', () => this.forgot());
+    api('/api/auth/providers').then(p => {
+      this.providers = p;
+      $('#oauth-google').hidden = !p.google; $('#oauth-discord').hidden = !p.discord;
+      this.setTab(this.tab);
+    }).catch(() => {});
     for (const b of $$('.auth-card .tab')) b.addEventListener('click', () => this.setTab(b.dataset.tab));
     $('#auth-form').addEventListener('submit', e => this.submit(e));
     this.setTab('login');
@@ -271,11 +346,12 @@ class App {
     let saved = null;
     try { saved = JSON.parse(localStorage.getItem(TOKEN_KEY) || 'null'); } catch { /* ignore */ }
     this.landing(saved);
+    setInterval(() => { if (!this.conn) this.refreshServer(); }, 15000);
+    if (await this.handleAuthLinks()) return;
     if (saved && saved.token && this.serverInfo) {
       $('#auth-user').value = saved.username;
       this.startSession(new OnlineConnection(saved.token), saved.username, false);
     }
-    setInterval(() => { if (!this.conn) this.refreshServer(); }, 15000);
   }
 }
 

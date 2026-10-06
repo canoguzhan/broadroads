@@ -19,6 +19,7 @@
     "preview": "npm run build && npm start"
   },
   "dependencies": {
+    "nodemailer": "^10.0.15",
     "pg": "^8.13.1",
     "ws": "^8.18.0"
   },

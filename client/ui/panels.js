@@ -6,6 +6,7 @@ import { sfx } from '../audio/sfx.js';
 import { pic, champKey } from './icons.js';
 import { QUESTS } from '../../shared/moba/progression.js';
 import { share } from './share.js';
+import { isMuted, toggleMute, openReport } from './social.js';
 
 const CATS = [['rec', '⭐ Recommended'], ['basic', 'Basic'], ['boots', 'Boots'], ['attack', 'Attack'], ['magic', 'Magic'], ['defense', 'Defense'], ['consumable', 'Consumables']];
 const STAT = { ad: 'Attack Damage', ap: 'Ability Power', hp: 'Health', mp: 'Mana', armor: 'Armor', mr: 'Magic Resist', as: '% Attack Speed', crit: '% Crit Chance', ms: 'Move Speed', msPct: '% Move Speed', haste: 'Haste', lifesteal: '% Lifesteal', armorPen: '% Armor Pen', magicPen: 'Magic Pen', magicPenPct: '% Magic Pen', hpRegen: 'HP Regen /s', mpRegen: 'Mana Regen /s', tenacity: '% Tenacity' };
@@ -97,7 +98,10 @@ export class Panels {
       h('tr', {}, h('th', { text: '' }), h('th', { text: 'Player' }), h('th', { text: 'Lv' }), h('th', { text: 'K / D / A' }), h('th', { text: 'CS' }), h('th', { text: 'Items' })),
       ...sc.players.filter(p => p.tm === team).map(p => h(`tr${p.id === g.world.youId ? '.me' : ''}${p.dead ? '.dead' : ''}`, {},
         h('td.sb-c', {}, h('span.sb-pic', {}, pic(champKey(p.c), g.champInfo[p.c]?.icon || '?'))),
-        h('td', {}, `${p.name}${p.bot ? ' 🤖' : ''}`, p.dead ? h('small', { text: ` (${p.rs}s)` }) : null),
+        h('td', {}, `${p.name}${p.bot ? ' 🤖' : ''}`, p.dead ? h('small', { text: ` (${p.rs}s)` }) : null,
+          !p.bot && p.id !== g.world.youId ? h('span.sb-act', {},
+            h('button.btn.btn-xs', { title: isMuted(p.name) ? 'Unmute' : 'Mute chat', onclick: () => { g.ui.toast(toggleMute(p.name) ? `${p.name} muted` : `${p.name} unmuted`); this.render(); } }, isMuted(p.name) ? '🔇' : '🔈'),
+            h('button.btn.btn-xs', { title: 'Report', onclick: () => openReport(g.ui, m => g.send(m), p.name, g.match.id) }, '🚩')) : null),
         h('td', { text: p.l }), h('td', { text: `${p.k} / ${p.d} / ${p.a}` }), h('td', { text: p.cs }),
         h('td.sb-items', {}, ...p.it.map(i => h('span.sb-item', {}, i ? pic(`item/${i}`, g.data.items[i].icon) : ''))))));
     return {
@@ -133,6 +137,7 @@ export class Panels {
         h('label.field.row', {}, lock, h('span', { text: 'Lock camera to champion (Y)' })),
         h('label.field.row', {}, fps, h('span', { text: 'Show FPS & ping' })),
         h('label.field.row', {}, autoLvl, h('span', { text: 'Auto-level abilities (ultimate first)' })),
+        typeof Notification !== 'undefined' && Notification.permission === 'default' ? h('button.btn.btn-sm', { onclick: ev => { Notification.requestPermission(); ev.currentTarget.remove(); } }, '🔔 Enable notifications (match found, invites)') : null,
         h('label.field.row', {}, models, h('span', { text: 'Detailed 3D models (turn off on slow devices; applies next match)' })),
         h('div.btn-row', {},
           h('button.btn', { onclick: () => this.open('help') }, '❔ Controls'),
@@ -186,7 +191,7 @@ export class Panels {
       content: h('div.result', {},
         watching ? h('h2.win', { text: `${res.winner === 'blue' ? 'BLUE' : 'RED'} TEAM WINS` }) : h(`h2.${win ? 'win' : 'loss'}`, { text: win ? 'VICTORY' : 'DEFEAT' }),
         r.bonus && r.bonus.firstWin ? h('div.first-win', {}, pic('misc/firstwin', '☀️'), h('b', { text: 'First win of the day!' }), ' +100 💠 +200 XP') : null,
-        watching ? null : h('p', {}, `+${r.xp} XP`, r.rated ? ` · Rating ${r.delta >= 0 ? '+' : ''}${r.delta} (${r.profile.rating})` : ' · Unranked'),
+        watching ? null : h('p', {}, `+${r.xp} XP`, r.rated ? ` · Rating ${(r.bonus?.delta ?? r.delta) >= 0 ? '+' : ''}${r.bonus?.delta ?? r.delta} (${r.profile.rating})${r.bonus?.placement ? ` · Placement ${r.bonus.placement}/5` : ''}` : ' · Unranked'),
         r.profile && r.profile.quests ? h('div.end-quests', {}, ...r.profile.quests.list.map(q => { const d = QUESTS[q.id]; return d ? h(`span.eq${q.n >= d.goal ? '.done' : ''}`, { text: `${q.n >= d.goal ? '✓' : '📜'} ${d.text}: ${Math.min(q.n, d.goal).toLocaleString()}/${d.goal.toLocaleString()}` }) : null; }), h('span.eq.sh', { text: `💠 ${r.profile.shards} shards` })) : null,
         this.replayButtons(),
         h('h4.t-blue', { text: 'Blue team' }), table('blue'), h('h4.t-red', { text: 'Red team' }), table('red'),

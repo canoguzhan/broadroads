@@ -120,7 +120,16 @@ describe('lobby', () => {
     for (const s of ss) hub.handle(s, { t: 'queue', mode: 'ranked' });
     ticks(hub, 25);
     assert.ok(ss.every(s => s.last('select')?.select.ranked));
+    assert.equal(ss[0].last('select').select.phase, 'ban');
+    for (const s of ss) hub.handle(s, { t: 'ban', champ: s === ss[0] ? 'garrok' : 'lyra' });
+    ticks(hub, 2);
+    const sel = ss[0].last('select').select;
+    assert.equal(sel.phase, 'pick');
+    assert.ok(sel.bans.includes('lyra'), 'majority vote decides the ban');
+    hub.handle(ss[1], { t: 'pick', champ: 'lyra' });
+    assert.notEqual(ss[1].last('select').select.players.find(p => p.you).champ, 'lyra', 'banned champion cannot be picked');
     ticks(hub, 60);
+    assert.ok(!ss[0].view.match.heroes.some(h => sel.bans.includes(h.champ)), 'nobody plays a banned champion');
     const match = ss[0].view.match;
     assert.ok(match.ranked);
     match.end('blue', 'test');

@@ -1,5 +1,6 @@
 /* Chat box. In a match: team chat (default) or /all. In the lobby: global and party. */
 import { h, clear } from './dom.js';
+import { isMuted } from './social.js';
 
 const LABEL = { team: 'Team', all: 'All', global: 'Lobby', party: 'Party', whisper: 'Whisper', system: '' };
 
@@ -62,6 +63,7 @@ export class Chat {
   system(text, kind = '') { this.add({ ch: 'system', from: '', text, kind }); }
 
   add(m) {
+    if (m.from && m.from !== this.app.name && isMuted(m.from)) return; // muted on this device
     const ch = m.ch || 'system';
     if (ch === 'whisper' && m.from !== this.app.name) this.lastWhisper = m.from;
     const line = h(`div.chat-line.ch-${ch}${m.kind ? `.k-${m.kind}` : ''}`);

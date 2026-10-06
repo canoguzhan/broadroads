@@ -50,7 +50,7 @@
     <div class="ld-features">
       <div class="ld-card"><img src="/icons/misc/tier_gold.webp" alt=""><h3>Ranked seasons</h3><p>Climb from Bronze to Champion with Elo matchmaking, quarterly seasons and peak-tier rewards.</p></div>
       <div class="ld-card"><img src="/icons/misc/streak.webp" alt=""><h3>Skirmish 3v3</h3><p>One lane, level 3 start, done in about ten minutes. Perfect on a phone or between meetings.</p></div>
-      <div class="ld-card"><img src="/portraits/lyra.webp" alt=""><h3>10 champions, real 3D</h3><p>Rigged, animated champions with voices, emotes and unlockable skins.</p></div>
+      <div class="ld-card"><img src="/portraits/lyra.webp" alt=""><h3>12 champions, real 3D</h3><p>Rigged, animated champions with voices, emotes and unlockable skins.</p></div>
       <div class="ld-card"><img src="/icons/misc/trophy.webp" alt=""><h3>Watch &amp; share</h3><p>Spectate live matches, rewatch any game and share your best moments with one link.</p></div>
       <div class="ld-card"><img src="/icons/misc/quest.webp" alt=""><h3>Daily quests</h3><p>Login streaks, first-win bonuses and quests earn shards for skins and profile pictures.</p></div>
       <div class="ld-card"><img src="/icons/misc/shop.webp" alt=""><h3>Play with friends</h3><p>Friends list, parties of up to five, custom rooms with bots, and practice against AI any time.</p></div>
@@ -71,7 +71,7 @@
       <header class="brand">
         <div class="brand-mark">⚔️</div>
         <h1 class="brand-title">BROADROADS</h1>
-        <p class="brand-tag">5v5 browser MOBA · 10 champions · Ranked · Custom games · Practice vs AI</p>
+        <p class="brand-tag">5v5 browser MOBA · 12 champions · Ranked · Custom games · Practice vs AI</p>
       </header>
       <div class="auth-card">
         <div class="server-status" id="server-status"><span class="dot"></span><span class="label">Checking servers…</span></div>
@@ -87,14 +87,23 @@
           <label class="field" id="pass-field"><span>Password</span>
             <input id="auth-pass" name="password" type="password" autocomplete="current-password" minlength="6" maxlength="128">
           </label>
+          <label class="field" id="email-field" hidden><span>Email <small class="muted">(optional, for password recovery)</small></span>
+            <input id="auth-email" name="email" type="email" autocomplete="email" maxlength="254">
+          </label>
           <p class="auth-hint" id="auth-hint"></p>
           <p class="auth-error" id="auth-error" role="alert"></p>
           <button class="btn btn-primary btn-lg" id="auth-submit" type="submit">Enter the Valley</button>
+          <button class="link-btn" id="forgot-btn" type="button">Forgot password?</button>
         </form>
+        <div class="oauth-row" id="oauth-row" hidden>
+          <div class="or"><span>or</span></div>
+          <a class="btn btn-oauth" id="oauth-google" href="/api/auth/oauth/google/start" hidden>Continue with Google</a>
+          <a class="btn btn-oauth" id="oauth-discord" href="/api/auth/oauth/discord/start" hidden>Continue with Discord</a>
+        </div>
       </div>
       <ul class="features">
         <li><b>⚔️ 5v5 in the Valley</b><span>Three lanes, a jungle, towers, spires and the Core. Last-hit, build items, out-play.</span></li>
-        <li><b>🧙 10 Champions</b><span>Tanks, fighters, assassins, mages, marksmen and supports — each with a passive and four abilities.</span></li>
+        <li><b>🧙 12 Champions</b><span>Tanks, fighters, assassins, mages, marksmen and supports — each with a passive and four abilities.</span></li>
         <li><b>🏆 Ranked & Custom</b><span>Elo matchmaking with parties, custom rooms with friends, or practice against smart bots.</span></li>
       </ul>
       <footer class="site-foot">© BroadRoads · <a href="https://broadroads.com">broadroads.com</a></footer>

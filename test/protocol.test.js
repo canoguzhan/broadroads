@@ -79,3 +79,20 @@ test('brawl: 5v5 with random unique champions, picks refused, one lane', async (
   assert.deepEqual(m.lanes, ['mid']);
   assert.equal(m.heroes.find(h => h.session === s).level, 3);
 });
+
+test('leaving ranked champion select locks you out of ranked, escalating', async () => {
+  const hub = new Hub({ store: new MemoryStore(), config: { queueBotWait: 0, selectTime: 30 }, log: { error() {}, log() {}, info() {} } });
+  const join = async n => { const inbox = []; const s = await hub.connect({ accountId: n, name: n, send: m => inbox.push(m) }); s.inbox = inbox; return s; };
+  let a = await join('Dodger');
+  hub.handle(a, { t: 'queue', mode: 'ranked' });
+  hub.tick(); hub.processQueue();
+  assert.ok(hub.selects.size === 1, 'in ranked select');
+  await hub.disconnect(a);
+  a = await join('Dodger');
+  const until = a.profile.queueLockUntil;
+  assert.ok(until > Date.now() + 4 * 60000 && until <= Date.now() + 5 * 60000);
+  hub.handle(a, { t: 'queue', mode: 'ranked' });
+  assert.match(a.inbox.filter(m => m.t === 'notice').pop().text, /locked out of ranked/);
+  hub.penalize(a.profile, 'dodge');
+  assert.ok(a.profile.queueLockUntil > Date.now() + 14 * 60000, 'second offence: 15 minutes');
+});

@@ -55,6 +55,29 @@ export class FileStore {
     return acc;
   }
 
+  /** Account metadata (email, linked logins, reset token). */
+  async getAccount(id) { const a = this.data.accounts[id]; return a ? { ...a, meta: a.meta || {} } : null; }
+
+  async updateAccountMeta(id, patch) {
+    const a = this.data.accounts[id];
+    if (!a) return;
+    a.meta = { ...(a.meta || {}) };
+    for (const [k, v] of Object.entries(patch)) { if (v === null) delete a.meta[k]; else a.meta[k] = v; }
+    this.scheduleWrite();
+  }
+
+  /** field: 'email' | 'resetHash' | 'oauth:<provider>' */
+  async findAccountBy(field, value) {
+    const [k, sub] = field.split(':');
+    const v = String(value).toLowerCase();
+    const a = Object.values(this.data.accounts).find(x => {
+      const m = x.meta || {};
+      if (sub) return m.oauth && m.oauth[sub] === value;
+      return m[k] != null && (k === 'email' ? String(m[k]).toLowerCase() === v : m[k] === value);
+    });
+    return a ? { ...a, meta: a.meta || {} } : null;
+  }
+
   async updatePasswordHash(id, passwordHash) {
     if (this.data.accounts[id]) { this.data.accounts[id].passwordHash = passwordHash; this.scheduleWrite(); }
   }

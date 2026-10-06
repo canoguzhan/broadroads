@@ -1,6 +1,7 @@
 /* Lobby + match server core. Transport-agnostic: wrapped by the Node server
    (WebSockets + database) and by the browser for offline play vs AI. */
 import { TICK, CHAT_MAX, PROTOCOL_VERSION } from './constants.js';
+import { filterChat } from './chatfilter.js';
 import { KEYSTONES } from './moba/keystones.js';
 import { Match, CFG } from './moba/match.js';
 import { CHAMPIONS, CHAMPION_IDS, championInfo } from './moba/champions.js';
@@ -119,7 +120,10 @@ export class Hub {
     if (session.roomCode) this.roomOp(session, { op: 'leave' });
     for (const sel of this.selects.values()) {
       const p = sel.players.find(x => x.session === session);
-      if (p) { p.session = null; p.bot = true; p.wasHuman = true; }
+      if (p) {
+        p.session = null; p.bot = true; p.wasHuman = true;
+        if (sel.opts.mode === 'ranked' && !sel.started && session.profile) this.penalize(session.profile, 'dodge');
+      }
     }
     const active = this.activeByAccount.get(session.accountId);
     if (active) {
@@ -166,6 +170,7 @@ export class Hub {
   /* ================= tick ================= */
   tickMatch(m, dt) {
     m.update(dt);
+    this.checkAfk(m, dt);
     // Full snapshots at 10 Hz; on the ticks in between, only effect events
     // (hits, casts) go out right away so combat feedback stays immediate.
     const full = (m.netTick = (m.netTick || 0) + 1) % 2 === 0 || this.config.snapshotEvery === 1;
@@ -238,7 +243,9 @@ export class Hub {
     if (MATCH_CMDS.has(msg.t)) {
       const v = session.view;
       if (!v || v.spectator) return;
-      return v.match.command(v.match.get(v.heroId), msg);
+      const hero = v.match.get(v.heroId);
+      if (hero) { hero.idleT = 0; hero.afkWarned = false; }
+      return v.match.command(hero, msg);
     }
     switch (msg.t) {
       case 'mping': { const v = session.view; if (v && !v.spectator) v.match.command(v.match.get(v.heroId), { ...msg, t: 'ping' }); return; }
@@ -246,7 +253,7 @@ export class Hub {
       case 'queue': return this.joinQueue(session, msg);
       case 'cancel': return this.leaveQueue(session);
       case 'room': return this.roomOp(session, msg);
-      case 'pick': case 'csumm': case 'ks': case 'lock': return this.selectOp(session, msg);
+      case 'pick': case 'csumm': case 'ks': case 'lock': case 'ban': return this.selectOp(session, msg);
       case 'party': return this.partyOp(session, msg);
       case 'chat': return this.chat(session, msg);
       case 'who': return this.who(session);
@@ -256,6 +263,7 @@ export class Hub {
       case 'live': return session.send({ t: 'live', list: this.liveMatches() });
       case 'track': if (msg.ev === 'tutorialDone' && !session.profile?.tutorialDone) { session.profile.tutorialDone = true; this.analytics?.event('tutorialDone'); } return;
       case 'friend': return this.friendOp(session, msg);
+      case 'report': return this.report(session, msg);
       case 'friends': return this.sendFriends(session);
       case 'spectate': return this.spectate(session, msg.id);
       case 'replays': case 'replay': return this.replayOp(session, msg);
@@ -265,6 +273,7 @@ export class Hub {
         const v = session.view;
         if (v?.spectator) { this.detach(session); return this.sendLobby(session); }
         if (!v || v.match.ended) return;
+        if (v.match.ranked && session.profile) this.penalize(session.profile, 'leave');
         const h = v.match.get(v.heroId);
         if (h) { h.session = null; h.wasHuman = true; h.bot = makeBrain({ role: h.botRole || guessRole(h.champ), skill: 0.7 }); h.ver++; }
         session.view = null;
@@ -282,7 +291,7 @@ export class Hub {
 
   /* ================= chat & social ================= */
   chat(session, msg) {
-    const text = clean(msg.text);
+    const text = filterChat(clean(msg.text));
     if (!text) return;
     const now = Date.now();
     session.chatBudget = Math.min(5, session.chatBudget + (now - session.lastChat) / 1500);
@@ -294,6 +303,7 @@ export class Hub {
     switch (msg.ch) {
       case 'team': case 'all':
         if (!v) return this.notice(session, 'You are not in a match.', 'warn');
+        if (v.spectator) return this.notice(session, 'Spectators cannot chat in the match.', 'warn');
         out.team = v.team;
         out.champ = v.match.get(v.heroId)?.champ;
         for (const h of v.match.heroes) if (h.session && (msg.ch === 'all' || h.team === v.team)) h.session.send(out);
@@ -551,6 +561,8 @@ export class Hub {
       const difficulty = ['easy', 'normal', 'hard'].includes(msg.difficulty) ? msg.difficulty : 'normal';
       return this.startSelect({ blue: group, red: [] }, { mode: 'practice', ranked: false, difficulty });
     }
+    const locked = group.find(s => (s.profile.queueLockUntil || 0) > Date.now());
+    if (locked) return this.notice(session, `${locked === session ? 'You are' : `${locked.name} is`} locked out of ranked for ${Math.ceil((locked.profile.queueLockUntil - Date.now()) / 60000)} more minutes (left a ranked game).`, 'warn');
     const rating = group.reduce((a, s) => a + s.profile.rating, 0) / group.length;
     const entry = { mode, sessions: group, t: this.time, rating };
     this.queue.push(entry);
@@ -707,7 +719,10 @@ export class Hub {
         for (const p of players.filter(x => x.team === team)) { p.champ = pool.pop(); p.locked = !p.bot ? false : true; }
       }
     }
-    const sel = { id, players, opts, endsAt: this.time + Math.min(this.config.selectTime ?? SELECT_TIME, opts.selectTime ?? Infinity), started: false };
+    const sel = { id, players, opts, endsAt: this.time + Math.min(this.config.selectTime ?? SELECT_TIME, opts.selectTime ?? Infinity), started: false, bans: [] };
+    // Ranked: a short ban phase first (each team bans one champion by vote).
+    const banTime = this.config.banTime ?? Math.min(12, this.config.selectTime ?? SELECT_TIME);
+    if (opts.mode === 'ranked' && players.some(p => p.session)) { sel.phase = 'ban'; sel.banEndsAt = this.time + banTime; sel.endsAt += banTime; }
     this.selects.set(id, sel);
     this.broadcastSelect(sel);
     return sel;
@@ -715,7 +730,8 @@ export class Hub {
 
   selectInfo(sel, viewer) {
     return {
-      id: sel.id, mode: sel.opts.mode, ranked: sel.opts.ranked, timeLeft: Math.max(0, Math.ceil(sel.endsAt - this.time)),
+      id: sel.id, mode: sel.opts.mode, ranked: sel.opts.ranked, phase: sel.phase || 'pick', bans: sel.bans, banVote: viewer.banVote || null,
+      timeLeft: Math.max(0, Math.ceil((sel.phase === 'ban' ? sel.banEndsAt : sel.endsAt) - this.time)),
       players: sel.players.map(p => ({ name: p.name, team: p.team, bot: p.bot, champ: p.team === viewer.team || p.locked ? p.champ : null, summ: p.team === viewer.team ? p.summ : null, ks: p.team === viewer.team ? p.keystone : null, locked: p.locked, you: p === viewer })),
     };
   }
@@ -729,9 +745,16 @@ export class Hub {
     if (!sel) return;
     const p = sel.players.find(x => x.session === session);
     if (p.locked) return;
+    if (msg.t === 'ban') {
+      if (sel.phase !== 'ban' || !CHAMPIONS[msg.champ]) return;
+      p.banVote = msg.champ;
+      this.broadcastSelect(sel);
+      return;
+    }
     if (msg.t === 'pick') {
       if (sel.opts.random) return this.notice(session, 'Champions are random in Brawl.', 'warn');
-      if (!CHAMPIONS[msg.champ]) return;
+      if (sel.phase === 'ban') return this.notice(session, 'Bans first: pick a champion to ban.', 'warn');
+      if (!CHAMPIONS[msg.champ] || sel.bans.includes(msg.champ)) return;
       if (sel.players.some(o => o !== p && o.team === p.team && o.champ === msg.champ)) return this.notice(session, 'A teammate already picked that champion.', 'warn');
       p.champ = msg.champ;
     } else if (msg.t === 'csumm') {
@@ -739,6 +762,7 @@ export class Hub {
     } else if (msg.t === 'ks') {
       if (KEYSTONES[msg.k]) { p.keystone = msg.k; if (session.profile) session.profile.keystone = msg.k; } // remembered for next time
     } else if (msg.t === 'lock') {
+      if (sel.phase === 'ban') return;
       if (!p.champ) return this.notice(session, 'Pick a champion first.', 'warn');
       p.locked = true;
     }
@@ -746,10 +770,71 @@ export class Hub {
     if (sel.players.filter(x => x.session).every(x => x.locked)) sel.endsAt = Math.min(sel.endsAt, this.time + 2);
   }
 
+  /** AFK: in games with other people, 90s without input warns, 120s hands the champion to the AI. */
+  checkAfk(m, dt) {
+    if (m.ended || m.mode === 'tutorial') return;
+    const humans = m.heroes.filter(h => h.session);
+    if (humans.length < 2) return;
+    for (const h of humans) {
+      if (!h.dead) h.idleT = (h.idleT || 0) + dt;
+      if (h.idleT > 90 && !h.afkWarned) { h.afkWarned = true; this.notice(h.session, 'Are you still there? Move or cast within 30 seconds or the AI will take over your champion.', 'warn'); }
+      if (h.idleT > 120) {
+        const s = h.session;
+        h.session = null; h.wasHuman = true; h.afk = true;
+        h.bot = makeBrain({ role: h.botRole || guessRole(h.champ), skill: 0.7 }); h.ver++;
+        s.view = null; s.state = 'lobby';
+        if (m.ranked && s.profile) this.penalize(s.profile, 'afk');
+        this.matchChat(m, null, `${h.name} went AFK — the AI took over.`, h.team);
+        this.notice(s, 'You were away too long: the AI took over your champion. You can reconnect from the lobby.', 'warn');
+        this.sendLobby(s);
+      }
+    }
+  }
+
+  /** Player reports (AFK, abuse, cheating): rate-limited, one per target per match, stored for review on /admin. */
+  report(session, msg) {
+    const target = clean(msg.name).slice(0, 16);
+    const reason = ['afk', 'abuse', 'cheating', 'other'].includes(msg.reason) ? msg.reason : 'other';
+    if (!target || target.toLowerCase() === session.name.toLowerCase()) return;
+    const today = new Date().toISOString().slice(0, 10);
+    session.reports = session.reports?.day === today ? session.reports : { day: today, n: 0, keys: new Set() };
+    const key = `${target.toLowerCase()}:${msg.match || ''}`;
+    if (session.reports.keys.has(key)) return this.notice(session, `You already reported ${target} for this game.`);
+    if (session.reports.n >= 10) return this.notice(session, 'You have reached today\'s report limit.', 'warn');
+    session.reports.n++; session.reports.keys.add(key);
+    this.reportSink?.({ at: Date.now(), from: session.name, target, reason, match: String(msg.match || '').slice(0, 20), note: clean(msg.note || '').slice(0, 200) });
+    this.notice(session, `Thanks — your report on ${target} was received.`, 'good');
+  }
+
+  /** Ranked lockout for leaving: 5, 15, then 30 minutes for repeat offences within a day. */
+  penalize(prof, kind) {
+    const today = new Date().toISOString().slice(0, 10);
+    if (prof.offenceDay !== today) { prof.offenceDay = today; prof.offences = 0; }
+    prof.offences = (prof.offences || 0) + 1;
+    const minutes = [5, 15, 30][Math.min(2, prof.offences - 1)];
+    prof.queueLockUntil = Date.now() + minutes * 60000;
+    prof.lastOffence = kind;
+  }
+
+  /** Each team's ban is its most-voted champion (ties: earliest vote). */
+  endBans(sel) {
+    sel.phase = 'pick';
+    for (const team of ['blue', 'red']) {
+      const votes = new Map();
+      for (const p of sel.players) if (p.team === team && p.banVote) votes.set(p.banVote, (votes.get(p.banVote) || 0) + 1);
+      const top = [...votes.entries()].sort((a, b) => b[1] - a[1])[0];
+      if (top && !sel.bans.includes(top[0])) sel.bans.push(top[0]);
+    }
+    for (const p of sel.players) if (sel.bans.includes(p.champ)) p.champ = null;
+    sel.endsAt = this.time + (this.config.selectTime ?? SELECT_TIME);
+    this.broadcastSelect(sel);
+  }
+
   updateSelect(sel) {
     if (sel.started) return;
     if (!sel.players.some(p => p.session) && !sel.players.some(p => p.wasHuman)) { this.selects.delete(sel.id); return; }
-    const remaining = Math.ceil(sel.endsAt - this.time);
+    if (sel.phase === 'ban' && (this.time >= sel.banEndsAt || sel.players.filter(p => p.session).every(p => p.banVote))) this.endBans(sel);
+    const remaining = Math.ceil((sel.phase === 'ban' ? sel.banEndsAt : sel.endsAt) - this.time);
     if (remaining !== sel.lastBroadcast) { sel.lastBroadcast = remaining; this.broadcastSelect(sel); }
     if (this.time < sel.endsAt) return;
     sel.started = true;
@@ -757,7 +842,7 @@ export class Hub {
     // Assign champions & roles for anyone who did not pick.
     for (const team of ['blue', 'red']) {
       const tp = sel.players.filter(p => p.team === team);
-      const taken = new Set(tp.map(p => p.champ).filter(Boolean));
+      const taken = new Set([...tp.map(p => p.champ).filter(Boolean), ...sel.bans]);
       const rolesLeft = [...ROLES];
       for (const p of tp.filter(x => x.champ)) { const r = guessRole(p.champ, rolesLeft); p.role = r; rolesLeft.splice(rolesLeft.indexOf(r), 1); }
       for (const p of tp.filter(x => !x.champ)) {
@@ -800,6 +885,7 @@ export class Hub {
     const h = match.get(heroId);
     if (!h) return;
     if (h.bot && h.wasHuman) { h.bot = null; h.ver++; }
+    h.idleT = 0; h.afkWarned = false; h.afk = false;
     h.session = session;
     session.view = { match, heroId, team: h.team, known: new Map() };
     session.state = 'game';
@@ -839,7 +925,15 @@ export class Hub {
         if (match.mode !== 'tutorial') { prof.realGames = (prof.realGames || 0) + 1; if (prof.realGames === 1) this.analytics?.event('firstGame'); if (prof.realGames === 2) this.analytics?.event('secondGame'); }
         if (p.win) prof.wins++; else prof.losses++;
         prof.kills += p.kills; prof.deaths += p.deaths; prof.assists += p.assists;
-        if (rated) { prof.rating = Math.max(0, prof.rating + delta); rankedGame(prof); }
+        if (rated) {
+          // Placements: the first 5 ranked games of a season move rating twice as far.
+          const placing = (prof.seasonGames || 0) < 5;
+          const d = placing ? delta * 2 : delta;
+          prof.rating = Math.max(0, prof.rating + d);
+          rankedGame(prof);
+          bonus.delta = d;
+          if (placing) bonus.placement = prof.seasonGames;
+        }
         const fw = p.win && match.mode !== 'tutorial' && firstWin(prof);
         bonus.firstWin = fw;
         prof.xp += xp + (fw ? FIRST_WIN_XP : 0);
@@ -849,7 +943,7 @@ export class Hub {
         const c = prof.champs[p.champ] || { games: 0, wins: 0 };
         c.games++; if (p.win) c.wins++;
         prof.champs[p.champ] = c;
-        prof.history.unshift({ at: Date.now(), champ: p.champ, win: p.win, k: p.kills, d: p.deaths, a: p.assists, mode: match.mode, dur: result.duration, delta });
+        prof.history.unshift({ at: Date.now(), champ: p.champ, win: p.win, k: p.kills, d: p.deaths, a: p.assists, mode: match.mode, dur: result.duration, delta: bonus.delta ?? delta });
         prof.history = prof.history.slice(0, 20);
       }, { result, delta, xp, rated, you: p.id, bonus });
     }

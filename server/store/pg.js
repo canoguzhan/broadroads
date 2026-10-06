@@ -27,6 +27,8 @@ export class PgStore {
         created_at TIMESTAMPTZ NOT NULL DEFAULT now()
       );
       CREATE UNIQUE INDEX IF NOT EXISTS br_accounts_username ON br_accounts (lower(username));
+      ALTER TABLE br_accounts ADD COLUMN IF NOT EXISTS meta JSONB NOT NULL DEFAULT '{}'::jsonb;
+      CREATE UNIQUE INDEX IF NOT EXISTS br_accounts_email ON br_accounts (lower(meta->>'email')) WHERE meta ? 'email';
       CREATE TABLE IF NOT EXISTS br_characters (
         account_id INTEGER PRIMARY KEY REFERENCES br_accounts(id) ON DELETE CASCADE,
         data JSONB NOT NULL,
@@ -66,6 +68,30 @@ export class PgStore {
       if (err.code === '23505') return null; // unique violation
       throw err;
     }
+  }
+
+  /** Account metadata (email, linked logins, reset token). */
+  async getAccount(id) {
+    const { rows } = await this.pool.query('SELECT id::text, username, password_hash AS "passwordHash", meta FROM br_accounts WHERE id = $1', [id]);
+    return rows[0] || null;
+  }
+
+  async updateAccountMeta(id, patch) {
+    // null values remove keys
+    const set = Object.fromEntries(Object.entries(patch).filter(([, v]) => v !== null));
+    const del = Object.keys(patch).filter(k => patch[k] === null);
+    await this.pool.query("UPDATE br_accounts SET meta = (meta - $3::text[]) || $2::jsonb WHERE id = $1", [id, JSON.stringify(set), del]);
+  }
+
+  /** field: 'email' | 'resetHash' | 'oauth:<provider>' */
+  async findAccountBy(field, value) {
+    const [k, sub] = field.split(':');
+    const cols = 'id::text, username, password_hash AS "passwordHash", meta';
+    let res;
+    if (sub) res = await this.pool.query(`SELECT ${cols} FROM br_accounts WHERE meta->'oauth'->>$1 = $2`, [sub, String(value)]);
+    else if (k === 'email') res = await this.pool.query(`SELECT ${cols} FROM br_accounts WHERE lower(meta->>'email') = lower($1)`, [String(value)]);
+    else res = await this.pool.query(`SELECT ${cols} FROM br_accounts WHERE meta->>$1 = $2`, [k, String(value)]);
+    return res.rows[0] || null;
   }
 
   async updatePasswordHash(id, passwordHash) {

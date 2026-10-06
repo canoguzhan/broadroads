@@ -155,6 +155,8 @@ export class Lobby {
 
   rankLine(p) {
     const t = tierOf(p.rating), s = seasonOf();
+    const locked = (p.queueLockUntil || 0) > Date.now();
+    if ((p.seasonGames || 0) < 5) return h('div.rank-line', {}, h('span.rl-ic', {}, pic('misc/placement', '❔')), h('div.rl-mid', {}, h('b', { text: `Placements ${p.seasonGames || 0}/5` }), h('div.muted.rl-season', { text: locked ? `Ranked locked for ${Math.ceil((p.queueLockUntil - Date.now()) / 60000)} min (left a ranked game)` : `Your first 5 ranked games set your Season ${s.number} rank` })));
     const days = Math.max(0, Math.ceil((s.endsAt - Date.now()) / 86400000));
     return h('div.rank-line', {},
       h('span.rl-ic', {}, pic(`misc/tier_${t.id}`, '🏆')),
@@ -262,8 +264,33 @@ export class Lobby {
         stat('Win rate', p.games ? `${Math.round(p.wins / p.games * 100)}%` : '—'), stat('Avg KDA', p.games ? `${(p.kills / p.games).toFixed(1)} / ${(p.deaths / p.games).toFixed(1)} / ${(p.assists / p.games).toFixed(1)}` : '—'),
         h('h4', { text: 'Champions' }), ...champs.slice(0, 6).map(([id, s]) => stat(h('span.stat-champ', {}, h('span.hr-icon', {}, pic(champKey(id), this.app.champInfo[id]?.icon || '')), this.app.champInfo[id]?.name || id), `${s.games} games · ${Math.round(s.wins / s.games * 100)}% WR`))),
       this.rankView(p),
+      this.accountView(p),
       this.avatarsView(p),
       h('div.card', {}, h('h4', { text: 'Match history' }), p.history.length ? h('div.history', {}, ...p.history.map(m => this.historyRow(m))) : h('p.muted', { text: 'No matches yet.' })));
+  }
+
+  /** Email for recovery and linked Google/Discord sign-in (online accounts only). */
+  accountView(p) {
+    const app = this.app;
+    if (app.offline || p.name !== app.name || !app.token) return null;
+    const card = h('div.card.account', {}, h('h4', { text: 'Account' }), h('p.muted', { text: 'Loading…' }));
+    const auth = { Authorization: `Bearer ${app.token}` };
+    fetch('/api/account', { headers: auth }).then(r => r.json()).then(acc => {
+      const input = h('input', { type: 'email', value: acc.email || '', placeholder: 'you@example.com', maxlength: 254 });
+      const msg = h('p.muted.acc-msg');
+      const save = async () => {
+        const r = await fetch('/api/account/email', { method: 'POST', headers: { ...auth, 'Content-Type': 'application/json' }, body: JSON.stringify({ email: input.value.trim() }) });
+        const d = await r.json();
+        msg.textContent = r.ok ? (d.email ? 'Saved: you can now reset your password by email.' : 'Email removed.') : d.error;
+      };
+      const providers = app.providers || {};
+      const link = prov => acc.linked.includes(prov) ? h('span.acc-linked', { text: `✓ ${prov[0].toUpperCase()}${prov.slice(1)} linked` })
+        : providers[prov] ? h('a.btn.btn-sm.btn-oauth', { href: `/api/auth/oauth/${prov}/start?link=${encodeURIComponent(app.token)}` }, `Link ${prov[0].toUpperCase()}${prov.slice(1)}`) : null;
+      card.replaceChildren(h('h4', { text: 'Account' }),
+        h('label.field', {}, h('span', { text: 'Email (for password recovery)' }), h('div.invite-row', {}, input, h('button.btn.btn-sm', { onclick: save }, 'Save'))), msg,
+        h('div.acc-links', {}, link('google'), link('discord')));
+    }).catch(() => { card.lastChild.textContent = 'Could not load account settings.'; });
+    return card;
   }
 
   rankView(p) {

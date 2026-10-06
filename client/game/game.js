@@ -1,5 +1,6 @@
 /* In-match client controller. */
 import { ClientWorld } from './world.js';
+import { isMuted } from '../ui/social.js';
 import { canRankUp } from '../../shared/moba/champions.js';
 import { SpectatorBar } from './spectate.js';
 import { EmoteWheel, EMOTE_ICON } from './emotes.js';
@@ -85,7 +86,7 @@ export class Game {
       case 'chat':
         this.chat.add(m);
         if (m.from && m.from !== this.name) sfx.play('chat_msg', { gap: 0.3 });
-        if (m.from) for (const e of this.world.entities.values()) if (e.kind === 'hero' && e.n === m.from) { this.labels.bubble(e.id, m.text, m.ch); break; }
+        if (m.from && !isMuted(m.from)) for (const e of this.world.entities.values()) if (e.kind === 'hero' && e.n === m.from) { this.labels.bubble(e.id, m.text, m.ch); break; }
         break;
       case 'notice': this.ui.toast(m.text, m.kind); break;
       default:

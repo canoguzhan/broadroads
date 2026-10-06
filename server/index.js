@@ -1,5 +1,6 @@
 /* BroadRoads game server: static client + REST auth API + WebSocket game gateway. */
 import http from 'node:http';
+import { accountRoutes } from './accounts.js';
 import { fileAnalytics } from './analytics.js';
 import { encodeSnapshot } from '../shared/protocol.js';
 import { CHAMPION_IDS, championInfo } from '../shared/moba/champions.js';
@@ -118,6 +119,11 @@ export async function startServer(overrides = {}) {
   const hub = new Hub({ store, config: hubConfig, log, replays, analytics });
   const monitor = new Monitor({ dataDir: cfg.dataDir, log, webhook: cfg.alertWebhook, hub });
   hub.onError = (where, err) => monitor.serverError(where, err);
+  // Player reports: appended to data/reports.ndjson, the latest 200 kept for /admin.
+  const reports = [];
+  const reportFile = path.join(cfg.dataDir, 'reports.ndjson');
+  try { for (const line of fs.readFileSync(reportFile, 'utf8').trim().split('\n').slice(-200)) if (line) reports.push(JSON.parse(line)); } catch { /* none yet */ }
+  hub.reportSink = r => { reports.push(r); if (reports.length > 200) reports.shift(); fs.appendFile(reportFile, JSON.stringify(r) + '\n', () => {}); };
   hub.onTick = ms => monitor.noteTick(ms);
   hub.start();
   monitor.started();
@@ -125,6 +131,7 @@ export async function startServer(overrides = {}) {
   const safeEqual = (a, b) => { const x = Buffer.from(String(a)), y = Buffer.from(String(b)); return x.length === y.length && crypto.timingSafeEqual(x, y); };
 
   const authLimiter = new RateLimiter(20, 10 * 60 * 1000);
+  let accountRoute = null; // set after json/readBody exist
   const sweep = setInterval(() => authLimiter.sweep(), 60 * 1000);
   const startedAt = Date.now();
 
@@ -151,8 +158,12 @@ export async function startServer(overrides = {}) {
     if (!NAME_RE.test(username)) return json(res, 400, { error: 'Username must be 3-16 letters, numbers or _ and start with a letter.' }, cors);
     if (password.length < 6 || password.length > 128) return json(res, 400, { error: 'Password must be 6-128 characters.' }, cors);
     if (mode === 'register') {
+      const email = String(body.email || '').trim().toLowerCase();
+      if (email && !/^[^\s@]{1,64}@[^\s@]{1,190}\.[^\s@]{2,24}$/.test(email)) return json(res, 400, { error: 'That email address does not look right.' }, cors);
+      if (email && store.findAccountBy && await store.findAccountBy('email', email)) return json(res, 409, { error: 'That email is already used by another account.' }, cors);
       const acc = await store.createAccount(username, hashPassword(password));
       if (!acc) return json(res, 409, { error: 'That username is taken.' }, cors);
+      if (email && store.updateAccountMeta) await store.updateAccountMeta(acc.id, { email });
       return json(res, 200, { token: signToken(secret, { a: acc.id, n: acc.username }), username: acc.username }, cors);
     }
     const acc = await store.findAccount(username);
@@ -215,7 +226,7 @@ export async function startServer(overrides = {}) {
         }
         if (p === '/api/admin/metrics') {
           if (!cfg.adminToken || !safeEqual(req.headers['x-admin-token'] || '', cfg.adminToken)) return json(res, 401, { error: 'Unauthorized' });
-          return json(res, 200, { metrics: monitor.metrics(), server: monitor.server, client: monitor.client, analytics: analytics.report(14) });
+          return json(res, 200, { metrics: monitor.metrics(), server: monitor.server, client: monitor.client, analytics: analytics.report(14), reports: [...reports].reverse() });
         }
         if (req.method === 'OPTIONS') { res.writeHead(204, cors); return res.end(); }
         if (p === '/api/health') {
@@ -224,6 +235,8 @@ export async function startServer(overrides = {}) {
             matches: hub.matches.size, tickMs: Math.round(hub.stats.tickMs * 100) / 100, uptime: Math.round((Date.now() - startedAt) / 1000),
           }, cors);
         }
+        accountRoute ||= accountRoutes({ cfg, store, secret, log, json, readBody, limiter: authLimiter, clientIp });
+        if (await accountRoute(req, res, p, url, cors)) return;
         if (p === '/api/auth/register' && req.method === 'POST') return await handleAuth(req, res, 'register');
         if (p === '/api/auth/login' && req.method === 'POST') return await handleAuth(req, res, 'login');
         if (p === '/api/leaderboard') return json(res, 200, { kind: url.searchParams.get('kind') || 'rating', rows: await hub.leaderboard(url.searchParams.get('kind') || 'rating') }, cors);

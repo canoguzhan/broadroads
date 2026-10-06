@@ -1058,3 +1058,27 @@ body.is-dead #hud.touch .m-ann { top: auto; bottom: 26%; }
 .play-card.featured { border-color: #a78bfa; box-shadow: 0 0 14px rgba(167, 139, 250, .25); }
 .play-card.featured .tc-badge { background: #a78bfa; }
 .pc-ic { display: inline-grid; width: 26px; height: 26px; border-radius: 6px; overflow: hidden; vertical-align: middle; margin-right: 6px; }
+.champ-card.banned { opacity: .3; position: relative; }
+.champ-card.banned::after { content: '✕'; position: absolute; inset: 0; display: grid; place-items: center; font-size: 3rem; color: #ef4444; }
+.champ-card.ban-vote { border-color: #ef4444; box-shadow: 0 0 14px rgba(239, 68, 68, .45); }
+.ban-phase { color: #fca5a5 !important; display: flex; align-items: center; gap: 8px; }
+.ban-phase .pic { width: 30px; height: 30px; border-radius: 6px; }
+.sel-bans { display: flex; align-items: center; gap: 6px; }
+.ban-chip { width: 34px; height: 34px; border-radius: 50%; overflow: hidden; border: 2px solid #ef4444; filter: grayscale(.6); }
+.sb-act { margin-left: 6px; display: inline-flex; gap: 3px; }
+.btn-xs { padding: 1px 5px; font-size: .7rem; border-radius: 6px; }
+.report-dlg { position: fixed; inset: 0; z-index: 95; background: rgba(0, 0, 0, .55); display: grid; place-items: center; }
+.rd-card { width: min(380px, calc(100vw - 32px)); background: var(--panel); border: 1px solid var(--line); border-radius: 14px; padding: 16px; display: flex; flex-direction: column; gap: 10px; }
+.rd-card h3 { margin: 0; color: var(--gold-2); }
+.rd-reasons { display: flex; flex-direction: column; gap: 6px; }
+.rd-card textarea { background: #0e0b14; color: #eee; border: 1px solid var(--line); border-radius: 8px; padding: 8px; min-height: 60px; resize: vertical; }
+.link-btn { background: none; border: none; color: var(--gold-2); cursor: pointer; font-size: .82rem; margin-top: 6px; text-decoration: underline; }
+.oauth-row { display: flex; flex-direction: column; gap: 8px; margin-top: 10px; }
+.or { display: flex; align-items: center; gap: 10px; color: var(--muted); font-size: .8rem; }
+.or::before, .or::after { content: ''; flex: 1; height: 1px; background: var(--line); }
+.btn-oauth { text-align: center; text-decoration: none; background: #f4f1ea; color: #1f1b16 !important; border-color: #f4f1ea; }
+#oauth-discord { background: #5865f2; color: #fff !important; border-color: #5865f2; }
+.acc-links { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+.acc-linked { color: #4ade80; font-size: .85rem; font-weight: 700; }
+.acc-msg { font-size: .8rem; min-height: 1em; }
+.server-status .label { position: static; text-shadow: none; white-space: normal; will-change: auto; }

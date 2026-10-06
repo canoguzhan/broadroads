@@ -40,6 +40,7 @@
   <h2>Player funnel (daily)</h2><div id="funnel"></div>
   <h2>Champion balance (last 14 days)</h2><p class="muted">Win rate counts all games; “Human WR” only games played by people. Bots skew early numbers.</p><div id="champs"></div>
   <h2>Items &amp; keystones (last 14 days)</h2><div class="grid2"><div id="items"></div><div id="keystones"></div></div>
+  <h2>Player reports</h2><div id="reports"></div>
   <h2>Server errors</h2><div id="server"></div>
   <h2>Client errors</h2><div id="client"></div>
 </main>
@@ -71,6 +72,8 @@ async function load() {
     $('#server').innerHTML = table(d.server, [['When', r => ago(r.at)], ['Where', r => esc(r.where)], ['Error', r => `${esc(r.message)}<pre>${esc(r.stack)}</pre>`]]);
     $('#client').innerHTML = table(d.client, [['When', r => `${ago(r.at)}${r.count > 1 ? `<br><span class="muted">×${r.count}</span>` : ''}`], ['Error', r => `${esc(r.message)}<pre>${esc(r.stack)}</pre>`], ['Context', r => `${esc(r.context)}<br><span class="muted">${esc(r.ua)}</span>`]]);
     renderAnalytics(d.analytics || []);
+    const counts = {}; for (const r of d.reports || []) counts[r.target.toLowerCase()] = (counts[r.target.toLowerCase()] || 0) + 1;
+    $('#reports').innerHTML = table(d.reports || [], [['When', r => ago(r.at)], ['Player', r => `${esc(r.target)} <span class="muted">(${counts[r.target.toLowerCase()]} total)</span>`], ['Reason', r => esc(r.reason)], ['By', r => esc(r.from)], ['Match', r => esc(r.match)], ['Note', r => esc(r.note)]]);
     $('#updated').textContent = `updated ${new Date().toLocaleTimeString()}`;
   } catch { $('#dot').className = 'dot off'; $('#updated').textContent = 'server unreachable'; }
 }
