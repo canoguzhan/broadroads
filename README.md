@@ -174,7 +174,7 @@ champion portraits → photoreal 16:9 key frames (Higgsfield, Qwen Image 3 edit)
 **Seedance 2.5** image-to-video → champion and narrator lines in each champion's voice (**ElevenLabs v4**),
 a timed orchestral score (ElevenLabs Music) and sound effects → an ffmpeg cut with a title card.
 It writes `public/trailer/broadroads-trailer.mp4` (full, with sound), `bg.mp4` (the muted landing-page loop) and `poster.jpg`;
-every step is cached in `trailer-src/`, so re-runs only redo what changed.
+every step is cached in `trailer-src/`, so re-runs only redo what changed. A shot whose clip isn't generated yet (e.g. credits ran out) is cut in as a slow push-in on its key frame; re-running `--only shots` then `--only cut` swaps in the real clip. `SHOT_RES` picks the Seedance resolution (default 720p; the cut is 1080p).
 
 ```bash
 # .env (git-ignored): HF_CREDENTIALS=<key id>:<key secret>  ELEVENLABS_API_KEY=...

@@ -141,7 +141,7 @@ async function shots() {
     const file = path.join(SRC, `${s.id}.mp4`);
     if (exists(file)) continue;
     if (!reqs[s.id]) {
-      const common = { prompt: s.motion, duration: SHOT, resolution: '1080p', generate_audio: false, output_format: 'mp4' };
+      const common = { prompt: s.motion, duration: SHOT, resolution: process.env.SHOT_RES || '720p', generate_audio: false, output_format: 'mp4' };
       reqs[s.id] = s.still
         ? await submit(SEEDANCE_I2V, { ...common, image_url: await uploadImage(path.join(SRC, `${s.id}.png`)) })
         : await submit(SEEDANCE_T2V, { ...common, aspect_ratio: '16:9' });
@@ -194,7 +194,20 @@ async function cut() {
   // Shots are SHOT seconds long and overlap by XF in crossfades; the last one holds its
   // final frame under the title card so the cut runs exactly TOTAL seconds.
   const total = TOTAL;
-  const vin = SHOTS.flatMap(s => ['-i', path.join(SRC, `${s.id}.mp4`)]);
+  // A shot without a generated clip (e.g. credits ran out) becomes a slow push-in on its key frame.
+  const clip = (s, i) => {
+    const mp4 = path.join(SRC, `${s.id}.mp4`);
+    if (exists(mp4)) return mp4;
+    const png = path.join(SRC, `${s.id}.png`), still = path.join(SRC, `${s.id}.still.mp4`);
+    if (!exists(png)) throw new Error(`shot ${s.id}: no clip and no key frame`);
+    if (!exists(still)) {
+      const n = SHOT * 30, dir = i % 2 ? -1 : 1; // alternate drift direction
+      ff(['-loop', '1', '-i', png, '-vf', `scale=3840:-2,zoompan=z='1.0+0.10*on/${n}':x='iw/2-(iw/zoom/2)+${dir}*on*1.2':y='ih/2-(ih/zoom/2)':d=${n}:s=1920x1080:fps=30,format=yuv420p`, '-frames:v', String(n), '-c:v', 'libx264', '-crf', '17', still]);
+    }
+    console.log(`  ${s.id}: using a push-in on the key frame (no generated clip yet)`);
+    return still;
+  };
+  const vin = SHOTS.flatMap((s, i) => ['-i', clip(s, i)]);
   const lastIdx = SHOTS.length - 1;
   let fc = SHOTS.map((_, i) => `[${i}:v]scale=1920:1080:force_original_aspect_ratio=increase,crop=1920:1080,trim=0:${SHOT},setpts=PTS-STARTPTS,fps=30,settb=1/30${i === lastIdx ? `,tpad=stop_mode=clone:stop_duration=${(TOTAL - shotStart(lastIdx) - SHOT + 0.1).toFixed(2)}` : ''},format=yuv420p[v${i}]`).join(';');
   let last = 'v0';
