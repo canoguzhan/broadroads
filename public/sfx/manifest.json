@@ -545,211 +545,351 @@
   "file": "vo_welcome.mp3",
   "kind": "voice",
   "vol": 0.9,
-  "text": "Welcome to the Valley."
+  "text": "Welcome to the Valley.",
+  "i18n": {
+   "tr": "tr/vo_welcome.mp3",
+   "es": "es/vo_welcome.mp3"
+  }
  },
  "vo_minions_soon": {
   "file": "vo_minions_soon.mp3",
   "kind": "voice",
   "vol": 0.9,
-  "text": "Thirty seconds until minions spawn."
+  "text": "Thirty seconds until minions spawn.",
+  "i18n": {
+   "tr": "tr/vo_minions_soon.mp3",
+   "es": "es/vo_minions_soon.mp3"
+  }
  },
  "vo_minions": {
   "file": "vo_minions.mp3",
   "kind": "voice",
   "vol": 0.9,
-  "text": "Minions have spawned."
+  "text": "Minions have spawned.",
+  "i18n": {
+   "tr": "tr/vo_minions.mp3",
+   "es": "es/vo_minions.mp3"
+  }
  },
  "vo_first_strike": {
   "file": "vo_first_strike.mp3",
   "kind": "voice",
   "vol": 0.9,
-  "text": "First strike!"
+  "text": "First strike!",
+  "i18n": {
+   "tr": "tr/vo_first_strike.mp3",
+   "es": "es/vo_first_strike.mp3"
+  }
  },
  "vo_multi2": {
   "file": "vo_multi2.mp3",
   "kind": "voice",
   "vol": 0.9,
-  "text": "Double takedown!"
+  "text": "Double takedown!",
+  "i18n": {
+   "tr": "tr/vo_multi2.mp3",
+   "es": "es/vo_multi2.mp3"
+  }
  },
  "vo_multi3": {
   "file": "vo_multi3.mp3",
   "kind": "voice",
   "vol": 0.9,
-  "text": "Triple takedown!"
+  "text": "Triple takedown!",
+  "i18n": {
+   "tr": "tr/vo_multi3.mp3",
+   "es": "es/vo_multi3.mp3"
+  }
  },
  "vo_multi4": {
   "file": "vo_multi4.mp3",
   "kind": "voice",
   "vol": 0.9,
-  "text": "Quad takedown!"
+  "text": "Quad takedown!",
+  "i18n": {
+   "tr": "tr/vo_multi4.mp3",
+   "es": "es/vo_multi4.mp3"
+  }
  },
  "vo_multi5": {
   "file": "vo_multi5.mp3",
   "kind": "voice",
   "vol": 0.9,
-  "text": "Total takedown!"
+  "text": "Total takedown!",
+  "i18n": {
+   "tr": "tr/vo_multi5.mp3",
+   "es": "es/vo_multi5.mp3"
+  }
  },
  "vo_you_slain": {
   "file": "vo_you_slain.mp3",
   "kind": "voice",
   "vol": 0.9,
-  "text": "You have been slain."
+  "text": "You have been slain.",
+  "i18n": {
+   "tr": "tr/vo_you_slain.mp3",
+   "es": "es/vo_you_slain.mp3"
+  }
  },
  "vo_you_killed": {
   "file": "vo_you_killed.mp3",
   "kind": "voice",
   "vol": 0.9,
-  "text": "You have slain an enemy."
+  "text": "You have slain an enemy.",
+  "i18n": {
+   "tr": "tr/vo_you_killed.mp3",
+   "es": "es/vo_you_killed.mp3"
+  }
  },
  "vo_ally_slain": {
   "file": "vo_ally_slain.mp3",
   "kind": "voice",
   "vol": 0.9,
-  "text": "An ally has been slain."
+  "text": "An ally has been slain.",
+  "i18n": {
+   "tr": "tr/vo_ally_slain.mp3",
+   "es": "es/vo_ally_slain.mp3"
+  }
  },
  "vo_enemy_slain": {
   "file": "vo_enemy_slain.mp3",
   "kind": "voice",
   "vol": 0.9,
-  "text": "An enemy has been slain."
+  "text": "An enemy has been slain.",
+  "i18n": {
+   "tr": "tr/vo_enemy_slain.mp3",
+   "es": "es/vo_enemy_slain.mp3"
+  }
  },
  "vo_streak3": {
   "file": "vo_streak3.mp3",
   "kind": "voice",
   "vol": 0.9,
-  "text": "Heating up!"
+  "text": "Heating up!",
+  "i18n": {
+   "tr": "tr/vo_streak3.mp3",
+   "es": "es/vo_streak3.mp3"
+  }
  },
  "vo_streak4": {
   "file": "vo_streak4.mp3",
   "kind": "voice",
   "vol": 0.9,
-  "text": "On fire!"
+  "text": "On fire!",
+  "i18n": {
+   "tr": "tr/vo_streak4.mp3",
+   "es": "es/vo_streak4.mp3"
+  }
  },
  "vo_streak5": {
   "file": "vo_streak5.mp3",
   "kind": "voice",
   "vol": 0.9,
-  "text": "Relentless!"
+  "text": "Relentless!",
+  "i18n": {
+   "tr": "tr/vo_streak5.mp3",
+   "es": "es/vo_streak5.mp3"
+  }
  },
  "vo_streak6": {
   "file": "vo_streak6.mp3",
   "kind": "voice",
   "vol": 0.9,
-  "text": "Overwhelming!"
+  "text": "Overwhelming!",
+  "i18n": {
+   "tr": "tr/vo_streak6.mp3",
+   "es": "es/vo_streak6.mp3"
+  }
  },
  "vo_streak7": {
   "file": "vo_streak7.mp3",
   "kind": "voice",
   "vol": 0.9,
-  "text": "Mythic!"
+  "text": "Mythic!",
+  "i18n": {
+   "tr": "tr/vo_streak7.mp3",
+   "es": "es/vo_streak7.mp3"
+  }
  },
  "vo_streak8": {
   "file": "vo_streak8.mp3",
   "kind": "voice",
   "vol": 0.9,
-  "text": "Beyond legend!"
+  "text": "Beyond legend!",
+  "i18n": {
+   "tr": "tr/vo_streak8.mp3",
+   "es": "es/vo_streak8.mp3"
+  }
  },
  "vo_streak_end": {
   "file": "vo_streak_end.mp3",
   "kind": "voice",
   "vol": 0.9,
-  "text": "Streak ended!"
+  "text": "Streak ended!",
+  "i18n": {
+   "tr": "tr/vo_streak_end.mp3",
+   "es": "es/vo_streak_end.mp3"
+  }
  },
  "vo_team_wipe": {
   "file": "vo_team_wipe.mp3",
   "kind": "voice",
   "vol": 0.9,
-  "text": "Team wipe!"
+  "text": "Team wipe!",
+  "i18n": {
+   "tr": "tr/vo_team_wipe.mp3",
+   "es": "es/vo_team_wipe.mp3"
+  }
  },
  "vo_ally_tower": {
   "file": "vo_ally_tower.mp3",
   "kind": "voice",
   "vol": 0.9,
-  "text": "Your tower has fallen."
+  "text": "Your tower has fallen.",
+  "i18n": {
+   "tr": "tr/vo_ally_tower.mp3",
+   "es": "es/vo_ally_tower.mp3"
+  }
  },
  "vo_enemy_tower": {
   "file": "vo_enemy_tower.mp3",
   "kind": "voice",
   "vol": 0.9,
-  "text": "Enemy tower destroyed."
+  "text": "Enemy tower destroyed.",
+  "i18n": {
+   "tr": "tr/vo_enemy_tower.mp3",
+   "es": "es/vo_enemy_tower.mp3"
+  }
  },
  "vo_ally_spire": {
   "file": "vo_ally_spire.mp3",
   "kind": "voice",
   "vol": 0.9,
-  "text": "Your spire has been destroyed."
+  "text": "Your spire has been destroyed.",
+  "i18n": {
+   "tr": "tr/vo_ally_spire.mp3",
+   "es": "es/vo_ally_spire.mp3"
+  }
  },
  "vo_enemy_spire": {
   "file": "vo_enemy_spire.mp3",
   "kind": "voice",
   "vol": 0.9,
-  "text": "Enemy spire destroyed. Juggernaut minions incoming!"
+  "text": "Enemy spire destroyed. Juggernaut minions incoming!",
+  "i18n": {
+   "tr": "tr/vo_enemy_spire.mp3",
+   "es": "es/vo_enemy_spire.mp3"
+  }
  },
  "vo_spire_restored": {
   "file": "vo_spire_restored.mp3",
   "kind": "voice",
   "vol": 0.9,
-  "text": "A spire has been restored."
+  "text": "A spire has been restored.",
+  "i18n": {
+   "tr": "tr/vo_spire_restored.mp3",
+   "es": "es/vo_spire_restored.mp3"
+  }
  },
  "vo_wyrm_spawn": {
   "file": "vo_wyrm_spawn.mp3",
   "kind": "voice",
   "vol": 0.9,
-  "text": "The Ember Wyrm has spawned."
+  "text": "The Ember Wyrm has spawned.",
+  "i18n": {
+   "tr": "tr/vo_wyrm_spawn.mp3",
+   "es": "es/vo_wyrm_spawn.mp3"
+  }
  },
  "vo_titan_spawn": {
   "file": "vo_titan_spawn.mp3",
   "kind": "voice",
   "vol": 0.9,
-  "text": "The Abyss Titan has awoken."
+  "text": "The Abyss Titan has awoken.",
+  "i18n": {
+   "tr": "tr/vo_titan_spawn.mp3",
+   "es": "es/vo_titan_spawn.mp3"
+  }
  },
  "vo_ally_wyrm": {
   "file": "vo_ally_wyrm.mp3",
   "kind": "voice",
   "vol": 0.9,
-  "text": "Your team has slain the Ember Wyrm."
+  "text": "Your team has slain the Ember Wyrm.",
+  "i18n": {
+   "tr": "tr/vo_ally_wyrm.mp3",
+   "es": "es/vo_ally_wyrm.mp3"
+  }
  },
  "vo_enemy_wyrm": {
   "file": "vo_enemy_wyrm.mp3",
   "kind": "voice",
   "vol": 0.9,
-  "text": "The enemy has slain the Ember Wyrm."
+  "text": "The enemy has slain the Ember Wyrm.",
+  "i18n": {
+   "tr": "tr/vo_enemy_wyrm.mp3",
+   "es": "es/vo_enemy_wyrm.mp3"
+  }
  },
  "vo_ally_titan": {
   "file": "vo_ally_titan.mp3",
   "kind": "voice",
   "vol": 0.9,
-  "text": "Your team has slain the Abyss Titan."
+  "text": "Your team has slain the Abyss Titan.",
+  "i18n": {
+   "tr": "tr/vo_ally_titan.mp3",
+   "es": "es/vo_ally_titan.mp3"
+  }
  },
  "vo_enemy_titan": {
   "file": "vo_enemy_titan.mp3",
   "kind": "voice",
   "vol": 0.9,
-  "text": "The enemy has slain the Abyss Titan."
+  "text": "The enemy has slain the Abyss Titan.",
+  "i18n": {
+   "tr": "tr/vo_enemy_titan.mp3",
+   "es": "es/vo_enemy_titan.mp3"
+  }
  },
  "vo_victory": {
   "file": "vo_victory.mp3",
   "kind": "voice",
   "vol": 0.9,
-  "text": "Victory!"
+  "text": "Victory!",
+  "i18n": {
+   "tr": "tr/vo_victory.mp3",
+   "es": "es/vo_victory.mp3"
+  }
  },
  "vo_defeat": {
   "file": "vo_defeat.mp3",
   "kind": "voice",
   "vol": 0.9,
-  "text": "Defeat."
+  "text": "Defeat.",
+  "i18n": {
+   "tr": "tr/vo_defeat.mp3",
+   "es": "es/vo_defeat.mp3"
+  }
  },
  "vo_match_found": {
   "file": "vo_match_found.mp3",
   "kind": "voice",
   "vol": 0.9,
-  "text": "Match found."
+  "text": "Match found.",
+  "i18n": {
+   "tr": "tr/vo_match_found.mp3",
+   "es": "es/vo_match_found.mp3"
+  }
  },
  "vo_choose": {
   "file": "vo_choose.mp3",
   "kind": "voice",
   "vol": 0.9,
-  "text": "Choose your champion."
+  "text": "Choose your champion.",
+  "i18n": {
+   "tr": "tr/vo_choose.mp3",
+   "es": "es/vo_choose.mp3"
+  }
  },
  "cv_garrok_pick": {
   "file": "cv_garrok_pick.mp3",

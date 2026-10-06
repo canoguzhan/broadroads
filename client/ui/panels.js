@@ -1,4 +1,5 @@
 /* In-match panels: shop, scoreboard, settings, help, end-of-game. */
+import { langPicker } from '../i18n.js';
 import { h, $, clear, timeStr } from './dom.js';
 import { priceFor } from '../../shared/moba/items.js';
 import { CHAMPIONS } from '../../shared/moba/champions.js';
@@ -132,6 +133,7 @@ export class Panels {
       title: '⚙️ Settings',
       content: h('div', {},
         h('label.field', {}, h('span', { text: 'Graphics quality' }), quality),
+        h('label.field', {}, h('span', { text: 'Language (reloads the page)' }), langPicker()),
         h('label.field', {}, h('span', { text: 'Master volume' }), vol),
         h('label.field', {}, h('span', { text: 'Music & ambience volume' }), music),
         h('label.field.row', {}, lock, h('span', { text: 'Lock camera to champion (Y)' })),

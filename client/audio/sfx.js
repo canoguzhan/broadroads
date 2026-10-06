@@ -2,6 +2,8 @@
    scripts/generate-audio.mjs): lazy-loaded buffers, positional effects,
    a prioritized announcer queue and crossfaded music loops. */
 
+import { lang } from '../i18n.js';
+
 const BASE = `${import.meta.env.BASE_URL || '/'}sfx/`;
 const HEAR_RANGE = 24;
 
@@ -51,7 +53,7 @@ class Sfx {
       const entry = m[key];
       if (!entry || !this.ctx) return null;
       try {
-        const res = await fetch(BASE + entry.file);
+        const res = await fetch(BASE + (entry.i18n?.[lang] || entry.file)); // announcer lines follow the interface language
         const buf = await this.ctx.decodeAudioData(await res.arrayBuffer());
         this.buffers.set(key, buf);
         return buf;

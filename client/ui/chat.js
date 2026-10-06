@@ -70,11 +70,11 @@ export class Chat {
     if (LABEL[ch]) line.append(h('span.chat-tag', { text: `[${LABEL[ch]}] ` }));
     if (m.from) {
       const who = ch === 'whisper' ? (m.from === this.app.name ? `To ${m.to}` : `From ${m.from}`) : m.from;
-      const nameEl = h(`span.chat-name${m.team ? `.tn-${m.team}` : ''}`, { text: `${who}: ` });
+      const nameEl = h(`span.chat-name${m.team ? `.tn-${m.team}` : ''}`, { text: `${who}: `, translate: 'no' });
       nameEl.addEventListener('click', () => this.focus(`/w ${m.from === this.app.name ? m.to : m.from} `));
       line.append(nameEl);
     }
-    line.append(h('span.chat-text', { text: m.text }));
+    line.append(h('span.chat-text', { text: m.text, translate: m.from ? 'no' : undefined }));
     const atBottom = this.log.scrollTop + this.log.clientHeight >= this.log.scrollHeight - 30;
     this.log.append(line);
     while (this.log.children.length > 150) this.log.firstChild.remove();

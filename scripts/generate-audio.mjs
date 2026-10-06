@@ -9,6 +9,7 @@ const KEY = process.env.ELEVENLABS_API_KEY;
 if (!KEY) { console.error('Set ELEVENLABS_API_KEY'); process.exit(1); }
 const OUT = path.resolve('public/sfx');
 fs.mkdirSync(OUT, { recursive: true });
+for (const l of ['tr', 'es']) fs.mkdirSync(path.join(OUT, l), { recursive: true });
 const args = process.argv.slice(2);
 const force = args.includes('--force');
 const only = args.filter(a => !a.startsWith('--'));
@@ -177,6 +178,32 @@ const VOICE = [
   ['vo_choose', 'Choose your champion.'],
 ];
 
+// Announcer lines in the other interface languages (public/sfx/<lang>/<key>.mp3).
+const VOICE_I18N = {
+  tr: {
+    vo_welcome: 'Vadiye hoş geldiniz.', vo_minions_soon: 'Minyonların doğmasına otuz saniye.', vo_minions: 'Minyonlar doğdu.',
+    vo_first_strike: 'İlk kan!', vo_multi2: 'Çifte alaşağı!', vo_multi3: 'Üçlü alaşağı!', vo_multi4: 'Dörtlü alaşağı!', vo_multi5: 'Tam alaşağı!',
+    vo_you_slain: 'Öldürüldün.', vo_you_killed: 'Bir düşmanı öldürdün.', vo_ally_slain: 'Bir müttefik öldürüldü.', vo_enemy_slain: 'Bir düşman öldürüldü.',
+    vo_streak3: 'Isınıyor!', vo_streak4: 'Alev aldı!', vo_streak5: 'Durdurulamıyor!', vo_streak6: 'Ezip geçiyor!', vo_streak7: 'Efsaneleşti!', vo_streak8: 'Efsanenin ötesinde!',
+    vo_streak_end: 'Seri sona erdi!', vo_team_wipe: 'Takım silindi!',
+    vo_ally_tower: 'Kulen yıkıldı.', vo_enemy_tower: 'Düşman kulesi yıkıldı.', vo_ally_spire: 'Sütunun yıkıldı.', vo_enemy_spire: 'Düşman sütunu yıkıldı. Dev minyonlar geliyor!', vo_spire_restored: 'Bir sütun yeniden kuruldu.',
+    vo_wyrm_spawn: 'Kor Ejderi ortaya çıktı.', vo_titan_spawn: 'Uçurum Titanı uyandı.',
+    vo_ally_wyrm: "Takımın Kor Ejderi'ni kesti.", vo_enemy_wyrm: "Düşman Kor Ejderi'ni kesti.", vo_ally_titan: "Takımın Uçurum Titanı'nı kesti.", vo_enemy_titan: "Düşman Uçurum Titanı'nı kesti.",
+    vo_victory: 'Zafer!', vo_defeat: 'Yenilgi.', vo_match_found: 'Maç bulundu.', vo_choose: 'Şampiyonunu seç.',
+  },
+  es: {
+    vo_welcome: 'Bienvenidos al Valle.', vo_minions_soon: 'Treinta segundos para que aparezcan los súbditos.', vo_minions: 'Han aparecido los súbditos.',
+    vo_first_strike: '¡Primera sangre!', vo_multi2: '¡Doble derribo!', vo_multi3: '¡Triple derribo!', vo_multi4: '¡Cuádruple derribo!', vo_multi5: '¡Derribo total!',
+    vo_you_slain: 'Te han eliminado.', vo_you_killed: 'Has eliminado a un enemigo.', vo_ally_slain: 'Han eliminado a un aliado.', vo_enemy_slain: 'Un enemigo ha sido eliminado.',
+    vo_streak3: '¡Se está calentando!', vo_streak4: '¡Está que arde!', vo_streak5: '¡Implacable!', vo_streak6: '¡Arrollador!', vo_streak7: '¡Mítico!', vo_streak8: '¡Más que una leyenda!',
+    vo_streak_end: '¡Racha terminada!', vo_team_wipe: '¡Equipo arrasado!',
+    vo_ally_tower: 'Ha caído tu torre.', vo_enemy_tower: 'Torre enemiga destruida.', vo_ally_spire: 'Han destruido tu aguja.', vo_enemy_spire: 'Aguja enemiga destruida. ¡Llegan súbditos colosales!', vo_spire_restored: 'Una aguja ha sido restaurada.',
+    vo_wyrm_spawn: 'Ha aparecido el Wyrm de Ascuas.', vo_titan_spawn: 'El Titán del Abismo ha despertado.',
+    vo_ally_wyrm: 'Tu equipo ha derrotado al Wyrm de Ascuas.', vo_enemy_wyrm: 'El enemigo ha derrotado al Wyrm de Ascuas.', vo_ally_titan: 'Tu equipo ha derrotado al Titán del Abismo.', vo_enemy_titan: 'El enemigo ha derrotado al Titán del Abismo.',
+    vo_victory: '¡Victoria!', vo_defeat: 'Derrota.', vo_match_found: 'Partida encontrada.', vo_choose: 'Elige a tu campeón.',
+  },
+};
+
 // Champion voice lines: [champion, voice id, pick, ultimate, kill, death].
 const CHAMP_VOICES = [
   ['garrok', 'pNInz6obpgDQGcFmaJgB', 'The mountain stands with you.', 'Avalanche!', 'Crumbled.', 'I return... to stone.'],
@@ -215,11 +242,17 @@ for (const [key, prompt, seconds, vol] of MUSIC) {
   jobs.push({ key, run: () => post('https://api.elevenlabs.io/v1/sound-generation', { text: prompt, duration_seconds: seconds, prompt_influence: 0.4, loop: true })
     .catch(() => post('https://api.elevenlabs.io/v1/sound-generation', { text: prompt, duration_seconds: seconds, prompt_influence: 0.4 })) });
 }
+const announce = text => () => post(`https://api.elevenlabs.io/v1/text-to-speech/${ANNOUNCER_VOICE}?output_format=mp3_44100_128`, {
+  text, model_id: 'eleven_multilingual_v2', voice_settings: { stability: 0.45, similarity_boost: 0.8, style: 0.55, use_speaker_boost: true },
+});
 for (const [key, text] of VOICE) {
   manifest[key] = { file: `${key}.mp3`, kind: 'voice', vol: 0.9, text };
-  jobs.push({ key, run: () => post(`https://api.elevenlabs.io/v1/text-to-speech/${ANNOUNCER_VOICE}?output_format=mp3_44100_128`, {
-    text, model_id: 'eleven_multilingual_v2', voice_settings: { stability: 0.45, similarity_boost: 0.8, style: 0.55, use_speaker_boost: true },
-  }) });
+  jobs.push({ key, run: announce(text) });
+  for (const [lang, lines] of Object.entries(VOICE_I18N)) {
+    if (!lines[key]) continue;
+    (manifest[key].i18n ||= {})[lang] = `${lang}/${key}.mp3`;
+    jobs.push({ key: `${lang}/${key}`, run: announce(lines[key]) });
+  }
 }
 for (const [champ, voice, ...lines] of CHAMP_VOICES) {
   ['pick', 'ult', 'kill', 'death'].forEach((kind, i) => {

@@ -7,6 +7,7 @@ import { iconsReady } from './ui/icons.js';
 import './net/report.js';
 import { ReplayPlayer } from './game/spectate.js';
 import { notify, askNotifyPermission } from './ui/notify.js';
+import { initI18n, langPicker } from './i18n.js';
 import { initPwa, canInstall, onInstallChange, promptInstall } from './ui/install.js';
 import { Game } from './game/game.js';
 import { Lobby } from './ui/lobby.js';
@@ -35,6 +36,9 @@ class App {
     this.tab = 'login';
     this.serverInfo = null;
     initPwa();
+    document.querySelector('.ld-nav-r')?.prepend(langPicker());
+    const authLang = document.createElement('div'); authLang.className = 'auth-lang'; authLang.append(langPicker());
+    document.querySelector('#screen-auth')?.append(authLang);
     // Every element with .install-btn shows only while installing is possible.
     const syncInstall = () => document.querySelectorAll('.install-btn').forEach(b => { b.hidden = !canInstall(); });
     onInstallChange(syncInstall);
@@ -364,11 +368,15 @@ class App {
   }
 }
 
-const app = new App();
-app.boot();
-app.openSharedReplay(); // ?replay=<id>&t=<s> links open the replay right away
+let app = null;
+// The interface language loads first (only a small import when not English).
+initI18n().catch(() => {}).finally(() => {
+  app = new App();
+  app.boot();
+  app.openSharedReplay(); // ?replay=<id>&t=<s> links open the replay right away
+});
 
 // Read-only hooks used by the end-to-end browser tests.
-Object.defineProperty(window, '__broadroads', { get: () => app.game });
+Object.defineProperty(window, '__broadroads', { get: () => app?.game });
 Object.defineProperty(window, '__app', { get: () => app });
 Object.defineProperty(window, '__sfx', { get: () => sfx });
