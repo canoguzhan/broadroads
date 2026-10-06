@@ -13,7 +13,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { execFileSync } from 'node:child_process';
-import { generate, uploadImage, loadEnv, SEEDANCE_I2V, SEEDANCE_T2V } from '../higgsfield.mjs';
+import { generate, submit, waitFor, uploadImage, loadEnv, SEEDANCE_I2V, SEEDANCE_T2V } from '../higgsfield.mjs';
 
 loadEnv();
 const SRC = path.resolve(process.env.TRAILER_SRC || 'trailer-src');
@@ -30,7 +30,7 @@ const TOTAL = 30;
 const shotStart = i => i * (SHOT - XF); // 0, 4.6, 9.2, 13.8, 18.4, 23.0
 
 const LOOK = 'photorealistic live-action fantasy film still, cinematic lighting, anamorphic lens, shallow depth of field, volumetric light and atmosphere, highly detailed real materials and skin, epic scale, color graded like a blockbuster trailer, 16:9';
-const NEG = 'cartoon, anime, 3d render, video game graphics, plastic, toy, text, letters, logo, watermark, subtitles, extra limbs, blurry, low quality';
+const NEG = 'modern objects, asphalt, guardrail, cars, power lines, buildings from today, cartoon, anime, 3d render, video game graphics, plastic, toy, text, letters, logo, watermark, subtitles, extra limbs, blurry, low quality';
 
 /* The cut. `refs` are in-game portraits used to keep each champion's design. */
 const SHOTS = [
@@ -38,7 +38,7 @@ const SHOTS = [
     still: null,
     motion: 'Slow majestic aerial drone shot at dawn gliding over a vast fantasy valley: three ancient stone roads wind between forests toward two rival fortresses, stone watchtowers with glowing crystals line the roads, a huge glowing blue crystal core pulses at the heart of a fortress, mist in the jungle between the roads, golden sunrise light, photorealistic epic fantasy film, no people, no text' },
   { id: 's2_garrok', refs: ['garrok'],
-    still: 'The colossal living stone golem from image 1 (a giant made of cracked tan boulders with glowing molten amber seams in its rocky body) stands on a misty mountain road at dawn, fists clenched, about to charge, dust and pebbles floating around it. Keep its exact shape, colors and glowing seams',
+    still: 'The colossal living stone golem from image 1 (a giant made of cracked tan boulders with glowing molten amber seams in its rocky body) stands on an ancient overgrown cobblestone road through misty mountains at dawn, fists clenched, about to charge, dust and pebbles floating around it. Keep its exact shape, colors and glowing seams',
     motion: 'The giant stone golem roars and charges toward the camera, each heavy step cracking the stone road, boulders and dust exploding around it, the ground shakes, camera shakes and pulls back fast, glowing amber cracks in its body pulse, cinematic slow motion at the end' },
   { id: 's3_lyra_thessa', refs: ['lyra', 'thessa'],
     still: 'On the left, the sun priestess from image 1 (white hair with a golden horned circlet, gleaming white and gold armor, a turquoise gem on her chest) raises a hand that blazes with golden sunlight; on the right, the sea sorceress from image 2 (long flowing teal hair, ornate turquoise gown with silver filigree) commands a towering wave of water rising behind her. They stand side by side on a ruined temple causeway above a stormy sea at dusk. Keep both characters\' designs and colors',
@@ -110,31 +110,52 @@ async function frames() {
     }
     return refUrls[id];
   };
-  await Promise.all(SHOTS.filter(s => s.still).map(async s => {
+  const onlyIds = process.env.SHOT_IDS?.split(',');
+  await Promise.all(SHOTS.filter(s => s.still && (!onlyIds || onlyIds.includes(s.id))).map(async s => {
     const file = path.join(SRC, `${s.id}.png`);
     if (exists(file)) return;
     const urls = [];
     for (const r of s.refs) urls.push(await ref(r));
     console.log(`frame ${s.id}…`);
-    const url = await generate('alibaba/qwen-image-3/edit', { prompt: `${s.still}. ${LOOK}`, negative_prompt: NEG, image_urls: urls, aspect_ratio: '16:9', resolution: '2k' });
+    // Qwen Image 3 edit first; Grok Imagine 2.0 (also reference-guided) when Qwen is unavailable.
+    let url;
+    try {
+      url = await generate('alibaba/qwen-image-3/edit', { prompt: `${s.still}. ${LOOK}`, negative_prompt: NEG, image_urls: urls, aspect_ratio: '16:9', resolution: '2k' });
+    } catch (err) {
+      console.warn(`  qwen: ${err.message.split(' (request')[0]} → trying grok`);
+      url = await generate('xai/grok-imagine-image-2.0', { prompt: `${s.still}. ${LOOK}. Avoid: ${NEG}`, image_urls: urls, aspect_ratio: '16:9', resolution: '2k', quality: 'medium' });
+    }
     await download(url, file);
     console.log(`✓ frame ${s.id}`);
   }));
 }
 
-/* 2. shots */
+/* 2. shots: one at a time, each request id saved as soon as it is submitted so a re-run
+   picks up a running or finished request instead of paying for it again. */
 async function shots() {
-  await Promise.all(SHOTS.map(async s => {
+  const reqFile = path.join(SRC, 'requests.json');
+  const reqs = exists(reqFile) ? JSON.parse(fs.readFileSync(reqFile, 'utf8')) : {};
+  const save = () => fs.writeFileSync(reqFile, JSON.stringify(reqs, null, 1));
+  const onlyIds = process.env.SHOT_IDS?.split(',');
+  for (const s of SHOTS.filter(x => !onlyIds || onlyIds.includes(x.id))) {
     const file = path.join(SRC, `${s.id}.mp4`);
-    if (exists(file)) return;
-    console.log(`shot ${s.id}…`);
-    const common = { prompt: s.motion, duration: SHOT, resolution: '1080p', generate_audio: false, output_format: 'mp4' };
-    const url = s.still
-      ? await generate(SEEDANCE_I2V, { ...common, image_url: await uploadImage(path.join(SRC, `${s.id}.png`)) })
-      : await generate(SEEDANCE_T2V, { ...common, aspect_ratio: '16:9' });
-    await download(url, file);
-    console.log(`✓ shot ${s.id}`);
-  }));
+    if (exists(file)) continue;
+    if (!reqs[s.id]) {
+      const common = { prompt: s.motion, duration: SHOT, resolution: '1080p', generate_audio: false, output_format: 'mp4' };
+      reqs[s.id] = s.still
+        ? await submit(SEEDANCE_I2V, { ...common, image_url: await uploadImage(path.join(SRC, `${s.id}.png`)) })
+        : await submit(SEEDANCE_T2V, { ...common, aspect_ratio: '16:9' });
+      save();
+      console.log(`shot ${s.id} submitted (${reqs[s.id]})`);
+    } else console.log(`shot ${s.id}: resuming ${reqs[s.id]}`);
+    try {
+      await download(await waitFor(reqs[s.id]), file);
+      console.log(`✓ shot ${s.id}`);
+    } catch (err) {
+      if (err.terminal) { delete reqs[s.id]; save(); } // failed requests are refunded; submit fresh next time
+      throw new Error(`shot ${s.id}: ${err.message}`);
+    }
+  }
 }
 
 /* 3. audio */

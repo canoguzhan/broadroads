@@ -47,8 +47,37 @@ export async function generate(model, input) {
     const detail = r && !r.ok ? (await r.json().catch(() => ({}))).detail : null;
     throw new Error(`${model}: ${detail || err.message}`);
   }
-  if (res.status !== 'completed') throw new Error(`${model}: ${res.status === 'nsfw' ? 'rejected by moderation' : res.status} (request ${res.request_id})`);
+  if (res.status !== 'completed') throw new Error(`${model}: ${res.status === 'nsfw' ? 'rejected by moderation' : res.status}${res.error ? ` (${res.error})` : ''} (request ${res.request_id})`);
   const url = res.video?.url || res.images?.[0]?.url;
   if (!url) throw new Error(`${model}: no result URL (request ${res.request_id})`);
   return url;
+}
+
+/** Submits a generation without waiting; returns the request id. */
+export async function submit(model, input) {
+  const r = await fetch(`${API}/${model}`, { method: 'POST', headers: { ...auth, 'Content-Type': 'application/json' }, body: JSON.stringify(input) });
+  const body = await r.json().catch(() => ({}));
+  if (!r.ok || !body.request_id) throw new Error(`${model}: ${body.detail || r.status}`);
+  return body.request_id;
+}
+
+/** Waits for a submitted request; returns the result URL. */
+export async function waitFor(requestId, { interval = 5000, timeout = 30 * 60e3 } = {}) {
+  const t0 = Date.now();
+  for (;;) {
+    const r = await fetch(`${API}/requests/${requestId}/status`, { headers: auth });
+    const res = await r.json().catch(() => ({}));
+    if (res.status === 'completed') {
+      const url = res.video?.url || res.images?.[0]?.url;
+      if (!url) throw new Error(`no result URL (request ${requestId})`);
+      return url;
+    }
+    if (['failed', 'nsfw', 'canceled', 'cancelled'].includes(res.status)) {
+      const err = new Error(`${res.status === 'nsfw' ? 'rejected by moderation' : res.status}${res.error ? ` (${res.error})` : ''} (request ${requestId})`);
+      err.terminal = true;
+      throw err;
+    }
+    if (Date.now() - t0 > timeout) throw new Error(`timed out waiting for request ${requestId}`);
+    await new Promise(ok => setTimeout(ok, interval));
+  }
 }
