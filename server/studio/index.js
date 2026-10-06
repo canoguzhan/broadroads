@@ -121,12 +121,13 @@ export async function startStudio(opts = {}) {
     }
   }
 
-  // Episodes interrupted by a restart resume (without uploading unless autopilot says so).
-  for (const id of listEps()) {
+  // Episodes interrupted by a restart (e.g. a deploy) resume where they stopped; they upload
+  // afterwards only when the autopilot would have.
+  for (const id of listEps().reverse()) {
     const ep = loadEp(id);
     if (['running', 'queued', 'uploading'].includes(ep.data.status)) {
-      ep.data.status = 'failed'; ep.data.error = 'Interrupted by a restart'; ep.log('Interrupted by a restart.');
-      if (settings.autopilot) enqueue(id, ep.data.settings.autoUpload);
+      ep.data.status = 'queued'; ep.data.error = null; ep.log('Interrupted by a restart; resuming.');
+      enqueue(id, settings.autopilot ? ep.data.settings.autoUpload : false);
     }
   }
 

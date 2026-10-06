@@ -25,11 +25,12 @@ TimeoutStopSec=15
 StateDirectory=broadroads-studio
 StateDirectoryMode=0750
 # Rendering is heavy: lowest priority, capped memory, first to go if memory runs out.
+# Two 1080p renders in parallel need about 4 GB; above MemoryHigh the kernel throttles them to a crawl.
 Nice=19
 CPUWeight=10
 IOWeight=10
-MemoryHigh=3G
-MemoryMax=4G
+MemoryHigh=5G
+MemoryMax=5632M
 OOMScoreAdjust=900
 NoNewPrivileges=true
 ProtectSystem=full
