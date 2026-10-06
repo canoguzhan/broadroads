@@ -27,7 +27,7 @@ if (fs.existsSync(path.join(ROOT, '.env')) && typeof process.loadEnvFile === 'fu
 const MIME = {
   '.html': 'text/html; charset=utf-8', '.js': 'text/javascript; charset=utf-8', '.css': 'text/css; charset=utf-8',
   '.json': 'application/json', '.svg': 'image/svg+xml', '.png': 'image/png', '.jpg': 'image/jpeg', '.ico': 'image/x-icon',
-  '.webp': 'image/webp', '.woff2': 'font/woff2', '.mp3': 'audio/mpeg', '.ogg': 'audio/ogg', '.wav': 'audio/wav', '.glb': 'model/gltf-binary', '.txt': 'text/plain; charset=utf-8', '.webmanifest': 'application/manifest+json',
+  '.webp': 'image/webp', '.woff2': 'font/woff2', '.mp3': 'audio/mpeg', '.ogg': 'audio/ogg', '.wav': 'audio/wav', '.glb': 'model/gltf-binary', '.txt': 'text/plain; charset=utf-8', '.webmanifest': 'application/manifest+json', '.mp4': 'video/mp4',
 };
 
 export function loadConfig(env = process.env) {
@@ -190,12 +190,25 @@ export async function startServer(overrides = {}) {
     const ext = path.extname(target);
     const immutable = target.includes(`${path.sep}assets${path.sep}`);
     const audio = (target.includes(`${path.sep}sfx${path.sep}`) && ext === '.mp3') || ext === '.glb'; // .glb URLs carry ?v=
-    res.writeHead(200, {
+    const headers = {
       'Content-Type': MIME[ext] || 'application/octet-stream',
-      'Cache-Control': immutable ? 'public, max-age=31536000, immutable' : audio ? 'public, max-age=86400' : 'no-cache',
+      'Cache-Control': immutable ? 'public, max-age=31536000, immutable' : audio || ext === '.mp4' ? 'public, max-age=86400' : 'no-cache',
       'X-Content-Type-Options': 'nosniff',
       'Referrer-Policy': 'strict-origin-when-cross-origin',
-    });
+      'Accept-Ranges': 'bytes',
+    };
+    // Byte ranges: Safari only plays video that can be fetched in pieces.
+    const size = fs.statSync(target).size;
+    const range = /^bytes=(\d*)-(\d*)$/.exec(req.headers.range || '');
+    if (range && (range[1] || range[2])) {
+      const start = range[1] ? Number(range[1]) : Math.max(0, size - Number(range[2]));
+      const end = range[1] && range[2] ? Math.min(Number(range[2]), size - 1) : size - 1;
+      if (start >= size || start > end) { res.writeHead(416, { 'Content-Range': `bytes */${size}` }); return res.end(); }
+      res.writeHead(206, { ...headers, 'Content-Range': `bytes ${start}-${end}/${size}`, 'Content-Length': end - start + 1 });
+      if (req.method === 'HEAD') return res.end();
+      return fs.createReadStream(target, { start, end }).pipe(res);
+    }
+    res.writeHead(200, { ...headers, 'Content-Length': size });
     if (req.method === 'HEAD') return res.end();
     fs.createReadStream(target).pipe(res);
   }

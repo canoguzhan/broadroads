@@ -8,3 +8,4 @@ e2e-screenshots
 models-src/
 *-tmp.mjs
 .loadtest-accounts.json
+trailer-src/

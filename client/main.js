@@ -8,6 +8,7 @@ import './net/report.js';
 import { ReplayPlayer } from './game/spectate.js';
 import { notify, askNotifyPermission } from './ui/notify.js';
 import { initI18n, langPicker } from './i18n.js';
+import { initTrailer } from './ui/trailer.js';
 import { initPwa, canInstall, onInstallChange, promptInstall } from './ui/install.js';
 import { Game } from './game/game.js';
 import { Lobby } from './ui/lobby.js';
@@ -288,7 +289,10 @@ class App {
       else this.setTab(mode === 'login' ? 'login' : this.serverInfo ? 'register' : 'offline');
     };
     for (const b of $$('[data-landing]')) b.addEventListener('click', () => go(b.dataset.landing));
-    if (!seen && !(saved && saved.token) && !new URLSearchParams(location.search).has('replay')) this.show('screen-landing');
+    if (!seen && !(saved && saved.token) && !new URLSearchParams(location.search).has('replay')) {
+      this.show('screen-landing');
+      initTrailer($('#screen-landing .ld-hero'));
+    }
   }
 
   /* ---------------- account recovery & social sign-in ---------------- */

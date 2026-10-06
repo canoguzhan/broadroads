@@ -165,3 +165,23 @@ test('missing client build gives a helpful message', async () => {
   const t = await fetch(base + '/../../etc/passwd');
   assert.notEqual(t.status, 200);
 });
+
+test('static files support byte ranges (video playback in Safari)', async () => {
+  const dir = path.join(dataDir, 'nodist', 'trailer');
+  fs.mkdirSync(dir, { recursive: true });
+  fs.writeFileSync(path.join(dataDir, 'nodist', 'index.html'), '<!doctype html>');
+  fs.writeFileSync(path.join(dir, 'bg.mp4'), Buffer.from('0123456789'));
+  const full = await fetch(`${base}/trailer/bg.mp4`);
+  assert.equal(full.status, 200);
+  assert.equal(full.headers.get('content-type'), 'video/mp4');
+  assert.equal(full.headers.get('accept-ranges'), 'bytes');
+  const part = await fetch(`${base}/trailer/bg.mp4`, { headers: { Range: 'bytes=2-5' } });
+  assert.equal(part.status, 206);
+  assert.equal(part.headers.get('content-range'), 'bytes 2-5/10');
+  assert.equal(await part.text(), '2345');
+  const tail = await fetch(`${base}/trailer/bg.mp4`, { headers: { Range: 'bytes=-3' } });
+  assert.equal(await tail.text(), '789');
+  const bad = await fetch(`${base}/trailer/bg.mp4`, { headers: { Range: 'bytes=20-' } });
+  assert.equal(bad.status, 416);
+  fs.rmSync(path.join(dataDir, 'nodist'), { recursive: true, force: true });
+});

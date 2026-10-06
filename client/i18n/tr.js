@@ -10,6 +10,7 @@ export default {
   "Log in": "Giriş yap",
   "Log In": "Giriş Yap",
   "A free 5v5 MOBA in your browser. Pick a champion, push the lanes, slay the Ember Wyrm and destroy the enemy Core": "Tarayıcında ücretsiz 5v5 MOBA. Bir şampiyon seç, koridorları it, Kor Ejderi'ni kes ve düşman Çekirdeği'ni yok et",
+  "Watch the trailer": "Fragmanı izle",
   "Play free now": "Hemen ücretsiz oyna",
   "Play offline instantly": "Anında çevrimdışı oyna",
   "No download": "İndirme yok",

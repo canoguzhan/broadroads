@@ -167,6 +167,21 @@ node scripts/build-models.mjs                                             # pack
 
 API credits are bought in the Tripo platform console. They are separate from Tripo Studio subscriptions.
 
+## 🎬 Trailer (Higgsfield + ElevenLabs)
+
+`scripts/trailer/make-trailer.mjs` builds the ~30 s trailer from the in-game champions:
+champion portraits → photoreal 16:9 key frames (Higgsfield, Qwen Image 3 edit) → shots animated with
+**Seedance 2.5** image-to-video → champion and narrator lines in each champion's voice (**ElevenLabs v4**),
+a timed orchestral score (ElevenLabs Music) and sound effects → an ffmpeg cut with a title card.
+It writes `public/trailer/broadroads-trailer.mp4` (full, with sound), `bg.mp4` (the muted landing-page loop) and `poster.jpg`;
+every step is cached in `trailer-src/`, so re-runs only redo what changed.
+
+```bash
+# .env (git-ignored): HF_CREDENTIALS=<key id>:<key secret>  ELEVENLABS_API_KEY=...
+FFMPEG=/path/to/ffmpeg node scripts/trailer/make-trailer.mjs        # or --only frames|shots|audio|cut
+```
+`scripts/higgsfield.mjs` is the shared Higgsfield client (official `@higgsfield/client` SDK plus uploads).
+
 ## 😊 Emotes and quick chat
 
 Press **G** (or 😊) for the wheel: Dance, Cheer and Laugh play Tripo-animated emotes on your champion; quick chat sends "Good game!", "On my way!", "Careful!" and more.
