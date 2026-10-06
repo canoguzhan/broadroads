@@ -11,6 +11,7 @@ export default {
   "Log In": "Iniciar sesión",
   "A free 5v5 MOBA in your browser. Pick a champion, push the lanes, slay the Ember Wyrm and destroy the enemy Core": "Un MOBA 5v5 gratis en tu navegador. Elige un campeón, empuja las calles, derrota al Wyrm de Ascuas y destruye el Núcleo enemigo",
   "Watch the trailer": "Ver el tráiler",
+  "Back": "Volver",
   "Play free now": "Juega gratis ya",
   "Play offline instantly": "Juega sin conexión al instante",
   "No download": "Sin descargas",

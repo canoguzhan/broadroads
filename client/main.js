@@ -260,8 +260,8 @@ class App {
     if (this.game) { this.game.destroy(); this.game = null; }
     if (this.conn) { const c = this.conn; this.conn = null; c.close(); }
     $('#orientation-lock').classList.remove('active');
-    this.show('screen-auth');
-    if (reason) $('#auth-error').textContent = reason;
+    // Signed out on purpose: back to the front page. Kicked out with a reason: the sign-in form shows it.
+    if (reason) { this.show('screen-auth'); $('#auth-error').textContent = reason; } else this.showLanding();
     this.refreshServer();
   }
 
@@ -270,10 +270,8 @@ class App {
     this.exit(null);
   }
 
-  /** Front page for first-time visitors; returning players and shared links skip it. */
+  /** Front page for everyone who isn't signed in (signed-in players and shared replay links skip it). */
   landing(saved) {
-    let seen = false;
-    try { seen = localStorage.getItem('broadroads_seen_landing') === '1'; } catch { /* ignore */ }
     const champs = $('#ld-champs');
     if (champs && !champs.children.length) {
       for (const id of ['garrok', 'lyra', 'kaelen', 'hale', 'thorne', 'mira', 'zarak', 'nyra', 'brakka', 'rook', 'thessa', 'borrin']) {
@@ -283,16 +281,22 @@ class App {
       }
     }
     const go = mode => {
-      try { localStorage.setItem('broadroads_seen_landing', '1'); } catch { /* ignore */ }
+      // A history entry, so the browser's Back button returns to the landing page.
+      history.pushState({ screen: 'auth' }, '', '#login');
       this.show('screen-auth');
       if (mode === 'offline') { this.setTab('offline'); $('#auth-form').requestSubmit(); }
       else this.setTab(mode === 'login' ? 'login' : this.serverInfo ? 'register' : 'offline');
     };
     for (const b of $$('[data-landing]')) b.addEventListener('click', () => go(b.dataset.landing));
-    if (!seen && !(saved && saved.token) && !new URLSearchParams(location.search).has('replay')) {
-      this.show('screen-landing');
-      initTrailer($('#screen-landing .ld-hero'));
-    }
+    $('#auth-back')?.addEventListener('click', () => (history.state?.screen === 'auth' ? history.back() : this.showLanding()));
+    window.addEventListener('popstate', () => { if (!this.conn && !$('#screen-auth').hidden) this.showLanding(); });
+    if (!(saved && saved.token) && !new URLSearchParams(location.search).has('replay')) this.showLanding();
+  }
+
+  showLanding() {
+    if (location.hash === '#login') history.replaceState(null, '', location.pathname + location.search);
+    this.show('screen-landing');
+    if (!this.trailerReady) { this.trailerReady = true; initTrailer($('#screen-landing .ld-hero')); }
   }
 
   /* ---------------- account recovery & social sign-in ---------------- */

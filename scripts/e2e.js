@@ -20,7 +20,7 @@ const log = msg => console.log(`  ✓ ${msg}`);
 
 async function newPage(label, opts = {}) {
   const ctx = await browser.newContext({ viewport: { width: 1100, height: 680 }, ...opts });
-  await ctx.addInitScript(() => { localStorage.setItem('broadroads_settings', JSON.stringify({ quality: 'low', volume: 0, showFps: false, models: false })); localStorage.setItem('broadroads_seen_landing', '1'); });
+  await ctx.addInitScript(() => { localStorage.setItem('broadroads_settings', JSON.stringify({ quality: 'low', volume: 0, showFps: false, models: false })); });
   const page = await ctx.newPage();
   page.on('pageerror', e => errors.push(`[${label}] ${e.message}`));
   page.on('console', m => { if (m.type() === 'error' && !/favicon|fonts\.g/.test(m.text())) errors.push(`[${label}] ${m.text()}`); });
@@ -33,6 +33,7 @@ const evalIn = (page, fn, arg) => page.evaluate(([src, a]) => new Function('app'
 
 async function register(page, name) {
   await page.goto(BASE);
+  await page.click('#screen-landing:not([hidden]) [data-landing=login]', { timeout: 15000 }); // the front page comes first
   await page.waitForSelector('#server-status.online', { timeout: 15000 });
   await page.click('.tab[data-tab=register]');
   await page.fill('#auth-user', name);
@@ -133,6 +134,7 @@ try {
   console.log('Offline mode');
   const o = await newPage('offline');
   await o.goto(BASE);
+  await o.click('#screen-landing:not([hidden]) [data-landing=login]', { timeout: 15000 });
   await o.waitForSelector('#server-status.online', { timeout: 15000 });
   await o.click('.tab[data-tab=offline]');
   await o.fill('#auth-user', 'Wanderer');
