@@ -1,5 +1,6 @@
 /* In-match panels: shop, scoreboard, settings, help, end-of-game. */
 import { langPicker } from '../i18n.js';
+import { packSetting } from './packOffer.js';
 import { h, $, clear, timeStr } from './dom.js';
 import { priceFor } from '../../shared/moba/items.js';
 import { CHAMPIONS } from '../../shared/moba/champions.js';
@@ -141,6 +142,7 @@ export class Panels {
         h('label.field.row', {}, autoLvl, h('span', { text: 'Auto-level abilities (ultimate first)' })),
         typeof Notification !== 'undefined' && Notification.permission === 'default' ? h('button.btn.btn-sm', { onclick: ev => { Notification.requestPermission(); ev.currentTarget.remove(); } }, '🔔 Enable notifications (match found, invites)') : null,
         h('label.field.row', {}, models, h('span', { text: 'Detailed 3D models (turn off on slow devices; applies next match)' })),
+        packSetting(g.ui),
         h('div.btn-row', {},
           h('button.btn', { onclick: () => this.open('help') }, '❔ Controls'),
           h('button.btn', { onclick: () => g.send({ t: 'ff', yes: true }) }, '🏳️ Vote surrender'),

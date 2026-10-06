@@ -4,7 +4,7 @@
    - sounds, icons, portraits and the model manifest: stale-while-revalidate.
    - pages: network-first, falling back to the cached shell when offline.
    - /api and /ws: never touched. */
-const VERSION = 'br-v1';
+const VERSION = 'br-v2';
 const STATIC = `${VERSION}-static`, MEDIA = `${VERSION}-media`, PAGES = `${VERSION}-pages`;
 
 self.addEventListener('install', e => {
@@ -14,14 +14,14 @@ self.addEventListener('install', e => {
 
 self.addEventListener('activate', e => {
   e.waitUntil((async () => {
-    for (const k of await caches.keys()) if (!k.startsWith(VERSION)) await caches.delete(k);
+    for (const k of await caches.keys()) if (!k.startsWith(VERSION) && !k.startsWith('br-pack')) await caches.delete(k); // the HD pack outlives updates
     await self.clients.claim();
   })());
 });
 
 async function cacheFirst(req, name) {
   const cache = await caches.open(name);
-  const hit = await cache.match(req);
+  const hit = await caches.match(req); // any cache: also finds the HD pack the player downloaded
   if (hit) return hit;
   const res = await fetch(req);
   if (res.ok) cache.put(req, res.clone());

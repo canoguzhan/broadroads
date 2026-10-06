@@ -4,10 +4,71 @@ import * as THREE from 'three';
 import { TILE } from '../../shared/tiles.js';
 import { mulberry32 } from '../../shared/rng.js';
 import { makeGlowTexture } from './glow.js';
+import { mergeGeometries, mergeVertices } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
+import { packInstalled } from './assetPack.js';
 
 const PX = 10;
 const CHUNK = 16;
 export const TEAM_HEX = { blue: 0x3b82f6, red: 0xef4444, neutral: 0xa3a3a3 };
+
+/* Stylized default trees (no download needed): a canopy of a few soft, jittered blobs, lit
+   lighter on top and darker underneath through vertex colors, on a tapered trunk.
+   'round' is a broadleaf crown, 'tall' a pine-like stack. ~250 triangles per tree. */
+function blob(radius, sx, sy, sz, x, y, z, seed) {
+  const g = mergeVertices(new THREE.IcosahedronGeometry(radius, 1)); // welded, so it shades smooth and the jitter can't crack it
+  g.deleteAttribute('normal'); g.deleteAttribute('uv');
+  const rnd = mulberry32(seed), pos = g.attributes.position, v = new THREE.Vector3();
+  for (let i = 0; i < pos.count; i++) { // lumpy, so it reads as leaf clumps rather than a ball
+    v.fromBufferAttribute(pos, i);
+    v.multiplyScalar(1 + (rnd() - 0.5) * 0.22);
+    pos.setXYZ(i, v.x * sx + x, v.y * sy + y, v.z * sz + z);
+  }
+  return g;
+}
+function shadeCanopy(g, y0, y1) {
+  const pos = g.attributes.position, cols = new Float32Array(pos.count * 3);
+  for (let i = 0; i < pos.count; i++) {
+    const t = Math.min(1, Math.max(0, (pos.getY(i) - y0) / (y1 - y0)));
+    const k = 0.55 + 0.6 * t; // dark underside, sunlit top
+    cols[i * 3] = k * 0.92; cols[i * 3 + 1] = k; cols[i * 3 + 2] = k * 0.85;
+  }
+  g.setAttribute('color', new THREE.BufferAttribute(cols, 3));
+  g.computeVertexNormals();
+  return g;
+}
+export function treeGeometries(kind) {
+  const trunk = new THREE.CylinderGeometry(0.1, 0.2, 1.4, 6).translate(0, 0.7, 0);
+  let canopy;
+  if (kind === 'tall') {
+    canopy = mergeGeometries([blob(0.78, 1, 0.8, 1, 0, 1.45, 0, 11), blob(0.6, 1, 0.85, 1, 0.05, 2.1, -0.03, 12), blob(0.4, 1, 1, 1, 0, 2.65, 0.02, 13)]);
+    canopy = shadeCanopy(canopy, 0.9, 3.0);
+  } else {
+    canopy = mergeGeometries([blob(0.82, 1, 0.85, 1, 0, 1.75, 0, 21), blob(0.62, 1, 0.9, 1, 0.55, 1.55, 0.25, 22), blob(0.6, 1, 0.9, 1, -0.45, 1.6, -0.35, 23), blob(0.55, 1, 0.9, 1, 0.1, 2.25, -0.1, 24)]);
+    canopy = shadeCanopy(canopy, 1.0, 2.8);
+  }
+  return { trunk, canopy };
+}
+
+/** Plants the stylized default trees for `items` (treeData rows) into `group`. */
+function plantTrees(group, items, shadow) {
+  const m4 = new THREE.Matrix4(), q = new THREE.Quaternion(), s = new THREE.Vector3(), p = new THREE.Vector3(), col = new THREE.Color();
+  const yAxis = new THREE.Vector3(0, 1, 0);
+  const trunkMat = new THREE.MeshLambertMaterial({ color: 0x5a3e26 });
+  const leafMat = new THREE.MeshLambertMaterial({ color: 0xffffff, vertexColors: true });
+  const placeTree = (mesh, i, [, , sc, ox, oy, rot, c]) => {
+    q.setFromAxisAngle(yAxis, rot);
+    m4.compose(p.set(ox, 0, oy), q, s.set(sc, sc, sc));
+    mesh.setMatrixAt(i, m4);
+    mesh.setColorAt(i, col.copy(c).multiplyScalar(1.5));
+  };
+  for (const kind of ['round', 'tall']) {
+    const list = items.filter(([x, y]) => (((x * 31 + y * 17) >>> 0) % 3 === 0) === (kind === 'tall')); // one in three is a pine
+    if (!list.length) continue;
+    const { trunk, canopy } = treeGeometries(kind);
+    chunked(group, list, trunk, trunkMat, placeTree, shadow);
+    chunked(group, list, canopy, leafMat, placeTree, shadow);
+  }
+}
 
 function chunked(group, list, geometry, material, place, opts = {}) {
   const buckets = new Map();
@@ -201,28 +262,21 @@ export function buildValley(valley, quality) {
 
   const leaf = new THREE.Color(0x2c5a26);
   const treeData = trees.map(([x, y, edge]) => [x, y, 0.85 + rand() * 0.7, x + 0.5 + (rand() - 0.5) * 0.4, y + 0.5 + (rand() - 0.5) * 0.4, rand() * Math.PI, leaf.clone().offsetHSL((rand() - 0.5) * 0.05, 0, (rand() - 0.5) * 0.12), edge]);
-  const part = (h, colorFn) => (mesh, i, [, , sc, ox, oy, rot, c]) => {
-    q.setFromAxisAngle(yAxis, rot);
-    m4.compose(p.set(ox, h * sc, oy), q, s.set(sc, sc, sc));
-    mesh.setMatrixAt(i, m4);
-    if (colorFn) mesh.setColorAt(i, colorFn(c));
-  };
   const shadow = { castShadow: quality === 'high' };
   const treeGroup = new THREE.Group(), bushGroup = new THREE.Group(), fountainGroup = new THREE.Group();
   group.add(treeGroup, bushGroup, fountainGroup);
-  chunked(treeGroup, treeData, new THREE.CylinderGeometry(0.12, 0.18, 1, 5), new THREE.MeshLambertMaterial({ color: 0x4a3420 }), part(0.5), shadow);
-  const leafMat = new THREE.MeshLambertMaterial({ color: 0xffffff, flatShading: true });
-  chunked(treeGroup, treeData, new THREE.ConeGeometry(0.85, 1.7, 7), leafMat, part(1.6, c => c), shadow);
-  chunked(treeGroup, treeData, new THREE.ConeGeometry(0.62, 1.3, 7), leafMat, part(2.5, c => col.copy(c).offsetHSL(0, 0, 0.05)), shadow);
+  plantTrees(treeGroup, treeData, shadow);
 
   // Bushes: clumps of tall grass.
   const bushMat = new THREE.MeshLambertMaterial({ color: 0xffffff, flatShading: true });
   const bushData = bushes.map(([x, y]) => [x, y, rand(), rand()]);
-  chunked(bushGroup, bushData, new THREE.IcosahedronGeometry(0.62, 0), bushMat, (mesh, i, [x, y, r1, r2]) => {
+  const bushGeo = shadeCanopy(mergeGeometries([blob(0.5, 1, 0.7, 1, 0, 0.3, 0, 31), blob(0.38, 1, 0.75, 1, 0.38, 0.25, 0.12, 32), blob(0.36, 1, 0.75, 1, -0.32, 0.25, -0.2, 33)]), -0.1, 0.75);
+  bushMat.vertexColors = true; bushMat.flatShading = false;
+  chunked(bushGroup, bushData, bushGeo, bushMat, (mesh, i, [x, y, r1, r2]) => {
     q.setFromAxisAngle(yAxis, r1 * 6);
-    m4.compose(p.set(x + 0.5, 0.35, y + 0.5), q, s.set(1 + r2 * 0.3, 0.75 + r1 * 0.3, 1 + r2 * 0.3));
+    m4.compose(p.set(x + 0.5, 0.05, y + 0.5), q, s.set(1 + r2 * 0.3, 0.85 + r1 * 0.3, 1 + r2 * 0.3));
     mesh.setMatrixAt(i, m4);
-    mesh.setColorAt(i, col.set(0x3f7f2e).offsetHSL(0, 0, (r2 - 0.5) * 0.1));
+    mesh.setColorAt(i, col.set(0x4f9a38).offsetHSL(0, 0, (r2 - 0.5) * 0.1));
   });
 
   const water = buildWater(map);
@@ -271,49 +325,57 @@ function clearGroup(g) {
   for (const c of [...g.children]) { g.remove(c); c.traverse(o => { if (o.isInstancedMesh) o.dispose(); if (o.geometry) o.geometry.dispose(); }); }
 }
 
-/** Swaps procedural trees, bushes and fountain pillars for Tripo models as they load. */
+/** Swaps in the HD pack's trees and brush (when installed) and the fountain models as they load. */
 export function upgradeValley(terrain, valley, loadModel) {
   const m4 = new THREE.Matrix4(), q = new THREE.Quaternion(), s = new THREE.Vector3(), p = new THREE.Vector3(), col = new THREE.Color();
   const yAxis = new THREE.Vector3(0, 1, 0);
   const shadow = { castShadow: terrain.quality === 'high' };
 
-  // Low quality keeps the cheap cone forest (model trees are ~2k triangles each).
-  if (terrain.quality !== 'low') Promise.all(['tree_pine', 'tree_oak', 'tree_fir'].map(loadModel)).then(models => {
-    const variants = models.filter(Boolean).map(g => propParts(g, 2.9)).filter(Boolean);
-    if (!variants.length || !terrain.group.parent) return;
-    clearGroup(terrain.treeGroup);
-    // Model trees are ~2k triangles and bigger than the cones, so use fewer:
-    // every other forest-edge tile, and a sparse scattering inside.
-    const high = terrain.quality === 'high';
-    const placed = terrain.treeData.filter(([x, y, , , , , , edge]) => {
-      const h = (x * 73856093 ^ y * 19349663) >>> 0;
-      return edge ? h % (high ? 2 : 3) === 0 : h % (high ? 8 : 16) === 0;
-    });
-    variants.forEach((parts, vi) => {
-      const items = placed.filter(([x, y]) => ((x * 7 + y * 13) % variants.length) === vi);
-      for (const part of parts) {
-        chunked(terrain.treeGroup, items, part.geometry, part.material, (mesh, i, [, , sc, ox, oy, rot, c, edge]) => {
-          q.setFromAxisAngle(yAxis, rot);
-          m4.compose(p.set(ox, 0, oy), q, s.setScalar(edge ? Math.min(sc, 1.15) * 0.85 : sc * 1.3)); // edge trees stay small so they don't hide paths and camps
-          mesh.setMatrixAt(i, m4);
-          mesh.setColorAt(i, col.setScalar(0.82).lerp(c, 0.15));
-        }, shadow);
-      }
-    });
-  });
-
-  if (terrain.quality !== 'low') loadModel('bush').then(gltf => {
-    const parts = gltf && propParts(gltf, 1.6, true);
-    if (!parts || !terrain.group.parent) return;
-    clearGroup(terrain.bushGroup);
-    for (const part of parts) {
-      chunked(terrain.bushGroup, terrain.bushData, part.geometry, part.material, (mesh, i, [x, y, r1, r2]) => {
-        q.setFromAxisAngle(yAxis, r1 * 6);
-        m4.compose(p.set(x + 0.5, 0, y + 0.5), q, s.setScalar(0.9 + r2 * 0.3));
-        mesh.setMatrixAt(i, m4);
+  // The HD environment pack (an optional download kept on the device) swaps in full model trees
+  // on the forest edges, where they're seen, and lush grass and shrubs in the brush.
+  // Without it, the stylized default trees stay.
+  if (terrain.quality !== 'low' && packInstalled()) {
+    Promise.all(['hd_tree_oak', 'hd_tree_ancient', 'hd_tree_pine'].map(loadModel)).then(models => {
+      const variants = models.map(g => g && propParts(g, 3.4));
+      if (!variants.some(Boolean) || !terrain.group.parent) return;
+      const high = terrain.quality === 'high';
+      const hash = (x, y) => (x * 73856093 ^ y * 19349663) >>> 0;
+      const isHd = ([x, y, , , , , , edge]) => (edge ? hash(x, y) % (high ? 2 : 3) === 0 : hash(x, y) % (high ? 10 : 20) === 0);
+      const hd = terrain.treeData.filter(isHd), rest = terrain.treeData.filter(t => !isHd(t));
+      clearGroup(terrain.treeGroup);
+      plantTrees(terrain.treeGroup, rest, shadow);
+      // Oak and ancient most of the time; the airy pine one tree in five.
+      const pick = (x, y) => { const h = (x * 7 + y * 13) % 5; return h === 4 && variants[2] ? 2 : h % 2 && variants[1] ? 1 : variants[0] ? 0 : variants.findIndex(Boolean); };
+      variants.forEach((parts, vi) => {
+        if (!parts) return;
+        const items = hd.filter(([x, y]) => pick(x, y) === vi);
+        for (const part of parts) {
+          chunked(terrain.treeGroup, items, part.geometry, part.material, (mesh, i, [, , sc, ox, oy, rot, c, edge]) => {
+            q.setFromAxisAngle(yAxis, rot);
+            m4.compose(p.set(ox, 0, oy), q, s.setScalar(edge ? Math.min(sc, 1.15) * 0.8 : sc * 1.15)); // edge trees stay small so they don't hide paths and camps
+            mesh.setMatrixAt(i, m4);
+            mesh.setColorAt(i, col.setScalar(0.9).lerp(c, 0.1));
+          }, shadow);
+        }
       });
-    }
-  });
+    });
+    Promise.all(['hd_grass', 'hd_bush'].map(loadModel)).then(models => {
+      const variants = models.map((g, i) => g && propParts(g, i === 0 ? 1.5 : 1.3, true));
+      if (!variants.some(Boolean) || !terrain.group.parent) return;
+      clearGroup(terrain.bushGroup);
+      variants.forEach((parts, vi) => {
+        if (!parts) return;
+        const items = terrain.bushData.filter(([, , r1]) => (variants[0] && variants[1] ? (r1 < 0.65 ? 0 : 1) : vi) === vi); // mostly grass
+        for (const part of parts) {
+          chunked(terrain.bushGroup, items, part.geometry, part.material, (mesh, i, [x, y, r1, r2]) => {
+            q.setFromAxisAngle(yAxis, r1 * 40);
+            m4.compose(p.set(x + 0.5 + (r2 - 0.5) * 0.3, 0, y + 0.5 + (r1 - 0.5) * 0.3), q, s.setScalar(0.85 + r2 * 0.35));
+            mesh.setMatrixAt(i, m4);
+          });
+        }
+      });
+    });
+  }
 
   for (const team of ['blue', 'red']) {
     loadModel(`fountain_${team}`).then(gltf => {

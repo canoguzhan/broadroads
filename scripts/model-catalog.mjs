@@ -76,6 +76,13 @@ CATALOG.push(
   { id: 'tree_oak', group: 'prop', kind: 'static', prompt: `stylized low poly round leafy oak tree with a thick trunk, ${PROP}`, face: 500, low: true, tex: 256, tris: 600 },
   { id: 'tree_fir', group: 'prop', kind: 'static', prompt: `stylized low poly tall dark green fir tree, ${PROP}`, face: 500, low: true, tex: 256, tris: 600 },
   { id: 'bush', group: 'prop', kind: 'static', prompt: `dense round clump of tall wild grass and leafy shrub, ${PROP}`, face: 1500, low: true, tex: 256, tris: 900 },
+  // HD environment pack: optional download (Settings / lobby), stored on the device. Full canopies
+  // instead of the low-poly props; only forest edges use them, so the triangle count stays sane.
+  { id: 'hd_tree_oak', group: 'pack', kind: 'static', prompt: `lush stylized fantasy oak tree, thick twisted brown trunk with roots, a full rounded canopy made of many soft clustered leaf clumps, rich layered greens with warm highlights, ${PROP}`, face: 8000, tex: 1024, tris: 6000 },
+  { id: 'hd_tree_pine', group: 'pack', kind: 'static', prompt: `tall stylized fantasy pine tree, straight brown trunk, tiers of soft drooping branches full of dense dark green needle clumps, ${PROP}`, face: 8000, tex: 1024, tris: 6000 },
+  { id: 'hd_tree_ancient', group: 'pack', kind: 'static', prompt: `ancient gnarled fantasy forest tree with a wide mossy trunk, hanging vines and a broad lush canopy of deep green leaf clusters with a few glowing blossoms, ${PROP}`, face: 8000, tex: 1024, tris: 6000 },
+  { id: 'hd_bush', group: 'pack', kind: 'static', prompt: `dense round leafy forest shrub with broad layered leaves and a few small flowers, lush and full, ${PROP}`, face: 4000, tex: 1024, tris: 2500 },
+  { id: 'hd_grass', group: 'pack', kind: 'static', prompt: `clump of tall wild meadow grass and ferns with a few wildflowers, lush, ${PROP}`, face: 4000, tex: 1024, tris: 2500 },
 );
 
 // Static models whose generated orientation isn't facing +Z.

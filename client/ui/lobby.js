@@ -1,5 +1,6 @@
 /* Home lobby: play modes, custom rooms, party, champions, leaderboards, profile. */
 import { langPicker } from '../i18n.js';
+import { packOffer } from './packOffer.js';
 import { h, $, clear, timeStr } from './dom.js';
 import { pic, champKey, abilityKey } from './icons.js';
 import { championPreview } from '../render/preview.js';
@@ -41,7 +42,7 @@ export class Lobby {
     this.whoEl = h('div.lob-who');
     this.friendsEl = h('div.lob-friends');
     const chatBox = h('div.lob-chat');
-    this.root.append(h('div.auth-bg'), this.header, h('div.lob-grid', {}, this.playPanel, this.center, h('aside.lob-side', {}, this.partyEl, this.friendsEl, this.whoEl, chatBox)));
+    this.root.append(h('div.auth-bg'), this.header, h('div.lob-grid', {}, this.playPanel, this.center, h('aside.lob-side', {}, packOffer(app), this.partyEl, this.friendsEl, this.whoEl, chatBox)));
     this.chat = new Chat(app, chatBox, 'lobby');
     this.renderPlay();
     this.renderCenter();

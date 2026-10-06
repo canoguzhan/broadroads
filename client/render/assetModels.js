@@ -4,6 +4,7 @@
    machine; structures, props and flying/hopping creatures are static.
    Anything without a model, or whose model hasn't loaded yet, keeps its
    procedural look from mobaModels.js / valley.js. */
+import { packInstalled } from './assetPack.js';
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import { MeshoptDecoder } from 'three/examples/jsm/libs/meshopt_decoder.module.js';
@@ -48,7 +49,7 @@ export function loadModel(id) {
 // Models every match uses, fetched during champion select.
 const COMMON = ['tower', 'spire', 'core', 'fountain'].flatMap(k => [`${k}_blue`, `${k}_red`])
   .concat(['melee', 'caster', 'super', 'siege'].flatMap(t => [`minion_${t}_blue`, `minion_${t}_red`]))
-  .concat(['tree_pine', 'tree_oak', 'tree_fir', 'bush', 'mob_mossback', 'mob_brute', 'mob_stonehulk', 'mob_wolf', 'mob_bat', 'mob_toad', 'mob_wyrm', 'mob_titan']);
+  .concat([...(packInstalled() ? ['hd_tree_oak', 'hd_tree_ancient', 'hd_tree_pine', 'hd_grass', 'hd_bush'] : []), 'mob_mossback', 'mob_brute', 'mob_stonehulk', 'mob_wolf', 'mob_bat', 'mob_toad', 'mob_wyrm', 'mob_titan']);
 const queue = [];
 let pumping = false;
 

@@ -443,5 +443,40 @@
    "laugh"
   ],
   "v": "muvx9yks"
+ },
+ "hd_tree_oak": {
+  "file": "hd_tree_oak.glb",
+  "group": "pack",
+  "bytes": 299584,
+  "clips": [],
+  "v": "muwp9gjy"
+ },
+ "hd_tree_pine": {
+  "file": "hd_tree_pine.glb",
+  "group": "pack",
+  "bytes": 413948,
+  "clips": [],
+  "v": "muwp9gvl"
+ },
+ "hd_tree_ancient": {
+  "file": "hd_tree_ancient.glb",
+  "group": "pack",
+  "bytes": 221644,
+  "clips": [],
+  "v": "muwp9h6h"
+ },
+ "hd_bush": {
+  "file": "hd_bush.glb",
+  "group": "pack",
+  "bytes": 209540,
+  "clips": [],
+  "v": "muwp9hg5"
+ },
+ "hd_grass": {
+  "file": "hd_grass.glb",
+  "group": "pack",
+  "bytes": 200932,
+  "clips": [],
+  "v": "muwp9hqm"
  }
 }

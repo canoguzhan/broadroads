@@ -1099,3 +1099,11 @@ body.is-dead #hud.touch .m-ann { top: auto; bottom: 26%; }
 .auth-lang { position: absolute; top: max(12px, env(safe-area-inset-top)); right: 16px; z-index: 2; }
 .auth-back { position: absolute; top: max(12px, env(safe-area-inset-top)); left: 16px; z-index: 2; background: rgba(20, 16, 30, .8); color: var(--text, #ece6da); border: 1px solid rgba(255, 255, 255, .15); border-radius: 8px; padding: 6px 12px; font: inherit; font-size: .85rem; cursor: pointer; }
 .auth-back:hover { border-color: rgba(255, 255, 255, .35); }
+.pack-offer { background: linear-gradient(135deg, rgba(46, 90, 40, .35), rgba(23, 19, 31, .9)); border: 1px solid rgba(110, 190, 90, .35); border-radius: 14px; padding: 12px 14px; margin-bottom: 10px; }
+.pack-offer b { display: block; margin-bottom: 4px; }
+.pack-offer p { margin: 0 0 10px; font-size: .85rem; }
+.pack-actions { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+.pack-meter { flex: 1; min-width: 80px; height: 6px; border-radius: 3px; background: rgba(255, 255, 255, .12); overflow: hidden; }
+.pack-meter i { display: block; height: 100%; width: 0; background: #6fcf5a; transition: width .2s; }
+.pack-meter[hidden] { display: none; }
+.pack-setting { display: flex; flex-direction: column; gap: 6px; }
