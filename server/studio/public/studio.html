@@ -36,16 +36,21 @@
       </div>
       <label class="switch"><input type="checkbox" id="s-autoUpload"><span>Upload finished episodes and Shorts</span></label>
       <p id="auto-next" class="muted small"></p>
+      <p id="auto-hint" class="muted small"></p>
     </section>
 
     <section class="panel">
       <h2>YouTube</h2>
       <div id="yt-body"></div>
+      <p id="upload-budget" class="muted small"></p>
     </section>
 
     <section class="panel wide">
       <h2>Settings</h2>
       <div class="settings">
+        <label>YouTube uploads per 24 h (channel limit)
+          <input id="s-maxUploadsPerDay" type="number" min="1" max="100" class="num">
+        </label>
         <label>Privacy on upload
           <select id="s-privacy"><option value="public">Public</option><option value="unlisted">Unlisted</option><option value="private">Private</option></select>
         </label>

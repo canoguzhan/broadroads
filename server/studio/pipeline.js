@@ -12,6 +12,7 @@ import { renderFight, SIZES } from './render.js';
 import { mixFight, mux, cardClip, cardAudio, concat, card, durationOf } from './edit.js';
 import { shortMeta, episodeMeta, fightFacts, tagList } from './metadata.js';
 import { claudeCommentary, claudeMetadata } from './claude.js';
+import { isUploadLimit } from './youtube.js';
 
 export const STAGES = ['simulate', 'script', 'render', 'edit', 'upload'];
 const SHORT_MAX = 58;
@@ -44,8 +45,8 @@ export class Episode {
 
 /** Everything the pipeline needs from the studio (config, services). */
 export class Pipeline {
-  constructor({ root, staticDir, host, voiceCache, musicDir, youtube, env, log = console }) {
-    Object.assign(this, { root, staticDir, host, voiceCache, musicDir, youtube, env, logger: log });
+  constructor({ root, staticDir, host, voiceCache, musicDir, youtube, env, log = console, uploadGate = null }) {
+    Object.assign(this, { root, staticDir, host, voiceCache, musicDir, youtube, env, logger: log, uploadGate });
     this.manifest = JSON.parse(fs.readFileSync(path.join(staticDir, 'sfx', 'manifest.json'), 'utf8'));
   }
 
@@ -260,13 +261,37 @@ export class Pipeline {
     ep.log(`Episode cut: ${d.main.duration} s, ${d.fights.length} shorts. Title: “${meta.title}”`);
   }
 
+  /**
+   * Uploads what's missing. When the daily budget is spent or YouTube refuses with its upload
+   * limit, the episode waits ('waiting') and the studio retries it once uploads free up.
+   */
   async upload(ep, signal) {
+    try {
+      await this.uploadAll(ep, signal);
+    } catch (err) {
+      if (!err.defer && !isUploadLimit(err)) throw err;
+      if (!err.defer) this.uploadGate?.limitHit(err);
+      const d = ep.data;
+      const until = this.uploadGate?.pausedUntil();
+      d.status = 'waiting'; d.stage = null; d.progress = null;
+      d.error = `Waiting for YouTube's daily upload limit${until ? ` (next try after ${new Date(until).toISOString().slice(0, 16).replace('T', ' ')} UTC)` : ''}. It uploads automatically.`;
+      ep.log(err.defer ? `⏸ ${d.error}` : `⏸ YouTube refused: ${err.message}. ${d.error}`);
+    }
+  }
+
+  gate() {
+    const wait = this.uploadGate?.check();
+    if (wait) throw Object.assign(new Error(wait), { defer: true });
+  }
+
+  async uploadAll(ep, signal) {
     const d = ep.data;
     if (!this.youtube.connected) throw new Error('YouTube is not connected — connect it on the studio page, then press Upload.');
     this.stage(ep, 'upload');
     d.status = 'uploading'; ep.save();
     const privacy = d.settings.privacy || 'public';
     if (!d.uploads.main) {
+      this.gate();
       ep.progress({ label: 'Uploading the episode', pct: 0 });
       const r = await this.youtube.upload(ep.file(d.main.file), { ...d.main.meta, privacy, synthetic: d.settings.synthetic }, { signal, onProgress: p => ep.progress({ label: 'Uploading the episode', pct: Math.round(p * 100) }) });
       d.uploads.main = { id: r.id, url: r.url, at: Date.now(), privacy: r.status?.privacyStatus || privacy };
@@ -277,6 +302,7 @@ export class Pipeline {
     d.uploads.shorts = d.uploads.shorts || {};
     for (const f of d.fights) {
       if (d.uploads.shorts[f.n]) continue;
+      this.gate();
       const meta = { ...f.short.meta, description: f.short.meta.description.includes('youtu.be') ? f.short.meta.description : f.short.meta.description.replace(`Play BroadRoads free`, `Full match highlights: ${d.uploads.main.url}\nPlay BroadRoads free`) };
       ep.progress({ label: `Uploading short ${f.n}`, pct: 0 });
       const r = await this.youtube.upload(ep.file(f.short.file), { ...meta, privacy, synthetic: d.settings.synthetic }, { signal, onProgress: p => ep.progress({ label: `Uploading short ${f.n}`, pct: Math.round(p * 100) }) });

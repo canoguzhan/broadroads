@@ -43,6 +43,14 @@ if [ "$MATCHES" -gt 0 ]; then
 fi
 rm -f "$STATE/waiting"
 
+# Keep an installed studio's unit file in step with the repo (limits, paths).
+studio_unit() {
+  U=/etc/systemd/system/broadroads-studio.service
+  if [ -f "$U" ] && ! cmp -s "$APP/deploy/broadroads-studio.service" "$U"; then
+    cp "$APP/deploy/broadroads-studio.service" "$U" && systemctl daemon-reload
+  fi
+}
+
 # Chained with && on purpose: `set -e` does not apply inside `install ... && healthy`.
 install() {
   $G checkout -q -- package-lock.json 2>/dev/null || true
@@ -53,7 +61,7 @@ install() {
     $G checkout -q -- package-lock.json &&
     chown -R broadroads:broadroads "$APP" &&
     systemctl restart broadroads &&
-    { systemctl try-restart broadroads-studio || true; }
+    { studio_unit; systemctl try-restart broadroads-studio || true; }
 }
 healthy() {
   i=0

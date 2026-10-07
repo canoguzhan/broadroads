@@ -5,6 +5,15 @@ import fs from 'node:fs';
 import { spawn } from 'node:child_process';
 import { playwright, ffmpeg, CHROMIUM_ARGS } from './tools.js';
 
+// A frame normally takes about a second. Minutes without one means the renderer is starved
+// (e.g. throttled at the service's memory limit): fail loudly instead of crawling for hours.
+const STALL_MS = 3 * 60e3;
+function stall(promise) {
+  let timer;
+  const timeout = new Promise((_, fail) => { timer = setTimeout(() => fail(new Error('Rendering stalled: no frame for 3 minutes (the server may be out of memory). Press Resume to retry.')), STALL_MS); });
+  return Promise.race([promise, timeout]).finally(() => clearTimeout(timer));
+}
+
 export const SIZES = { landscape: { width: 1920, height: 1080 }, portrait: { width: 1080, height: 1920 } };
 
 /**
@@ -36,7 +45,7 @@ export async function renderFight(opts) {
     await page.evaluate(() => window.__studio.sounds());
 
     enc = spawn(ff, ['-y', '-hide_banner', '-loglevel', 'error', '-f', 'image2pipe', '-framerate', String(fps), '-c:v', 'mjpeg', '-i', '-',
-      '-c:v', 'libx264', '-preset', 'medium', '-crf', '19', '-pix_fmt', 'yuv420p', '-r', String(fps), '-movflags', '+faststart', outFile], { stdio: ['pipe', 'ignore', 'pipe'] });
+      '-c:v', 'libx264', '-preset', 'medium', '-crf', '19', '-threads', '3', '-x264-params', 'rc-lookahead=20', '-pix_fmt', 'yuv420p', '-r', String(fps), '-movflags', '+faststart', outFile], { stdio: ['pipe', 'ignore', 'pipe'] });
     let encErr = '';
     enc.stderr.on('data', d => { encErr += d; });
     const encDone = new Promise((ok, fail) => enc.on('close', code => (code === 0 ? ok() : fail(new Error(`ffmpeg encode failed: ${encErr.slice(-400)}`)))));
@@ -49,7 +58,7 @@ export async function renderFight(opts) {
     const t0 = Date.now();
     for (let i = 0; i < total; i++) {
       if (signal?.aborted) throw new Error('cancelled');
-      const clock = await page.evaluate(dt => window.__studio.step(dt), 1 / fps);
+      const clock = await stall(page.evaluate(dt => window.__studio.step(dt), 1 / fps));
       if (!thumbDone && clock >= opts.thumbAt) {
         thumbDone = true;
         await page.evaluate(() => window.__studio.overlay(false));
@@ -57,7 +66,7 @@ export async function renderFight(opts) {
         fs.writeFileSync(opts.thumbFile, Buffer.from(png.data, 'base64'));
         await page.evaluate(() => window.__studio.overlay(true));
       }
-      const shot = await cdp.send('Page.captureScreenshot', { format: 'jpeg', quality: 90, optimizeForSpeed: true });
+      const shot = await stall(cdp.send('Page.captureScreenshot', { format: 'jpeg', quality: 90, optimizeForSpeed: true }));
       if (!enc.stdin.write(Buffer.from(shot.data, 'base64'))) await new Promise(r => enc.stdin.once('drain', r));
       if (i % 15 === 0) {
         sounds.push(...await page.evaluate(() => window.__studio.sounds()));
