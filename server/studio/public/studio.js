@@ -31,7 +31,7 @@ const toast = (msg, bad) => { const b = $('#banner'); b.textContent = msg; b.cla
 const act = fn => async (...a) => { try { await fn(...a); await refresh(); } catch (e) { toast(e.message, true); } };
 
 /* ---------- settings ---------- */
-const S_KEYS = ['maxUploadsPerDay', 'autopilot', 'everyHours', 'autoUpload', 'privacy', 'fights', 'voiceId', 'quality', 'fps', 'renderWorkers', 'busyMatches', 'keepEpisodes', 'useClaude', 'synthetic'];
+const S_KEYS = ['captionsFor', 'maxUploadsPerDay', 'autopilot', 'everyHours', 'autoUpload', 'privacy', 'fights', 'voiceId', 'quality', 'fps', 'renderWorkers', 'busyMatches', 'keepEpisodes', 'useClaude', 'synthetic'];
 function fillSettings(s) {
   for (const k of S_KEYS) {
     const i = $(`#s-${k}`);
@@ -47,6 +47,16 @@ for (const k of S_KEYS) {
     await api('/api/settings', { method: 'POST', body: { [k]: v } });
   }));
 }
+function renderLanguages(list, chosen) {
+  const box = $('#s-languages');
+  if (box.dataset.ready !== '1') {
+    box.dataset.ready = '1';
+    box.replaceChildren(el('label', { class: 'check' }, el('input', { type: 'checkbox', checked: true, disabled: true }), 'English (voice)'),
+      ...list.map(l => el('label', { class: 'check' }, el('input', { type: 'checkbox', value: l.code, onchange: act(() => api('/api/settings', { method: 'POST', body: { languages: [...box.querySelectorAll('input[value]:checked')].map(i => i.value) } })) }), l.name)));
+  }
+  for (const i of box.querySelectorAll('input[value]')) i.checked = chosen.includes(i.value);
+}
+
 async function loadVoices() {
   const sel = $('#s-voiceId');
   try {
@@ -73,6 +83,7 @@ function renderYouTube(y) {
     return;
   }
   box.replaceChildren(
+    y.canCaption ? null : el('p', { class: 'note' }, 'Subtitles need one more YouTube permission. ', el('a', { href: '/oauth/youtube/start', text: 'Reconnect YouTube' }), ' (same channel) to allow them.'),
     el('div', { class: 'channel' }, y.channel?.thumb ? el('img', { src: y.channel.thumb, alt: '' }) : null, el('div', {}, el('b', { text: y.channel?.title || 'Connected channel' }), el('span', { class: 'muted small', text: y.channel ? `Channel ${y.channel.id}` : '' }))),
     el('button', { class: 'btn ghost', text: 'Disconnect', onclick: act(async () => { if (confirm('Disconnect YouTube? Automatic uploads stop until you connect again.')) await api('/api/youtube/disconnect', { method: 'POST' }); }) }));
 }
@@ -101,6 +112,7 @@ function episodeRow(ep) {
       el('button', { class: 'btn', text: 'Open', onclick: () => openDetail(ep.id) }),
       busy ? el('button', { class: 'btn ghost', text: ep.status === 'waiting' ? 'Don\'t upload' : 'Cancel', onclick: act(() => api(`/api/episodes/${ep.id}/cancel`, { method: 'POST' })) }) : null,
       (ep.status === 'failed' || ep.status === 'cancelled') && !ep.pruned ? el('button', { class: 'btn', text: 'Resume', onclick: act(() => api(`/api/episodes/${ep.id}/run`, { method: 'POST' })) }) : null,
+      ep.status === 'published' && ep.captions && ep.captions.done < ep.captions.expected && state.youtube.canCaption ? el('button', { class: 'btn', text: 'Add subtitles', onclick: act(() => api(`/api/episodes/${ep.id}/upload`, { method: 'POST' })) }) : null,
       ep.status === 'ready' || (ep.status === 'failed' && ep.duration) ? el('button', { class: 'btn primary', text: 'Upload', disabled: !state.youtube.connected, title: state.youtube.connected ? '' : 'Connect YouTube first', onclick: act(() => api(`/api/episodes/${ep.id}/upload`, { method: 'POST' })) }) : null,
       !busy ? el('button', { class: 'btn ghost danger', text: 'Delete', onclick: act(async () => { if (confirm('Delete this episode and its files? Videos already on YouTube stay there.')) await api(`/api/episodes/${ep.id}`, { method: 'DELETE' }); }) }) : null));
 }
@@ -108,6 +120,7 @@ function episodeRow(ep) {
 async function refresh() {
   state = await api('/api/state');
   fillSettings(state.settings);
+  renderLanguages(state.languages, state.settings.languages || []);
   if ($('#s-voiceId').options.length === 0) loadVoices();
   renderYouTube(state.youtube);
   const u = state.uploads;
@@ -161,6 +174,11 @@ async function refreshDetail(force) {
       el('video', { src: media('episode.mp4'), controls: true, preload: 'metadata', poster: media('thumb.jpg') }),
       el('div', {}, el('p', { class: 'muted small', text: 'Thumbnail' }), el('img', { src: media('thumb.jpg'), alt: 'Thumbnail', class: 'thumb' }))),
     metaEditor(d.main.meta, !!d.uploads.main, patch => api(`/api/episodes/${d.id}/meta`, { method: 'POST', body: { main: patch } })));
+  }
+  const locs = [['Episode', d.main?.meta?.localizations], ...d.fights.map(f => [`Short ${f.n}`, f.short?.meta?.localizations])].filter(([, l]) => l && Object.keys(l).length);
+  if (locs.length) {
+    body.push(el('h3', { text: 'Other languages' }), el('p', { class: 'muted small', text: 'Titles and descriptions YouTube shows to viewers in these languages (written from the same facts; edits to the English title above don\'t change them).' }),
+      el('div', { class: 'locs' }, ...locs.map(([what, l]) => el('div', {}, el('b', { text: what }), el('ul', {}, ...Object.entries(l).map(([code, m]) => el('li', {}, el('span', { class: 'muted small', text: `${code} ` }), m.title)))))));
   }
   if (d.fights.some(f => f.short?.file) && !d.pruned) {
     body.push(el('h3', { text: 'Shorts' }), el('div', { class: 'shorts' }, ...d.fights.filter(f => f.short?.file).map(f => el('div', { class: 'short' },

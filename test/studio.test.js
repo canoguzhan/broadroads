@@ -12,6 +12,9 @@ import { YouTube, isUploadLimit } from '../server/studio/youtube.js';
 import { Episode, Pipeline } from '../server/studio/pipeline.js';
 import { cleanSettings, DEFAULT_SETTINGS, startStudio } from '../server/studio/index.js';
 import { Mix, thinSounds } from '../server/studio/mixer.js';
+import { trCase, fill, EXTRA_LANGS } from '../server/studio/i18n.js';
+import { toVtt, wrap, cuesFor } from '../server/studio/captions.js';
+import { withMainUrl } from '../server/studio/metadata.js';
 
 const hit = (t, s, v, n = 100, hp = 50) => ({ t, e: 'hit', s, v, n, hp, x: 50, y: 50 });
 const kill = (t, k, v, team, a = []) => ({ t, e: 'kill', k, v, a, team });
@@ -328,5 +331,124 @@ describe('YouTube upload limit', () => {
   test('the daily budget setting is bounded', () => {
     assert.equal(cleanSettings(DEFAULT_SETTINGS, { maxUploadsPerDay: 0 }).maxUploadsPerDay, 1);
     assert.equal(cleanSettings(DEFAULT_SETTINGS, { maxUploadsPerDay: 6 }).maxUploadsPerDay, 6);
+  });
+});
+
+describe('languages', () => {
+  const LANGS4 = ['es', 'pt', 'tr', 'id'];
+  test('every commentary line comes with its translations', () => {
+    const lines = writeCommentary(fixtureFight(), { summary: { seed: 7 } });
+    for (const l of lines) {
+      for (const g of LANGS4) {
+        assert.ok(l.i18n[g] && l.i18n[g].length > 3, `${l.kind} has ${g}`);
+        assert.ok(!/[{}[\]]/.test(l.i18n[g]), `no placeholders or tags: ${l.i18n[g]}`);
+      }
+    }
+    const open = lines.find(l => l.kind === 'open');
+    assert.ok(/Red|Blue|dead even/.test(spoken(open.text)) || /Garrok|Lyra/.test(open.text));
+  });
+
+  test('Turkish case endings follow vowel harmony (and how names are said)', () => {
+    assert.equal(trCase.acc('Garrok'), "Garrok'u");
+    assert.equal(trCase.acc('Lyra'), "Lyra'yı");
+    assert.equal(trCase.gen('Kaelen'), "Kaelen'in");
+    assert.equal(trCase.dat('Rook'), "Rook'a");
+    assert.equal(trCase.acc('Thorne'), "Thorne'u");
+    assert.equal(fill('{k}, {v|acc} indiriyor!', { k: 'Garrok', v: 'Lyra' }, 'tr'), "Garrok, Lyra'yı indiriyor!");
+    assert.equal(fill('{m|lower|cap}', { m: 'TAKIM SİLİNDİ' }, 'tr'), 'Takım silindi');
+  });
+
+  test('shorts and episodes get titles and descriptions in every language', () => {
+    const f = fixtureFight();
+    const m = shortMeta(f, { seed: 3, langs: LANGS4 });
+    assert.deepEqual(Object.keys(m.localizations).sort(), [...LANGS4].sort());
+    for (const [g, loc] of Object.entries(m.localizations)) {
+      assert.ok(loc.title.length <= 100 && /#Shorts$/.test(loc.title), g);
+      assert.match(loc.description, /broadroads\.com/);
+      assert.ok(!/[{}<>]/.test(loc.title + loc.description), g);
+    }
+    const summary = { seed: 1, duration: 1300, winner: 'blue', kills: { blue: 30, red: 20 }, players: lineup(1).map(p => ({ ...p, name: p.champ })) };
+    const e = episodeMeta({ fights: [f], summary, seed: 1, langs: LANGS4, chapters: [{ at: 0, kind: 'intro' }, { at: 5, kind: 'fight', n: 1 }, { at: 40, kind: 'outro' }] });
+    assert.match(e.description, /^0:05 Fight 1 — Garrok: /m);
+    assert.match(e.localizations.tr.description, /^0:00 Giriş$/m);
+    assert.match(e.localizations.es.description, /^0:05 Pelea 1: Garrok, /m);
+    assert.match(e.localizations.pt.description, /Vermelho: /);
+  });
+
+  test('the full-match link is added in the description language', () => {
+    assert.match(withMainUrl('Line one\nLine two', 'es', 'https://youtu.be/X'), /^Line one\nPartida completa: https:\/\/youtu\.be\/X\nLine two$/);
+    assert.equal(withMainUrl('a https://youtu.be/X', 'es', 'https://youtu.be/X'), 'a https://youtu.be/X');
+  });
+
+  test('captions are valid WebVTT with short rows', () => {
+    const vtt = toVtt([{ start: 1.5, end: 4, text: 'Short line' }, { start: 65, end: 71, text: 'A much longer caption line that has to wrap onto more than two rows of text to fit the screen nicely' }]);
+    assert.match(vtt, /^WEBVTT\n\n00:00:01\.500 --> 00:00:04\.000\nShort line\n/);
+    assert.match(vtt, /00:01:05\.000 --> /);
+    for (const row of vtt.split('\n')) if (!row.includes('-->')) assert.ok(row.length <= 42, row);
+    assert.ok(wrap('one two three', 7).length === 2);
+    const cues = cuesFor([{ text: '[excited] Big play!', i18n: { es: '¡Jugadón!' }, start: 10, dur: 2 }], 'es', l => l.start - 9);
+    assert.deepEqual(cues, [{ start: 1, end: 3, text: '¡Jugadón!' }]);
+    assert.equal(cuesFor([{ text: '[excited] Big play!', start: 10, dur: 2 }], 'tr', l => l.start)[0].text, 'Big play!', 'falls back to English');
+  });
+
+  test('language settings only keep supported languages', () => {
+    const s = cleanSettings(DEFAULT_SETTINGS, { languages: ['es', 'xx', 'tr', 'es', 'en'], captionsFor: 'all' });
+    assert.deepEqual(s.languages, ['es', 'tr']);
+    assert.equal(s.captionsFor, 'all');
+    assert.equal(cleanSettings(DEFAULT_SETTINGS, { captionsFor: 'bogus' }).captionsFor, DEFAULT_SETTINGS.captionsFor);
+    assert.deepEqual(DEFAULT_SETTINGS.languages, EXTRA_LANGS);
+  });
+
+  test('uploads carry localizations; captions need the extra permission and go up once', async () => {
+    const root = fs.mkdtempSync(path.join(os.tmpdir(), 'cap-'));
+    const ep = Episode.create(root, { privacy: 'private', languages: ['es', 'tr'], captionsFor: 'episode' });
+    fs.writeFileSync(ep.file('episode.en.vtt'), 'WEBVTT\n'); fs.writeFileSync(ep.file('episode.es.vtt'), 'WEBVTT\n'); fs.writeFileSync(ep.file('episode.tr.vtt'), 'WEBVTT\n');
+    Object.assign(ep.data, { edited: true, main: { file: 'episode.mp4', thumb: 'thumb.jpg', meta: { title: 'T', description: 'D', tags: [], localizations: { es: { title: 'T-es', description: 'D-es' }, tr: { title: 'T-tr', description: 'D-tr' }, pt: { title: 'not chosen', description: '' } } } },
+      fights: [], captions: { main: { en: 'episode.en.vtt', es: 'episode.es.vtt', tr: 'episode.tr.vtt' }, shorts: {} } });
+    ep.save();
+    const sent = [], caps = [];
+    let canCaption = false;
+    const youtube = { connected: true, get canCaption() { return canCaption; }, async upload(file, meta) { sent.push(meta); return { id: 'VID', url: 'https://youtu.be/VID', status: {} }; }, async thumbnail() {}, async caption(id, lang) { caps.push(`${id}:${lang}`); } };
+    const pipe = new Pipeline({ root, staticDir: path.resolve('public'), host: null, voiceCache: root, musicDir: root, youtube, env: {}, uploadGate: { check: () => null, pausedUntil: () => null, limitHit() {} } });
+    await pipe.upload(ep, null);
+    assert.deepEqual(Object.keys(sent[0].localizations).sort(), ['es', 'tr'], 'only chosen languages, keyed by YouTube codes');
+    assert.equal(caps.length, 0, 'no captions without the permission');
+    assert.ok(ep.data.log.some(l => /reconnect YouTube/.test(l.msg)));
+    canCaption = true;
+    await pipe.upload(ep, null);
+    assert.deepEqual(caps.sort(), ['VID:en', 'VID:es', 'VID:tr']);
+    assert.equal(sent.length, 1, 'the video itself is not uploaded again');
+    await pipe.upload(ep, null);
+    assert.equal(caps.length, 3, 'tracks already on YouTube are skipped');
+    assert.equal(ep.data.status, 'published');
+    fs.rmSync(root, { recursive: true, force: true });
+  });
+
+  test('the YouTube client sends localizations and caption tracks', async () => {
+    const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'yt2-'));
+    fs.writeFileSync(path.join(dir, 'v.mp4'), Buffer.alloc(64, 1));
+    const calls = [];
+    const fakeFetch = async (url, opts = {}) => {
+      calls.push({ url: String(url), opts });
+      if (String(url).includes('oauth2.googleapis.com/token')) return new Response(JSON.stringify({ access_token: 'AT', expires_in: 3600, refresh_token: 'RT', scope: 'https://www.googleapis.com/auth/youtube.upload https://www.googleapis.com/auth/youtube.force-ssl' }), { status: 200 });
+      if (String(url).includes('/channels')) return new Response(JSON.stringify({ items: [] }), { status: 200 });
+      if (String(url).includes('uploadType=resumable')) return new Response('', { status: 200, headers: { location: 'https://upload.example/s' } });
+      if (String(url) === 'https://upload.example/s') { if (opts.body) for await (const _ of opts.body) { /* drain */ } return new Response(JSON.stringify({ id: 'V1', status: {} }), { status: 200 }); }
+      if (String(url).includes('/captions')) return new Response(JSON.stringify({ id: 'C1' }), { status: 200 });
+      return new Response('{}', { status: 404 });
+    };
+    const yt = new YouTube({ clientId: 'c', clientSecret: 's', redirectUri: 'https://x/cb', tokenFile: path.join(dir, 'tok'), secret: 'k', fetchImpl: fakeFetch });
+    assert.ok(yt.authUrl('s').includes('youtube.force-ssl'));
+    await yt.exchange('code');
+    assert.equal(yt.canCaption, true);
+    await yt.upload(path.join(dir, 'v.mp4'), { title: 'T', description: 'D', tags: [], localizations: { 'pt-BR': { title: 'T-pt', description: 'D-pt' } } });
+    const init = calls.find(c => c.url.includes('uploadType=resumable'));
+    assert.match(init.url, /part=snippet,status,localizations/);
+    assert.equal(JSON.parse(init.opts.body).localizations['pt-BR'].title, 'T-pt');
+    assert.equal(await yt.caption('V1', 'pt-BR', 'Português', 'WEBVTT\n'), 'C1');
+    const cap = calls.find(c => c.url.includes('/captions'));
+    assert.match(cap.opts.headers['Content-Type'], /^multipart\/related; boundary=/);
+    assert.match(cap.opts.body.toString(), /"language":"pt-BR"/);
+    fs.rmSync(dir, { recursive: true, force: true });
   });
 });

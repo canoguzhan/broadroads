@@ -5,57 +5,17 @@
    that the voice step speaks but never shows in captions. */
 import { CHAMPIONS } from '../../shared/moba/champions.js';
 import { mulberry32, hashString } from '../../shared/rng.js';
+import { LINES, LEAD, TEAM, LANGS, fill } from './i18n.js';
 
 export const name = c => CHAMPIONS[c]?.name || c;
 const ability = (c, sl) => CHAMPIONS[c]?.abilities?.[sl]?.name || null;
-const TEAM = { blue: 'Blue', red: 'Red' };
-const mmss = t => `${Math.floor(t / 60)} minutes`;
 
 function picker(seed) {
   const rnd = mulberry32(hashString(String(seed)));
-  return list => list[Math.floor(rnd() * list.length)];
+  return list => Math.floor(rnd() * list.length);
 }
 
-const fill = (s, v) => s.replace(/\{(\w+)\}/g, (_, k) => v[k] ?? '');
-
-const T = {
-  open: [
-    '{time} in, {lead}. {a} and {b} are looking for something here.',
-    'Here we go — {a} is stalking {b}, and this could turn ugly fast.',
-    '{lead} at {time}. Watch {a} — this is where fights start.',
-    'Things are heating up around {a}. {lead}.',
-    'Eyes on {a}. {b} is right there, and nobody is backing off.',
-  ],
-  engage: [
-    '{c} goes in!', '{c} commits — here comes the fight!', 'And {c} starts it!', '{c} takes the first swing!',
-  ],
-  ult: [
-    '{ab} from {c}!', '{c} with the {ab}!', 'Huge {ab} — {c} is all in!', 'There it is, {c}\'s {ab}!',
-  ],
-  flash: ['{c} blinks in!', '{c} with the blink!'],
-  kill: [
-    '{k} takes down {v}!', '{v} goes down to {k}!', '{k} finishes {v}!', 'And {v} is dead — {k} gets it!', '{k} picks off {v}!',
-  ],
-  killAssist: ['{v} falls — {k} and {a} combine for it!', '{k} with {a} on {v}, gone!'],
-  killTower: ['The tower finishes {v}!', '{v} dives too deep and the tower says no!'],
-  lowSurvive: ['{c} is barely alive!', '{c} on a sliver of health!', 'Can {c} survive this?!'],
-  multi2: ['DOUBLE TAKEDOWN for {k}!', 'That\'s TWO for {k}!'],
-  multi3: ['TRIPLE TAKEDOWN! {k} is unstoppable!', 'THREE! {k} with the triple!'],
-  multi4: ['QUADRA! {k} is taking over this game!', 'FOUR down — {k} is a monster!'],
-  multi5: ['PENTA! {k} WIPES THEM ALL!', 'FIVE! A TOTAL TAKEDOWN FOR {k}!'],
-  team_wipe: ['TEAM WIPE! {team} cleans up everyone!', 'ACE! {team} leaves nobody standing!'],
-  first_strike: ['First blood of the game!', 'And that\'s first strike!'],
-  streak_end: ['SHUTDOWN! That streak is over!', 'The streak is broken — shutdown gold!'],
-  wyrm: ['{team} takes the Ember Wyrm!', 'The Wyrm falls to {team}!'],
-  titan: ['{team} slays the Abyss Titan! Huge!', 'ABYSS TITAN to {team}!'],
-  tower: ['{team} takes the tower!', 'And the tower comes down for {team}!'],
-  spire: ['The spire is down — juggernauts incoming!', '{team} breaks the spire!'],
-  closeWin: [
-    '{team} wins that fight {w} for {l}!', 'What a fight — {team} comes out {w} for {l}!', 'That\'s a {w}-for-{l} trade in favor of {team}!',
-  ],
-  closeEven: ['Even trade, {w} for {l} — nobody gives an inch!', 'Bloody exchange, {w} apiece!'],
-  closeStomp: ['{team} wins it {w} for {l} — that could decide the game!', 'Clean sweep for {team}, {w} for {l}!'],
-};
+const T = LINES;
 
 const tagFor = kind => ({ open: '[intrigued]', engage: '[excited]', ult: '[excited]', flash: '[excited]', kill: '[excited]', killAssist: '[excited]', killTower: '[laughs]', lowSurvive: '[tense]', multi: '[shouting]', team_wipe: '[shouting]', first_strike: '[excited]', streak_end: '[shouting]', objective: '[excited]', close: '[excited]' }[kind] || '[excited]');
 
@@ -64,15 +24,28 @@ export function writeCommentary(fight, ctx = {}) {
   const pick = picker(`${ctx.summary?.seed}:${fight.n}`);
   const ev = fight.events.filter(e => e.t >= fight.start - 0.5 && e.t <= fight.end + 1);
   const lines = [];
-  const add = (at, kind, tpl, vars, priority, maxDelay = 2.2) => lines.push({ at: Math.round(at * 100) / 100, kind, text: `${tagFor(kind)} ${fill(pick(tpl), vars)}`, priority, maxDelay });
+  // One template per line, filled in every language: the English one is spoken, the others
+  // are its captions. vars.team is a team code; vars.lead a { team, w, l } or { n } score.
+  const add = (at, kind, tpls, vars, priority, maxDelay = 2.2) => {
+    const tpl = tpls[pick(tpls)];
+    const text = {};
+    for (const lang of Object.keys(LANGS)) {
+      const v = { ...vars };
+      if (vars.team) v.team = TEAM[vars.team]?.[lang] || '';
+      if (vars.lead) v.lead = vars.lead.n !== undefined ? fill(LEAD.even[lang], vars.lead, lang) : fill(LEAD.ahead[lang], { ...vars.lead, team: TEAM[vars.lead.team][lang] }, lang);
+      text[lang] = fill(tpl[lang] || tpl.en, v, lang);
+    }
+    const { en, ...i18n } = text;
+    lines.push({ at: Math.round(at * 100) / 100, kind, text: `${tagFor(kind)} ${en}`, i18n, priority, maxDelay });
+  };
 
   // Opening: who is around, and the score.
   const hits = ev.filter(e => e.e === 'hit');
   const early = [...new Set(hits.slice(0, 12).flatMap(e => [e.s, e.v]))];
   const a = early[0] || fight.champs[0], b = early.find(c => c !== a) || fight.champs[1] || a;
   const s = fight.before || { blue: 0, red: 0 };
-  const lead = s.blue === s.red ? `it's dead even at ${s.blue} apiece` : `${s.blue > s.red ? 'Blue' : 'Red'} leads ${Math.max(s.blue, s.red)} to ${Math.min(s.blue, s.red)}`;
-  add(fight.start + 0.3, 'open', T.open, { time: mmss(fight.start), lead, a: name(a), b: name(b) }, 3, 1.5);
+  const lead = s.blue === s.red ? { n: s.blue } : { team: s.blue > s.red ? 'blue' : 'red', w: Math.max(s.blue, s.red), l: Math.min(s.blue, s.red) };
+  add(fight.start + 0.3, 'open', T.open, { min: Math.floor(fight.start / 60), lead, a: name(a), b: name(b) }, 3, 1.5);
 
   // The engage: the first ultimate, blink or champion hit.
   const firstHit = hits[0];
@@ -97,7 +70,7 @@ export function writeCommentary(fight, ctx = {}) {
     else add(k.t, 'kill', T.kill, { k: name(k.k), v: name(k.v) }, 6, 1.8);
   }
   for (const x of anns) {
-    const vars = { team: TEAM[x.team] || 'They', k: x.killer ? name(x.killer) : '' };
+    const vars = { team: x.team || 'none', k: x.killer ? name(x.killer) : '' };
     if (x.key === 'team_wipe') add(x.t + 0.4, 'team_wipe', T.team_wipe, vars, 10, 2);
     else if (x.key === 'first_strike') add(x.t + 0.1, 'first_strike', T.first_strike, vars, 5, 2);
     else if (x.key === 'streak_end') add(x.t + 0.2, 'streak_end', T.streak_end, vars, 7, 2);
@@ -114,7 +87,7 @@ export function writeCommentary(fight, ctx = {}) {
   const w = winner ? won[winner] : won.blue, l = winner ? won[winner === 'blue' ? 'red' : 'blue'] : won.red;
   const tpl = !winner ? T.closeEven : l === 0 && w >= 3 ? T.closeStomp : T.closeWin;
   const lastKill = kills.length ? kills[kills.length - 1].t : fight.end - 2;
-  add(Math.max(lastKill + 1.6, fight.end - 1.5), 'close', tpl, { team: TEAM[winner] || '', w, l }, 8, 4);
+  add(Math.max(lastKill + 1.6, fight.end - 1.5), 'close', tpl, { team: winner || undefined, w, l }, 8, 4);
   lines.sort((x, y) => x.at - y.at);
   return lines;
 }

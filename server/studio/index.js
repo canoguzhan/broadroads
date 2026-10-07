@@ -14,6 +14,7 @@ import { Episode, Pipeline } from './pipeline.js';
 import { YouTube } from './youtube.js';
 import { Voice, DEFAULT_VOICE } from './voice.js';
 import { startRenderHost } from './renderhost.js';
+import { LANGS, EXTRA_LANGS } from './i18n.js';
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.resolve(HERE, '..', '..');
@@ -26,6 +27,8 @@ export const DEFAULT_SETTINGS = {
   autopilot: false, everyHours: 24, autoUpload: false, privacy: 'private', fights: 3, fps: 30, quality: 'medium',
   voiceId: DEFAULT_VOICE, useClaude: true, synthetic: false, renderWorkers: 2, busyMatches: 8, keepEpisodes: 14,
   maxUploadsPerDay: 10, // YouTube caps uploads per channel per rolling 24 h (low for new channels)
+  languages: ['es', 'pt', 'tr', 'id'], // besides English: localized titles/descriptions and subtitles
+  captionsFor: 'episode', // subtitle tracks on: 'episode' | 'all' (episode + shorts) | 'none'
 };
 const PRIVACY = ['public', 'unlisted', 'private'];
 
@@ -37,6 +40,8 @@ export function cleanSettings(cur, patch) {
   num('everyHours', 1, 168); num('fights', 1, 5); num('fps', 24, 60); num('renderWorkers', 1, 4); num('busyMatches', 1, 100); num('keepEpisodes', 3, 100); num('maxUploadsPerDay', 1, 100);
   if (PRIVACY.includes(patch.privacy)) s.privacy = patch.privacy;
   if (['low', 'medium', 'high'].includes(patch.quality)) s.quality = patch.quality;
+  if (Array.isArray(patch.languages)) s.languages = [...new Set(patch.languages.filter(l => EXTRA_LANGS.includes(l)))];
+  if (['episode', 'all', 'none'].includes(patch.captionsFor)) s.captionsFor = patch.captionsFor;
   if (typeof patch.voiceId === 'string' && /^[A-Za-z0-9]{10,40}$/.test(patch.voiceId)) s.voiceId = patch.voiceId;
   return s;
 }
@@ -223,6 +228,13 @@ export async function startStudio(opts = {}) {
     return {
       id: d.id, status: d.status, stage: d.stage, progress: d.progress, error: d.error, createdAt: d.createdAt, publishedAt: d.publishedAt || null, pruned: !!d.pruned,
       title: d.main?.meta?.title || null, duration: d.main?.duration || null, fights: d.fights.length, uploads: d.uploads,
+      captions: d.captions ? (() => {
+        const mode = d.settings.captionsFor || 'episode';
+        const per = Object.keys(d.captions.main || {}).length;
+        const expected = mode === 'none' ? 0 : per * (mode === 'all' ? 1 + d.fights.length : 1);
+        const done = Object.values(d.uploads.captions || {}).reduce((a, l) => a + l.length, 0);
+        return { expected, done };
+      })() : null,
       match: d.summary ? { minutes: Math.round(d.summary.duration / 60), kills: d.summary.kills, winner: d.summary.winner } : null,
     };
   }
@@ -317,7 +329,8 @@ export async function startStudio(opts = {}) {
       return json(res, 200, {
         settings, running: current ? current.id : null, queue: queue.map(q => q.id),
         autopilot: { enabled: settings.autopilot, next: settings.autopilot ? Math.max(Date.now(), lastAuto + settings.everyHours * 3600e3) : null },
-        youtube: { configured: youtube.configured, connected: youtube.connected, channel, redirectUri: youtube.redirectUri },
+        youtube: { configured: youtube.configured, connected: youtube.connected, canCaption: youtube.connected && youtube.canCaption, channel, redirectUri: youtube.redirectUri },
+        languages: EXTRA_LANGS.map(l => ({ code: l, name: LANGS[l].name })),
         keys: { elevenlabs: !!env.ELEVENLABS_API_KEY, anthropic: !!env.ANTHROPIC_API_KEY },
         uploads: { last24h: recentUploads().length, max: settings.maxUploadsPerDay, pausedUntil: uploadGate.pausedUntil(), reason: uploadPause?.until > Date.now() ? uploadPause.reason : null },
         episodes: listEps().slice(0, 40).map(id => summary(loadEp(id))),
@@ -356,7 +369,8 @@ export async function startStudio(opts = {}) {
       if (action === 'upload' && method === 'POST') {
         if (!ep.data.edited) return json(res, 409, { error: 'The videos are not ready yet' });
         if (!youtube.connected) return json(res, 409, { error: 'Connect YouTube first' });
-        if (uploadGate.check()) { ep.data.status = 'waiting'; ep.data.error = `${uploadGate.check()}. It uploads automatically.`; ep.save(); return json(res, 200, { ok: true, waiting: true }); }
+        const videosLeft = !ep.data.uploads.main || ep.data.fights.some(f => !ep.data.uploads.shorts?.[f.n]);
+        if (videosLeft && uploadGate.check()) { ep.data.status = 'waiting'; ep.data.error = `${uploadGate.check()}. It uploads automatically.`; ep.save(); return json(res, 200, { ok: true, waiting: true }); }
         enqueue(ep.data.id, 'only');
         return json(res, 200, { ok: true });
       }

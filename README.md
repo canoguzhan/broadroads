@@ -193,6 +193,8 @@ An admin-only page that turns simulated matches into YouTube highlight videos an
 4. **Edit** (`mixer.js`, `edit.js`): the logged game sounds, the commentary and a music bed (generated once with ElevenLabs Music) are mixed in PCM with ducking and normalized to −14 LUFS. The episode is intro card → fights → outro card with chapters; each fight also becomes a vertical Short (≤ 58 s); the thumbnail is rendered from the best fight's peak frame.
 5. **Upload** (`youtube.js`): YouTube Data API v3 resumable uploads (episode first, then Shorts linking to it), with titles, descriptions, tags and the thumbnail. Metadata can be reviewed and edited on the page before uploading.
 
+Languages (`i18n.js`, `captions.js`): the commentator speaks English. Titles and descriptions are also written in Spanish, Brazilian Portuguese, Turkish and Indonesian, and sent as YouTube `localizations`, so viewers see their own language. The captions are WebVTT tracks in all five languages. Every phrase is a set of parallel translations, so each caption is an exact translation of the spoken line. Turkish case endings follow vowel harmony. Choose the languages and where captions go (episode, episode + Shorts, or none) in Settings. Caption uploads need the `youtube.force-ssl` scope; channels connected before this feature reconnect once.
+
 Security: one admin token (`STUDIO_TOKEN`, else `ADMIN_TOKEN`) is exchanged for a signed HttpOnly `__Host-` cookie (12 h, SameSite=Strict). Logins are rate-limited per IP and globally. Mutations need a same-origin `Origin` and the `X-Studio` header. Every response carries a strict CSP, `frame-ancestors 'none'` and `noindex`. The YouTube refresh token is stored AES-GCM-encrypted.
 
 ```bash

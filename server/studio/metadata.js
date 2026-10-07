@@ -1,12 +1,13 @@
 /* YouTube metadata for an episode and its shorts: titles, descriptions (with chapters),
-   tags, the hook shown in a short's first seconds and the thumbnail text. Built from the fight
-   facts; claude.js can replace these with model-written ones (same shape). */
+   tags, the hook shown in a short's first seconds and the thumbnail text, in English plus
+   YouTube `localizations` for the other languages (i18n.js). Built from the fight facts;
+   claude.js can improve the English ones (same shape). */
 import { mulberry32, hashString } from '../../shared/rng.js';
 import { name } from './commentary.js';
+import { LANGS, TEAM, MOMENTS, SHORT_TITLES, EPISODE_TITLES, DESC, LANG_TAGS, fill, tr } from './i18n.js';
 
 export const SITE = 'https://broadroads.com';
 const BASE_TAGS = ['BroadRoads', 'MOBA', 'browser game', 'free to play', '5v5', 'gaming', 'highlights', 'teamfight', 'esports', 'game commentary', 'MOBA gameplay', 'browser MOBA', 'play free online'];
-const BIG = { multi5: 'TOTAL TAKEDOWN', multi4: 'QUADRA TAKEDOWN', multi3: 'TRIPLE TAKEDOWN', team_wipe: 'TEAM WIPE', multi2: 'DOUBLE TAKEDOWN', titan: 'ABYSS TITAN FIGHT', wyrm: 'EMBER WYRM FIGHT', streak_end: 'SHUTDOWN', spire: 'SPIRE SIEGE', tower: 'TOWER DIVE', first_strike: 'FIRST BLOOD', skirmish: 'TEAMFIGHT', pick: 'OUTPLAYED' };
 const RANK = ['multi5', 'multi4', 'multi3', 'team_wipe', 'titan', 'multi2', 'wyrm', 'streak_end', 'spire', 'tower', 'first_strike', 'skirmish', 'pick'];
 
 const clip = (s, n) => (s.length <= n ? s : `${s.slice(0, n - 1).trimEnd()}…`);
@@ -24,20 +25,9 @@ export function fightFacts(f) {
   })();
   const won = { blue: kills.filter(k => k.team === 'blue').length, red: kills.filter(k => k.team === 'red').length };
   const winner = won.blue === won.red ? null : won.blue > won.red ? 'blue' : 'red';
-  return { best, moment: BIG[best] || 'TEAMFIGHT', star, starName: name(star), kills: kills.length, won, winner, at: f.start, champs: f.champs.map(name) };
+  return { best, moment: (MOMENTS[best] || MOMENTS.skirmish).en, star, starName: name(star), kills: kills.length, won, winner, at: f.start, champs: f.champs.map(name) };
 }
 
-const TITLES = {
-  multi5: ['{star} gets a TOTAL TAKEDOWN 😱', 'This {star} play is UNREAL (all 5!)', 'FIVE for {star}?! Insane BroadRoads teamfight'],
-  multi4: ['{star} with a QUADRA in this teamfight 🔥', '4 kills in seconds — {star} goes off', 'This {star} quadra is filthy'],
-  multi3: ['{star} TRIPLE TAKEDOWN — nobody survives', 'Triple kill {star} turns the whole fight', '{star} just deleted three people 💀'],
-  team_wipe: ['TEAM WIPE! {winner} leaves nobody standing', 'They all died. Every single one.', 'The cleanest ACE you\'ll see today'],
-  titan: ['The Abyss Titan fight that decided everything', 'Titan fight goes horribly wrong 😳'],
-  wyrm: ['Ember Wyrm fight turns into chaos', 'They fought over the Wyrm… and this happened'],
-  multi2: ['{star} double takedown out of nowhere', '{star} wins the 2v2 like it\'s nothing', 'Did {star} just do that?!'],
-  streak_end: ['SHUTDOWN! {star} ends the streak', 'That streak was not going to last…'],
-  default: ['This {kills}-kill teamfight is pure chaos', '{star} goes all in and THIS happens', 'Wait for the end of this fight 😳', '{won} teamfight — who wins?'],
-};
 const HOOKS = {
   multi5: ['Watch {star} take ALL FIVE', 'wait for it… 5 kills'], multi4: ['{star} is about to go OFF', 'count the kills 👀'],
   multi3: ['{star} is about to delete 3 people', 'wait for the triple 💀'], team_wipe: ['nobody survives this', 'watch the whole team vanish'],
@@ -49,67 +39,93 @@ function pickFrom(seed) {
   const rnd = mulberry32(hashString(String(seed)));
   return list => list[Math.floor(rnd() * list.length)];
 }
-const fill = (s, v) => s.replace(/\{(\w+)\}/g, (_, k) => v[k] ?? '');
+const strip = s => s.replace(/[<>]/g, '');
+const langsOf = langs => ['en', ...(langs || []).filter(l => l !== 'en' && LANGS[l])];
 
-function vars(x) {
-  return { star: x.starName, kills: x.kills, winner: x.winner ? (x.winner === 'blue' ? 'Blue' : 'Red') : 'one team', won: `${Math.max(x.won.blue, x.won.red)}-for-${Math.min(x.won.blue, x.won.red)}` };
+function vars(x, lang) {
+  const hi = Math.max(x.won.blue, x.won.red), lo = Math.min(x.won.blue, x.won.red);
+  return { star: x.starName, kills: x.kills, winner: TEAM[x.winner || 'none'][lang], won: lang === 'en' ? `${hi}-for-${lo}` : `${hi}-${lo}`, moment: tr(MOMENTS[x.best] || MOMENTS.skirmish, lang) };
 }
 
-/** Metadata for one short. */
-export function shortMeta(f, { seed, mainUrl } = {}) {
-  const x = fightFacts(f);
-  const pick = pickFrom(`${seed}:${f.n}:short`);
-  const title = clip(`${fill(pick(TITLES[x.best] || TITLES.default), vars(x))} #Shorts`, 100);
-  // Shown on screen by headless Chromium, which has no color emoji font.
-  const hook = fill(pick(HOOKS[x.best] || HOOKS.default), vars(x)).replace(/\p{Extended_Pictographic}\uFE0F?/gu, '').trim();
-  const champTags = [...new Set(x.champs)].map(c => `${c} BroadRoads`);
-  const description = [
-    `${x.moment} — ${x.starName} and ${x.champs.filter(c => c !== x.starName).slice(0, 3).join(', ')} in a ${x.kills}-kill fight at ${mmss(f.start)}.`,
-    mainUrl ? `Full match highlights: ${mainUrl}` : '',
-    `Play BroadRoads free in your browser: ${SITE}`,
+/** Adds the "full match" link to a short's description (after its first line). */
+export function withMainUrl(description, lang, url) {
+  if (!url || description.includes(url)) return description;
+  const lines = description.split('\n');
+  lines.splice(1, 0, fill(tr(DESC.full, lang), { url }, lang));
+  return lines.join('\n');
+}
+
+function shortDescription(f, x, lang) {
+  const others = x.champs.filter(c => c !== x.starName).slice(0, 3).join(', ');
+  return [
+    fill(tr(DESC.shortFacts, lang), { ...vars(x, lang), others, time: mmss(f.start) }, lang),
+    fill(tr(DESC.ctaShort, lang), { site: SITE }, lang),
     '',
-    'Commentary voiced with AI (ElevenLabs) over real BroadRoads gameplay (bot match).',
+    tr(DESC.disclosureShort, lang),
     '',
     '#Shorts #BroadRoads #MOBA #gaming',
-  ].filter((l, i, a) => l || a[i - 1]).join('\n');
-  return { title, description, tags: tagList([...champTags, x.moment.toLowerCase(), 'shorts', 'gaming shorts']), hook, thumbText: x.moment };
+  ].join('\n');
 }
 
-/** Metadata for the full episode (all fights), with chapters. */
-export function episodeMeta({ fights, summary, chapters, seed }) {
+/** Metadata for one short: English plus `localizations` for the other languages. */
+export function shortMeta(f, { seed, langs } = {}) {
+  const x = fightFacts(f);
+  const pick = pickFrom(`${seed}:${f.n}:short`);
+  const tpl = pick(SHORT_TITLES[x.best] || SHORT_TITLES.default);
+  const title = l => strip(clip(`${fill(tr(tpl, l), vars(x, l), l)} #Shorts`, 100));
+  // Shown on screen by headless Chromium, which has no color emoji font.
+  const hook = fill(pick(HOOKS[x.best] || HOOKS.default), vars(x, 'en')).replace(/\p{Extended_Pictographic}️?/gu, '').trim();
+  const champTags = [...new Set(x.champs)].map(c => `${c} BroadRoads`);
+  const localizations = {};
+  for (const l of langsOf(langs).slice(1)) localizations[l] = { title: title(l), description: shortDescription(f, x, l) };
+  const extraTags = langsOf(langs).slice(1).flatMap(l => LANG_TAGS[l] || []);
+  return { title: title('en'), description: shortDescription(f, x, 'en'), tags: tagList([...champTags, x.moment.toLowerCase(), 'shorts', 'gaming shorts', ...extraTags]), hook, thumbText: x.moment, localizations };
+}
+
+/**
+ * Metadata for the full episode, with chapters. chapters: [{ at, kind: 'intro'|'fight'|'outro',
+ * n?, fight? }] (labels are written per language).
+ */
+export function episodeMeta({ fights, summary, chapters, seed, langs }) {
   const facts = fights.map(fightFacts);
   const top = [...facts].sort((a, b) => RANK.indexOf(a.best) - RANK.indexOf(b.best))[0];
   const pick = pickFrom(`${seed}:main`);
   const total = facts.reduce((a, x) => a + x.kills, 0);
   const n = fights.length;
-  const t = pick(n === 1 ? [
-    `${top.starName}'s ${top.moment.toLowerCase()} — ${total}-kill BroadRoads fight`,
-    `${top.moment}! ${top.starName} takes over this BroadRoads teamfight`,
-    `This BroadRoads teamfight had EVERYTHING (${top.moment.toLowerCase()})`,
-  ] : [
-    `${top.starName}'s ${top.moment.toLowerCase()} + ${n - 1} more insane fight${n > 2 ? 's' : ''} | BroadRoads`,
-    `${top.moment}! ${n} wild teamfights from one BroadRoads match`,
-    `${total} kills, ${n} fights, one ${top.moment.toLowerCase()} — BroadRoads highlights`,
-    `This BroadRoads match had EVERYTHING (${top.moment.toLowerCase()})`,
-  ]);
-  const winner = summary.winner ? `${summary.winner === 'blue' ? 'Blue' : 'Red'} won ${Math.max(summary.kills.blue, summary.kills.red)}–${Math.min(summary.kills.blue, summary.kills.red)} in ${Math.round(summary.duration / 60)} minutes.` : '';
-  const lineup = team => summary.players.filter(p => p.team === team).map(p => p.name).join(', ');
-  const description = [
-    `${n === 1 ? 'The best fight' : 'The best fights'} from one BroadRoads 5v5 match, with live commentary. ${winner}`,
-    '',
-    ...chapters.map(c => `${mmss(c.at)} ${c.label}`),
-    '',
-    `🔵 Blue: ${lineup('blue')}`,
-    `🔴 Red: ${lineup('red')}`,
-    '',
-    `▶ Play BroadRoads free in your browser — no download: ${SITE}`,
-    '',
-    'Gameplay is a real BroadRoads match between AI-controlled champions, recorded from the in-game spectator. Commentary is voiced with AI (ElevenLabs).',
-    '',
-    '#BroadRoads #MOBA #gaming',
-  ].join('\n');
+  const tpl = pick(n === 1 ? EPISODE_TITLES.one : EPISODE_TITLES.many.filter(t => !t.minFights || n >= t.minFights));
   const champs = [...new Set(summary.players.map(p => p.name))];
-  return { title: clip(t, 100), description, tags: tagList([...champs.map(c => `${c} BroadRoads`), ...facts.map(x => x.moment.toLowerCase())]), thumbText: top.moment, thumbStar: top.star };
+  const lineup = team => summary.players.filter(p => p.team === team).map(p => p.name).join(', ');
+  const build = lang => {
+    const v = { ...vars(top, lang), total, n, more: n - 1 };
+    const title = strip(clip(fill(tr(tpl, lang), v, lang), 100));
+    const won = summary.winner ? fill(tr(DESC.won, lang), { team: TEAM[summary.winner][lang], a: Math.max(summary.kills.blue, summary.kills.red), b: Math.min(summary.kills.blue, summary.kills.red), min: Math.round(summary.duration / 60) }, lang) : '';
+    const label = c => {
+      if (c.label && !c.kind) return c.label;
+      if (c.kind === 'intro') return tr(DESC.intro, lang);
+      if (c.kind === 'outro') return tr(DESC.outro, lang);
+      const x = facts[c.n - 1];
+      return fill(tr(DESC.chapter, lang), { n: c.n, star: x.starName, moment: tr(MOMENTS[x.best] || MOMENTS.skirmish, lang), time: mmss(fights[c.n - 1].start) }, lang);
+    };
+    const description = [
+      `${tr(n === 1 ? DESC.bestOne : DESC.bestMany, lang)} ${won}`.trim(),
+      '',
+      ...chapters.map(c => `${mmss(c.at)} ${label(c)}`),
+      '',
+      fill(tr(DESC.blue, lang), { list: lineup('blue') }, lang),
+      fill(tr(DESC.red, lang), { list: lineup('red') }, lang),
+      '',
+      fill(tr(DESC.cta, lang), { site: SITE }, lang),
+      '',
+      tr(DESC.disclosure, lang),
+      '',
+      '#BroadRoads #MOBA #gaming',
+    ].join('\n');
+    return { title, description };
+  };
+  const localizations = {};
+  for (const l of langsOf(langs).slice(1)) localizations[l] = build(l);
+  const extraTags = langsOf(langs).slice(1).flatMap(l => LANG_TAGS[l] || []);
+  return { ...build('en'), tags: tagList([...champs.map(c => `${c} BroadRoads`), ...facts.map(x => x.moment.toLowerCase()), ...extraTags]), thumbText: top.moment, thumbStar: top.star, localizations };
 }
 
 /** YouTube allows 500 characters of tags in total. */

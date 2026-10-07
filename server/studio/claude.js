@@ -80,3 +80,18 @@ export async function claudeMetadata(kind, facts, draft) {
   if (!out.description.includes('broadroads.com')) out.description += `\n\n▶ Play free: https://broadroads.com`;
   return { title: out.title, description: out.description.slice(0, 4900), tags: out.tags.slice(0, 30), hook: out.hook?.slice(0, 40) || draft.hook };
 }
+
+const LANG_NAMES = { es: 'Spanish (Latin American)', pt: 'Brazilian Portuguese', tr: 'Turkish', id: 'Indonesian' };
+
+/** Translates caption lines (English, delivery tags removed) into each language, or null. */
+export async function claudeTranslate(texts, langs) {
+  if (!texts.length || !langs.length) return null;
+  const out = await ask(`You translate live esports commentary for subtitles of a BroadRoads (free 5v5 browser MOBA) video. Keep the energy and brevity of a caster. Keep champion names, ability names and BroadRoads game terms such as Ember Wyrm, Abyss Titan, spire and takedown recognizable (use the established gaming term in that language when there is one). Return exactly one translation per input line, in order.`,
+    JSON.stringify({ languages: Object.fromEntries(langs.map(l => [l, LANG_NAMES[l] || l])), lines: texts }), {
+      type: 'object', additionalProperties: false, required: ['translations'],
+      properties: { translations: { type: 'object', additionalProperties: false, required: langs, properties: Object.fromEntries(langs.map(l => [l, { type: 'array', items: { type: 'string' } }])) } },
+    });
+  const t = out?.translations;
+  if (!t || !langs.every(l => Array.isArray(t[l]) && t[l].length === texts.length)) return null;
+  return t;
+}
