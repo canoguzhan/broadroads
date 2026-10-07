@@ -8,7 +8,9 @@ const AUTH = 'https://accounts.google.com/o/oauth2/v2/auth';
 const TOKEN = 'https://oauth2.googleapis.com/token';
 const API = 'https://www.googleapis.com/youtube/v3';
 const UPLOAD = 'https://www.googleapis.com/upload/youtube/v3';
-export const SCOPES = ['https://www.googleapis.com/auth/youtube.upload', 'https://www.googleapis.com/auth/youtube.readonly'];
+// force-ssl is needed for caption tracks (captions.insert); upload/readonly for the rest.
+export const SCOPES = ['https://www.googleapis.com/auth/youtube.upload', 'https://www.googleapis.com/auth/youtube.readonly', 'https://www.googleapis.com/auth/youtube.force-ssl'];
+const CAPTION_SCOPE = 'https://www.googleapis.com/auth/youtube.force-ssl';
 
 function seal(secret, obj) {
   const key = crypto.createHash('sha256').update(`yt-token:${secret}`).digest();
@@ -39,6 +41,9 @@ export class YouTube {
   }
 
   get connected() { return !!this.saved()?.refresh_token; }
+
+  /** Whether the saved grant allows caption uploads (channels connected before captions existed don't). */
+  get canCaption() { return String(this.saved()?.scope || '').split(/\s+/).includes(CAPTION_SCOPE); }
 
   authUrl(state) {
     const q = new URLSearchParams({ client_id: this.clientId, redirect_uri: this.redirectUri, response_type: 'code', scope: SCOPES.join(' '), access_type: 'offline', prompt: 'consent', include_granted_scopes: 'true', state });
@@ -88,10 +93,11 @@ export class YouTube {
     const size = fs.statSync(file).size;
     const status = { privacyStatus: meta.publishAt ? 'private' : meta.privacy || 'public', selfDeclaredMadeForKids: !!meta.madeForKids, containsSyntheticMedia: !!meta.synthetic };
     if (meta.publishAt) status.publishAt = meta.publishAt;
-    const init = await this.fetch(`${UPLOAD}/videos?uploadType=resumable&part=snippet,status`, {
+    const localizations = Object.keys(meta.localizations || {}).length ? meta.localizations : null;
+    const init = await this.fetch(`${UPLOAD}/videos?uploadType=resumable&part=snippet,status${localizations ? ',localizations' : ''}`, {
       method: 'POST',
       headers: { Authorization: `Bearer ${await this.token()}`, 'Content-Type': 'application/json; charset=UTF-8', 'X-Upload-Content-Type': 'video/mp4', 'X-Upload-Content-Length': String(size) },
-      body: JSON.stringify({ snippet: { title: meta.title, description: meta.description, tags: meta.tags, categoryId: '20', defaultLanguage: 'en', defaultAudioLanguage: 'en' }, status }),
+      body: JSON.stringify({ snippet: { title: meta.title, description: meta.description, tags: meta.tags, categoryId: '20', defaultLanguage: 'en', defaultAudioLanguage: 'en' }, status, ...(localizations ? { localizations } : {}) }),
     });
     if (!init.ok) { const e = await apiError(init); throw Object.assign(new Error(`YouTube upload refused: ${init.status} ${e.message}`), { reason: e.reason, status: init.status }); }
     const session = init.headers.get('location');
@@ -120,6 +126,20 @@ export class YouTube {
       offset = range ? Number(range.split('-')[1]) + 1 : 0;
     }
     throw new Error('YouTube upload kept failing');
+  }
+
+  /** Adds a closed-caption track (WebVTT text) in `language` (a YouTube language code). */
+  async caption(videoId, language, name, vtt) {
+    const boundary = `br${Date.now().toString(36)}${Math.random().toString(36).slice(2)}`;
+    const body = Buffer.concat([
+      Buffer.from(`--${boundary}\r\nContent-Type: application/json; charset=UTF-8\r\n\r\n${JSON.stringify({ snippet: { videoId, language, name, isDraft: false } })}\r\n`),
+      Buffer.from(`--${boundary}\r\nContent-Type: application/octet-stream\r\n\r\n`),
+      Buffer.from(vtt, 'utf8'),
+      Buffer.from(`\r\n--${boundary}--\r\n`),
+    ]);
+    const r = await this.fetch(`${UPLOAD}/captions?uploadType=multipart&part=snippet`, { method: 'POST', headers: { Authorization: `Bearer ${await this.token()}`, 'Content-Type': `multipart/related; boundary=${boundary}`, 'Content-Length': String(body.length) }, body });
+    if (!r.ok) { const e = await apiError(r); throw Object.assign(new Error(`caption ${language}: ${r.status} ${e.message}`), { reason: e.reason, status: r.status }); }
+    return (await r.json()).id;
   }
 
   async thumbnail(videoId, jpg) {
