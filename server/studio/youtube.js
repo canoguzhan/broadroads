@@ -93,7 +93,7 @@ export class YouTube {
       headers: { Authorization: `Bearer ${await this.token()}`, 'Content-Type': 'application/json; charset=UTF-8', 'X-Upload-Content-Type': 'video/mp4', 'X-Upload-Content-Length': String(size) },
       body: JSON.stringify({ snippet: { title: meta.title, description: meta.description, tags: meta.tags, categoryId: '20', defaultLanguage: 'en', defaultAudioLanguage: 'en' }, status }),
     });
-    if (!init.ok) throw new Error(`YouTube upload refused: ${init.status} ${await errText(init)}`);
+    if (!init.ok) { const e = await apiError(init); throw Object.assign(new Error(`YouTube upload refused: ${init.status} ${e.message}`), { reason: e.reason, status: init.status }); }
     const session = init.headers.get('location');
     let offset = 0;
     for (let attempt = 0; attempt < 8; attempt++) {
@@ -108,7 +108,7 @@ export class YouTube {
           body: offset === size ? null : Readable.toWeb(chunk),
         });
         if (r.ok) { const j = await r.json(); onProgress(1); return { id: j.id, url: `https://youtu.be/${j.id}`, status: j.status }; }
-        if (r.status >= 400 && r.status < 500 && r.status !== 408 && r.status !== 429) throw Object.assign(new Error(`YouTube upload failed: ${r.status} ${await errText(r)}`), { fatal: true });
+        if (r.status >= 400 && r.status < 500 && r.status !== 408 && r.status !== 429) { const e = await apiError(r); throw Object.assign(new Error(`YouTube upload failed: ${r.status} ${e.message}`), { fatal: true, reason: e.reason, status: r.status }); }
       } catch (err) {
         if (err.fatal || signal?.aborted) throw err;
       }
@@ -129,6 +129,14 @@ export class YouTube {
   }
 }
 
-async function errText(r) {
-  try { const j = await r.json(); return j.error?.message || JSON.stringify(j).slice(0, 300); } catch { return ''; }
+async function errText(r) { return (await apiError(r)).message; }
+
+async function apiError(r) {
+  try { const j = await r.json(); return { message: j.error?.message || JSON.stringify(j).slice(0, 300), reason: j.error?.errors?.[0]?.reason || null }; } catch { return { message: '', reason: null }; }
+}
+
+/** YouTube refusals that clear up with time (the channel's daily upload limit, the API quota). */
+export function isUploadLimit(err) {
+  return ['uploadLimitExceeded', 'quotaExceeded', 'dailyLimitExceeded', 'rateLimitExceeded', 'userRateLimitExceeded'].includes(err?.reason)
+    || /exceeded the number of videos|quota/i.test(String(err?.message || ''));
 }

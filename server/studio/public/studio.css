@@ -62,6 +62,7 @@ input[type=checkbox] { width: auto; accent-color: var(--gold); }
 .ep-actions { display: flex; flex-wrap: wrap; align-items: flex-start; justify-content: flex-end; gap: 6px; }
 .chip { font-size: .72rem; font-weight: 700; padding: 2px 8px; border-radius: 999px; text-transform: uppercase; letter-spacing: .05em; border: 1px solid var(--line); }
 .chip.running, .chip.uploading, .chip.queued { color: var(--blue); border-color: rgba(96, 165, 250, .4); }
+.chip.waiting { color: var(--warn); border-color: rgba(251, 191, 36, .4); }
 .chip.ready { color: var(--gold-2); border-color: rgba(243, 210, 122, .45); }
 .chip.published { color: var(--ok); border-color: rgba(74, 222, 128, .4); }
 .chip.failed, .chip.cancelled { color: var(--bad); border-color: rgba(248, 113, 113, .4); }

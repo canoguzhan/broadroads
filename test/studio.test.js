@@ -8,7 +8,8 @@ import { writeCommentary, schedule, spoken } from '../server/studio/commentary.j
 import { wordsFromAlignment, captionChunks } from '../server/studio/voice.js';
 import { shortMeta, episodeMeta, tagList } from '../server/studio/metadata.js';
 import { makeAuth } from '../server/studio/auth.js';
-import { YouTube } from '../server/studio/youtube.js';
+import { YouTube, isUploadLimit } from '../server/studio/youtube.js';
+import { Episode, Pipeline } from '../server/studio/pipeline.js';
 import { cleanSettings, DEFAULT_SETTINGS, startStudio } from '../server/studio/index.js';
 import { Mix, thinSounds } from '../server/studio/mixer.js';
 
@@ -274,5 +275,58 @@ describe('studio server', () => {
     const r = await fetch(`${base}/oauth/youtube/callback?code=x&state=y`, { redirect: 'manual' });
     assert.equal(r.status, 200);
     assert.match(await r.text(), /youtube=state/);
+  });
+});
+
+describe('YouTube upload limit', () => {
+  const limitErr = () => Object.assign(new Error('YouTube upload refused: 400 The user has exceeded the number of videos they may upload.'), { reason: 'uploadLimitExceeded' });
+  function setup({ failOn = 1, blocked = null } = {}) {
+    const root = fs.mkdtempSync(path.join(os.tmpdir(), 'eps-'));
+    const ep = Episode.create(root, { privacy: 'private' });
+    Object.assign(ep.data, { edited: true, main: { file: 'episode.mp4', thumb: 'thumb.jpg', meta: { title: 'T', description: 'D', tags: [] } },
+      fights: [1, 2, 3].map(n => ({ n, short: { file: `short${n}.mp4`, meta: { title: `S${n}`, description: 'Play BroadRoads free', tags: [] } } })) });
+    ep.save();
+    let calls = 0;
+    const youtube = { connected: true, async upload() { calls++; if (calls >= failOn) throw limitErr(); return { id: `V${calls}`, url: `https://youtu.be/V${calls}`, status: { privacyStatus: 'private' } }; }, async thumbnail() {} };
+    const hits = [];
+    const uploadGate = { check: () => blocked, pausedUntil: () => Date.now() + 3600e3, limitHit: e => hits.push(e) };
+    const pipe = new Pipeline({ root, staticDir: path.resolve('public'), host: null, voiceCache: root, musicDir: root, youtube, env: {}, uploadGate });
+    return { ep, pipe, hits, calls: () => calls, root };
+  }
+
+  test('recognizes the channel limit and quota errors', () => {
+    assert.ok(isUploadLimit(limitErr()));
+    assert.ok(isUploadLimit({ reason: 'quotaExceeded', message: '' }));
+    assert.ok(!isUploadLimit(new Error('YouTube upload refused: 400 Invalid title')));
+  });
+
+  test('a refusal parks the episode as waiting instead of failing it', async () => {
+    const t = setup({ failOn: 1 });
+    await t.pipe.upload(t.ep, null);
+    assert.equal(t.ep.data.status, 'waiting');
+    assert.match(t.ep.data.error, /uploads automatically/);
+    assert.equal(t.hits.length, 1, 'the studio is told to pause uploads');
+    fs.rmSync(t.root, { recursive: true, force: true });
+  });
+
+  test('uploads made before the limit are kept and not repeated', async () => {
+    const t = setup({ failOn: 3 }); // episode + short 1 go up, short 2 is refused
+    await t.pipe.upload(t.ep, null);
+    assert.equal(t.ep.data.status, 'waiting');
+    assert.ok(t.ep.data.uploads.main);
+    assert.deepEqual(Object.keys(t.ep.data.uploads.shorts), ['1']);
+  });
+
+  test('a spent daily budget waits without calling YouTube at all', async () => {
+    const t = setup({ blocked: 'Upload budget used up' });
+    await t.pipe.upload(t.ep, null);
+    assert.equal(t.calls(), 0);
+    assert.equal(t.ep.data.status, 'waiting');
+    assert.equal(t.hits.length, 0);
+  });
+
+  test('the daily budget setting is bounded', () => {
+    assert.equal(cleanSettings(DEFAULT_SETTINGS, { maxUploadsPerDay: 0 }).maxUploadsPerDay, 1);
+    assert.equal(cleanSettings(DEFAULT_SETTINGS, { maxUploadsPerDay: 6 }).maxUploadsPerDay, 6);
   });
 });

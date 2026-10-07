@@ -25,6 +25,7 @@ const env = process.env;
 export const DEFAULT_SETTINGS = {
   autopilot: false, everyHours: 24, autoUpload: false, privacy: 'private', fights: 3, fps: 30, quality: 'medium',
   voiceId: DEFAULT_VOICE, useClaude: true, synthetic: false, renderWorkers: 2, busyMatches: 8, keepEpisodes: 14,
+  maxUploadsPerDay: 10, // YouTube caps uploads per channel per rolling 24 h (low for new channels)
 };
 const PRIVACY = ['public', 'unlisted', 'private'];
 
@@ -33,7 +34,7 @@ export function cleanSettings(cur, patch) {
   const num = (k, lo, hi) => { if (patch[k] !== undefined) { const v = Number(patch[k]); if (Number.isFinite(v)) s[k] = Math.max(lo, Math.min(hi, Math.round(v))); } };
   const bool = k => { if (patch[k] !== undefined) s[k] = !!patch[k]; };
   bool('autopilot'); bool('autoUpload'); bool('useClaude'); bool('synthetic');
-  num('everyHours', 1, 168); num('fights', 1, 5); num('fps', 24, 60); num('renderWorkers', 1, 4); num('busyMatches', 1, 100); num('keepEpisodes', 3, 100);
+  num('everyHours', 1, 168); num('fights', 1, 5); num('fps', 24, 60); num('renderWorkers', 1, 4); num('busyMatches', 1, 100); num('keepEpisodes', 3, 100); num('maxUploadsPerDay', 1, 100);
   if (PRIVACY.includes(patch.privacy)) s.privacy = patch.privacy;
   if (['low', 'medium', 'high'].includes(patch.quality)) s.quality = patch.quality;
   if (typeof patch.voiceId === 'string' && /^[A-Za-z0-9]{10,40}$/.test(patch.voiceId)) s.voiceId = patch.voiceId;
@@ -74,7 +75,42 @@ export async function startStudio(opts = {}) {
       return fs.existsSync(f) ? f : null;
     },
   });
-  const pipeline = new Pipeline({ root: epRoot, staticDir: cfg.staticDir, host, voiceCache: path.join(cfg.dir, 'voice-cache'), musicDir: path.join(cfg.dir, 'music'), youtube, env });
+  /* ---------------- the YouTube upload budget ---------------- */
+  // Uploads in the last 24 hours come from the episodes' own records; when YouTube itself says
+  // the channel hit its limit, uploads pause until the oldest upload in the window turns 24 h old.
+  const pauseFile = path.join(cfg.dir, 'upload-pause.json');
+  let uploadPause = null;
+  try { uploadPause = JSON.parse(fs.readFileSync(pauseFile, 'utf8')); } catch { /* none */ }
+  function recentUploads() {
+    const since = Date.now() - 24 * 3600e3;
+    const times = [];
+    for (const id of listEps()) {
+      const u = loadEp(id)?.data.uploads || {};
+      if (u.main?.at > since) times.push(u.main.at);
+      for (const x of Object.values(u.shorts || {})) if (x.at > since) times.push(x.at);
+    }
+    return times.sort((a, b) => a - b);
+  }
+  const uploadGate = {
+    pausedUntil() {
+      if (uploadPause && uploadPause.until > Date.now()) return uploadPause.until;
+      const recent = recentUploads();
+      return recent.length >= settings.maxUploadsPerDay ? recent[recent.length - settings.maxUploadsPerDay] + 24 * 3600e3 : null;
+    },
+    /** null when an upload may start now, else why not. */
+    check() {
+      const until = this.pausedUntil();
+      return until ? `Upload budget used up until ${new Date(until).toISOString().slice(0, 16).replace('T', ' ')} UTC` : null;
+    },
+    limitHit(err) {
+      const recent = recentUploads();
+      const until = Math.max(Date.now() + 3600e3, recent.length ? recent[0] + 24 * 3600e3 + 5 * 60e3 : Date.now() + 24 * 3600e3);
+      uploadPause = { until, reason: String(err.message).slice(0, 300), at: Date.now() };
+      fs.writeFileSync(pauseFile, JSON.stringify(uploadPause));
+      console.warn(`studio: YouTube upload limit hit, pausing uploads until ${new Date(until).toISOString()}`);
+    },
+  };
+  const pipeline = new Pipeline({ root: epRoot, staticDir: cfg.staticDir, host, voiceCache: path.join(cfg.dir, 'voice-cache'), musicDir: path.join(cfg.dir, 'music'), youtube, env, uploadGate });
 
   /* ---------------- episodes and the job queue ---------------- */
   const episodeDir = id => (/^\d{8}-[a-z0-9]{5}$/.test(id) ? path.join(epRoot, id) : null);
@@ -115,9 +151,17 @@ export async function startStudio(opts = {}) {
     // Keep the newest episodes' files; older ones are deleted (published ones keep their record).
     for (const id of listEps().slice(settings.keepEpisodes)) {
       const ep = loadEp(id);
-      if (!ep || ['running', 'uploading', 'queued'].includes(ep.data.status)) continue;
+      if (!ep || ['running', 'uploading', 'queued', 'waiting'].includes(ep.data.status)) continue;
       for (const f of fs.readdirSync(ep.dir)) if (f !== 'episode.json') fs.rmSync(path.join(ep.dir, f), { recursive: true, force: true });
       if (!ep.data.pruned) { ep.data.pruned = true; ep.save(); }
+    }
+  }
+
+  // Episodes that failed on YouTube's upload limit (before 'waiting' existed) wait instead.
+  for (const id of listEps()) {
+    const ep = loadEp(id);
+    if (ep.data.status === 'failed' && ep.data.edited && /exceeded the number of videos|quota/i.test(ep.data.error || '')) {
+      ep.data.status = 'waiting'; ep.data.error = 'Waiting for YouTube\'s daily upload limit. It uploads automatically.'; ep.log('Moved to the upload queue (YouTube daily limit).');
     }
   }
 
@@ -140,7 +184,12 @@ export async function startStudio(opts = {}) {
   }
 
   const autoTimer = setInterval(async () => {
-    if (!settings.autopilot || current || queue.length) return;
+    if (current || queue.length) return;
+    // Waiting uploads go first, oldest first, whenever the budget allows one.
+    const waiting = listEps().reverse().filter(id => loadEp(id)?.data.status === 'waiting');
+    if (waiting.length && youtube.connected && !uploadGate.check()) { enqueue(waiting[0], 'only'); return; }
+    if (!settings.autopilot) return;
+    if (waiting.length >= 2) return; // don't render more than YouTube will take
     if (Date.now() - lastAuto < settings.everyHours * 3600e3) return;
     if (await gameBusy()) return; // live games come first; try again in a minute
     lastAuto = Date.now();
@@ -270,6 +319,7 @@ export async function startStudio(opts = {}) {
         autopilot: { enabled: settings.autopilot, next: settings.autopilot ? Math.max(Date.now(), lastAuto + settings.everyHours * 3600e3) : null },
         youtube: { configured: youtube.configured, connected: youtube.connected, channel, redirectUri: youtube.redirectUri },
         keys: { elevenlabs: !!env.ELEVENLABS_API_KEY, anthropic: !!env.ANTHROPIC_API_KEY },
+        uploads: { last24h: recentUploads().length, max: settings.maxUploadsPerDay, pausedUntil: uploadGate.pausedUntil(), reason: uploadPause?.until > Date.now() ? uploadPause.reason : null },
         episodes: listEps().slice(0, 40).map(id => summary(loadEp(id))),
       });
     }
@@ -306,13 +356,15 @@ export async function startStudio(opts = {}) {
       if (action === 'upload' && method === 'POST') {
         if (!ep.data.edited) return json(res, 409, { error: 'The videos are not ready yet' });
         if (!youtube.connected) return json(res, 409, { error: 'Connect YouTube first' });
+        if (uploadGate.check()) { ep.data.status = 'waiting'; ep.data.error = `${uploadGate.check()}. It uploads automatically.`; ep.save(); return json(res, 200, { ok: true, waiting: true }); }
         enqueue(ep.data.id, 'only');
         return json(res, 200, { ok: true });
       }
       if (action === 'cancel' && method === 'POST') {
         if (current?.id === ep.data.id) current.ctrl.abort();
         const qi = queue.findIndex(q => q.id === ep.data.id);
-        if (qi >= 0) { queue.splice(qi, 1); ep.data.status = 'cancelled'; ep.save(); }
+        if (qi >= 0) { queue.splice(qi, 1); ep.data.status = ep.data.edited ? 'ready' : 'cancelled'; ep.save(); }
+        else if (ep.data.status === 'waiting') { ep.data.status = 'ready'; ep.data.error = null; ep.log('Taken off the upload queue.'); ep.save(); }
         return json(res, 200, { ok: true });
       }
       if (action === 'meta' && method === 'POST') {

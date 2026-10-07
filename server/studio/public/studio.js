@@ -23,7 +23,7 @@ const el = (tag, attrs = {}, ...kids) => {
 };
 const ago = t => { const s = Math.round((Date.now() - t) / 1000); return s < 60 ? `${s}s ago` : s < 3600 ? `${Math.round(s / 60)} min ago` : s < 86400 ? `${Math.round(s / 3600)} h ago` : new Date(t).toLocaleString(); };
 const mmss = s => `${Math.floor(s / 60)}:${String(Math.round(s % 60)).padStart(2, '0')}`;
-const STATUS = { queued: 'Queued', running: 'Working', ready: 'Ready for review', uploading: 'Uploading', published: 'Published', failed: 'Failed', cancelled: 'Cancelled' };
+const STATUS = { queued: 'Queued', running: 'Working', ready: 'Ready for review', uploading: 'Uploading', published: 'Published', waiting: 'Waiting to upload', failed: 'Failed', cancelled: 'Cancelled' };
 
 let state = null;
 let openId = null;
@@ -31,7 +31,7 @@ const toast = (msg, bad) => { const b = $('#banner'); b.textContent = msg; b.cla
 const act = fn => async (...a) => { try { await fn(...a); await refresh(); } catch (e) { toast(e.message, true); } };
 
 /* ---------- settings ---------- */
-const S_KEYS = ['autopilot', 'everyHours', 'autoUpload', 'privacy', 'fights', 'voiceId', 'quality', 'fps', 'renderWorkers', 'busyMatches', 'keepEpisodes', 'useClaude', 'synthetic'];
+const S_KEYS = ['maxUploadsPerDay', 'autopilot', 'everyHours', 'autoUpload', 'privacy', 'fights', 'voiceId', 'quality', 'fps', 'renderWorkers', 'busyMatches', 'keepEpisodes', 'useClaude', 'synthetic'];
 function fillSettings(s) {
   for (const k of S_KEYS) {
     const i = $(`#s-${k}`);
@@ -86,7 +86,7 @@ function progressEl(ep) {
 }
 
 function episodeRow(ep) {
-  const busy = ep.status === 'running' || ep.status === 'uploading' || ep.status === 'queued';
+  const busy = ep.status === 'running' || ep.status === 'uploading' || ep.status === 'queued' || ep.status === 'waiting';
   const links = [];
   if (ep.uploads?.main) links.push(el('a', { href: ep.uploads.main.url, target: '_blank', rel: 'noopener', text: 'Episode ↗' }));
   for (const [n, s] of Object.entries(ep.uploads?.shorts || {})) links.push(el('a', { href: s.url, target: '_blank', rel: 'noopener', text: `Short ${n} ↗` }));
@@ -94,12 +94,12 @@ function episodeRow(ep) {
     el('div', { class: 'ep-main' },
       el('div', { class: 'ep-title' }, el('span', { class: `chip ${ep.status}`, text: STATUS[ep.status] || ep.status }), el('b', { text: ep.title || (ep.match ? `Match · ${ep.match.minutes} min · ${ep.match.kills.blue}–${ep.match.kills.red}` : `Episode ${ep.id}`) })),
       el('div', { class: 'muted small', text: [ago(ep.createdAt), ep.stage ? `stage: ${ep.stage}` : '', ep.duration ? `${mmss(ep.duration)} episode + ${ep.fights} shorts` : '', ep.pruned ? 'files cleaned up' : ''].filter(Boolean).join(' · ') }),
-      ep.error ? el('div', { class: 'error small', text: ep.error }) : null,
+      ep.error ? el('div', { class: ep.status === 'waiting' ? 'muted small' : 'error small', text: ep.error }) : null,
       progressEl(ep),
       links.length ? el('div', { class: 'links' }, ...links) : null),
     el('div', { class: 'ep-actions' },
       el('button', { class: 'btn', text: 'Open', onclick: () => openDetail(ep.id) }),
-      busy ? el('button', { class: 'btn ghost', text: 'Cancel', onclick: act(() => api(`/api/episodes/${ep.id}/cancel`, { method: 'POST' })) }) : null,
+      busy ? el('button', { class: 'btn ghost', text: ep.status === 'waiting' ? 'Don\'t upload' : 'Cancel', onclick: act(() => api(`/api/episodes/${ep.id}/cancel`, { method: 'POST' })) }) : null,
       (ep.status === 'failed' || ep.status === 'cancelled') && !ep.pruned ? el('button', { class: 'btn', text: 'Resume', onclick: act(() => api(`/api/episodes/${ep.id}/run`, { method: 'POST' })) }) : null,
       ep.status === 'ready' || (ep.status === 'failed' && ep.duration) ? el('button', { class: 'btn primary', text: 'Upload', disabled: !state.youtube.connected, title: state.youtube.connected ? '' : 'Connect YouTube first', onclick: act(() => api(`/api/episodes/${ep.id}/upload`, { method: 'POST' })) }) : null,
       !busy ? el('button', { class: 'btn ghost danger', text: 'Delete', onclick: act(async () => { if (confirm('Delete this episode and its files? Videos already on YouTube stay there.')) await api(`/api/episodes/${ep.id}`, { method: 'DELETE' }); }) }) : null));
@@ -110,6 +110,11 @@ async function refresh() {
   fillSettings(state.settings);
   if ($('#s-voiceId').options.length === 0) loadVoices();
   renderYouTube(state.youtube);
+  const u = state.uploads;
+  $('#upload-budget').textContent = `YouTube uploads in the last 24 h: ${u.last24h} of ${u.max}${u.pausedUntil ? ` · paused until ${new Date(u.pausedUntil).toLocaleString()}` : ''}.`;
+  const perEpisode = state.settings.fights + 1;
+  const fits = Math.max(1, Math.floor(u.max / perEpisode));
+  $('#auto-hint').textContent = `Each episode is ${perEpisode} videos, so ${u.max}/day fits about ${fits} episode${fits === 1 ? '' : 's'} a day (every ${Math.ceil(24 / fits)} h or slower).`;
   $('#auto-next').textContent = state.autopilot.enabled ? `Next episode: ${new Date(state.autopilot.next).toLocaleString()}${state.settings.autoUpload ? ', uploaded automatically' : ', kept for review'}.` : 'Off.';
   $('#queue').textContent = state.running ? `Working on ${state.running}${state.queue.length ? ` · ${state.queue.length} queued` : ''}` : state.queue.length ? `${state.queue.length} queued` : 'Idle';
   $('#keys').textContent = `ElevenLabs key: ${state.keys.elevenlabs ? 'set' : 'MISSING (voice-over will fail)'} · Claude key: ${state.keys.anthropic ? 'set' : 'not set (built-in writer is used)'}`;
