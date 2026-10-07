@@ -27,7 +27,13 @@ const io = new NodeIO().registerExtensions(ALL_EXTENSIONS).registerDependencies(
 
 // Tripo's slash/chop/cast presets are multi-second combos; keep one strike.
 // Keyed by Tripo's clip name, in seconds (picked from rendered filmstrips).
-const WINDOWS = { box_01: [0, 1.3], slash: [1.1, 2.4], chop: [1.1, 2.4], cast_a_spell: [0.4, 2.5], hurt: [0, 3.5], dance_01: [0, 8], cheer: [0, 4], laugh_01: [0, 4] };
+// Trim windows (seconds) per Tripo preset: just the strike / gesture, picked from scripts/clip-frames strips.
+const WINDOWS = {
+  box_01: [0, 1.3], slash: [1.1, 2.4], chop: [1.1, 2.4], cast_a_spell: [0.4, 2.5], hurt: [0, 3.5], dance_01: [0, 8], cheer: [0, 4], laugh_01: [0, 4],
+  lift_heavy: [3.0, 5.4], pitch_baseball: [0.8, 2.1], box_02: [1.4, 2.6], flip: [0.7, 2.9], angry_01: [0.4, 2.6], volleyball: [1.8, 2.6],
+  sing_01: [3.6, 6.2], basketball_shot: [1.2, 2.7], shoot: [0.6, 2.4], front_kick_01: [0.2, 1.6], angry_02: [0.3, 1.5], jump: [0, 2.2],
+  football_pass: [2.4, 3.6], victory_celebration: [0.5, 2.6], box_03: [0.2, 1.6], dig: [5.5, 7.5],
+};
 
 function trim(doc, input, output, [t0, t1]) {
   const t = input.getArray(), size = output.getElementSize(), v = output.getArray();

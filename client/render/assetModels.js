@@ -13,7 +13,10 @@ import { F } from '../../shared/constants.js';
 import { SKINS } from '../../shared/moba/progression.js';
 
 const BASE = `${import.meta.env.BASE_URL || '/'}models/`;
-const ONE_SHOT = { attack: 0.55, cast: 0.75 }; // seconds each one-shot clip is squeezed into
+// One-shot clips play faster than authored, within these bounds (seconds); each champion's
+// clip keeps its own pacing (a quick jab stays quick, a big lift a little longer).
+const ONE_SHOT = { attack: [0.45, 0.65], cast: [0.6, 1.0] };
+const oneShotLen = clip => Math.min(ONE_SHOT[clip.name][1], Math.max(ONE_SHOT[clip.name][0], clip.duration / 2.2));
 const RIG_YAW = -Math.PI / 2; // Tripo rigs face 90° off the procedural models' forward (+Z)
 const loader = new GLTFLoader().setMeshoptDecoder(MeshoptDecoder);
 const cache = new Map();
@@ -143,7 +146,7 @@ export function attachModel(view, gltf, height, skin) {
   for (const clip of gltf.animations) {
     const a = mixer.clipAction(clip);
     if (ONE_SHOT[clip.name] || clip.name === 'death' || clip.name === 'cheer' || clip.name === 'laugh') { a.setLoop(THREE.LoopOnce, 1); a.clampWhenFinished = true; }
-    if (ONE_SHOT[clip.name]) a.timeScale = clip.duration / ONE_SHOT[clip.name];
+    if (ONE_SHOT[clip.name]) { a.userData = { len: oneShotLen(clip) }; a.timeScale = clip.duration / a.userData.len; }
     actions[clip.name] = a;
   }
   view.anim = { model, mixer, actions, current: null, oneShotUntil: 0 };
@@ -171,7 +174,7 @@ export function animateModel(view, e, dead, moving, dt, now) {
     else if (stunned && anim.actions.stun) { play(anim, 'stun', 0.12); view.oneShot = null; anim.oneShotUntil = 0; }
     else if (view.oneShot) {
       const name = anim.actions[view.oneShot] ? view.oneShot : 'attack';
-      if (anim.actions[name]) { play(anim, name, 0.08, true); anim.oneShotUntil = now + ONE_SHOT[name] * 1000; }
+      if (anim.actions[name]) { play(anim, name, 0.08, true); anim.oneShotUntil = now + (anim.actions[name].userData?.len || 0.6) * 1000; }
       view.oneShot = null;
     } else if (now >= anim.oneShotUntil) {
       if (!anim.actions.idle) anim.actions.run.timeScale = moving ? 1 : 0; // walk-only rigs freeze when standing

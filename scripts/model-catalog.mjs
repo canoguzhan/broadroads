@@ -35,7 +35,7 @@ export const CATALOG = [
   hero('nyra', 'desert marshal gunslinger woman in a long brown coat and wide-brimmed hat holding a long rifle', 'shoot', { cast: 'shoot' }),
   hero('brakka', 'armored minotaur bull warrior with big horns, steel shoulder pads and huge fists', 'punch', { attack: 'front_kick_01', cast: 'angry_02' }),
   hero('rook', 'green-armored storm warrior holding a large axe, with lightning accents on the armor', 'slash', { cast: 'jump' }),
-  hero('thessa', 'graceful sea sorceress woman in teal and pearl robes with flowing aqua hair, holding a coral trident staff', 'cast', { attack: 'football_pass', cast: 'press' }),
+  hero('thessa', 'graceful sea sorceress woman in teal and pearl robes with flowing aqua hair, holding a coral trident staff', 'cast', { attack: 'football_pass', cast: 'victory_celebration' }),
   hero('borrin', 'hulking tree warden made of living bark and moss, with leafy shoulders, glowing green eyes and thorny vine arms', 'punch', { attack: 'box_03', cast: 'dig', idle: 'wait' }),
 ];
 

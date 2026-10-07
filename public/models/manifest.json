@@ -8,13 +8,13 @@
    "run",
    "idle",
    "attack",
-   "cast",
    "stun",
    "dance",
    "cheer",
-   "laugh"
+   "laugh",
+   "cast"
   ],
-  "v": "muvx9aap"
+  "v": "muymu79b"
  },
  "lyra": {
   "file": "lyra.glb",
@@ -23,15 +23,15 @@
   "clips": [
    "idle",
    "run",
-   "attack",
    "cast",
    "death",
    "stun",
    "dance",
    "cheer",
-   "laugh"
+   "laugh",
+   "attack"
   ],
-  "v": "muvx9bde"
+  "v": "muymu7u2"
  },
  "kaelen": {
   "file": "kaelen.glb",
@@ -40,15 +40,15 @@
   "clips": [
    "idle",
    "run",
-   "attack",
-   "cast",
    "death",
    "stun",
    "dance",
    "cheer",
-   "laugh"
+   "laugh",
+   "attack",
+   "cast"
   ],
-  "v": "muvx9cf1"
+  "v": "muymu8bz"
  },
  "hale": {
   "file": "hale.glb",
@@ -57,15 +57,15 @@
   "clips": [
    "idle",
    "run",
-   "cast",
    "death",
    "attack",
    "stun",
    "dance",
    "cheer",
-   "laugh"
+   "laugh",
+   "cast"
   ],
-  "v": "muvx9df6"
+  "v": "muymu8xb"
  },
  "thorne": {
   "file": "thorne.glb",
@@ -75,14 +75,14 @@
    "idle",
    "run",
    "attack",
-   "cast",
    "death",
    "stun",
    "dance",
    "cheer",
-   "laugh"
+   "laugh",
+   "cast"
   ],
-  "v": "muvx9eag"
+  "v": "muymu9g7"
  },
  "mira": {
   "file": "mira.glb",
@@ -91,15 +91,15 @@
   "clips": [
    "idle",
    "run",
-   "attack",
-   "cast",
    "death",
    "stun",
    "dance",
    "cheer",
-   "laugh"
+   "laugh",
+   "attack",
+   "cast"
   ],
-  "v": "muvx9f5y"
+  "v": "muymua1f"
  },
  "zarak": {
   "file": "zarak.glb",
@@ -108,15 +108,15 @@
   "clips": [
    "idle",
    "run",
-   "attack",
    "cast",
    "death",
    "stun",
    "dance",
    "cheer",
-   "laugh"
+   "laugh",
+   "attack"
   ],
-  "v": "muvx9g1g"
+  "v": "muymual7"
  },
  "nyra": {
   "file": "nyra.glb",
@@ -125,15 +125,15 @@
   "clips": [
    "idle",
    "run",
-   "cast",
    "death",
    "attack",
    "stun",
    "dance",
    "cheer",
-   "laugh"
+   "laugh",
+   "cast"
   ],
-  "v": "muvx9gzo"
+  "v": "muymub4s"
  },
  "brakka": {
   "file": "brakka.glb",
@@ -142,15 +142,15 @@
   "clips": [
    "idle",
    "run",
-   "attack",
-   "cast",
    "death",
    "stun",
    "dance",
    "cheer",
-   "laugh"
+   "laugh",
+   "attack",
+   "cast"
   ],
-  "v": "muvx9hx7"
+  "v": "muymubql"
  },
  "rook": {
   "file": "rook.glb",
@@ -160,14 +160,14 @@
    "idle",
    "run",
    "attack",
-   "cast",
    "death",
    "stun",
    "dance",
    "cheer",
-   "laugh"
+   "laugh",
+   "cast"
   ],
-  "v": "muvx9iv4"
+  "v": "muymuc9i"
  },
  "minion_melee_blue": {
   "file": "minion_melee_blue.glb",
@@ -417,15 +417,15 @@
   "clips": [
    "idle",
    "run",
-   "attack",
-   "cast",
    "death",
    "stun",
    "dance",
    "cheer",
-   "laugh"
+   "laugh",
+   "attack",
+   "cast"
   ],
-  "v": "muvx9xmq"
+  "v": "muymucuu"
  },
  "borrin": {
   "file": "borrin.glb",
@@ -434,15 +434,15 @@
   "clips": [
    "idle",
    "run",
-   "attack",
-   "cast",
    "death",
    "stun",
    "dance",
    "cheer",
-   "laugh"
+   "laugh",
+   "attack",
+   "cast"
   ],
-  "v": "muvx9yks"
+  "v": "muymudgt"
  },
  "hd_tree_oak": {
   "file": "hd_tree_oak.glb",
