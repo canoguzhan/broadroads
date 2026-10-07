@@ -97,7 +97,7 @@ export class Game {
     sfx.playMusic('amb_valley');
     sfx.play('match_start', { late: true });
     sfx.announce('vo_welcome', 5);
-    sfx.preload([...MATCH_SOUNDS, ...Object.values(ATTACK_SOUND), ...[...this.players.values()].flatMap(p => ['q', 'w', 'e', 'r'].map(k => `${p.champ}_${k}`))]);
+    sfx.preload([...MATCH_SOUNDS, ...[...this.players.values()].flatMap(p => [`atk_${p.champ}`, ...['q', 'w', 'e', 'r'].flatMap(k => [`${p.champ}_${k}`, `${p.champ}_${k}_hit`])])]);
     this.running = true;
     this.last = performance.now();
     const loop = t => {
@@ -335,7 +335,7 @@ export class Game {
       }
       case 'atk': {
         if (!ent) break;
-        const key = ent.kind === 'hero' ? ATTACK_SOUND[ent.c] || 'atk_sword' : 'atk_sword';
+        const key = ent.kind === 'hero' ? `atk_${ent.c}` : 'atk_sword'; // every champion has its own attack sound
         at(key, { gap: ent.kind === 'hero' ? 0.05 : 0.15, vol: ent.kind === 'hero' ? (ev.id === you ? 1 : 0.7) : 0.25, rate: ent.kind === 'minion' ? 1.2 : 0.95 + Math.random() * 0.1 });
         break;
       }
@@ -345,6 +345,10 @@ export class Game {
         if (ev.sl === 'r') this.champLine(ev.c, 'ult', ev.id, 0);
         break;
       case 'summ': at(SPELL_SOUND[ev.k] || 'blink', { gap: 0.2 }); break;
+      case 'boom': case 'shock': case 'nova': case 'beam':
+        // Abilities whose payoff lands after the cast (zone explosions, beams) have their own impact sound.
+        if (ev.ab) at(`${ev.ab}_hit`, { gap: 0.15, vol: 0.9, range: 30 });
+        break;
       case 'dash': at('dash', { gap: 0.2, vol: 0.8 }); break;
       case 'blink': at('blink', { gap: 0.3 }); break;
       case 'cc': if (ev.id === you && ev.k !== 'slow') sfx.play('stun', { gap: 0.5 }); break;
@@ -474,6 +478,5 @@ export class Game {
 
 function round2(v) { return Math.round(v * 100) / 100; }
 
-const ATTACK_SOUND = { thessa: 'atk_magic', borrin: 'atk_fist', garrok: 'atk_fist', brakka: 'atk_fist', thorne: 'atk_axe', rook: 'atk_axe', kaelen: 'atk_sword', hale: 'atk_bow', nyra: 'atk_gun', lyra: 'atk_magic', mira: 'atk_magic', zarak: 'atk_magic' };
 const SPELL_SOUND = { blink: 'blink', mend: 'heal', scorch: 'sp_scorch', strike: 'sp_strike', haste: 'sp_haste', bulwark: 'shield' };
 const MATCH_SOUNDS = ['hurt', 'hit_physical', 'hit_magic', 'hit_crit', 'gold', 'atk_sword', 'death_minion', 'tower_shot', 'levelup', 'vo_minions', 'vo_ally_slain', 'vo_enemy_slain', 'vo_you_slain', 'vo_you_killed', 'vo_first_strike'];

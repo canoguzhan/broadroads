@@ -21,21 +21,22 @@ const minionClips = style => ({ run: 'preset:biped:walk', attack: ATTACK[style],
 const beastClips = style => ({ idle: 'preset:biped:idle', run: 'preset:biped:walk', attack: ATTACK[style], death: 'preset:biped:fall' });
 const WALK = { run: 'preset:quadruped:walk' };
 
-const hero = (id, desc, style) => ({ id, group: 'champion', kind: 'biped', prompt: `${desc}, ${HERO}`, clips: heroClips(style), face: 30000, tex: 1024, tris: 15000 });
+// `own` gives a champion its own idle / attack / cast presets, so no two move alike.
+const hero = (id, desc, style, own = {}) => ({ id, group: 'champion', kind: 'biped', prompt: `${desc}, ${HERO}`, clips: { ...heroClips(style), ...Object.fromEntries(Object.entries(own).map(([k, v]) => [k, `preset:biped:${v}`])) }, face: 30000, tex: 1024, tris: 15000 });
 
 export const CATALOG = [
-  hero('garrok', 'massive stone-skinned golem warrior with glowing amber cracks, rocky shoulders and huge stone fists', 'punch'),
-  hero('lyra', 'radiant light mage woman in flowing white and gold robes holding a glowing sun staff', 'cast'),
-  hero('kaelen', 'hooded shadow assassin in dark purple leather armor holding twin curved daggers', 'slash'),
-  hero('hale', 'frost huntress archer woman in blue fur-lined leather armor holding an ice longbow', 'shoot'),
-  hero('thorne', 'armored iron warlord in dark red plate armor holding a huge two-handed battle axe', 'chop'),
-  hero('mira', 'moon priestess in pale blue and silver robes with a crescent halo holding a moon staff', 'cast'),
-  hero('zarak', 'young fire mage boy in red and orange robes with small flames in his hands', 'cast'),
-  hero('nyra', 'desert marshal gunslinger woman in a long brown coat and wide-brimmed hat holding a long rifle', 'shoot'),
-  hero('brakka', 'armored minotaur bull warrior with big horns, steel shoulder pads and huge fists', 'punch'),
-  hero('rook', 'green-armored storm warrior holding a large axe, with lightning accents on the armor', 'slash'),
-  hero('thessa', 'graceful sea sorceress woman in teal and pearl robes with flowing aqua hair, holding a coral trident staff', 'cast'),
-  hero('borrin', 'hulking tree warden made of living bark and moss, with leafy shoulders, glowing green eyes and thorny vine arms', 'punch'),
+  hero('garrok', 'massive stone-skinned golem warrior with glowing amber cracks, rocky shoulders and huge stone fists', 'punch', { cast: 'lift_heavy' }),
+  hero('lyra', 'radiant light mage woman in flowing white and gold robes holding a glowing sun staff', 'cast', { attack: 'pitch_baseball', idle: 'standing_relax' }),
+  hero('kaelen', 'hooded shadow assassin in dark purple leather armor holding twin curved daggers', 'slash', { attack: 'box_02', cast: 'flip', idle: 'fold_arms' }),
+  hero('hale', 'frost huntress archer woman in blue fur-lined leather armor holding an ice longbow', 'shoot', { cast: 'pitch_baseball', idle: 'look_around' }),
+  hero('thorne', 'armored iron warlord in dark red plate armor holding a huge two-handed battle axe', 'chop', { cast: 'angry_01', idle: 'wait' }),
+  hero('mira', 'moon priestess in pale blue and silver robes with a crescent halo holding a moon staff', 'cast', { attack: 'volleyball', cast: 'sing_01' }),
+  hero('zarak', 'young fire mage boy in red and orange robes with small flames in his hands', 'cast', { attack: 'basketball_shot', idle: 'warm_up' }),
+  hero('nyra', 'desert marshal gunslinger woman in a long brown coat and wide-brimmed hat holding a long rifle', 'shoot', { cast: 'shoot' }),
+  hero('brakka', 'armored minotaur bull warrior with big horns, steel shoulder pads and huge fists', 'punch', { attack: 'front_kick_01', cast: 'angry_02' }),
+  hero('rook', 'green-armored storm warrior holding a large axe, with lightning accents on the armor', 'slash', { cast: 'jump' }),
+  hero('thessa', 'graceful sea sorceress woman in teal and pearl robes with flowing aqua hair, holding a coral trident staff', 'cast', { attack: 'football_pass', cast: 'press' }),
+  hero('borrin', 'hulking tree warden made of living bark and moss, with leafy shoulders, glowing green eyes and thorny vine arms', 'punch', { attack: 'box_03', cast: 'dig', idle: 'wait' }),
 ];
 
 // Lane minions, one model per team so allegiance reads at a glance.

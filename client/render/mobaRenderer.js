@@ -1,6 +1,7 @@
 /* Three.js scene for a MOBA match: terrain, entities, fog of war, FX, camera. */
 import * as THREE from 'three';
 import { buildValley, upgradeValley, TEAM_HEX } from './valley.js';
+import { abilityProjectile, abilityArea, abilityEvent, abilityCast } from './abilityFx.js';
 import { buildChampion, buildMinion, buildTower, buildSpire, buildCore, buildWard, buildTrap, buildMobaMonster, buildMobaProjectile, buildMobaArea } from './mobaModels.js';
 import { FxSystem } from './fx.js';
 import { loadModel, assetFor, attachModel, animateModel, animateDying } from './assetModels.js';
@@ -126,13 +127,15 @@ export class MobaRenderer {
       case 'monster': built = buildMobaMonster(e.md, e.sm, e.ep); break;
       case 'proj': {
         const owner = this.world && this.world.entities.get(e.o);
-        built = buildMobaProjectile(e.s, e.tm, owner && owner.kind === 'hero' ? (this.champInfo[owner.c] || {}).accent : this.champColorFromStyle(e.s));
+        built = abilityProjectile(e.ab) || buildMobaProjectile(e.s, e.tm, owner && owner.kind === 'hero' ? (this.champInfo[owner.c] || {}).accent : this.champColorFromStyle(e.s));
         break;
       }
       case 'area': built = buildMobaArea(e.s, e.rad, e.len, e.w, e.tm !== this.team); break;
       default: return;
     }
     const v = { root: built.root, parts: built.parts, kind: e.kind, phase: Math.random() * 10, attackT: 0, mats: [], spin: built.spin, color: built.color, fiery: built.fiery };
+    if (built.trail) Object.assign(v, { custom: built, color: built.trail[0], fiery: !!built.smoke }); // an ability's own projectile
+    if (e.kind === 'area') { const deco = abilityArea(e.ab, e.rad, e.len, e.w, e.dur); if (deco) { built.root.add(deco.obj); v.deco = deco; } }
     if (e.kind === 'hero' || e.kind === 'minion' || e.kind === 'monster') built.root.traverse(o => { if (o.material && o.material.emissive) v.mats.push({ m: o.material, base: o.material.emissive.clone(), bi: o.material.emissiveIntensity }); });
     if (e.kind === 'hero' && built.parts.ring) built.parts.ring.material.color.set(e.id === this.youId ? 0xfacc15 : this.team === 'spectator' ? TEAM_HEX[e.tm] : e.tm === this.team ? 0x3b82f6 : 0xef4444);
     built.root.position.set(e.x, 0, e.y);
@@ -152,7 +155,10 @@ export class MobaRenderer {
   removeEntity(e, replaced) {
     const v = this.views.get(e.id);
     if (!v) return;
-    if (e.kind === 'proj' && !replaced) this.fx.impact(v.root.position.x, v.root.position.z, { y: v.root.position.y, color: v.color || 0xffffff, big: v.fiery });
+    if (e.kind === 'proj' && !replaced) {
+      if (v.custom?.impact) v.custom.impact(this.fx, v.root.position.x, v.root.position.z);
+      else this.fx.impact(v.root.position.x, v.root.position.z, { y: v.root.position.y, color: v.color || 0xffffff, big: v.fiery });
+    }
     this.views.delete(e.id);
     if (!replaced && (e.kind === 'minion' || e.kind === 'monster') && (e.fl & F.DEAD)) this.dying.push({ view: v, t: 0 });
     else if (!replaced && (e.kind === 'minion' || e.kind === 'monster') && e.hp <= 0) this.dying.push({ view: v, t: 0 });
@@ -204,9 +210,10 @@ export class MobaRenderer {
         case 'proj':
           root.position.set(e.x, 1.1, e.y);
           root.rotation.y = Math.PI / 2 - e.f;
-          if (v.spin) v.parts.core.rotation.y += dt * 20;
+          if (v.custom) this.animateCustomProjectile(v, e, dt);
+          else if (v.spin) v.parts.core.rotation.y += dt * 20;
           v.trailT = (v.trailT || 0) - dt;
-          if (v.trailT <= 0) { v.trailT = 0.025; this.fx.trail(e.x, 1.1, e.y, v.color || 0xffffff, v.fiery ? 0.8 : 0.5); if (v.fiery && Math.random() < 0.3) this.fx.smoke(e.x, e.y, { count: 1, radius: 0.3, life: 0.6 }); }
+          if (v.trailT <= 0) { v.trailT = 0.025; this.fx.trail(e.x, 1.1, e.y, v.color || 0xffffff, v.custom ? v.custom.trail[1] : v.fiery ? 0.8 : 0.5); if (v.fiery && Math.random() < 0.3) this.fx.smoke(e.x, e.y, { count: 1, radius: 0.3, life: 0.6, ...(v.custom?.smoke ? { color: v.custom.smoke } : {}) }); }
           break;
         case 'area': {
           root.position.set(e.x, 0, e.y);
@@ -217,6 +224,7 @@ export class MobaRenderer {
           if (p.plane) p.plane.material.opacity = 0.15 + prog * 0.45;
           if (p.glow) p.glow.material.opacity = 0.4 + Math.sin(v.phase * 8) * 0.2;
           if (p.rune) p.rune.rotation.z += dt * 0.8;
+          if (v.deco) v.deco.update(prog, dt);
           break;
         }
         default:
@@ -235,6 +243,19 @@ export class MobaRenderer {
       d.view.root.scale.multiplyScalar(1 - dt * 0.9);
       if (d.t > 0.9) { this.disposeView(d.view); this.dying.splice(i, 1); }
     }
+  }
+
+  /** Motion for an ability's own projectile mesh (spin, tumble, flicker…). */
+  animateCustomProjectile(v, e, dt) {
+    const c = v.custom, core = v.parts.core;
+    if (c.spin && core) core.rotation.y += dt * c.spin;
+    if (c.spinX && core) core.rotation.x += dt * c.spinX;
+    if (c.roll && core) core.rotation.z += dt * c.roll;
+    if (c.tumble && core) { core.rotation.x += dt * 9; core.rotation.z += dt * 6; }
+    if (c.flicker) c.flicker.forEach((f, i) => f.scale.setScalar((1.6 - i * 0.3) * (0.85 + Math.random() * 0.3)));
+    if (c.wiggle) v.root.rotation.z = Math.sin(performance.now() / 60) * 0.4;
+    if (c.droplets && Math.random() < 0.4) this.fx.burst(e.x, e.y, { y: 1.1, color: 0xbae6fd, count: 3, speed: 1, up: 1, life: 0.4, size: 0.12 });
+    if (c.frost && Math.random() < 0.5) this.fx.burst(e.x, e.y, { y: 1.1, color: 0xf0f9ff, count: 3, speed: 1.5, up: 0.5, life: 0.6, size: 0.15 });
   }
 
   animateProcedural(v, e, dead, dt) {
@@ -330,6 +351,11 @@ export class MobaRenderer {
     const fx = this.fx;
     const c = FX_COLORS[ev.c] || 0xffffff;
     const ent = ev.id ? world.entities.get(ev.id) : null;
+    // Ability-specific effects first (the server tags them with `ab`); the generic ones below are the fallback.
+    const you = world.entities.get(this.youId);
+    const k = { fx, ev, ent, get: id => world.entities.get(id), x: ev.x ?? ent?.x, y: ev.y ?? ent?.y, tx: ev.tx, ty: ev.ty,
+      shake: n => { if (!you || Math.hypot(you.x - (ev.x ?? ent?.x ?? 0), you.y - (ev.y ?? ent?.y ?? 0)) < 14) this.shake(n); } };
+    if (ev.ab && ev.e !== 'cast' && ev.e !== 'dmg' && abilityEvent(ev, k)) return;
     switch (ev.e) {
       case 'atk': this.trigger(ev.id); break;
       case 'emote': { const v = this.views.get(ev.id); if (v) v.emote = { k: ev.k, until: performance.now() + (ev.k === 'dance' ? 8000 : 3800) }; break; }
@@ -337,6 +363,7 @@ export class MobaRenderer {
         if (!(ev.id === this.youId && performance.now() - (this.localCastAt || 0) < 600)) this.trigger(ev.id, 'cast'); // already played locally
         const accent = (this.champInfo[ev.c] || {}).accent || 0xffffff, ult = ev.sl === 'r';
         const x = ent ? ent.x : ev.x, y = ent ? ent.y : ev.y;
+        if (abilityCast(`${ev.c}_${ev.sl}`, { ...k, x, y })) { if (ult) fx.glow(x, y, { color: accent, size: 3, life: 0.3 }); break; }
         fx.runes(x, y, { color: accent, radius: ult ? 2.4 : 1.4, life: ult ? 1 : 0.6, spin: ult ? 3 : 2 });
         fx.glow(x, y, { color: accent, size: ult ? 3.5 : 2, life: 0.3 });
         fx.sparks(x, y, { y: 1.2, color: accent, count: ult ? 16 : 6, speed: 3, life: 0.5 });

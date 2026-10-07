@@ -337,7 +337,7 @@ export class Hud {
       const info = g.champInfo[p.c];
       this.teamEl.append(h(`div.m-ally${p.dead ? '.dead' : ''}`, { title: p.name },
         h('div.ma-icon', {}, pic(champKey(p.c), info ? info.icon : '?'), h('span.ma-lvl', { text: p.l })),
-        h('div.ma-bar', {}, h('div.ma-fill', { style: { width: `${pct}%` } })),
+        h('div.ma-mid', {}, h('span.ma-name', { text: p.name, translate: 'no' }), h('div.ma-bar', {}, h('div.ma-fill', { style: { width: `${pct}%` } }))),
         p.dead ? h('div.ma-rs', { text: p.rs }) : null));
     }
   }

@@ -24,7 +24,12 @@ export class Panels {
 
   isOpen(n) { return this.current === n; }
   toggle(n) { if (this.current === n) this.close(); else this.open(n); }
-  open(n) { if (this.current !== n) sfx.play('ui_open', { gap: 0.1 }); this.current = n; this.render(); }
+  open(n) {
+    if (this.current === n) return; // already open (e.g. Tab held down and repeating)
+    sfx.play('ui_open', { gap: 0.1 });
+    this.current = n;
+    this.render();
+  }
   close() { if (this.current) sfx.play('ui_close', { gap: 0.1 }); this.current = null; clear(this.root); this.game.ui.hideTip(); }
   refresh(names) { if (this.current && (!names || names.includes(this.current))) this.render(); }
 
@@ -34,6 +39,16 @@ export class Panels {
     const body = this.root.querySelector('.panel-body');
     const scroll = body ? body.scrollTop : 0;
     const { title, content, wide } = fn.call(this);
+    // Same panel already showing (live updates such as the scoreboard every second): swap its
+    // contents in place, so it doesn't replay the open animation and flicker.
+    const existing = this.root.querySelector(`.panel.panel-${this.current}`);
+    if (existing && body) {
+      existing.classList.toggle('wide', !!wide);
+      existing.querySelector('.panel-head h3').textContent = title;
+      body.replaceChildren(content);
+      body.scrollTop = scroll;
+      return;
+    }
     clear(this.root);
     const panel = h(`div.panel.panel-${this.current}${wide ? '.wide' : ''}`, {},
       h('div.panel-head', {}, h('h3', { text: title }), h('button.panel-close', { onclick: () => this.close(), 'aria-label': 'Close' }, '✕')),

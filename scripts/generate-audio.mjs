@@ -4,6 +4,7 @@
    Existing files are skipped unless --force is given. */
 import fs from 'node:fs';
 import path from 'node:path';
+import { execFileSync } from 'node:child_process';
 
 const KEY = process.env.ELEVENLABS_API_KEY;
 if (!KEY) { console.error('Set ELEVENLABS_API_KEY'); process.exit(1); }
@@ -19,20 +20,20 @@ const ANNOUNCER_VOICE = 'nPczCjzI2devNBz1zQrb'; // "Brian" — deep, resonant
 // [key, prompt, seconds, volume]
 const SFX = [
   // UI
-  ['ui_click', 'short crisp fantasy game UI button click, soft wooden tick', 0.5, 0.5],
-  ['ui_hover', 'very soft subtle UI hover tick, airy and quiet', 0.5, 0.25],
-  ['ui_open', 'fantasy game menu panel opening, soft parchment swoosh', 0.7, 0.5],
-  ['ui_close', 'fantasy game menu panel closing, short soft swoosh down', 0.5, 0.45],
-  ['ui_error', 'short soft muted negative UI buzz, error blip', 0.5, 0.5],
-  ['ui_notify', 'gentle magical notification chime, two bright notes', 0.8, 0.6],
-  ['ui_buy', 'gold coins dropping into a leather pouch, purchase confirmation', 0.8, 0.6],
-  ['ui_sell', 'coins sliding across a wooden counter with a small bell ding', 0.8, 0.6],
-  ['ui_skill', 'short bright magical power-up sparkle, ability unlocked', 0.7, 0.55],
-  ['queue_found', 'epic match found, war horn blast and big drum hit, triumphant and short', 2.0, 0.8],
-  ['lock_in', 'heavy sword locking into place with a magical shimmer', 1.0, 0.7],
-  ['select_tick', 'single wooden clock tick, short', 0.5, 0.35],
-  ['chat_msg', 'soft pop of a chat message bubble', 0.5, 0.35],
-  ['match_start', 'deep war horn blowing across a fantasy valley, echoing', 3.0, 0.75],
+  ['ui_click', "a single crisp satisfying click of a polished wooden game menu button with a tiny metallic tick, very short and dry, no reverb", 0.5, 0.5],
+  ['ui_hover', "an extremely soft short paper tick, barely audible, dry and close", 0.5, 0.22],
+  ['ui_open', "a leather-bound book cover opening with a soft paper flutter, short and warm", 0.6, 0.5],
+  ['ui_close', "a leather-bound book closing with a soft muffled thump, short", 0.5, 0.45],
+  ['ui_error', "a short low muted wooden double knock, dry, gentle", 0.5, 0.5],
+  ['ui_notify', "two clear warm bell chimes, gentle and soft, short fantasy game notification", 0.8, 0.6],
+  ['ui_buy', "a handful of gold coins clinking into a leather purse, bright and short", 0.7, 0.6],
+  ['ui_sell', "a few gold coins sliding across a wooden counter and dropping into a drawer", 0.7, 0.6],
+  ['ui_skill', "a short bright rising harp glissando with a soft sparkle, ability upgraded", 0.7, 0.55],
+  ['queue_found', "epic match found stinger, one deep war drum hit and a short heroic brass fanfare with a cymbal swell, no vocals", 2.2, 0.8],
+  ['lock_in', "a sword slammed into a stone pedestal with a deep metallic clang and a short hall echo", 1.0, 0.7],
+  ['select_tick', "a single soft mechanical pocket watch tick, dry and close", 0.5, 0.35],
+  ['chat_msg', "a soft short wooden pop like a cork, quiet and round", 0.5, 0.35],
+  ['match_start', "a huge war horn blowing across a mountain valley with distant war drums, echoing", 3.0, 0.75],
   // Movement
   ['step_1', 'single footstep on a dirt path, leather boot, close', 0.5, 0.18],
   ['step_2', 'single footstep on gravel, leather boot, close', 0.5, 0.18],
@@ -43,16 +44,16 @@ const SFX = [
   ['recall_done', 'teleport arrival, magical whoosh ending in a soft chime', 1.0, 0.6],
   ['respawn', 'holy revival chime with a rising choir shimmer', 1.5, 0.6],
   // Basic attacks
-  ['atk_sword', 'heavy sword swing whoosh', 0.5, 0.45],
+  ['atk_sword', "a short sword striking a wooden shield, crisp thwack, no whoosh", 0.5, 0.4],
   ['atk_axe', 'heavy battle axe swing whoosh', 0.5, 0.45],
   ['atk_fist', 'heavy stone fist punch with a dull impact', 0.5, 0.45],
   ['atk_bow', 'bowstring release and arrow whizzing away', 0.6, 0.45],
   ['atk_gun', 'old flintlock musket shot, short and punchy', 0.6, 0.45],
   ['atk_magic', 'small magic missile cast, sparkly zap', 0.6, 0.45],
-  ['hit_physical', 'blade striking armor and flesh, short impact', 0.5, 0.45],
-  ['hit_magic', 'magic energy impact, fizzling spark', 0.5, 0.45],
-  ['hit_crit', 'powerful critical slash impact with a metallic ring', 0.7, 0.6],
-  ['hurt', 'muffled body hit thud, taking damage', 0.5, 0.5],
+  ['hit_physical', "a solid weapon impact on armor, punchy thud with a light metal clank, very short", 0.5, 0.45],
+  ['hit_magic', "a short soft magical impact thump with a warm crackle, very short, no buzzing, no hiss", 0.5, 0.45],
+  ['hit_crit', "a powerful critical hit, heavy blade impact with a sharp metallic ring and a deep bass punch", 0.7, 0.6],
+  ['hurt', "a muffled body blow thud with a short grunt-less impact, close", 0.5, 0.5],
   ['death_hero', 'heroic character death, heavy body fall with a low dramatic boom', 1.5, 0.7],
   ['death_minion', 'small creature defeated, short magical poof', 0.5, 0.3],
   ['gold', 'short coin pickup jingle', 0.5, 0.35],
@@ -68,7 +69,7 @@ const SFX = [
   ['sp_strike', 'lightning bolt smiting the ground, sharp crack', 0.8, 0.65],
   ['sp_haste', 'rush of wind, speed boost whoosh', 0.8, 0.55],
   // Structures, monsters, objectives
-  ['tower_shot', 'crystal tower firing a heavy energy bolt, deep zap', 0.8, 0.55],
+  ['tower_shot', "a crystal turret firing, a deep resonant crystal thump with a short sizzle tail", 0.8, 0.55],
   ['tower_destroyed', 'large stone tower crumbling and collapsing', 2.5, 0.8],
   ['spire_destroyed', 'giant magic crystal shattering in an explosion', 2.0, 0.8],
   ['core_destroyed', 'massive magical crystal core exploding, epic and booming', 3.5, 0.9],
@@ -84,54 +85,81 @@ const SFX = [
   ['victory', 'short triumphant orchestral victory fanfare', 4.0, 0.8],
   ['defeat', 'short somber orchestral defeat sting with low brass', 4.0, 0.8],
   // Champion abilities
-  ['garrok_q', 'boulder thrown through the air then crunching impact', 1.0, 0.6],
-  ['garrok_w', 'crackling electricity charging stone fists', 1.0, 0.55],
-  ['garrok_e', 'heavy ground stomp, earthquake thud', 1.0, 0.65],
-  ['garrok_r', 'avalanche charge, rumbling rocks and a massive crash', 2.0, 0.75],
-  ['lyra_q', 'magical chains of light snapping tight', 1.0, 0.55],
-  ['lyra_w', 'bright protective magic shield humming', 1.0, 0.5],
-  ['lyra_e', 'orb of solar energy swelling then bursting', 1.5, 0.6],
-  ['lyra_r', 'massive laser beam of light charging up and firing', 2.0, 0.75],
-  ['kaelen_q', 'throwing star whirling through the air', 0.8, 0.55],
-  ['kaelen_w', 'shadowy teleport dash whoosh', 0.8, 0.55],
-  ['kaelen_e', 'rapid double blade slash', 0.8, 0.55],
-  ['kaelen_r', 'dark assassin strike with an ominous echoing boom', 1.5, 0.7],
-  ['hale_q', 'bowstring tightening with a frosty sparkle', 0.8, 0.5],
-  ['hale_w', 'volley of icy arrows whistling', 1.0, 0.6],
-  ['hale_e', 'quick light dodge roll whoosh', 0.6, 0.5],
-  ['hale_r', 'giant spear of ice launched with a freezing crackle', 1.5, 0.7],
-  ['thorne_q', 'huge axe spinning around in a heavy whoosh', 1.0, 0.6],
-  ['thorne_w', 'brutal crippling axe hit', 0.8, 0.6],
-  ['thorne_e', 'heavy iron chain hook thrown and yanked back', 1.0, 0.6],
-  ['thorne_r', 'massive executioner axe slamming down', 1.5, 0.75],
-  ['mira_q', 'falling star impact with sparkles', 1.0, 0.55],
-  ['mira_w', 'soft healing blessing chime', 1.0, 0.5],
-  ['mira_e', 'eerie humming zone of magical silence', 1.5, 0.55],
-  ['mira_r', 'angelic choir healing hymn swelling', 2.0, 0.65],
-  ['zarak_q', 'fireball whoosh', 0.8, 0.55],
-  ['zarak_w', 'roaring cone of fire blast', 1.0, 0.6],
-  ['zarak_e', 'fire shield igniting around a mage', 1.0, 0.55],
-  ['zarak_r', 'meteor falling and a huge fiery explosion', 2.0, 0.8],
-  ['nyra_q', 'long rifle charged shot, powerful crack', 1.0, 0.65],
-  ['nyra_w', 'metal trap being set with a click', 0.6, 0.5],
-  ['nyra_e', 'weighted bola thrown and whirling', 0.8, 0.55],
-  ['nyra_r', 'sniper rifle focused shot, slow heavy boom', 1.5, 0.75],
-  ['brakka_q', 'giant hooves smashing the ground, quake', 1.0, 0.65],
-  ['brakka_w', 'charging bull headbutt impact', 1.0, 0.65],
-  ['brakka_e', 'bull war bellow roar', 1.2, 0.6],
-  ['brakka_r', 'metal armor hardening with a deep clang', 1.2, 0.6],
-  ['rook_q', 'spinning blade cyclone whirling', 1.5, 0.55],
-  ['rook_w', 'axe thrown spinning through the air', 0.8, 0.55],
-  ['rook_e', 'leap and heavy landing slam', 1.0, 0.65],
-  ['rook_r', 'storm shockwave with thunder', 1.5, 0.75],
-  ['thessa_q', 'water spear launched with a splash', 0.9, 0.55],
-  ['thessa_w', 'swirling whirlpool rushing water pulling inward', 1.4, 0.6],
-  ['thessa_e', 'magical bubble forming with a soft shimmering pop', 1.0, 0.5],
-  ['thessa_r', 'massive ocean wave crashing tsunami roar', 2.0, 0.8],
-  ['borrin_q', 'thorny vine whip crack', 0.8, 0.55],
-  ['borrin_w', 'creaking wood bark hardening, deep rustle', 1.2, 0.55],
-  ['borrin_e', 'thorns sprouting from the ground, rustling brambles', 1.4, 0.55],
-  ['borrin_r', 'giant roots erupting from the earth, cracking ground', 2.0, 0.8],
+  ['garrok_q', "a huge boulder ripped from the ground, grinding rock and a heavy throw grunt-less heave", 1.0, 0.6],
+  ['garrok_w', "crackling thunder charging into stone fists, sharp electric crackle with a low rumble", 1.0, 0.55],
+  ['garrok_e', "a giant stone foot stomping the ground, deep earthquake boom with rocks cracking and dust", 1.2, 0.7],
+  ['garrok_r', "a stone giant charging, thundering heavy footsteps and an avalanche of rocks rumbling", 1.2, 0.7],
+  ['lyra_q', "bright golden chains of light whipping out and snapping tight with a metallic shimmer", 1.0, 0.55],
+  ['lyra_w', "a warm protective dome of holy light forming, soft choir swell and glassy shimmer", 1.2, 0.5],
+  ['lyra_e', "a glowing sun orb gathering energy, warm rising hum with sparkles", 1.4, 0.55],
+  ['lyra_r', "a massive beam of holy light charging up, rising choir and building energy hum", 1.2, 0.7],
+  ['kaelen_q', "a steel shuriken thrown, fast metallic spinning whirr cutting the air", 0.8, 0.55],
+  ['kaelen_w', "a shadowy step, soft dark cloth swish and a muffled puff of smoke", 0.7, 0.55],
+  ['kaelen_e', "two rapid dagger slashes in a circle, crisp steel cuts", 0.7, 0.6],
+  ['kaelen_r', "an assassin vanishing and reappearing, dark whoosh then a chilling deep resonant boom", 1.3, 0.7],
+  ['hale_q', "frost gathering on a bowstring, icy crackle and creaking string drawn tight", 0.9, 0.5],
+  ['hale_w', "a volley of five arrows released at once, layered bow twangs and arrows whistling", 1.0, 0.6],
+  ['hale_e', "a quick light glide over snow, soft crunch and swish", 0.6, 0.5],
+  ['hale_r', "a giant spear of ice hurled, heavy throw with freezing crackle and wind howl", 1.3, 0.7],
+  ['thorne_q', "a huge battle axe swung in a full circle, heavy iron sweep with chain rattle", 1.0, 0.6],
+  ['thorne_w', "an axe edge being drawn and gleaming, quick metallic scrape and ring", 0.8, 0.55],
+  ['thorne_e', "a heavy iron chain hook thrown, rattling chain links whipping out", 1.0, 0.6],
+  ['thorne_r', "a warrior leaping into the air with a heavy executioner axe, armor clank and rising whoosh", 1.0, 0.65],
+  ['mira_q', "a falling star whistling down from the sky, high crystalline whistle descending", 1.0, 0.55],
+  ['mira_w', "a gentle moonlight blessing, soft harp notes and a calm shimmering chime", 1.0, 0.5],
+  ['mira_e', "an eclipse zone forming, deep muted hum and a sudden silence like air being sucked away", 1.4, 0.55],
+  ['mira_r', "a lunar hymn, ethereal wordless choir and harp swelling, healing and calm", 2.0, 0.65],
+  ['zarak_q', "a fireball conjured and hurled, roaring flame burst with crackling embers", 0.9, 0.55],
+  ['zarak_w', "a cone of fire blasted forward, roaring flamethrower burst and crackle", 1.0, 0.6],
+  ['zarak_e', "a ring of fire igniting around a mage, whoosh of flames and crackling", 1.0, 0.55],
+  ['zarak_r', "a meteor summoned, deep rumbling roar of fire growing louder from the sky", 1.2, 0.7],
+  ['nyra_q', "a long rifle firing a charged shot, loud sharp crack with a ringing echo", 1.0, 0.65],
+  ['nyra_w', "a steel bear trap being set on the ground, springs creak and a metal click", 0.7, 0.5],
+  ['nyra_e', "a weighted bola thrown, rope whirling with a rhythmic whoop whoop", 0.8, 0.55],
+  ['nyra_r', "a sniper aiming then firing, a long tense breath then one massive deep rifle boom", 1.6, 0.75],
+  ['brakka_q', "giant hooves smashing the ground, heavy quake boom and rocks flying", 1.1, 0.7],
+  ['brakka_w', "a bull warrior charging and ramming, galloping hooves then a heavy armored impact", 1.0, 0.65],
+  ['brakka_e', "a mighty bull war bellow, deep animal roar with a battle horn feel", 1.3, 0.6],
+  ['brakka_r', "armor hardening into iron, deep resonant metal clang and a rising metallic hum", 1.2, 0.6],
+  ['rook_q', "a warrior spinning with a blade in a cyclone, rhythmic whirling steel and gusting wind", 1.5, 0.55],
+  ['rook_w', "a hand axe thrown spinning through the air, rhythmic whirr", 0.8, 0.55],
+  ['rook_e', "a leap into the sky then a slam with a lightning strike, crackling thunder impact", 1.1, 0.65],
+  ['rook_r', "a storm gathering, rolling thunder and howling wind building up", 1.3, 0.7],
+  ['thessa_q', "a lance of water shot forward, pressurized water jet rushing and a splash", 0.9, 0.55],
+  ['thessa_w', "a whirlpool forming, rushing water swirling and gurgling", 1.2, 0.6],
+  ['thessa_e', "a shimmering water bubble forming around someone, soft liquid wobble and a gentle shimmer", 1.0, 0.5],
+  ['thessa_r', "a huge ocean wave rising, deep rumbling surge of water building", 1.0, 0.7],
+  ['borrin_q', "a thorny vine lashing out, woody whip crack with leaves rustling", 0.8, 0.55],
+  ['borrin_w', "tree bark hardening over a body, deep creaking wood and rustling leaves", 1.2, 0.55],
+  ['borrin_e', "thorny brambles sprouting from the ground, creaking wood and rustling thorns", 1.3, 0.55],
+  ['borrin_r', "roots stirring underground, deep creaking wood and rumbling earth", 1.0, 0.7],
+  // Champion basic attacks (one each)
+  ['atk_garrok', "a giant stone fist punching, heavy rock-on-armor thud with crumbling pebbles, short, no whoosh", 0.6, 0.45],
+  ['atk_lyra', "a quick bright pulse of holy light, a soft crystal chime struck once with a warm shimmer, short", 0.6, 0.45],
+  ['atk_kaelen', "a fast dagger slash, sharp steel swipe and a quick cut, short and crisp", 0.6, 0.45],
+  ['atk_hale', "a wooden longbow firing, bowstring twang and arrow release, short", 0.6, 0.45],
+  ['atk_thorne', "a heavy iron axe chopping into armor, brutal metallic chop, short", 0.6, 0.45],
+  ['atk_mira', "a soft moonlight bolt, a short glassy bell-like ping with a gentle airy shimmer", 0.6, 0.45],
+  ['atk_zarak', "a small fireball launched, a short flame burst with a crackle", 0.6, 0.45],
+  ['atk_nyra', "a single old western revolver shot, punchy with a short tail", 0.6, 0.45],
+  ['atk_brakka', "a huge bull warrior shoving with horns and an armored shoulder, heavy leather and metal thud", 0.6, 0.45],
+  ['atk_rook', "a steel sword swing that cracks with a small electric snap, slash with a spark, short", 0.6, 0.45],
+  ['atk_thessa', "a small water orb thrown, short liquid splash and slosh", 0.6, 0.45],
+  ['atk_borrin', "a heavy wooden club strike, thick branch smacking with a woody thud and a leaf rustle", 0.6, 0.45],
+  // Ability payoffs that land later than the cast (zone explosions, beams, impacts)
+  ['garrok_r_hit', "a stone giant crashing into the ground, enormous rock explosion, debris and a deep boom", 1.6, 0.8],
+  ['lyra_e_hit', "a sun orb exploding, bright radiant burst with a warm boom and shimmering tail", 1.2, 0.7],
+  ['lyra_r_hit', "a massive beam of holy light firing across the land, searing roar with a choir blast", 1.8, 0.8],
+  ['kaelen_r_hit', "a shadow mark detonating, dark implosion followed by a sharp blade slice", 1.0, 0.75],
+  ['hale_r_hit', "a giant ice spear shattering on impact, cracking ice explosion and freezing hiss", 1.2, 0.75],
+  ['thorne_q_hit', "a giant axe blade cleaving through several armored enemies, brutal heavy chop", 1.0, 0.7],
+  ['thorne_r_hit', "an executioner axe slamming down into the ground, huge metal impact and stone cracking", 1.2, 0.8],
+  ['mira_q_hit', "a falling star hitting the ground, crystalline impact burst with sparkling chimes", 1.0, 0.65],
+  ['zarak_r_hit', "a meteor crashing into the ground, huge fiery explosion with deep rumble and crackling flames", 2.0, 0.85],
+  ['rook_r_hit', "a thunderstorm unleashed, several lightning strikes cracking and a booming shockwave", 1.6, 0.8],
+  ['thessa_w_hit', "water crashing inward from a whirlpool, heavy splash and slosh", 1.0, 0.65],
+  ['thessa_r_hit', "a tsunami wave crashing down, enormous roaring wave and spray", 2.0, 0.85],
+  ['borrin_r_hit', "giant roots erupting from the earth, wood cracking and ground bursting open", 1.6, 0.8],
 ];
 
 // [key, prompt, seconds, volume] — long loops.
@@ -231,11 +259,22 @@ async function post(url, body, attempt = 1) {
   throw new Error(`${res.status} ${text.slice(0, 200)}`);
 }
 
+// Sound effects are polished after download: leading silence trimmed (so attacks land instantly)
+// and loudness evened out. Needs ffmpeg (FFMPEG=/path/to/ffmpeg or on PATH); skipped without it.
+const FFMPEG = process.env.FFMPEG || 'ffmpeg';
+function polish(file) {
+  const tmp = `${file}.tmp.mp3`;
+  try {
+    execFileSync(FFMPEG, ['-y', '-hide_banner', '-loglevel', 'error', '-i', file, '-af', 'silenceremove=start_periods=1:start_duration=0:start_threshold=-48dB,loudnorm=I=-18:TP=-2:LRA=11', '-ar', '44100', '-c:a', 'libmp3lame', '-q:a', '3', tmp]);
+    fs.renameSync(tmp, file);
+  } catch (err) { fs.rmSync(tmp, { force: true }); if (!polish.warned) { polish.warned = true; console.warn(`(not polishing: ${err.message.split('\n')[0]})`); } }
+}
+
 const jobs = [];
 const manifest = {};
 for (const [key, prompt, seconds, vol] of SFX) {
   manifest[key] = { file: `${key}.mp3`, kind: 'sfx', vol };
-  jobs.push({ key, run: () => post('https://api.elevenlabs.io/v1/sound-generation', { text: prompt, duration_seconds: seconds, prompt_influence: 0.6 }) });
+  jobs.push({ key, sfx: true, run: () => post('https://api.elevenlabs.io/v1/sound-generation', { text: prompt, duration_seconds: seconds, prompt_influence: 0.6 }) });
 }
 for (const [key, prompt, seconds, vol] of MUSIC) {
   manifest[key] = { file: `${key}.mp3`, kind: 'music', vol, loop: true };
@@ -273,6 +312,7 @@ async function worker() {
     try {
       const buf = await job.run();
       fs.writeFileSync(file, buf);
+      if (job.sfx) polish(file);
       made++;
       console.log(`✓ ${job.key} (${(buf.length / 1024).toFixed(0)} KB)`);
     } catch (err) {

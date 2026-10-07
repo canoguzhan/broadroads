@@ -7,7 +7,7 @@
  "ui_hover": {
   "file": "ui_hover.mp3",
   "kind": "sfx",
-  "vol": 0.25
+  "vol": 0.22
  },
  "ui_open": {
   "file": "ui_open.mp3",
@@ -112,7 +112,7 @@
  "atk_sword": {
   "file": "atk_sword.mp3",
   "kind": "sfx",
-  "vol": 0.45
+  "vol": 0.4
  },
  "atk_axe": {
   "file": "atk_axe.mp3",
@@ -302,12 +302,12 @@
  "garrok_e": {
   "file": "garrok_e.mp3",
   "kind": "sfx",
-  "vol": 0.65
+  "vol": 0.7
  },
  "garrok_r": {
   "file": "garrok_r.mp3",
   "kind": "sfx",
-  "vol": 0.75
+  "vol": 0.7
  },
  "lyra_q": {
   "file": "lyra_q.mp3",
@@ -322,12 +322,12 @@
  "lyra_e": {
   "file": "lyra_e.mp3",
   "kind": "sfx",
-  "vol": 0.6
+  "vol": 0.55
  },
  "lyra_r": {
   "file": "lyra_r.mp3",
   "kind": "sfx",
-  "vol": 0.75
+  "vol": 0.7
  },
  "kaelen_q": {
   "file": "kaelen_q.mp3",
@@ -342,7 +342,7 @@
  "kaelen_e": {
   "file": "kaelen_e.mp3",
   "kind": "sfx",
-  "vol": 0.55
+  "vol": 0.6
  },
  "kaelen_r": {
   "file": "kaelen_r.mp3",
@@ -377,7 +377,7 @@
  "thorne_w": {
   "file": "thorne_w.mp3",
   "kind": "sfx",
-  "vol": 0.6
+  "vol": 0.55
  },
  "thorne_e": {
   "file": "thorne_e.mp3",
@@ -387,7 +387,7 @@
  "thorne_r": {
   "file": "thorne_r.mp3",
   "kind": "sfx",
-  "vol": 0.75
+  "vol": 0.65
  },
  "mira_q": {
   "file": "mira_q.mp3",
@@ -427,7 +427,7 @@
  "zarak_r": {
   "file": "zarak_r.mp3",
   "kind": "sfx",
-  "vol": 0.8
+  "vol": 0.7
  },
  "nyra_q": {
   "file": "nyra_q.mp3",
@@ -452,7 +452,7 @@
  "brakka_q": {
   "file": "brakka_q.mp3",
   "kind": "sfx",
-  "vol": 0.65
+  "vol": 0.7
  },
  "brakka_w": {
   "file": "brakka_w.mp3",
@@ -487,7 +487,7 @@
  "rook_r": {
   "file": "rook_r.mp3",
   "kind": "sfx",
-  "vol": 0.75
+  "vol": 0.7
  },
  "thessa_q": {
   "file": "thessa_q.mp3",
@@ -507,7 +507,7 @@
  "thessa_r": {
   "file": "thessa_r.mp3",
   "kind": "sfx",
-  "vol": 0.8
+  "vol": 0.7
  },
  "borrin_q": {
   "file": "borrin_q.mp3",
@@ -526,6 +526,131 @@
  },
  "borrin_r": {
   "file": "borrin_r.mp3",
+  "kind": "sfx",
+  "vol": 0.7
+ },
+ "atk_garrok": {
+  "file": "atk_garrok.mp3",
+  "kind": "sfx",
+  "vol": 0.45
+ },
+ "atk_lyra": {
+  "file": "atk_lyra.mp3",
+  "kind": "sfx",
+  "vol": 0.45
+ },
+ "atk_kaelen": {
+  "file": "atk_kaelen.mp3",
+  "kind": "sfx",
+  "vol": 0.45
+ },
+ "atk_hale": {
+  "file": "atk_hale.mp3",
+  "kind": "sfx",
+  "vol": 0.45
+ },
+ "atk_thorne": {
+  "file": "atk_thorne.mp3",
+  "kind": "sfx",
+  "vol": 0.45
+ },
+ "atk_mira": {
+  "file": "atk_mira.mp3",
+  "kind": "sfx",
+  "vol": 0.45
+ },
+ "atk_zarak": {
+  "file": "atk_zarak.mp3",
+  "kind": "sfx",
+  "vol": 0.45
+ },
+ "atk_nyra": {
+  "file": "atk_nyra.mp3",
+  "kind": "sfx",
+  "vol": 0.45
+ },
+ "atk_brakka": {
+  "file": "atk_brakka.mp3",
+  "kind": "sfx",
+  "vol": 0.45
+ },
+ "atk_rook": {
+  "file": "atk_rook.mp3",
+  "kind": "sfx",
+  "vol": 0.45
+ },
+ "atk_thessa": {
+  "file": "atk_thessa.mp3",
+  "kind": "sfx",
+  "vol": 0.45
+ },
+ "atk_borrin": {
+  "file": "atk_borrin.mp3",
+  "kind": "sfx",
+  "vol": 0.45
+ },
+ "garrok_r_hit": {
+  "file": "garrok_r_hit.mp3",
+  "kind": "sfx",
+  "vol": 0.8
+ },
+ "lyra_e_hit": {
+  "file": "lyra_e_hit.mp3",
+  "kind": "sfx",
+  "vol": 0.7
+ },
+ "lyra_r_hit": {
+  "file": "lyra_r_hit.mp3",
+  "kind": "sfx",
+  "vol": 0.8
+ },
+ "kaelen_r_hit": {
+  "file": "kaelen_r_hit.mp3",
+  "kind": "sfx",
+  "vol": 0.75
+ },
+ "hale_r_hit": {
+  "file": "hale_r_hit.mp3",
+  "kind": "sfx",
+  "vol": 0.75
+ },
+ "thorne_q_hit": {
+  "file": "thorne_q_hit.mp3",
+  "kind": "sfx",
+  "vol": 0.7
+ },
+ "thorne_r_hit": {
+  "file": "thorne_r_hit.mp3",
+  "kind": "sfx",
+  "vol": 0.8
+ },
+ "mira_q_hit": {
+  "file": "mira_q_hit.mp3",
+  "kind": "sfx",
+  "vol": 0.65
+ },
+ "zarak_r_hit": {
+  "file": "zarak_r_hit.mp3",
+  "kind": "sfx",
+  "vol": 0.85
+ },
+ "rook_r_hit": {
+  "file": "rook_r_hit.mp3",
+  "kind": "sfx",
+  "vol": 0.8
+ },
+ "thessa_w_hit": {
+  "file": "thessa_w_hit.mp3",
+  "kind": "sfx",
+  "vol": 0.65
+ },
+ "thessa_r_hit": {
+  "file": "thessa_r_hit.mp3",
+  "kind": "sfx",
+  "vol": 0.85
+ },
+ "borrin_r_hit": {
+  "file": "borrin_r_hit.mp3",
   "kind": "sfx",
   "vol": 0.8
  },

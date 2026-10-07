@@ -89,6 +89,7 @@ export class Match {
     this.nextId = 1;
     this.time = 0;
     this.fx = [];
+    this.ab = null; // the ability ('garrok_q') whose effects are being emitted, so clients can draw them distinctly
     this.waveT = this.skirmish ? 10 : CFG.minionFirst;
     this.wave = 0;
     this.spawnQueue = [];
@@ -116,7 +117,10 @@ export class Match {
   add(e) { e.id = this.newId(); e.ver = 1; e.buffs = e.buffs || []; e.shields = e.shields || []; this.entities.set(e.id, e); return e; }
   remove(e) { this.entities.delete(e.id); e.removed = true; }
   get(id) { return this.entities.get(id); }
-  emit(ev) { this.fx.push(ev); }
+  emit(ev) { if (this.ab && !ev.ab) ev.ab = this.ab; this.fx.push(ev); }
+
+  /** Runs fn with effects attributed to ability `ab` (deferred callbacks of projectiles, zones, dashes). */
+  withAb(ab, fn) { const prev = this.ab; this.ab = ab || null; try { return fn(); } finally { this.ab = prev; } }
 
   buildStructures() {
     this.structures = { blue: [], red: [] };
@@ -830,7 +834,7 @@ export class Match {
 
   /* ================= projectiles & areas ================= */
   projectile(src, tgt, o) {
-    return this.add({ kind: 'proj', homing: true, team: src.team, src, ownerHero: src.kind === 'hero' ? src.id : null, x: src.x, y: src.y, r: 0.2, facing: 0, target: tgt.id, speed: o.speed, onHit: o.onHit, style: o.style });
+    return this.add({ kind: 'proj', homing: true, team: src.team, src, ownerHero: src.kind === 'hero' ? src.id : null, x: src.x, y: src.y, r: 0.2, facing: 0, target: tgt.id, speed: o.speed, onHit: o.onHit, style: o.style, ab: this.ab });
   }
 
   homing(src, tgt, o) { return this.projectile(src, tgt, o); }
@@ -839,7 +843,7 @@ export class Match {
     const sx = src.x + Math.cos(o.angle) * src.r, sy = src.y + Math.sin(o.angle) * src.r;
     return this.add({ kind: 'proj', homing: false, team: src.team, src, ownerHero: src.kind === 'hero' ? src.id : null, x: sx, y: sy, r: o.width / 2, facing: o.angle, angle: o.angle,
       vx: Math.cos(o.angle) * o.speed, vy: Math.sin(o.angle) * o.speed, speed: o.speed, range: o.range, traveled: 0, pierce: !!o.pierce, heroesOnly: !!o.heroesOnly,
-      onHit: o.onHit, hit: new Set(), style: o.style, done: false });
+      onHit: o.onHit, hit: new Set(), style: o.style, done: false, ab: this.ab });
   }
 
   beam(src, o) {
@@ -860,7 +864,7 @@ export class Match {
   area(src, o) {
     return this.add({ kind: 'area', team: src.team, src, ownerHero: src.kind === 'hero' ? src.id : null, x: o.x, y: o.y, r: o.radius, radius: o.radius, facing: o.angle || 0,
       dur: o.dur, life: o.dur, tickEvery: o.tickEvery || 0, tickT: o.tickEvery || 0, onTick: o.onTick, onEnd: o.onEnd, onStart: o.onStart, follow: o.follow,
-      style: o.style, length: o.length, width: o.width, started: false });
+      style: o.style, length: o.length, width: o.width, started: false, ab: this.ab });
   }
 
   trap(src, o) {
@@ -871,7 +875,7 @@ export class Match {
 
   dash(u, tx, ty, speed, o = {}) {
     const d = dist(u.x, u.y, tx, ty);
-    u.dash = { tx, ty, speed, t: d / speed + 0.05, onEnd: o.onEnd, stopAt: o.stopAt || 0, target: o.stopAt ? this.closestTo(tx, ty) : null };
+    u.dash = { tx, ty, speed, t: d / speed + 0.05, onEnd: o.onEnd, ab: this.ab, stopAt: o.stopAt || 0, target: o.stopAt ? this.closestTo(tx, ty) : null };
     if (o.unstoppable) this.addBuff(u, { id: 'unstoppable', dur: d / speed + 0.1, flags: { unstoppable: true } });
     u.windup = null; u.recall = null; u.path = [];
     this.emit({ e: 'dash', id: u.id, x: u.x, y: u.y });
@@ -1046,7 +1050,7 @@ export class Match {
       if (d <= step + D.stopAt || D.t <= 0) {
         if (!D.stopAt) moveCircle(this.map, h, (tx - h.x), (ty - h.y));
         h.dash = null;
-        if (D.onEnd) D.onEnd();
+        if (D.onEnd) this.withAb(D.ab, D.onEnd);
       } else {
         const blocked = moveCircle(this.map, h, (tx - h.x) / d * step, (ty - h.y) / d * step);
         if (blocked && D.t < d / D.speed - 0.1) { /* slide along walls */ }
@@ -1290,8 +1294,9 @@ export class Match {
     h.cdMax[slot] = h.cd[slot];
     if (t.x !== undefined && (t.x !== h.x || t.y !== h.y)) h.facing = Math.atan2(t.y - h.y, t.x - h.x);
     this.caster = h; // heal/shield power of the caster applies to what this cast gives allies
-    try { a.cast(this, h, rank, t); } finally { this.caster = null; }
-    this.emit({ e: 'cast', id: h.id, sl: slot, x: h.x, y: h.y, c: h.champ });
+    const ab = `${h.champ}_${slot}`;
+    try { this.withAb(ab, () => a.cast(this, h, rank, t)); } finally { this.caster = null; }
+    this.emit({ e: 'cast', id: h.id, sl: slot, x: h.x, y: h.y, c: h.champ, ...((t.unit || t).x !== undefined ? { tx: r2((t.unit || t).x), ty: r2((t.unit || t).y) } : {}) });
   }
 
   castSpell(h, slot, t) {
@@ -1484,8 +1489,8 @@ export class Match {
         case 'minion': if (!e.dead) this.updateMinion(e, dt); else if (this.time - e.deadT > 1) this.remove(e); break;
         case 'monster': if (!e.dead) this.updateMonster(e, dt); else if (this.time - e.deadT > 1.5) this.remove(e); break;
         case 'tower': this.updateTower(e, dt); break;
-        case 'proj': this.updateProjectile(e, dt); break;
-        case 'area': this.updateArea(e, dt); break;
+        case 'proj': this.withAb(e.ab, () => this.updateProjectile(e, dt)); break;
+        case 'area': this.withAb(e.ab, () => this.updateArea(e, dt)); break;
         case 'trap': this.updateTrap(e, dt); break;
         case 'ward': e.life -= dt; if (e.life <= 0 || e.dead) this.remove(e); break;
         default:
@@ -1560,8 +1565,8 @@ export class Match {
       case 'spire': case 'core': return { ...base, mh: e.maxHp };
       case 'ward': return { ...base, mh: 3 };
       case 'trap': return { ...base };
-      case 'proj': return { ...base, s: e.style, h: e.homing ? 1 : 0, vx: e.homing ? 0 : r2(e.vx), vy: e.homing ? 0 : r2(e.vy), tg: e.homing ? e.target : 0, sp: e.speed };
-      case 'area': return { ...base, s: e.style, rad: e.radius, life: r2(e.life), dur: e.dur, len: e.length || 0, w: e.width || 0, fo: e.follow ? e.follow.id : 0 };
+      case 'proj': return { ...base, s: e.style, ...(e.ab ? { ab: e.ab } : {}), h: e.homing ? 1 : 0, vx: e.homing ? 0 : r2(e.vx), vy: e.homing ? 0 : r2(e.vy), tg: e.homing ? e.target : 0, sp: e.speed };
+      case 'area': return { ...base, s: e.style, ...(e.ab ? { ab: e.ab } : {}), rad: e.radius, life: r2(e.life), dur: e.dur, len: e.length || 0, w: e.width || 0, fo: e.follow ? e.follow.id : 0 };
       default: return base;
     }
   }
