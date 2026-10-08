@@ -188,8 +188,15 @@ export class Game {
     // Camera: you, unless watching a teammate (clicked in the top-left) or, while dead, your killer.
     let focus = you;
     const dead = you && (you.fl & F.DEAD);
-    if (dead && this.deathCamId) { const k = w.entities.get(this.deathCamId); if (k && !(k.fl & F.DEAD)) focus = k; }
-    else if (!dead && this.deathCamId) this.deathCamId = null; // respawned: back to you
+    // Where each enemy hero was last seen (the death camera falls back to it).
+    if (!this.lastSeen) this.lastSeen = new Map();
+    for (const e of w.entities.values()) if (e.kind === 'hero' && e.tm !== w.team) this.lastSeen.set(e.id, { x: e.x, y: e.y });
+    if (dead && this.deathCamId) {
+      // Follow the killer; once they leave vision, hold where they were last seen.
+      const k = w.entities.get(this.deathCamId);
+      if (k && !(k.fl & F.DEAD)) { focus = k; this.deathCamLast = { x: k.x, y: k.y }; }
+      else if (this.deathCamLast) focus = this.deathCamLast;
+    } else if (!dead && this.deathCamId) { this.deathCamId = null; this.deathCamLast = null; } // respawned: back to you
     if (this.camFocusId && !dead) { const t = w.entities.get(this.camFocusId); if (t) focus = t; else this.setCamFocus(null); }
     if (this.input.keys.has('Space') && you) { if (this.camFocusId) this.setCamFocus(null); focus = you; this.renderer.camTarget.x = you.x; this.renderer.camTarget.z = you.y; }
     this.renderer.forceFollow = focus !== you;
@@ -401,7 +408,7 @@ export class Game {
         if (ev.sl === 'r') this.champLine(ev.c, 'ult', ev.id, 0);
         break;
       case 'kill':
-        if (ev.v === you && ev.k) { this.deathCamId = ev.k; this.setCamFocus(null); } // watch who killed you
+        if (ev.v === you && ev.k) { this.deathCamId = ev.k; this.deathCamLast = this.lastSeen?.get(ev.k) || null; this.setCamFocus(null); } // watch who killed you
         if (ev.k === you) this.hitStop(90, 0.25);
         break;
       case 'summ': at(SPELL_SOUND[ev.k] || 'blink', { gap: 0.2 }); break;

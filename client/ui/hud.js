@@ -93,7 +93,11 @@ export class Hud {
     this.root.append(h('div.m-minimap', {}, this.mini));
 
     this.annEl = h('div.m-ann');
-    this.deathEl = h('div.m-death', { hidden: true });
+    this.deathEl = h('div.m-death', { hidden: true },
+      h('div.md-ring'),
+      h('div.md-label', { text: 'Respawning' }),
+      h('div.md-tip'));
+    this.deathEl.querySelector('.md-ring').innerHTML = '<svg viewBox="0 0 100 100"><circle cx="50" cy="50" r="44" class="md-bg"/><circle cx="50" cy="50" r="44" class="md-fg" pathLength="100"/></svg><b class="md-n"></b>';
     this.recapEl = h('div.m-recap', { hidden: true });
     this.recallEl = h('div.m-recall', { hidden: true }, h('div.mr-fill'), h('span', { text: 'Returning home…' }));
     this.root.append(this.annEl, this.deathEl, this.recapEl, this.recallEl);
@@ -278,12 +282,26 @@ export class Hud {
     const kda = `⚔️ ${me.k} / ${me.d} / ${me.a}   🗡️ ${me.cs} CS`;
     if (this.kdaEl.textContent !== kda) this.kdaEl.textContent = kda;
     // Death & recall.
-    this.deathEl.hidden = !me.dead;
-    if (me.dead) this.deathEl.textContent = `Respawning in ${Math.ceil(me.rs)}`;
+    this.updateDeath(me);
     this.updateRecap(me.dead ? g.world.recap : null);
     document.body.classList.toggle('is-dead', !!me.dead);
     this.recallEl.hidden = !me.rc;
     if (me.rc) this.recallEl.querySelector('.mr-fill').style.width = `${me.rc * 100}%`;
+  }
+
+  /** Respawn countdown ring with a tip that fits how you died. */
+  updateDeath(me) {
+    const el = this.deathEl;
+    if (!me.dead) { el.hidden = true; this._deathMax = 0; return; }
+    if (el.hidden || !this._deathMax) {
+      el.hidden = false;
+      this._deathMax = Math.max(1, me.rs);
+      el.querySelector('.md-tip').textContent = pickTip(this.game.world.recap, this._lastTip);
+      this._lastTip = el.querySelector('.md-tip').textContent;
+    }
+    const n = Math.ceil(me.rs);
+    if (n !== this._deathN) { this._deathN = n; el.querySelector('.md-n').textContent = n; el.classList.toggle('md-soon', n <= 3); }
+    el.querySelector('.md-fg').style.strokeDashoffset = `${100 - Math.min(1, me.rs / this._deathMax) * 100}`;
   }
 
   /** Death recap: who killed you and where the damage came from. */
@@ -460,4 +478,31 @@ function invertFog(src) {
   ctx.drawImage(src, 0, 0);
   ctx.globalCompositeOperation = 'source-over';
   return invCanvas;
+}
+
+const TIPS = {
+  tower: ['Towers hit hard. Let your minions walk in first so the tower targets them.',
+    'A tower switches to you when you hit an enemy hero under it.'],
+  gank: ['When enemies go missing from the map, play closer to your tower.',
+    'Place a ward (T) in the river to see ganks coming.',
+    'Ping enemies who leave your lane so your team is ready.'],
+  monster: ['Jungle camps hit back. Clear them with high health or with a teammate.'],
+  general: ['Last-hit minions for gold: a gold outline marks the ones you can finish.',
+    'Hold Space to snap the camera back to your hero.',
+    'The shop is open while you are dead. Spend your gold now.',
+    'Your ultimate unlocks at level 6. Fights go better when it is ready.',
+    'Objectives win games. After a kill, push a tower or take a camp.',
+    'Recall (B) when you are low instead of staying for one more minion.',
+    'Hold an ability key to preview its range and shape before you cast.',
+    'Dying gives the enemy gold. Sometimes walking away is the best play.'],
+};
+
+/** A tip for this death: about towers, ganks or monsters when that is what killed you. */
+function pickTip(rc, last) {
+  const top = rc?.rows?.length ? rc.rows.reduce((a, b) => (b.v > a.v ? b : a)) : null;
+  const heroes = rc?.rows?.filter(r => r.k === 'hero').length || 0;
+  const pool = top?.k === 'tower' ? TIPS.tower : top?.k === 'monster' ? TIPS.monster
+    : heroes >= 2 && Math.random() < 0.6 ? TIPS.gank : TIPS.general;
+  const options = pool.filter(t => t !== last);
+  return options[Math.floor(Math.random() * options.length)] || pool[0];
 }
