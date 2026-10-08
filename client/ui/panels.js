@@ -182,7 +182,7 @@ export class Panels {
         row('Q W E R', 'Cast at cursor (quick cast)'), row('Ctrl + Q/W/E/R', 'Level up ability'), row('D · F', 'Battle spells'),
         row('1 – 6', 'Use item (potions)'), row('T', 'Place ward at cursor'), row('B', 'Return to base'), row('P', 'Shop'),
         row('Tab (hold)', 'Scoreboard'), row('Space (hold)', 'Center camera'), row('Y', 'Lock / unlock camera'), row('Arrow keys', 'Move directly'),
-        row('Alt + click', 'Ping'), row('Enter', 'Team chat (/all for all chat)'), row('Wheel', 'Zoom'), row('Esc', 'Settings')),
+        row('V / Alt + drag', 'Ping wheel'), row('Enter', 'Team chat (/all for all chat)'), row('Wheel', 'Zoom'), row('Esc', 'Settings')),
         h('h4', { text: 'How to win' }),
         h('p', { text: 'Destroy the enemy Core. Push lanes with your minions: towers must fall in order (outer → inner → spire tower → spire), then the two Core towers. Destroying a spire spawns juggernaut minions. Last-hit minions for gold, kill jungle camps, and slay the Ember Wyrm (permanent team damage) and the Abyss Titan (empowers your minions).' })),
     };

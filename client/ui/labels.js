@@ -58,6 +58,7 @@ export class Labels {
       el.style.transform = `translate(${p.x | 0}px, ${p.y | 0}px) translate(-50%, -100%)`;
       const pct = Math.max(0, Math.min(1, e.hp / (e.mh || 1)));
       if (el._pct !== pct) { el._pct = pct; el._fill.style.width = `${pct * 100}%`; }
+      if (el._mp && el._mh !== e.mh && e.mh > 0) { el._mh = e.mh; el.style.setProperty('--tick', `${(100 / e.mh) * 100}%`); el.style.setProperty('--tick-big', `${(1000 / e.mh) * 100}%`); } // a mark every 100 HP
       if (el._mp && e.mm) { const mp = Math.max(0, Math.min(1, (e.mp ?? e.mm) / e.mm)); if (el._mpv !== mp) { el._mpv = mp; el._mp.style.width = `${mp * 100}%`; } }
       el.classList.toggle('protected', (e.fl & F.PROTECTED) !== 0);
       el.classList.toggle('recall', (e.fl & F.RECALL) !== 0);

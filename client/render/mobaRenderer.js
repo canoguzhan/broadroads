@@ -478,7 +478,7 @@ export class MobaRenderer {
       case 'strike': fx.pillar(ev.x, ev.y, 0xfacc15, 0.4, 6); break;
       case 'summ': if (ev.k === 'mend') fx.ring(ev.x, ev.y, { color: 0x4ade80, radius: 3, life: 0.5 }); else if (ev.k === 'haste') fx.burst(ev.x, ev.y, { color: 0xe5e7eb, count: 10 }); else if (ev.k === 'bulwark') fx.ring(ev.x, ev.y, { color: 0xfde68a, radius: 1.4, life: 0.5 }); break;
       case 'ping': {
-        const color = ev.k === 'danger' ? 0xef4444 : ev.k === 'help' ? 0x3b82f6 : ev.k === 'omw' ? 0xfacc15 : 0x22c55e;
+        const color = ev.k === 'danger' ? 0xef4444 : ev.k === 'help' ? 0x3b82f6 : ev.k === 'omw' ? 0xfacc15 : ev.k === 'missing' ? 0xe879f9 : 0x22c55e;
         fx.ring(ev.x, ev.y, { color, radius: 2.2, life: 1.2 }); fx.ring(ev.x, ev.y, { color, radius: 1.2, life: 0.9 });
         break;
       }

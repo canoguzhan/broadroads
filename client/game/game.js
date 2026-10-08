@@ -7,6 +7,7 @@ import { isMuted } from '../ui/social.js';
 import { canRankUp } from '../../shared/moba/champions.js';
 import { SpectatorBar } from './spectate.js';
 import { EmoteWheel, EMOTE_ICON } from './emotes.js';
+import { PingWheel, PING_KINDS } from './pingWheel.js';
 import { Tutorial } from './tutorial.js';
 import { setModelsEnabled, setLowDetail } from '../render/assetModels.js';
 import { Labels } from '../ui/labels.js';
@@ -16,11 +17,11 @@ import { Chat } from '../ui/chat.js';
 import { Input } from '../input.js';
 import { sfx } from '../audio/sfx.js';
 import { $ } from '../ui/dom.js';
-import { getValley } from '../../shared/moba/map.js';
+import { getValley, MAP_SIZE } from '../../shared/moba/map.js';
 import { F } from '../../shared/constants.js';
 import { dist } from '../../shared/math.js';
 
-const PING_COLORS = { go: '#22c55e', danger: '#ef4444', help: '#3b82f6', omw: '#facc15' };
+const PING_COLORS = { go: '#22c55e', danger: '#ef4444', help: '#3b82f6', omw: '#facc15', missing: '#e879f9' };
 
 export class Game {
   constructor({ app, renderer, settings, ui, data, match }) {
@@ -64,6 +65,7 @@ export class Game {
     if (match.mode === 'tutorial') this.tutorial = new Tutorial(this);
     this.spectating = !!match.spectator;
     if (!this.spectating) this.emotes = new EmoteWheel(this);
+    if (!this.spectating) this.pingWheel = new PingWheel(this.hud.root, (k, p) => this.send({ t: 'mping', x: round2(p.x), y: round2(p.y), k }));
     if (this.spectating) { this.renderer.locked = false; this.spectator = new SpectatorBar(this); }
   }
 
@@ -318,6 +320,20 @@ export class Game {
   }
 
   /** Watch a teammate (top-left frames): click again, press Space or pick yourself to come back. */
+  /** Rough map area for chat callouts: a lane, the river or the jungle. */
+  laneAt(x, y) {
+    const S = MAP_SIZE;
+    const near = [['top', Math.min(x, y)], ['bot', Math.min(S - x, S - y)], ['mid', Math.abs(x + y - S) / Math.SQRT2]].sort((a, b) => a[1] - b[1])[0];
+    if (near[1] < 11) return near[0];
+    return Math.abs(x - y) / Math.SQRT2 < 8 ? 'river' : 'jungle';
+  }
+
+  openPingWheel() {
+    if (!this.pingWheel || this.pingWheel.open || !this.input.mouse.inside) return;
+    this.aiming = null;
+    this.pingWheel.start(this.input.mouse.x, this.input.mouse.y, this.cursorWorld());
+  }
+
   setCamFocus(id) {
     this.camFocusId = id && id !== this.world.youId && this.camFocusId !== id ? id : null;
     this.hud.markFocused(this.camFocusId);
@@ -334,7 +350,7 @@ export class Game {
     sfx.init();
     if (this.spectating && !['score', 'scoreUp', 'zoom', 'escape', 'help', 'chat'].includes(a)) return; // watching: camera and panels only
     switch (a) {
-      case 'rclick': if (this.aiming) { this.aiming = null; return; } this.rmbT = 0.15; return this.issueMove(false); // right click cancels aiming
+      case 'rclick': if (this.pingWheel?.open) return this.pingWheel.end(true); if (this.aiming) { this.aiming = null; return; } this.rmbT = 0.15; return this.issueMove(false); // right click cancels aiming
       case 'lclick': if (this.aiming && this.castMode() === 'confirm') { const s = this.aiming.slot; this.aiming = null; return this.castKey(s); } if (this.amovePending) { this.amovePending = false; this.issueMove(true); } return;
       case 'qUp': case 'wUp': case 'eUp': case 'rUp': case 'dUp': case 'fUp': {
         const s = a[0];
@@ -359,9 +375,13 @@ export class Game {
       case 'chat': return this.chat.focus();
       case 'help': return this.panels.toggle('help');
       case 'emotes': return this.emotes?.toggle();
-      case 'ping': { const p = this.cursorWorld(); const k = ev.ctrlKey ? 'danger' : ev.shiftKey ? 'help' : 'go'; return this.send({ t: 'mping', x: round2(p.x), y: round2(p.y), k }); }
+      case 'ping': // Alt + click: the ping wheel (Ctrl/Shift keep their quick pings)
+        if (ev.ctrlKey || ev.shiftKey) { const p = this.cursorWorld(); return this.send({ t: 'mping', x: round2(p.x), y: round2(p.y), k: ev.ctrlKey ? 'danger' : 'help' }); }
+        return this.openPingWheel();
+      case 'pingwheel': return this.openPingWheel();
+      case 'pingwheelUp': case 'lup': return this.pingWheel?.end();
       case 'zoom': this.renderer.zoom = Math.max(0.65, Math.min(1.5, this.renderer.zoom + ev * 0.07)); return;
-      case 'escape': if (this.aiming) { this.aiming = null; return; } if (this.panels.current && this.panels.current !== 'end') return this.panels.close(); return this.panels.open('settings');
+      case 'escape': if (this.pingWheel?.open) return this.pingWheel.end(true); if (this.aiming) { this.aiming = null; return; } if (this.panels.current && this.panels.current !== 'end') return this.panels.close(); return this.panels.open('settings');
       default:
     }
   }
@@ -453,7 +473,14 @@ export class Game {
         if (ev.key === 'titan_spawn') sfx.play('titan_roar', { late: true });
         break;
       }
-      case 'ping': this.pings.push({ x: ev.x, y: ev.y, t: 3, color: PING_COLORS[ev.k] || '#22c55e' }); sfx.play(`ping_${ev.k}`, { gap: 0.3 }); break;
+      case 'ping': {
+        this.pings.push({ x: ev.x, y: ev.y, t: 3, k: ev.k, color: PING_COLORS[ev.k] || '#22c55e' });
+        sfx.play(`ping_${ev.k === 'missing' ? 'danger' : ev.k}`, { gap: 0.3, rate: ev.k === 'missing' ? 1.25 : 1 });
+        // Called pings also go to the team chat, with the name of whoever pinged.
+        const who = this.world.entities.get(ev.id), kind = PING_KINDS.find(p => p.k === ev.k);
+        if (who && kind && ev.k !== 'go') this.chat.system(`${who.n}: ${kind.label}${ev.k === 'missing' ? ` (${this.laneAt(ev.x, ev.y)})` : ''}`, `ping-${ev.k}`);
+        break;
+      }
       case 'respawn': if (ev.id === you) sfx.play('respawn'); break;
       case 'recallStart': if (ev.id === you) this.recallSrc = sfx.play('recall_channel'); else at('recall_channel', { vol: 0.5 }); break;
       case 'recall': at('recall_done'); break;

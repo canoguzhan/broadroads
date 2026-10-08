@@ -456,7 +456,10 @@ export class Hud {
       ctx.strokeStyle = e.id === w.youId ? '#facc15' : TEAM_CSS[e.tm];
       ctx.stroke();
     }
-    for (const p of g.pings) { ctx.strokeStyle = p.color; ctx.lineWidth = 2; ctx.beginPath(); ctx.arc(p.x * k, p.y * k, 4 + (1 - p.t / 3) * 8, 0, Math.PI * 2); ctx.stroke(); }
+    for (const p of g.pings) {
+      ctx.strokeStyle = p.color; ctx.lineWidth = 2; ctx.beginPath(); ctx.arc(p.x * k, p.y * k, 4 + (1 - p.t / 3) * 8, 0, Math.PI * 2); ctx.stroke();
+      if (p.k === 'missing') { ctx.fillStyle = p.color; ctx.font = 'bold 13px sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText('?', p.x * k, p.y * k); }
+    }
     // Camera frustum.
     const vb = g.renderer.viewBounds();
     if (vb.length === 4) {

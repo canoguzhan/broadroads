@@ -700,6 +700,9 @@ body.is-dead #game-canvas { filter: grayscale(0.85) brightness(.75); }
 /* labels */
 .label { position: absolute; left: 0; top: 0; text-align: center; white-space: nowrap; will-change: transform; text-shadow: 0 1px 2px #000, 0 0 3px #000; }
 .label .lb { position: relative; width: 50px; height: 5px; background: rgba(0, 0, 0, .75); border: 1px solid rgba(0, 0, 0, .8); border-radius: 2px; overflow: hidden; margin: 0 auto; }
+.label .lb-ticks { position: absolute; inset: 0; pointer-events: none;
+  background: repeating-linear-gradient(to right, transparent 0 calc(var(--tick-big, 200%) - 1.5px), rgba(0, 0, 0, .85) calc(var(--tick-big, 200%) - 1.5px) var(--tick-big, 200%)),
+    repeating-linear-gradient(to right, transparent 0 calc(var(--tick, 200%) - 1px), rgba(0, 0, 0, .5) calc(var(--tick, 200%) - 1px) var(--tick, 200%)); }
 .lb-fill { height: 100%; width: 100%; }
 .l-hero .lb { width: 84px; height: 9px; }
 .l-hero .lb-mp { width: 84px; height: 3px; margin: 1px auto 0; background: #000; }
@@ -1195,3 +1198,17 @@ body.studio-clean #hud { visibility: hidden; }
 .in-portal .ld-foot, .in-portal .btn-oauth, .in-portal .install-btn, .in-portal .oauth-row { display: none !important; }
 .label.l-minion.lasthit .lb { outline: 2px solid #fde047; box-shadow: 0 0 8px rgba(253, 224, 71, .9); }
 .label.l-minion.lasthit .lb-fill { background: #fef9c3 !important; }
+
+/* Ping wheel */
+.ping-wheel { position: fixed; z-index: 60; width: 0; height: 0; pointer-events: none; }
+.ping-wheel::before { content: ''; position: absolute; left: -92px; top: -92px; width: 184px; height: 184px; border-radius: 50%; background: radial-gradient(circle, rgba(10, 8, 14, .15) 0 20px, rgba(10, 8, 14, .55) 21px 90px, transparent 91px); border: 1px solid rgba(255, 255, 255, .08); }
+.pw-opt { position: absolute; left: -21px; top: -21px; width: 42px; height: 42px; border-radius: 50%; display: grid; place-items: center; background: rgba(20, 16, 28, .85); border: 2px solid var(--pc, #fff); font-size: 1.2rem; transition: transform .08s, box-shadow .08s; }
+.pw-opt.on { box-shadow: 0 0 0 3px var(--pc), 0 0 18px var(--pc); background: color-mix(in srgb, var(--pc) 35%, #14101c); }
+.pw-opt.on .pw-ic { transform: scale(1.25); }
+.pw-ic { transition: transform .08s; }
+.pw-go { --pc: #22c55e; } .pw-omw { --pc: #facc15; } .pw-help { --pc: #3b82f6; } .pw-missing { --pc: #e879f9; } .pw-danger { --pc: #ef4444; }
+.pw-label { position: absolute; left: 0; top: 104px; transform: translateX(-50%); white-space: nowrap; font-weight: 800; font-size: .85rem; color: #fff; text-shadow: 0 1px 4px #000; }
+.chat-line.k-ping-missing .chat-text { color: #f0abfc; font-weight: 700; }
+.chat-line.k-ping-danger .chat-text { color: #fca5a5; font-weight: 700; }
+.chat-line.k-ping-help .chat-text { color: #93c5fd; }
+.chat-line.k-ping-omw .chat-text { color: #fde68a; }

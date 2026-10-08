@@ -4,7 +4,7 @@
 const KEYS = {
   KeyQ: 'q', KeyW: 'w', KeyE: 'e', KeyR: 'r', KeyD: 'd', KeyF: 'f', KeyB: 'recall', KeyT: 'ward', KeyA: 'amove', KeyS: 'stop',
   KeyP: 'shop', Tab: 'score', Space: 'center', KeyY: 'lock', Enter: 'chat', Escape: 'escape', KeyC: 'stats',
-  Digit1: 'item0', Digit2: 'item1', Digit3: 'item2', Digit4: 'item3', Digit5: 'item4', Digit6: 'item5', KeyH: 'help', KeyG: 'emotes',
+  Digit1: 'item0', Digit2: 'item1', Digit3: 'item2', Digit4: 'item3', Digit5: 'item4', Digit6: 'item5', KeyH: 'help', KeyG: 'emotes', KeyV: 'pingwheel',
 };
 
 export class Input {
@@ -19,7 +19,7 @@ export class Input {
     this.listeners = [];
     const on = (t, type, fn, opts) => { t.addEventListener(type, fn, opts); this.listeners.push([t, type, fn, opts]); };
     on(window, 'keydown', e => this.keydown(e));
-    on(window, 'keyup', e => { this.keys.delete(e.code); const a = KEYS[e.code]; if (a === 'score' || a === 'center' || ['q', 'w', 'e', 'r', 'd', 'f'].includes(a)) this.onAction(`${a}Up`, e); });
+    on(window, 'keyup', e => { this.keys.delete(e.code); const a = KEYS[e.code]; if (a === 'score' || a === 'center' || a === 'pingwheel' || ['q', 'w', 'e', 'r', 'd', 'f'].includes(a)) this.onAction(`${a}Up`, e); });
     on(window, 'blur', () => { this.keys.clear(); this.mouse.right = false; });
     on(window, 'mousemove', e => { this.mouse.x = e.clientX; this.mouse.y = e.clientY; });
     on(canvas, 'mouseenter', () => { this.mouse.inside = true; });
@@ -30,7 +30,7 @@ export class Input {
       if (e.button === 2) { this.mouse.right = true; this.onAction('rclick', e); }
       if (e.button === 0) this.onAction(e.altKey ? 'ping' : 'lclick', e);
     });
-    on(window, 'mouseup', e => { if (e.button === 2) this.mouse.right = false; });
+    on(window, 'mouseup', e => { if (e.button === 2) this.mouse.right = false; if (e.button === 0) this.onAction('lup', e); });
     on(canvas, 'contextmenu', e => e.preventDefault());
     on(canvas, 'wheel', e => { e.preventDefault(); if (this.enabled) this.onAction('zoom', Math.sign(e.deltaY)); }, { passive: false });
   }

@@ -681,4 +681,8 @@ export default {
   "Recall (B) when you are low instead of staying for one more minion.": "Vuelve a la base (B) cuando tengas poca vida en vez de quedarte por un súbdito más.",
   "Hold an ability key to preview its range and shape before you cast.": "Mantén la tecla de una habilidad para ver su alcance y forma antes de lanzarla.",
   "Dying gives the enemy gold. Sometimes walking away is the best play.": "Morir da oro al enemigo. A veces retirarse es la mejor jugada.",
+  "Ping wheel": "Rueda de señales",
+  "Need help": "Necesito ayuda",
+  "Enemy missing": "Enemigo desaparecido",
+  "Danger": "Peligro",
 };

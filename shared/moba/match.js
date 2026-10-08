@@ -1228,7 +1228,14 @@ export class Match {
         this.emit({ e: 'ward', x, y, team: h.team });
         return;
       }
-      case 'ping': this.emit({ e: 'ping', x: num(msg.x), y: num(msg.y), k: ['go', 'danger', 'help', 'omw'].includes(msg.k) ? msg.k : 'go', team: h.team, id: h.id }); return;
+      case 'ping': {
+        // At most 6 pings per 5 seconds each, so the wheel cannot be used to spam.
+        h.pingTimes = (h.pingTimes || []).filter(t => this.time - t < 5);
+        if (h.pingTimes.length >= 6) return;
+        h.pingTimes.push(this.time);
+        this.emit({ e: 'ping', x: num(msg.x), y: num(msg.y), k: ['go', 'danger', 'help', 'omw', 'missing'].includes(msg.k) ? msg.k : 'go', team: h.team, id: h.id });
+        return;
+      }
       default:
     }
   }

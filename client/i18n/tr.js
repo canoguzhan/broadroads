@@ -682,4 +682,8 @@ export default {
   "Recall (B) when you are low instead of staying for one more minion.": "Canın azken bir minyon daha için kalma, üsse dön (B).",
   "Hold an ability key to preview its range and shape before you cast.": "Kullanmadan önce menzilini ve şeklini görmek için yetenek tuşunu basılı tut.",
   "Dying gives the enemy gold. Sometimes walking away is the best play.": "Ölmek düşmana altın verir. Bazen geri çekilmek en iyi hamledir.",
+  "Ping wheel": "İşaret çarkı",
+  "Need help": "Yardım lazım",
+  "Enemy missing": "Düşman kayıp",
+  "Danger": "Tehlike",
 };
