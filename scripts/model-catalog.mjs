@@ -103,4 +103,18 @@ for (const a of CATALOG) {
   if (BIND_POSE.includes(a.id)) a.pose = 'bind';
 }
 
+// Skins with their own model (not just a tint): restyled from the base champion's concept,
+// sharing its motion presets. Only the core clips, to keep the cost down (others fall back to idle).
+const SKIN_CLIPS = ['idle', 'run', 'attack', 'cast', 'ult', 'death'];
+const skin = (base, name, desc) => {
+  const b = CATALOG.find(a => a.id === base);
+  return { id: `${base}_${name}`, group: 'skin', kind: 'biped', skinOf: base, concept: true, restyle: desc, prompt: b.prompt,
+    clips: Object.fromEntries(SKIN_CLIPS.filter(k => b.clips[k]).map(k => [k, b.clips[k]])), face: b.face, tex: b.tex, tris: b.tris };
+};
+CATALOG.push(
+  skin('garrok', 'frost', 'a glacier golem made of translucent pale blue ice and packed snow, with frost crystals on the shoulders and glowing icy blue cracks instead of amber'),
+  skin('brakka', 'gilded', 'clad in ornate polished golden armor with engraved patterns, golden horn caps and a royal crimson cloth sash'),
+);
+
 export const byId = Object.fromEntries(CATALOG.map(a => [a.id, a]));
+

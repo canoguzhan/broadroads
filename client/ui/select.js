@@ -71,7 +71,8 @@ export class Select {
     const keystones = h('div.sel-summs.sel-ks', {}, h('span.muted', { text: 'Keystone:' }),
       ...Object.entries(KEYSTONES).map(([id, k]) => h(`button.summ-btn${myKs === id ? '.active' : ''}`, { title: `${k.name}: ${k.desc}`, disabled: me.locked, onclick: () => app.send({ t: 'ks', k: id }) }, h('span.summ-ic', {}, pic(`misc/ks_${id}`, k.icon)), k.name)));
     clear(this.root);
-    this.root.append(h('div.auth-bg'), h('div.sel-wrap', {},
+    const splash = me && me.champ ? `url(${import.meta.env.BASE_URL || '/'}splash/${me.champ}.webp)` : null;
+    this.root.append(h('div.auth-bg'), splash ? h('div.sel-splash', { style: { backgroundImage: splash } }) : null, h('div.sel-wrap', {},
       h('div.sel-top', {}, sel.phase === 'ban' ? h('div.sel-mode.ban-phase', {}, pic('misc/ban', '🚫'), ' Ban phase · click a champion to vote a ban for your team') : h('div.sel-mode', { text: `${sel.mode === 'tutorial' ? 'Tutorial' : sel.mode === 'skirmish' ? 'Skirmish 3v3' : sel.mode === 'brawl' ? 'Brawl · random champions' : sel.mode === 'practice' ? 'Practice vs AI' : sel.mode === 'custom' ? 'Custom Game' : sel.ranked ? 'Ranked 5v5' : 'Matchmade 5v5'} · Choose your champion` }), h('div.sel-timer', { text: sel.timeLeft })),
       h('div.sel-main', {},
         teamList(myTeam, true),

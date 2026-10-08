@@ -15,14 +15,19 @@ export const CONCEPT_STYLE = 'full body character concept art for a stylized fan
 for (const id of process.argv.slice(2)) {
   const asset = CATALOG.find(a => a.id === id);
   if (!asset) { console.error(`unknown ${id}`); continue; }
+  // Skins restyle their base champion's concept (same build and silhouette, new materials).
+  const base = asset.skinOf || id;
+  const src = asset.skinOf && fs.existsSync(path.join(OUT, `${base}.png`)) ? path.join(OUT, `${base}.png`) : `public/portraits/${base}.webp`;
   const png = path.join(OUT, `ref_${id}.png`);
   if (!fs.existsSync(png)) {
     const sharp = (await import('sharp')).default;
-    await sharp(`public/portraits/${id}.webp`).resize(768, 768).png().toFile(png);
+    await sharp(src).resize(768, 1024, { fit: 'contain', background: '#cccccc' }).png().toFile(png);
   }
   const desc = asset.prompt.split(', stylized fantasy MOBA game character')[0];
   const ref = await uploadImage(png);
-  const prompt = `The character from image 1 (${desc}). Keep their identity, colors and costume details. ${CONCEPT_STYLE}`;
+  const prompt = asset.restyle
+    ? `Restyle the character from image 1 (${desc}) as a new skin: ${asset.restyle}. Keep exactly the same body shape, proportions, pose and silhouette; change only materials and colors. ${CONCEPT_STYLE}`
+    : `The character from image 1 (${desc}). Keep their identity, colors and costume details. ${CONCEPT_STYLE}`;
   let url;
   try { url = await generate('alibaba/qwen-image-3/edit', { prompt, image_urls: [ref], aspect_ratio: '3:4', resolution: '2k', negative_prompt: 'cropped, cut off feet, multiple characters, weapon on the floor, text, watermark, background scenery, dramatic pose' }); }
   catch (err) { console.warn(`  qwen: ${err.message.split(' (request')[0]} → grok`); url = await generate('xai/grok-imagine-image-2.0', { prompt, image_urls: [ref], aspect_ratio: '3:4', resolution: '2k', quality: 'medium' }); }

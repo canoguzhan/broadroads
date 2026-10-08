@@ -41,6 +41,16 @@ function getManifest() {
 }
 
 /** Loads (once) and resolves to the GLTF, or null if there is no model. */
+/** A champion in a skin: the skin's own model when one exists ('garrok_frost'), otherwise the
+    base model with the skin as a colour tint. Resolves to { gltf, tint }. */
+export async function loadChampion(champ, skin) {
+  if (skin && skin !== 'base' && (await getManifest())[`${champ}_${skin}`]) {
+    const gltf = await loadModel(`${champ}_${skin}`);
+    if (gltf) return { gltf, tint: 'base' };
+  }
+  return { gltf: await loadModel(champ), tint: skin };
+}
+
 export function loadModel(id) {
   if (!enabled) return Promise.resolve(null);
   if (!cache.has(id)) {

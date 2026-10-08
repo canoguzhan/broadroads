@@ -10,3 +10,4 @@ models-src/
 .loadtest-accounts.json
 trailer-src/
 .claude/
+creature-tmp.html

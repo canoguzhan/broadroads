@@ -5,7 +5,7 @@ import { abilityProjectile, abilityArea, abilityEvent, abilityCast } from './abi
 import { buildChampion, buildMinion, buildTower, buildSpire, buildCore, buildWard, buildTrap, buildMobaMonster, buildMobaProjectile, buildMobaArea } from './mobaModels.js';
 import { FxSystem } from './fx.js';
 import { smokeTexture } from './glow.js';
-import { loadModel, assetFor, attachModel, animateModel, animateDying } from './assetModels.js';
+import { loadModel, loadChampion, assetFor, attachModel, animateModel, animateDying } from './assetModels.js';
 import { F } from '../../shared/constants.js';
 
 const SIGHT = { hero: 11, minion: 7, tower: 9.5, ward: 8, spire: 7, core: 8 };
@@ -145,7 +145,8 @@ export class MobaRenderer {
     this.views.set(e.id, v);
     const asset = assetFor(e, e.kind === 'hero' ? 1.9 * (built.parts.body.scale.x / 1.15) : 0);
     const skin = e.kind === 'hero' && this.skins ? this.skins.get(e.id) : null;
-    if (asset) loadModel(asset[0]).then(gltf => { if (gltf && this.views.get(e.id) === v) attachModel(v, gltf, asset[1], skin, this.lookFor(e), asset[0]); });
+    if (asset && e.kind === 'hero') loadChampion(e.c, skin).then(({ gltf, tint }) => { if (gltf && this.views.get(e.id) === v) attachModel(v, gltf, asset[1], tint, this.lookFor(e), asset[0]); });
+    else if (asset) loadModel(asset[0]).then(gltf => { if (gltf && this.views.get(e.id) === v) attachModel(v, gltf, asset[1], skin, this.lookFor(e), asset[0]); });
   }
 
   /** Outline / rim colour by relationship: you gold, allies blue, enemies red (team colours when spectating). */
@@ -179,17 +180,33 @@ export class MobaRenderer {
 
   update(world, dt) {
     const now = performance.now();
+    // What the camera can see (with a margin): units outside are not drawn, and units near the
+    // edges animate at a lower rate. Rigged models have frustum culling off (their bounds move
+    // with the animation), so this is the culling for them.
+    const aspect = this.canvas.clientWidth / Math.max(1, this.canvas.clientHeight);
+    const halfW = 17 * this.zoom * Math.max(1, aspect) + 4, back = 22 * this.zoom + 4, front = 16 * this.zoom + 4;
+    const cx = this.camTarget.x, cz = this.camTarget.z;
+    this.frameNo = (this.frameNo || 0) + 1;
     for (const e of world.entities.values()) {
       const v = this.views.get(e.id);
       if (!v) continue;
       v.phase += dt;
       const root = v.root;
       const dead = (e.fl & F.DEAD) !== 0;
+      const dx = Math.abs(e.x - cx), dz = e.y - cz;
+      const inView = dx < halfW && dz > -back && dz < front;
+      if (root.visible !== inView) root.visible = inView;
       switch (e.kind) {
         case 'hero': case 'minion': case 'monster': {
+          if (!inView && e.kind !== 'hero') { v.skippedDt = (v.skippedDt || 0) + dt; break; } // off-screen: no animation work
+          // Animation level of detail: minions and monsters near the screen edge update every other frame.
+          const edge = dx > halfW * 0.7 || dz < -back * 0.7 || dz > front * 0.7;
+          const skipAnim = edge && e.kind !== 'hero' && (this.frameNo + e.id) % 2;
+          const adt = dt + (v.skippedDt || 0);
+          v.skippedDt = skipAnim ? adt : 0;
           root.position.set(e.x, (e.fl & F.AIRBORNE) ? 0.8 + Math.sin(v.phase * 8) * 0.1 : 0, e.y);
           root.rotation.y = Math.PI / 2 - e.f;
-          if (v.model) animateModel(v, e, dead, e.moving > 0.2, dt, now);
+          if (v.model) { if (!skipAnim) animateModel(v, e, dead, e.moving > 0.2, Math.min(adt, 0.25), now); }
           if (v.look && e.kind === 'hero') this.heroDissolve(v, dead, now);
           else this.animateProcedural(v, e, dead, dt);
           if (v.parts.ring) { v.parts.ring.material.opacity = dead ? 0.15 : 0.75; v.parts.ring.visible = !(e.fl & F.BUSH) || e.tm === this.team; }

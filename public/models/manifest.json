@@ -536,5 +536,33 @@
   "group": "decor",
   "clips": [],
   "v": "muzef09x"
+ },
+ "garrok_frost": {
+  "file": "garrok_frost.glb",
+  "lo": "garrok_frost.lo.glb",
+  "group": "skin",
+  "clips": [
+   "idle",
+   "run",
+   "attack",
+   "cast",
+   "ult",
+   "death"
+  ],
+  "v": "muzeyh6t"
+ },
+ "brakka_gilded": {
+  "file": "brakka_gilded.glb",
+  "lo": "brakka_gilded.lo.glb",
+  "group": "skin",
+  "clips": [
+   "idle",
+   "run",
+   "attack",
+   "cast",
+   "ult",
+   "death"
+  ],
+  "v": "muzeyi3w"
  }
 }

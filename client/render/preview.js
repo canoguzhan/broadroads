@@ -4,7 +4,7 @@
    One shared canvas; it only renders while attached to the page. */
 import * as THREE from 'three';
 import { clone as cloneSkinned } from 'three/examples/jsm/utils/SkeletonUtils.js';
-import { loadModel, modelsEnabled, applySkin } from './assetModels.js';
+import { loadChampion, modelsEnabled, applySkin } from './assetModels.js';
 import { h } from '../ui/dom.js';
 import { pic, champKey } from '../ui/icons.js';
 
@@ -66,8 +66,8 @@ class ChampionPreview {
   /** Shows a champion; info gives its accent colour and portrait fallback. */
   show(id, info, skin = 'base') {
     if (id === this.id) {
-      if (skin !== this.skin && this.model) { this.skin = skin; applySkin(this.model, skin); this.flourish('cast'); }
-      return;
+      if (skin === this.skin || !this.model) return;
+      this.id = null; // reload (cached): the skin may have its own model rather than a tint
     }
     this.id = id;
     this.skin = skin;
@@ -77,8 +77,8 @@ class ChampionPreview {
     this.el.classList.toggle('flat', !use3d);
     if (!use3d) return;
     if (info) { this.ringMat.color.setHex(info.accent); this.discMat.color.setHex(info.accent); this.rim.color.setHex(info.accent).lerp(new THREE.Color(0xffffff), 0.4); }
-    loadModel(id).then(gltf => {
-      if (this.id !== id) return;
+    loadChampion(id, skin).then(({ gltf, tint }) => {
+      if (this.id !== id || this.skin !== skin) return;
       if (!gltf) { this.el.classList.add('flat'); return; }
       this.el.classList.remove('flat');
       this.holder.clear();
@@ -90,7 +90,7 @@ class ChampionPreview {
       model.scale.setScalar(s);
       model.position.y = -box.min.y * s;
       model.traverse(o => { if (o.isMesh) { o.frustumCulled = false; o.material = o.material.clone(); } });
-      applySkin(model, this.skin);
+      applySkin(model, tint);
       this.model = model;
       this.holder.add(model);
       this.mixer = new THREE.AnimationMixer(model);

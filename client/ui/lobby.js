@@ -392,6 +392,7 @@ const LANE_NAME = { top: 'Top', jungle: 'Jungle', mid: 'Mid', bot: 'Bot lane', s
 export function championDetail(c) {
   const s = c.base;
   return h('div.champ-detail', { style: { '--c': '#' + c.color.toString(16).padStart(6, '0'), '--a': '#' + c.accent.toString(16).padStart(6, '0') } },
+    h('div.cd-splash', { style: { backgroundImage: `url(${import.meta.env.BASE_URL || '/'}splash/${c.id}.webp)` } }),
     h('div.cd-head', {}, h('div.cd-icon', {}, pic(champKey(c.id), c.icon)), h('div', {}, h('h3', { text: c.name }), h('div.cd-title', { text: c.title }), h('div.cd-role', { text: `${ROLE_ICON[c.role] || ''} ${c.role} · ${c.ranged ? 'Ranged' : 'Melee'} · ${c.roles.map(r => LANE_NAME[r] || r).join(' / ')}` }))),
     h('div.cd-stats', { text: `HP ${s.hp} · Mana ${s.mp} · AD ${s.ad} · Armor ${s.armor} · AS ${s.as} · Range ${c.range}` }),
     h('div.cd-abil', {}, h('div.cd-ai', {}, pic(`passive/${c.id}`, '◆')), h('div', {}, h('b', { text: `Passive — ${c.passive.name}` }), h('p', { text: c.passive.desc }))),
