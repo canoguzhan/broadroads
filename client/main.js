@@ -1,5 +1,5 @@
 /* BroadRoads client entry: auth → lobby → champion select → match. */
-import { api, checkServer, OnlineConnection } from './net/connection.js';
+import { api, checkServer, OnlineConnection, serverBase } from './net/connection.js';
 import { OfflineConnection, offlineProfileName } from './net/offline.js';
 import { MobaRenderer } from './render/mobaRenderer.js';
 import { setModelsEnabled, setLowDetail } from './render/assetModels.js';
@@ -8,6 +8,7 @@ import './net/report.js';
 import { ReplayPlayer } from './game/spectate.js';
 import { notify, askNotifyPermission } from './ui/notify.js';
 import { initI18n, langPicker } from './i18n.js';
+import { portal, initPortal, portalLoaded, portalGameplay } from './portal.js';
 import { initTrailer } from './ui/trailer.js';
 import { initPwa, canInstall, onInstallChange, promptInstall } from './ui/install.js';
 import { Game } from './game/game.js';
@@ -19,6 +20,7 @@ import { NAME_RE } from '../shared/constants.js';
 import { sfx } from './audio/sfx.js';
 
 const TOKEN_KEY = 'broadroads_token';
+const GUEST_KEY = 'broadroads_guest'; // this device is signed in as a guest (offer to save the account)
 
 class App {
   constructor() {
@@ -54,7 +56,13 @@ class App {
   }
   saveSettings() { try { localStorage.setItem('broadroads_settings', JSON.stringify(this.settings)); } catch { /* ignore */ } }
 
-  show(id) { for (const s of $$('.screen')) s.hidden = s.id !== id; $('#hud').hidden = id !== 'game'; if (id === 'game') for (const s of $$('.screen')) s.hidden = true; }
+  show(id) {
+    for (const s of $$('.screen')) s.hidden = s.id !== id;
+    $('#hud').hidden = id !== 'game';
+    if (id === 'game') for (const s of $$('.screen')) s.hidden = true;
+    portalGameplay(id === 'game'); // game portals: gameplay is the match screen
+    if (id === 'screen-lobby' && !this.portalReady) { this.portalReady = true; portalLoaded(); }
+  }
 
   send(msg) {
     if (msg.t === 'queue') askNotifyPermission(); // so 'match found' can reach a background tab
@@ -100,6 +108,7 @@ class App {
       const res = await api(this.tab === 'register' ? '/api/auth/register' : '/api/auth/login', { username: name, password: pass, ...(this.tab === 'register' && $('#auth-email').value.trim() ? { email: $('#auth-email').value.trim() } : {}) });
       try { localStorage.setItem(TOKEN_KEY, JSON.stringify({ token: res.token, username: res.username })); } catch { /* ignore */ }
       $('#auth-pass').value = '';
+      try { localStorage.removeItem(GUEST_KEY); } catch { /* ignore */ }
       await this.startSession(new OnlineConnection(res.token), res.username, false);
     } catch (err) {
       $('#auth-error').textContent = err.message;
@@ -272,7 +281,7 @@ class App {
   }
 
   logout() {
-    try { localStorage.removeItem(TOKEN_KEY); } catch { /* ignore */ }
+    try { localStorage.removeItem(TOKEN_KEY); localStorage.removeItem(GUEST_KEY); } catch { /* ignore */ }
     this.exit(null);
   }
 
@@ -291,11 +300,13 @@ class App {
       history.pushState({ screen: 'auth' }, '', '#login');
       this.show('screen-auth');
       if (mode === 'offline') { this.setTab('offline'); $('#auth-form').requestSubmit(); }
+      else if (mode === 'play' && this.serverInfo) this.playAsGuest(); // no sign-up: straight into the lobby
       else this.setTab(mode === 'login' ? 'login' : this.serverInfo ? 'register' : 'offline');
     };
     for (const b of $$('[data-landing]')) b.addEventListener('click', () => go(b.dataset.landing));
     $('#auth-back')?.addEventListener('click', () => (history.state?.screen === 'auth' ? history.back() : this.showLanding()));
     window.addEventListener('popstate', () => { if (!this.conn && !$('#screen-auth').hidden) this.showLanding(); });
+    if (portal) { if (!(saved && saved.token)) this.serverInfo ? this.playAsGuest() : (this.setTab('offline'), $('#auth-user').value = 'Player' + Math.floor(Math.random() * 9000 + 1000), $('#auth-form').requestSubmit()); return; } // portals have their own front page
     if (!(saved && saved.token) && !new URLSearchParams(location.search).has('replay')) this.showLanding();
   }
 
@@ -308,6 +319,38 @@ class App {
   /* ---------------- account recovery & social sign-in ---------------- */
   get token() { try { return JSON.parse(localStorage.getItem(TOKEN_KEY) || 'null')?.token || null; } catch { return null; } }
 
+  get isGuest() { try { return localStorage.getItem(GUEST_KEY) === '1'; } catch { return false; } }
+
+  /** Plays right away as a guest; progress is kept and can be saved to a real account later. */
+  async playAsGuest() {
+    try {
+      const r = await api('/api/auth/guest', {});
+      try { localStorage.setItem(GUEST_KEY, '1'); } catch { /* ignore */ }
+      this.signedIn(r.token, r.username);
+    } catch (err) {
+      this.setTab(this.serverInfo ? 'register' : 'offline');
+      $('#auth-error').textContent = err.message;
+    }
+  }
+
+  /** Turns the guest into a real account (name, password, optional email), keeping all progress. */
+  claimAccount() {
+    this.dialog('Save your progress', [
+      { name: 'username', label: 'Player name (3-16 letters, numbers or _)', auto: 'username' },
+      { name: 'password', label: 'Password', type: 'password', auto: 'new-password', min: 6 },
+      { name: 'email', label: 'Email (optional, for password recovery)', type: 'email', auto: 'email', optional: true },
+    ], 'Save my account', async (d, wrap) => {
+      const r = await fetch(`${serverBase()}/api/account/claim`, { method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${this.token}` }, body: JSON.stringify(d) });
+      const data = await r.json().catch(() => ({}));
+      if (!r.ok) throw new Error(data.error || 'Could not save the account.');
+      try { localStorage.removeItem(GUEST_KEY); } catch { /* ignore */ }
+      wrap.remove();
+      if (this.conn) { const c = this.conn; this.conn = null; c.close(); }
+      this.ui.toast(`Saved! You're ${data.username} now.`, 'good', 4000);
+      this.signedIn(data.token, data.username);
+    });
+  }
+
   signedIn(token, username) {
     try { localStorage.setItem(TOKEN_KEY, JSON.stringify({ token, username })); } catch { /* ignore */ }
     this.startSession(new OnlineConnection(token), username, false);
@@ -318,7 +361,7 @@ class App {
     wrap.className = 'report-dlg';
     const card = document.createElement('form');
     card.className = 'rd-card';
-    card.innerHTML = `<h3></h3>${fields.map(f => `<label class="field"><span>${f.label}</span><input name="${f.name}" type="${f.type || 'text'}" autocomplete="${f.auto || 'off'}" ${f.min ? `minlength="${f.min}"` : ''} required></label>`).join('')}<p class="auth-error"></p><div class="btn-row"><button class="btn btn-primary" type="submit"></button><button class="btn" type="button" data-cancel>Cancel</button></div>`;
+    card.innerHTML = `<h3></h3>${fields.map(f => `<label class="field"><span>${f.label}</span><input name="${f.name}" type="${f.type || 'text'}" autocomplete="${f.auto || 'off'}" ${f.min ? `minlength="${f.min}"` : ''} ${f.optional ? '' : 'required'}></label>`).join('')}<p class="auth-error"></p><div class="btn-row"><button class="btn btn-primary" type="submit"></button><button class="btn" type="button" data-cancel>Cancel</button></div>`;
     card.querySelector('h3').textContent = title;
     card.querySelector('[type=submit]').textContent = submitLabel;
     card.querySelector('[data-cancel]').onclick = () => wrap.remove();
@@ -384,7 +427,7 @@ class App {
 
 let app = null;
 // The interface language loads first (only a small import when not English).
-initI18n().catch(() => {}).finally(() => {
+Promise.all([initI18n().catch(() => {}), initPortal().catch(() => {})]).finally(() => {
   app = new App();
   app.boot();
   app.openSharedReplay(); // ?replay=<id>&t=<s> links open the replay right away

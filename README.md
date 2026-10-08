@@ -98,6 +98,17 @@ item passives (Spiked Plate, Emberplate Aegis, Frostbound Orb, Archmage's Crown,
 - **HD environment pack:** full-canopy trees, shrubs and grass (Tripo, `group: 'pack'`, ~1.3 MB). The lobby offers it once (and Settings can install or remove it); it downloads into Cache Storage with a progress bar, the browser is asked to keep it, and the service worker serves it on later visits. Without it, everyone gets the stylized default trees (soft clustered canopies, ~250 triangles each); Low quality never uses the pack.
 - **Installable app:** web manifest, service worker (hashed assets and models cached on the device, offline shell) and an Install button. Phones and Low quality load simplified models (`*.lo.glb`, ~35% of the triangles) first.
 
+## 🎮 Game portals (CrazyGames, Poki)
+
+The same build runs on portals: open it with `?portal=crazygames` or `?portal=poki` (or from the portal's domain).
+The portal SDK is loaded and told when loading finishes and when gameplay starts and stops; there's an ad break
+between matches (at most every 3 minutes, sound muted) and an optional rewarded ad on the end screen (+50 shards,
+up to 5 a day). Players skip the landing page and start as a guest; external links are hidden.
+
+To submit: create a developer account on the portal, add a new game with the URL
+`https://broadroads.com/?portal=crazygames` (or `...?portal=poki`), landscape orientation, desktop and mobile, and use
+the splash art in `public/splash/` and the trailer for the listing.
+
 ## 🕹️ Controls
 
 | Action | Desktop | Phone |

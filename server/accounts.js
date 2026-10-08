@@ -68,14 +68,47 @@ export function accountRoutes({ cfg, env = process.env, store, secret, log, json
     return d.exp > Date.now() ? d : null;
   };
 
+  const guestLimiter = { hits: new Map(), allow(ip) { const now = Date.now(), list = (this.hits.get(ip) || []).filter(t => now - t < 600e3); if (list.length >= 15) return false; list.push(now); this.hits.set(ip, list); return true; } };
+
   return async function handle(req, res, p, url, cors) {
+    // Play instantly: a guest account (random name, random password). Progress is kept; claiming
+    // it later sets a real name, password and email.
+    if (p === '/api/auth/guest' && req.method === 'POST') {
+      if (!guestLimiter.allow(clientIp(req))) return json(res, 429, { error: 'Too many new players from your network. Try again in a few minutes.' }, cors), true;
+      for (let i = 0; i < 20; i++) {
+        const name = `Guest${Math.floor(10000 + Math.random() * 90000)}`;
+        const acc = await store.createAccount(name, hashPassword(crypto.randomBytes(24).toString('hex')));
+        if (!acc) continue;
+        if (store.updateAccountMeta) await store.updateAccountMeta(acc.id, { guest: true });
+        return json(res, 200, { token: tokenFor(acc), username: acc.username, guest: true }, cors), true;
+      }
+      return json(res, 503, { error: 'Could not create a guest. Please try again.' }, cors), true;
+    }
+
+    if (p === '/api/account/claim' && req.method === 'POST') {
+      const tok = bearer(req);
+      if (!tok) return json(res, 401, { error: 'Not signed in.' }, cors), true;
+      const acc = await store.getAccount(tok.a);
+      if (!acc || !acc.meta?.guest) return json(res, 400, { error: 'This account is already saved.' }, cors), true;
+      const body = await readBody(req).catch(() => ({}));
+      const username = String(body.username || '').trim(), password = String(body.password || ''), email = String(body.email || '').trim().toLowerCase();
+      if (!NAME_RE.test(username)) return json(res, 400, { error: 'Username must be 3-16 letters, numbers or _ and start with a letter.' }, cors), true;
+      if (password.length < 6 || password.length > 128) return json(res, 400, { error: 'Password must be 6-128 characters.' }, cors), true;
+      if (email && !EMAIL_RE.test(email)) return json(res, 400, { error: 'That email address does not look right.' }, cors), true;
+      if (email) { const other = await store.findAccountBy('email', email); if (other && other.id !== acc.id) return json(res, 409, { error: 'That email is already used by another account.' }, cors), true; }
+      if (username.toLowerCase() !== acc.username.toLowerCase() && !(await store.renameAccount(acc.id, username))) return json(res, 409, { error: 'That username is taken.' }, cors), true;
+      await store.updatePasswordHash(acc.id, hashPassword(password));
+      await store.updateAccountMeta(acc.id, { guest: null, ...(email ? { email } : {}) });
+      return json(res, 200, { token: tokenFor({ id: acc.id, username }), username }, cors), true;
+    }
+
     if (p === '/api/auth/providers') return json(res, 200, { google: enabled('google'), discord: enabled('discord'), email: !!env.SMTP_URL }, cors), true;
 
     if (p === '/api/account' && req.method === 'GET') {
       const tok = bearer(req);
       if (!tok) return json(res, 401, { error: 'Not signed in.' }, cors), true;
       const acc = store.getAccount ? await store.getAccount(tok.a) : null;
-      return json(res, 200, { email: acc?.meta?.email || null, linked: Object.keys(acc?.meta?.oauth || {}) }, cors), true;
+      return json(res, 200, { email: acc?.meta?.email || null, linked: Object.keys(acc?.meta?.oauth || {}), guest: !!acc?.meta?.guest }, cors), true;
     }
 
     if (p === '/api/account/email' && req.method === 'POST') {

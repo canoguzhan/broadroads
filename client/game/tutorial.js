@@ -16,17 +16,14 @@ export class Tutorial {
     this.lanePoint = { x: mid.x + (team === 'blue' ? 6 : -6), y: mid.y + (team === 'blue' ? -6 : 6) };
     const enemy = team === 'blue' ? 'red' : 'blue';
     this.enemyTower = valley.teams[enemy].towers.find(t => t.lane === 'mid' && t.tier === 1);
+    // Three quick steps (about 2 minutes), then straight into an easy first game.
     this.steps = [
-      { text: 'Welcome to the Valley! Right-click on the ground to move your champion.', hint: 'On a phone, use the joystick.', check: s => s.moved > 6 },
-      { text: "You're at your base, the only place you can shop. Press P and buy a Healing Draught: double-click it (or pick any item).", highlight: '.mb-gold', check: s => s.items > 0 },
-      { text: 'Learn your first ability: press Ctrl+Q, or click a glowing + above your abilities.', highlight: '.mb-up:not([hidden])', check: s => s.ranks >= 1 },
-      { text: 'Head to the middle lane. Follow the golden marker on the ground and on your minimap.', marker: () => this.lanePoint, check: s => s.distLane < 9 },
-      { text: 'Use your ability on the enemy minions: point your cursor at them and press the ability key (Q, W or E).', highlight: '.mb-abils .mb-slot:not(.locked)', check: s => s.casts > 0 || s.stepTime > 60 },
-      { text: 'Attack enemy minions when their health is low to earn gold: last-hit 3 of them.', progress: s => `${Math.min(3, s.cs - this.cs0)} / 3`, check: s => s.cs - this.cs0 >= 3, enter: s => { this.cs0 = s.cs; } },
-      { text: 'Enemy towers hit hard. Let your minions walk in first, then right-click the tower to damage it.', marker: () => this.enemyTower, check: s => s.towerHit || s.stepTime > 75 },
-      { text: 'Press B to return home. Stand still while it channels; at your fountain you heal and can shop.', highlight: '.mb-recall', check: s => s.atBase && s.stepTime > 2 },
-      { text: "Tutorial complete! You know the basics: move, items, abilities, last-hitting, towers and returning home. Try Practice vs AI next, then Ranked when you're ready.", final: true },
+      { text: 'Welcome to the Valley! Right-click the ground to walk: follow the golden marker to the middle lane.', hint: 'On a phone, use the joystick.', marker: () => this.lanePoint, check: s => s.distLane < 9 },
+      { text: 'Learn an ability (press Ctrl+Q, or tap a glowing +), then point at the enemy minions and press Q.', highlight: '.mb-up:not([hidden]), .mb-abils .mb-slot:not(.locked)', check: s => (s.ranks >= 1 && s.casts > 0) || s.stepTime > 50 },
+      { text: 'Hit enemy minions when their health is low to earn gold: last-hit 2 of them.', progress: s => `${Math.min(2, s.cs - this.cs0)} / 2`, check: s => s.cs - this.cs0 >= 2 || s.stepTime > 70, enter: s => { this.cs0 = s.cs; } },
+      { text: "Tutorial complete! You know the basics: walk, use abilities and last-hit for gold. Shop at your base with P and destroy towers to reach the enemy Core. Ready for a real game?", final: true },
     ];
+
     this.i = 0;
     this.stepTime = 0;
     this.casts = 0;
@@ -111,7 +108,8 @@ export class Tutorial {
       this.game.send({ t: 'track', ev: 'tutorialDone' });
       sfx.play('victory', { late: true });
       this.actionsEl.append(
-        h('button.btn.btn-primary', { onclick: () => this.game.quit() }, 'Back to the lobby'),
+        h('button.btn.btn-primary', { onclick: () => { const app = this.game.app; app.settings.difficulty = 'easy'; app.saveSettings(); this.game.quit(); setTimeout(() => app.send({ t: 'queue', mode: 'practice', difficulty: 'easy' }), 400); } }, 'Play vs Easy bots'),
+        h('button.btn', { onclick: () => this.game.quit() }, 'Back to the lobby'),
         h('button.btn', { onclick: () => this.close() }, 'Keep playing'));
     }
   }

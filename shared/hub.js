@@ -260,6 +260,7 @@ export class Hub {
       case 'lb': return this.sendLeaderboard(session, msg.kind);
       case 'prof': return this.sendProfile(session, msg.name);
       case 'claim': case 'skin': case 'avatar': return this.progressOp(session, msg);
+      case 'adReward': return this.adReward(session);
       case 'live': return session.send({ t: 'live', list: this.liveMatches() });
       case 'track': if (msg.ev === 'tutorialDone' && !session.profile?.tutorialDone) { session.profile.tutorialDone = true; this.analytics?.event('tutorialDone'); } return;
       case 'friend': return this.friendOp(session, msg);
@@ -355,6 +356,20 @@ export class Hub {
   }
 
   /* ================= progression: quests, skins, profile pictures ================= */
+  /** Rewarded ad watched (game portals): +50 shards, at most 5 times a day. */
+  adReward(session) {
+    const p = session.profile;
+    if (!p) return;
+    const today = new Date().toISOString().slice(0, 10);
+    if (p.adDay !== today) { p.adDay = today; p.adCount = 0; }
+    if (p.adCount >= 5) return this.notice(session, 'That was the last ad reward for today.', 'info');
+    p.adCount++;
+    p.shards = (p.shards || 0) + 50;
+    session.send({ t: 'profile', profile: p });
+    this.notice(session, '+50 shards. Thanks for watching!', 'good');
+    this.saveProfile(session);
+  }
+
   progressOp(session, msg) {
     const prof = session.profile;
     if (!prof) return;

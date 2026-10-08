@@ -94,6 +94,12 @@ export class PgStore {
     return res.rows[0] || null;
   }
 
+  /** Renames an account (guest → chosen name). Returns false if the name is taken. */
+  async renameAccount(id, username) {
+    try { await this.pool.query('UPDATE br_accounts SET username = $2 WHERE id = $1', [id, username]); return true; }
+    catch (err) { if (err.code === '23505') return false; throw err; }
+  }
+
   async updatePasswordHash(id, passwordHash) {
     await this.pool.query('UPDATE br_accounts SET password_hash = $2 WHERE id = $1', [id, passwordHash]);
   }

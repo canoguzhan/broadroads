@@ -1169,3 +1169,8 @@ body.studio-clean #hud { visibility: hidden; }
 .m-ally { cursor: pointer; transition: border-color .15s, box-shadow .15s; }
 .m-ally:hover { border-color: rgba(147, 197, 253, .8); }
 .m-ally.focused { border-color: #facc15; box-shadow: 0 0 0 2px rgba(250, 204, 21, .35); }
+.guest-card { background: linear-gradient(135deg, rgba(212, 175, 55, .22), rgba(23, 19, 31, .92)); border: 1px solid rgba(212, 175, 55, .5); border-radius: 14px; padding: 12px 14px; margin-bottom: 10px; }
+.guest-card b { display: block; margin-bottom: 4px; }
+.guest-card p { margin: 0 0 10px; font-size: .85rem; }
+.guest-end { display: flex; gap: 10px; align-items: center; justify-content: center; flex-wrap: wrap; margin-top: 10px; padding: 10px; border-radius: 10px; background: rgba(212, 175, 55, .12); border: 1px solid rgba(212, 175, 55, .35); }
+.in-portal .ld-foot, .in-portal .btn-oauth, .in-portal .install-btn, .in-portal .oauth-row { display: none !important; }

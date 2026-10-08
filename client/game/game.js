@@ -1,4 +1,5 @@
 /* In-match client controller. */
+import { portalBreak } from '../portal.js';
 import { Pathfinder } from '../../shared/moba/pathfind.js';
 import { ClientWorld } from './world.js';
 import { isMuted } from '../ui/social.js';
@@ -490,8 +491,9 @@ export class Game {
     this.world.predict = null;
   }
 
-  quit() {
+  async quit() {
     if (this.match.replay) return this.app.endReplay();
+    if (this.endResult) await portalBreak(); // game portals: an ad between matches (rate-limited)
     if (this.endResult || this.spectating) this.send({ t: 'leave' });
     else this.send({ t: 'abandon' });
   }

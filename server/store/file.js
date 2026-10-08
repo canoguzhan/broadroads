@@ -78,6 +78,13 @@ export class FileStore {
     return a ? { ...a, meta: a.meta || {} } : null;
   }
 
+  async renameAccount(id, username) {
+    const other = await this.findAccount(username);
+    if (other && other.id !== id) return false;
+    if (this.data.accounts[id]) { this.data.accounts[id].username = username; this.scheduleWrite(); }
+    return true;
+  }
+
   async updatePasswordHash(id, passwordHash) {
     if (this.data.accounts[id]) { this.data.accounts[id].passwordHash = passwordHash; this.scheduleWrite(); }
   }

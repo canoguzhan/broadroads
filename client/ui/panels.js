@@ -1,6 +1,7 @@
 /* In-match panels: shop, scoreboard, settings, help, end-of-game. */
 import { langPicker } from '../i18n.js';
 import { packSetting } from './packOffer.js';
+import { portalAds, portalRewarded } from '../portal.js';
 import { h, $, clear, timeStr } from './dom.js';
 import { priceFor } from '../../shared/moba/items.js';
 import { CHAMPIONS } from '../../shared/moba/champions.js';
@@ -181,6 +182,21 @@ export class Panels {
     };
   }
 
+  /** Guests: save the account right after a match, when there's progress worth keeping. */
+  guestSave() {
+    const app = this.game.app;
+    if (!app.isGuest || app.offline || this.game.match.replay) return null;
+    return h('div.guest-end', {}, h('span', { text: '💾 Keep this progress: save your account.' }), h('button.btn.btn-primary.btn-sm', { type: 'button', onclick: () => app.claimAccount() }, 'Save my account'));
+  }
+
+  /** Game portals: watch an ad for shards (server caps it at 5 a day). */
+  adReward() {
+    if (!portalAds() || this.game.match.replay) return null;
+    const btn = h('button.btn.btn-sm', { type: 'button' }, '📺 Watch an ad: +50 shards');
+    btn.addEventListener('click', async () => { btn.disabled = true; if (await portalRewarded()) this.game.send({ t: 'adReward' }); btn.remove(); });
+    return btn;
+  }
+
   replayButtons() {
     const g = this.game, rep = g.app.lastReplay;
     if (g.match.replay) return null;
@@ -212,7 +228,7 @@ export class Panels {
         r.bonus && r.bonus.firstWin ? h('div.first-win', {}, pic('misc/firstwin', '☀️'), h('b', { text: 'First win of the day!' }), ' +100 💠 +200 XP') : null,
         watching ? null : h('p', {}, `+${r.xp} XP`, r.rated ? ` · Rating ${(r.bonus?.delta ?? r.delta) >= 0 ? '+' : ''}${r.bonus?.delta ?? r.delta} (${r.profile.rating})${r.bonus?.placement ? ` · Placement ${r.bonus.placement}/5` : ''}` : ' · Unranked'),
         r.profile && r.profile.quests ? h('div.end-quests', {}, ...r.profile.quests.list.map(q => { const d = QUESTS[q.id]; return d ? h(`span.eq${q.n >= d.goal ? '.done' : ''}`, { text: `${q.n >= d.goal ? '✓' : '📜'} ${d.text}: ${Math.min(q.n, d.goal).toLocaleString()}/${d.goal.toLocaleString()}` }) : null; }), h('span.eq.sh', { text: `💠 ${r.profile.shards} shards` })) : null,
-        this.replayButtons(),
+        this.replayButtons(), this.guestSave(), this.adReward(),
         h('h4.t-blue', { text: 'Blue team' }), table('blue'), h('h4.t-red', { text: 'Red team' }), table('red'),
         h('button.btn.btn-primary', { onclick: () => g.quit() }, 'Return to lobby')),
     };

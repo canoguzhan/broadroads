@@ -42,7 +42,7 @@ export class Lobby {
     this.whoEl = h('div.lob-who');
     this.friendsEl = h('div.lob-friends');
     const chatBox = h('div.lob-chat');
-    this.root.append(h('div.auth-bg'), this.header, h('div.lob-grid', {}, this.playPanel, this.center, h('aside.lob-side', {}, packOffer(app), this.partyEl, this.friendsEl, this.whoEl, chatBox)));
+    this.root.append(h('div.auth-bg'), this.header, h('div.lob-grid', {}, this.playPanel, this.center, h('aside.lob-side', {}, app.isGuest && !app.offline ? h('aside.guest-card', {}, h('b', { text: '💾 Save your progress' }), h('p', { text: `You're playing as ${app.name}. Pick a name and password to keep your levels, shards and skins on any device.` }), h('button.btn.btn-primary.btn-sm', { type: 'button', onclick: () => app.claimAccount() }, 'Save my account')) : null, packOffer(app), this.partyEl, this.friendsEl, this.whoEl, chatBox)));
     this.chat = new Chat(app, chatBox, 'lobby');
     this.renderPlay();
     this.renderCenter();
@@ -126,7 +126,7 @@ export class Lobby {
       h(`div.play-card.tutorial-card${tutorialDone() ? '' : '.new'}`, {},
         tutorialDone() ? null : h('div.tc-badge', { text: 'New here? Start with this' }),
         h('div.pc-title', { text: '🎓 Tutorial' }),
-        h('p', { text: 'A guided first match: moving, abilities, items, last-hitting, towers and returning home. About 5 minutes.' }),
+        h('p', { text: 'A quick guided first match: walking, abilities and last-hitting for gold. About 2 minutes.' }),
         h(`button.btn.btn-lg${tutorialDone() ? '' : '.btn-primary'}`, { disabled: busy, onclick: () => app.send({ t: 'queue', mode: 'tutorial' }) }, tutorialDone() ? 'Replay Tutorial' : 'Start Tutorial')),
       s.state === 'queue' && s.queue ? h('div.queue-box', {},
         h('div.qb-title', { text: `Searching for a match… ${timeStr(s.queue.since)}` }), h('div.spinner.small'),
