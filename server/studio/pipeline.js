@@ -11,7 +11,7 @@ import { Voice, captionChunks } from './voice.js';
 import { renderFight, SIZES } from './render.js';
 import { mixFight, mux, cardClip, cardAudio, concat, card, durationOf } from './edit.js';
 import { shortMeta, episodeMeta, fightFacts, tagList, withMainUrl } from './metadata.js';
-import { claudeCommentary, claudeMetadata, claudeTranslate } from './claude.js';
+import { aiCommentary, aiMetadata, aiTranslate, aiConfigured } from './gemini.js';
 import { isUploadLimit } from './youtube.js';
 import { CARDS, NUMBER_WORDS, LANGS, EXTRA_LANGS, fill, tr } from './i18n.js';
 import { toVtt, cuesFor } from './captions.js';
@@ -106,16 +106,16 @@ export class Pipeline {
     this.stage(ep, 'script');
     const d = ep.data;
     const voice = this.voice(d.settings);
-    const useClaude = d.settings.useClaude && this.env.ANTHROPIC_API_KEY;
+    const useAI = useAIFor(d);
     for (const f of d.fights) {
       if (signal?.aborted) throw new Error('cancelled');
       ep.progress({ label: `Commentary for fight ${f.n}/${d.fights.length}` });
       let lines = null;
-      if (useClaude) lines = await claudeCommentary(f, d.summary).catch(err => { ep.log(`Claude commentary failed (${err.message}); using the built-in writer.`); return null; });
+      if (useAI) lines = await aiCommentary(f, d.summary).catch(err => { ep.log(`Gemini commentary failed (${err.message}); using the built-in writer.`); return null; });
       if (lines) {
-        // Claude wrote English only: translate the lines for the subtitles (English captions otherwise).
+        // Gemini wrote English only: translate the lines for the subtitles (English captions otherwise).
         const extra = languages(d).slice(1);
-        const t = await claudeTranslate(lines.map(l => spoken(l.text)), extra).catch(() => null);
+        const t = await aiTranslate(lines.map(l => spoken(l.text)), extra).catch(() => null);
         if (t) lines.forEach((l, i) => { l.i18n = Object.fromEntries(extra.map(x => [x, t[x][i]])); });
         else ep.log(`Fight ${f.n}: commentary not translated; its subtitles in other languages use English.`);
       }
@@ -134,7 +134,7 @@ export class Pipeline {
       f.facts = facts;
       f.thumbAt = Math.min(f.renderEnd - 0.5, (f.events.find(e => e.e === 'ann' && e.key === facts.best)?.t ?? f.events.filter(e => e.e === 'kill').at(-1)?.t ?? f.end - 2) + 0.35);
       let meta = shortMeta(f, { seed: d.seed, langs: languages(d) });
-      if (useClaude) meta = { ...meta, ...((await claudeMetadata('short', { ...facts, lines: f.lines.map(l => spoken(l.text)) }, meta).catch(() => null)) || {}) };
+      if (useAI) meta = { ...meta, ...((await aiMetadata('short', { ...facts, lines: f.lines.map(l => spoken(l.text)) }, meta).catch(() => null)) || {}) };
       meta.tags = tagList(meta.tags);
       f.short = { meta };
       ep.log(`Fight ${f.n}: ${f.lines.length} lines voiced, ${Math.round(f.renderEnd - f.start)} s. Short: “${meta.title}”`);
@@ -267,9 +267,9 @@ export class Pipeline {
     let meta = episodeMeta({ fights: d.fights, summary: d.summary, chapters, seed: d.seed, langs: languages(d) });
     const portrait = path.join(this.staticDir, 'portraits', `${meta.thumbStar}.webp`);
     await card({ kind: 'thumb', size: { width: 1280, height: 720 }, bgFile: ep.file(`fight${best.n}-peak.jpg`), title: meta.thumbText, kicker: 'BROADROADS', portraitFile: fs.existsSync(portrait) ? portrait : null, file: ep.file('thumb.jpg') });
-    if (d.settings.useClaude && this.env.ANTHROPIC_API_KEY) {
+    if (useAIFor(d)) {
       const chapterLines = meta.description.split('\n').filter(l => /^\d+:\d\d /.test(l));
-      const better = await claudeMetadata('main', { summary: d.summary, fights: d.fights.map(f => f.facts) }, { ...meta, chapters: chapterLines }).catch(() => null);
+      const better = await aiMetadata('main', { summary: d.summary, fights: d.fights.map(f => f.facts) }, { ...meta, chapters: chapterLines }).catch(() => null);
       if (better) meta = { ...meta, ...better };
     }
     meta.tags = tagList(meta.tags);
@@ -405,4 +405,9 @@ function localized(meta, d) {
   const out = {};
   for (const l of languages(d).slice(1)) if (meta.localizations?.[l]) out[LANGS[l].yt] = meta.localizations[l];
   return Object.keys(out).length ? out : null;
+}
+
+/** Whether Gemini writes this episode's text (episodes made before the rename used `useClaude`). */
+function useAIFor(d) {
+  return (d.settings.useAI ?? d.settings.useClaude ?? true) && aiConfigured();
 }

@@ -31,7 +31,7 @@ const toast = (msg, bad) => { const b = $('#banner'); b.textContent = msg; b.cla
 const act = fn => async (...a) => { try { await fn(...a); await refresh(); } catch (e) { toast(e.message, true); } };
 
 /* ---------- settings ---------- */
-const S_KEYS = ['captionsFor', 'maxUploadsPerDay', 'autopilot', 'everyHours', 'autoUpload', 'privacy', 'fights', 'voiceId', 'quality', 'fps', 'renderWorkers', 'busyMatches', 'keepEpisodes', 'useClaude', 'synthetic'];
+const S_KEYS = ['captionsFor', 'maxUploadsPerDay', 'autopilot', 'everyHours', 'autoUpload', 'privacy', 'fights', 'voiceId', 'quality', 'fps', 'renderWorkers', 'busyMatches', 'keepEpisodes', 'useAI', 'synthetic'];
 function fillSettings(s) {
   for (const k of S_KEYS) {
     const i = $(`#s-${k}`);
@@ -130,8 +130,8 @@ async function refresh() {
   $('#auto-hint').textContent = `Each episode is ${perEpisode} videos, so ${u.max}/day fits about ${fits} episode${fits === 1 ? '' : 's'} a day (every ${Math.ceil(24 / fits)} h or slower).`;
   $('#auto-next').textContent = state.autopilot.enabled ? `Next episode: ${new Date(state.autopilot.next).toLocaleString()}${state.settings.autoUpload ? ', uploaded automatically' : ', kept for review'}.` : 'Off.';
   $('#queue').textContent = state.running ? `Working on ${state.running}${state.queue.length ? ` · ${state.queue.length} queued` : ''}` : state.queue.length ? `${state.queue.length} queued` : 'Idle';
-  $('#keys').textContent = `ElevenLabs key: ${state.keys.elevenlabs ? 'set' : 'MISSING (voice-over will fail)'} · Claude key: ${state.keys.anthropic ? 'set' : 'not set (built-in writer is used)'}`;
-  $('#claude-key').textContent = state.keys.anthropic ? '' : '(needs ANTHROPIC_API_KEY)';
+  $('#keys').textContent = `ElevenLabs key: ${state.keys.elevenlabs ? 'set' : 'MISSING (voice-over will fail)'} · Gemini key: ${state.keys.gemini ? 'set' : 'not set (built-in writer is used)'}`;
+  $('#ai-key').textContent = state.keys.gemini ? '' : '(needs GEMINI_API_KEY)';
   $('#run-upload').disabled = !state.youtube.connected;
   $('#run-note').textContent = 'Rendering runs in the background at low priority; expect about 1–2 hours per episode on this server.';
   const list = $('#episodes');

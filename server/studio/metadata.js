@@ -1,7 +1,7 @@
 /* YouTube metadata for an episode and its shorts: titles, descriptions (with chapters),
    tags, the hook shown in a short's first seconds and the thumbnail text, in English plus
    YouTube `localizations` for the other languages (i18n.js). Built from the fight facts;
-   claude.js can improve the English ones (same shape). */
+   gemini.js can improve the English ones (same shape). */
 import { mulberry32, hashString } from '../../shared/rng.js';
 import { name } from './commentary.js';
 import { LANGS, TEAM, MOMENTS, SHORT_TITLES, EPISODE_TITLES, DESC, LANG_TAGS, fill, tr } from './i18n.js';

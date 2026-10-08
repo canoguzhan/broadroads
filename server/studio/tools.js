@@ -29,10 +29,5 @@ export async function ffmpeg() {
   return ffmpegPath;
 }
 
-/** Optional: the Anthropic SDK (only when ANTHROPIC_API_KEY is set). */
-export async function anthropic() {
-  const m = await load('@anthropic-ai/sdk');
-  return m.default || m.Anthropic;
-}
 
 export const CHROMIUM_ARGS = ['--use-gl=angle', '--use-angle=swiftshader', '--enable-unsafe-swiftshader', '--disable-dev-shm-usage', '--mute-audio', '--js-flags=--max-old-space-size=768'];

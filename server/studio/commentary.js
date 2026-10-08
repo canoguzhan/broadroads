@@ -1,6 +1,6 @@
 /* Play-by-play commentary for a fight: short caster lines anchored to match times.
    The built-in writer turns the fight's events (engages, ultimates, kills, multi-kills,
-   objectives) into varied lines; when ANTHROPIC_API_KEY is set, claude.js can write them
+   objectives) into varied lines; when GEMINI_API_KEY is set, gemini.js can write them
    instead and this is the fallback. Lines carry an ElevenLabs v4 delivery tag ([excited]…)
    that the voice step speaks but never shows in captions. */
 import { CHAMPIONS } from '../../shared/moba/champions.js';

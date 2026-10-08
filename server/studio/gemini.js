@@ -1,33 +1,42 @@
-/* Optional: Claude writes the commentary and the YouTube metadata (when ANTHROPIC_API_KEY is
-   set and the studio setting is on). Every answer is validated and anything unusable falls back
-   to the built-in templates, so the pipeline never depends on it. */
-import { anthropic } from './tools.js';
+/* Optional: Google Gemini (AI Studio API) writes the commentary, translates it for subtitles and
+   polishes the YouTube metadata, when GEMINI_API_KEY is set and the studio setting is on. Every
+   answer is checked against a JSON schema and anything unusable falls back to the built-in
+   templates, so the pipeline never depends on it.
+   GEMINI_MODEL picks the model (default gemini-pro-latest, falling back to gemini-flash-latest). */
 import { CHAMPIONS } from '../../shared/moba/champions.js';
 
-const MODEL = 'claude-opus-5-5';
+const API = 'https://generativelanguage.googleapis.com/v1beta/models';
+const models = () => [...new Set([process.env.GEMINI_MODEL || 'gemini-pro-latest', 'gemini-flash-latest'])];
 
-let client = null;
-async function getClient() {
-  if (!process.env.ANTHROPIC_API_KEY) return null;
-  if (!client) { const Anthropic = await anthropic(); client = new Anthropic(); }
-  return client;
-}
+export const aiConfigured = () => !!process.env.GEMINI_API_KEY;
 
-async function ask(system, user, schema) {
-  const c = await getClient();
-  if (!c) return null;
-  const res = await c.beta.messages.create({
-    model: MODEL,
-    max_tokens: 16000,
-    betas: ['server-side-fallback-2026-07-01'],
-    fallbacks: 'default',
-    output_config: { effort: 'medium', format: { type: 'json_schema', schema } },
-    system,
-    messages: [{ role: 'user', content: user }],
+/** One structured call: system prompt + user JSON → parsed object matching `schema`, or null. */
+async function ask(system, user, schema, { fetchImpl = fetch } = {}) {
+  const key = process.env.GEMINI_API_KEY;
+  if (!key) return null;
+  const body = JSON.stringify({
+    systemInstruction: { parts: [{ text: system }] },
+    contents: [{ role: 'user', parts: [{ text: user }] }],
+    generationConfig: { responseMimeType: 'application/json', responseJsonSchema: schema, temperature: 1 },
   });
-  if (res.stop_reason === 'refusal' || res.stop_reason === 'max_tokens') return null;
-  const text = res.content.filter(b => b.type === 'text').map(b => b.text).join('');
-  try { return JSON.parse(text); } catch { return null; }
+  let lastErr = null;
+  for (const model of models()) {
+    for (let attempt = 0; attempt < 3; attempt++) {
+      let r;
+      try {
+        r = await fetchImpl(`${API}/${model}:generateContent`, { method: 'POST', headers: { 'x-goog-api-key': key, 'Content-Type': 'application/json' }, body, signal: AbortSignal.timeout(120000) });
+      } catch (err) { lastErr = err; continue; }
+      if (r.status === 429 || r.status >= 500) { lastErr = new Error(`Gemini ${model}: ${r.status}`); await new Promise(res => setTimeout(res, 1500 * (attempt + 1))); continue; }
+      const j = await r.json().catch(() => ({}));
+      if (!r.ok) { lastErr = new Error(`Gemini ${model}: ${r.status} ${j.error?.message || ''}`.trim()); break; } // try the next model
+      const cand = j.candidates?.[0];
+      if (!cand || (cand.finishReason && cand.finishReason !== 'STOP')) { lastErr = new Error(`Gemini ${model}: ${cand?.finishReason || j.promptFeedback?.blockReason || 'no answer'}`); break; }
+      const text = (cand.content?.parts || []).filter(p => !p.thought).map(p => p.text || '').join('');
+      try { return JSON.parse(text); } catch { lastErr = new Error(`Gemini ${model}: answer was not JSON`); break; }
+    }
+  }
+  if (lastErr) throw lastErr;
+  return null;
 }
 
 const champInfo = ids => Object.fromEntries([...new Set(ids)].filter(c => CHAMPIONS[c]).map(c => [c, { name: CHAMPIONS[c].name, title: CHAMPIONS[c].title, role: CHAMPIONS[c].role, ultimate: CHAMPIONS[c].abilities.r.name }]));
@@ -37,8 +46,8 @@ Write short, punchy, hype lines like a top esports caster: react to what happens
 Each line is spoken by an ElevenLabs v4 voice: start it with one delivery tag in square brackets such as [excited], [shouting], [tense], [intrigued] or [laughs]. Keep lines to 3–12 words except the opener (up to 16). The caster speaks about 2.5 words per second, so leave room: lines usually sit 2+ seconds apart and must not describe events before they happen.
 Only describe what the event log shows. No emojis, no hashtags, no profanity.`;
 
-/** Commentary lines for a fight, or null. Lines: [{ at, text, priority }]. */
-export async function claudeCommentary(fight, summary) {
+/** Commentary lines for a fight, or null. Lines: [{ at, text, kind, priority, maxDelay }]. */
+export async function aiCommentary(fight, summary, opts) {
   const events = fight.events
     .filter(e => e.e !== 'hit' || e.hp < 25)
     .map(e => ({ ...e, t: Math.round((e.t - fight.start) * 10) / 10 }))
@@ -54,12 +63,12 @@ export async function claudeCommentary(fight, summary) {
   }), {
     type: 'object', additionalProperties: false, required: ['lines'],
     properties: { lines: { type: 'array', items: { type: 'object', additionalProperties: false, required: ['at', 'text', 'priority'], properties: { at: { type: 'number' }, text: { type: 'string' }, priority: { type: 'integer' } } } } },
-  });
+  }, opts);
   if (!out?.lines?.length) return null;
   const len = fight.end - fight.start + 6;
   const lines = out.lines
     .filter(l => typeof l.text === 'string' && l.text.length > 3 && l.text.length < 140 && l.at >= 0 && l.at < len)
-    .map(l => ({ at: Math.round((fight.start + l.at) * 100) / 100, text: /^\[/.test(l.text) ? l.text : `[excited] ${l.text}`, kind: 'claude', priority: Math.max(1, Math.min(10, l.priority | 0)), maxDelay: 2 }));
+    .map(l => ({ at: Math.round((fight.start + l.at) * 100) / 100, text: /^\[/.test(l.text) ? l.text : `[excited] ${l.text}`, kind: 'ai', priority: Math.max(1, Math.min(10, l.priority | 0)), maxDelay: 2 }));
   return lines.length >= 3 ? lines.sort((a, b) => a.at - b.at) : null;
 }
 
@@ -68,29 +77,29 @@ Titles: curiosity and energy, under 70 characters, one emoji at most, no clickba
 Descriptions: 2–4 short lines about what happens, then the call to action to play free at https://broadroads.com. Keep any chapter lines you are given exactly as they are.
 Always keep the disclosure that the gameplay is an AI-controlled bot match and the commentary is AI-voiced.`;
 
-/** Improves template metadata ({ title, description, tags, hook? }) or returns null. */
-export async function claudeMetadata(kind, facts, draft) {
+/** Improves the English template metadata ({ title, description, tags, hook? }) or returns null. */
+export async function aiMetadata(kind, facts, draft, opts) {
   const out = await ask(META_SYS, JSON.stringify({ kind, facts, draft, rules: kind === 'short' ? 'Vertical YouTube Short: the title must end with #Shorts; hook = 2–6 words shown on screen in the first 2 seconds.' : 'Long-form highlights video: keep the chapter list from the draft description verbatim.' }), {
     type: 'object', additionalProperties: false, required: ['title', 'description', 'tags', 'hook'],
     properties: { title: { type: 'string' }, description: { type: 'string' }, tags: { type: 'array', items: { type: 'string' } }, hook: { type: 'string' } },
-  });
+  }, opts);
   if (!out?.title || out.title.length > 100 || !out.description) return null;
   if (kind === 'short' && !/#shorts/i.test(out.title + out.description)) out.title = `${out.title.slice(0, 91)} #Shorts`;
   if (kind === 'main' && draft.chapters && !draft.chapters.every(c => out.description.includes(c))) return null;
   if (!out.description.includes('broadroads.com')) out.description += `\n\n▶ Play free: https://broadroads.com`;
-  return { title: out.title, description: out.description.slice(0, 4900), tags: out.tags.slice(0, 30), hook: out.hook?.slice(0, 40) || draft.hook };
+  return { title: out.title, description: out.description.slice(0, 4900), tags: (out.tags || []).slice(0, 30), hook: out.hook?.replace(/\p{Extended_Pictographic}️?/gu, '').trim().slice(0, 40) || draft.hook };
 }
 
 const LANG_NAMES = { es: 'Spanish (Latin American)', pt: 'Brazilian Portuguese', tr: 'Turkish', id: 'Indonesian' };
 
 /** Translates caption lines (English, delivery tags removed) into each language, or null. */
-export async function claudeTranslate(texts, langs) {
+export async function aiTranslate(texts, langs, opts) {
   if (!texts.length || !langs.length) return null;
-  const out = await ask(`You translate live esports commentary for subtitles of a BroadRoads (free 5v5 browser MOBA) video. Keep the energy and brevity of a caster. Keep champion names, ability names and BroadRoads game terms such as Ember Wyrm, Abyss Titan, spire and takedown recognizable (use the established gaming term in that language when there is one). Return exactly one translation per input line, in order.`,
+  const out = await ask('You translate live esports commentary for subtitles of a BroadRoads (free 5v5 browser MOBA) video. Keep the energy and brevity of a caster. Keep champion names, ability names and BroadRoads game terms such as Ember Wyrm, Abyss Titan, spire and takedown recognizable (use the established gaming term in that language when there is one). Return exactly one translation per input line, in order.',
     JSON.stringify({ languages: Object.fromEntries(langs.map(l => [l, LANG_NAMES[l] || l])), lines: texts }), {
       type: 'object', additionalProperties: false, required: ['translations'],
       properties: { translations: { type: 'object', additionalProperties: false, required: langs, properties: Object.fromEntries(langs.map(l => [l, { type: 'array', items: { type: 'string' } }])) } },
-    });
+    }, opts);
   const t = out?.translations;
   if (!t || !langs.every(l => Array.isArray(t[l]) && t[l].length === texts.length)) return null;
   return t;
