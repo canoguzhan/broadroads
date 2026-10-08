@@ -195,7 +195,9 @@ export class Game {
     this.renderer.forceFollow = focus !== you;
     const pan = this.renderer.locked || this.renderer.forceFollow ? null : this.input.edgePan(this.renderer.width, this.renderer.height);
     this.updateAim();
-    this.renderer.frame(dt, w, focus, pan);
+    // Hit-stop: the picture nearly freezes for a beat on big hits (the simulation keeps running).
+    const rdt = performance.now() < (this.hitStopUntil || 0) ? dt * 0.08 : dt;
+    this.renderer.frame(rdt, w, focus, pan);
     this.labels.update(w, this.renderer, dt);
     if (w.me) this.hud.updateSelf(w.me);
     for (const p of this.pings) p.t -= dt;
@@ -288,6 +290,12 @@ export class Game {
     this.send({ t: 'cast', sl: slot, x: round2(p.x), y: round2(p.y), id });
   }
 
+  /** A short freeze-frame and shake for impact (crits, landed ultimates, kills). */
+  hitStop(ms, shake = 0) {
+    this.hitStopUntil = Math.max(this.hitStopUntil || 0, performance.now() + ms);
+    if (shake) this.renderer.shake(shake);
+  }
+
   castMode() { return this.settings.castMode || 'release'; }
 
   /** Aim indicator for the ability being aimed (drawn every frame while a key is held). */
@@ -367,6 +375,7 @@ export class Game {
         else if (mine) {
           this.labels.floatText(ev.x, ev.y, ev.c ? `${ev.v}!` : `${ev.v}`, ev.c ? 'crit' : ev.t === 'm' ? 'magic' : ev.t === 't' ? 'true' : 'dmg', ev.c ? 1.3 : 1);
           sfx.play(ev.c ? 'hit_crit' : ev.t === 'm' ? 'hit_magic' : 'hit_physical', { gap: 0.08, vol: 0.8 });
+          if (ev.c && e && e.kind === 'hero') this.hitStop(45, 0.08);
         } else if (e && e.kind === 'hero') { this.labels.floatText(ev.x, ev.y, `${ev.v}`, 'other', 0.8); sfx.playAt(ev.t === 'm' ? 'hit_magic' : 'hit_physical', ev.x, ev.y, { gap: 0.12, vol: 0.5 }); }
         break;
       }
@@ -391,9 +400,13 @@ export class Game {
         at(`${ev.c}_${ev.sl}`, { gap: 0.1, vol: ev.id === you ? 1 : 0.8 });
         if (ev.sl === 'r') this.champLine(ev.c, 'ult', ev.id, 0);
         break;
-      case 'kill': if (ev.v === you && ev.k) { this.deathCamId = ev.k; this.setCamFocus(null); } break; // watch who killed you
+      case 'kill':
+        if (ev.v === you && ev.k) { this.deathCamId = ev.k; this.setCamFocus(null); } // watch who killed you
+        if (ev.k === you) this.hitStop(90, 0.25);
+        break;
       case 'summ': at(SPELL_SOUND[ev.k] || 'blink', { gap: 0.2 }); break;
       case 'boom': case 'shock': case 'nova': case 'beam':
+        if (ev.ab && ev.ab === `${this.myChampId()}_r` && w.you() && Math.hypot((ev.x ?? 0) - w.you().x, (ev.y ?? 0) - w.you().y) < 30) this.hitStop(70); // your ultimate landing
         // Abilities whose payoff lands after the cast (zone explosions, beams) have their own impact sound.
         if (ev.ab) at(`${ev.ab}_hit`, { gap: 0.15, vol: 0.9, range: 30 });
         break;

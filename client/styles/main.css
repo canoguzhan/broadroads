@@ -672,7 +672,11 @@ kbd { background: #2a2434; border: 1px solid #4a4058; border-bottom-width: 2px; 
 .m-ann { position: absolute; top: 18%; left: 50%; transform: translateX(-50%); display: flex; flex-direction: column; align-items: center; gap: 6px; pointer-events: none; }
 .ann { font-family: var(--display); font-weight: 900; font-size: 1.6rem; letter-spacing: .06em; padding: 6px 22px; border-radius: 10px; background: rgba(10, 9, 14, .75); border: 1px solid var(--line); color: var(--gold-2); text-shadow: 0 2px 8px #000; animation: bannerin .3s; transition: opacity .5s; text-align: center; }
 .ann.out { opacity: 0; }
-.ann.k-multi, .ann.k-ace { color: #fb923c; font-size: 2rem; }
+.ann.k-multi, .ann.k-ace, .ann.k-spree { font-size: 2.4rem; padding: 10px 34px; letter-spacing: .1em; animation: annPunch .45s cubic-bezier(.2, 1.6, .4, 1); border-width: 2px; }
+.ann.k-multi { color: #fb923c; border-color: rgba(251, 146, 60, .7); box-shadow: 0 0 40px rgba(251, 146, 60, .45); }
+.ann.k-spree { color: #f87171; border-color: rgba(248, 113, 113, .7); box-shadow: 0 0 40px rgba(248, 113, 113, .4); }
+.ann.k-ace { color: #fde047; font-size: 2.8rem; border-color: rgba(253, 224, 71, .8); box-shadow: 0 0 50px rgba(253, 224, 71, .5); }
+@keyframes annPunch { 0% { transform: scale(2.2); opacity: 0; } 60% { transform: scale(.94); opacity: 1; } 100% { transform: scale(1); } }
 .ann.k-victory { font-size: 2.6rem; }
 .ann.k-buff, .ann.k-spire, .ann.k-epicSpawn { font-size: 1.1rem; color: #e9d5ff; }
 .m-death { position: absolute; top: 40%; left: 50%; transform: translate(-50%, -50%); font-family: var(--display); font-size: 2rem; font-weight: 900; color: #fff; text-shadow: 0 2px 10px #000; pointer-events: none; }
@@ -1174,3 +1178,5 @@ body.studio-clean #hud { visibility: hidden; }
 .guest-card p { margin: 0 0 10px; font-size: .85rem; }
 .guest-end { display: flex; gap: 10px; align-items: center; justify-content: center; flex-wrap: wrap; margin-top: 10px; padding: 10px; border-radius: 10px; background: rgba(212, 175, 55, .12); border: 1px solid rgba(212, 175, 55, .35); }
 .in-portal .ld-foot, .in-portal .btn-oauth, .in-portal .install-btn, .in-portal .oauth-row { display: none !important; }
+.label.l-minion.lasthit .lb { outline: 2px solid #fde047; box-shadow: 0 0 8px rgba(253, 224, 71, .9); }
+.label.l-minion.lasthit .lb-fill { background: #fef9c3 !important; }

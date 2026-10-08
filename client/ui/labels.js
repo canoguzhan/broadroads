@@ -47,6 +47,7 @@ export class Labels {
   }
 
   update(world, renderer, dt) {
+    const myAd = (world.me?.st?.ad || 0) * 0.93; // a little under, for minion armor
     for (const { el, e } of this.items.values()) {
       const dead = (e.fl & F.DEAD) !== 0;
       const hgt = e.kind === 'monster' ? (MONSTER_H[e.md] || 2) * (e.sm ? 0.65 : e.ep ? 1.2 : 1) : HEIGHT[e.kind] || 2;
@@ -60,6 +61,7 @@ export class Labels {
       if (el._mp && e.mm) { const mp = Math.max(0, Math.min(1, (e.mp ?? e.mm) / e.mm)); if (el._mpv !== mp) { el._mpv = mp; el._mp.style.width = `${mp * 100}%`; } }
       el.classList.toggle('protected', (e.fl & F.PROTECTED) !== 0);
       el.classList.toggle('recall', (e.fl & F.RECALL) !== 0);
+      if (e.kind === 'minion' && e.tm !== world.team) el.classList.toggle('lasthit', myAd > 0 && e.hp <= myAd); // last-hit helper: one attack kills it
     }
     for (let i = this.floaters.length - 1; i >= 0; i--) {
       const f = this.floaters[i];
