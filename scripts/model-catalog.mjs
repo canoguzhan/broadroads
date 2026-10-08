@@ -22,21 +22,21 @@ const beastClips = style => ({ idle: 'preset:biped:idle', run: 'preset:biped:wal
 const WALK = { run: 'preset:quadruped:walk' };
 
 // `own` gives a champion its own idle / attack / cast presets, so no two move alike.
-const hero = (id, desc, style, own = {}) => ({ id, group: 'champion', kind: 'biped', prompt: `${desc}, ${HERO}`, clips: { ...heroClips(style), ...Object.fromEntries(Object.entries(own).map(([k, v]) => [k, `preset:biped:${v}`])) }, face: 30000, tex: 1024, tris: 15000 });
+const hero = (id, desc, style, own = {}, extra = {}) => ({ ...extra, id, group: 'champion', kind: 'biped', prompt: `${desc}, ${HERO}`, clips: { ...heroClips(style), ...Object.fromEntries(Object.entries(own).map(([k, v]) => [k, `preset:biped:${v}`])) }, face: 30000, tex: 1024, tris: 15000 });
 
 export const CATALOG = [
-  hero('garrok', 'massive stone-skinned golem warrior with glowing amber cracks, rocky shoulders and huge stone fists', 'punch', { cast: 'lift_heavy' }),
-  hero('lyra', 'radiant light mage woman in flowing white and gold robes holding a glowing sun staff', 'cast', { attack: 'pitch_baseball', idle: 'standing_relax' }),
-  hero('kaelen', 'hooded shadow assassin in dark purple leather armor holding twin curved daggers', 'slash', { attack: 'box_02', cast: 'flip', idle: 'fold_arms' }),
-  hero('hale', 'frost huntress archer woman in blue fur-lined leather armor holding an ice longbow', 'shoot', { cast: 'pitch_baseball', idle: 'look_around' }),
-  hero('thorne', 'armored iron warlord in dark red plate armor holding a huge two-handed battle axe', 'chop', { cast: 'angry_01', idle: 'wait' }),
-  hero('mira', 'moon priestess in pale blue and silver robes with a crescent halo holding a moon staff', 'cast', { attack: 'volleyball', cast: 'sing_01' }),
-  hero('zarak', 'young fire mage boy in red and orange robes with small flames in his hands', 'cast', { attack: 'basketball_shot', idle: 'warm_up' }),
+  hero('garrok', 'massive stone-skinned golem warrior with glowing amber cracks, rocky shoulders and huge stone fists', 'punch', { cast: 'lift_heavy', ult: 'angry_03' }, { concept: true }),
+  hero('lyra', 'radiant light mage woman in flowing white and gold robes holding a glowing sun staff', 'cast', { attack: 'pitch_baseball', idle: 'standing_relax', ult: 'victory_celebration' }),
+  hero('kaelen', 'hooded shadow assassin in dark purple leather armor holding twin curved daggers', 'slash', { attack: 'box_02', cast: 'flip', idle: 'fold_arms', ult: 'dive' }),
+  hero('hale', 'frost huntress archer woman in blue fur-lined leather armor holding an ice longbow', 'shoot', { cast: 'pitch_baseball', idle: 'look_around', ult: 'basketball_shot' }),
+  hero('thorne', 'armored iron warlord in dark red plate armor holding a huge two-handed battle axe', 'chop', { cast: 'angry_01', idle: 'wait', ult: 'jump_down' }),
+  hero('mira', 'moon priestess in pale blue and silver robes with a crescent halo holding a moon staff', 'cast', { attack: 'volleyball', cast: 'sing_01', ult: 'sing_02' }),
+  hero('zarak', 'young fire mage boy in red and orange robes with small flames in his hands', 'cast', { attack: 'basketball_shot', idle: 'warm_up', ult: 'cheer' }, { concept: true }),
   hero('nyra', 'desert marshal gunslinger woman in a long brown coat and wide-brimmed hat holding a long rifle', 'shoot', { cast: 'shoot' }),
-  hero('brakka', 'armored minotaur bull warrior with big horns, steel shoulder pads and huge fists', 'punch', { attack: 'front_kick_01', cast: 'angry_02' }),
-  hero('rook', 'green-armored storm warrior holding a large axe, with lightning accents on the armor', 'slash', { cast: 'jump' }),
+  hero('brakka', 'armored minotaur bull warrior with big horns, steel shoulder pads and huge fists', 'punch', { attack: 'front_kick_01', cast: 'angry_02', ult: 'angry_01' }),
+  hero('rook', 'green-armored storm warrior holding a large axe, with lightning accents on the armor', 'slash', { cast: 'jump', ult: 'golf' }, { concept: true }),
   hero('thessa', 'graceful sea sorceress woman in teal and pearl robes with flowing aqua hair, holding a coral trident staff', 'cast', { attack: 'football_pass', cast: 'victory_celebration' }),
-  hero('borrin', 'hulking tree warden made of living bark and moss, with leafy shoulders, glowing green eyes and thorny vine arms', 'punch', { attack: 'box_03', cast: 'dig', idle: 'wait' }),
+  hero('borrin', 'hulking tree warden made of living bark and moss, with leafy shoulders, glowing green eyes and thorny vine arms', 'punch', { attack: 'box_03', cast: 'dig', idle: 'wait', ult: 'lift_heavy' }),
 ];
 
 // Lane minions, one model per team so allegiance reads at a glance.
@@ -77,6 +77,15 @@ CATALOG.push(
   { id: 'tree_oak', group: 'prop', kind: 'static', prompt: `stylized low poly round leafy oak tree with a thick trunk, ${PROP}`, face: 500, low: true, tex: 256, tris: 600 },
   { id: 'tree_fir', group: 'prop', kind: 'static', prompt: `stylized low poly tall dark green fir tree, ${PROP}`, face: 500, low: true, tex: 256, tris: 600 },
   { id: 'bush', group: 'prop', kind: 'static', prompt: `dense round clump of tall wild grass and leafy shrub, ${PROP}`, face: 1500, low: true, tex: 256, tris: 900 },
+  // Map decoration kit: placed on unwalkable forest-edge tiles along lanes, camps and bases.
+  { id: 'decor_pillar', group: 'decor', kind: 'static', prompt: `ruined ancient stone column, cracked and mossy, broken top, ${PROP}`, face: 6000, tex: 1024, tris: 3000 },
+  { id: 'decor_rocks', group: 'decor', kind: 'static', prompt: `cluster of three mossy grey boulders with small ferns, ${PROP}`, face: 6000, tex: 1024, tris: 3000 },
+  { id: 'decor_banner', group: 'decor', kind: 'static', prompt: `tall wooden war banner pole with a long hanging cloth flag and a golden sword emblem, ${PROP}`, face: 5000, tex: 1024, tris: 2500 },
+  { id: 'decor_brazier', group: 'decor', kind: 'static', prompt: `stone fire brazier on three legs with glowing burning coals, ${PROP}`, face: 5000, tex: 1024, tris: 2500 },
+  { id: 'decor_lantern', group: 'decor', kind: 'static', prompt: `old wooden lantern post with a hanging glowing iron lantern, ${PROP}`, face: 4000, tex: 1024, tris: 2000 },
+  { id: 'decor_wall', group: 'decor', kind: 'static', prompt: `broken ancient stone wall segment, crumbling bricks with ivy, ${PROP}`, face: 6000, tex: 1024, tris: 3000 },
+  { id: 'decor_statue', group: 'decor', kind: 'static', prompt: `weathered stone guardian statue of a knight holding a sword point down, mossy, ${PROP}`, face: 8000, tex: 1024, tris: 4000 },
+  { id: 'decor_shrine', group: 'decor', kind: 'static', prompt: `small mossy stone shrine with a glowing blue crystal on top, ${PROP}`, face: 6000, tex: 1024, tris: 3000 },
   // HD environment pack: optional download (Settings / lobby), stored on the device. Full canopies
   // instead of the low-poly props; only forest edges use them, so the triangle count stays sane.
   { id: 'hd_tree_oak', group: 'pack', kind: 'static', prompt: `lush stylized fantasy oak tree, thick twisted brown trunk with roots, a full rounded canopy made of many soft clustered leaf clumps, rich layered greens with warm highlights, ${PROP}`, face: 8000, tex: 1024, tris: 6000 },

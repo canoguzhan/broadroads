@@ -33,6 +33,7 @@ const WINDOWS = {
   lift_heavy: [3.0, 5.4], pitch_baseball: [0.8, 2.1], box_02: [1.4, 2.6], flip: [0.7, 2.9], angry_01: [0.4, 2.6], volleyball: [1.8, 2.6],
   sing_01: [3.6, 6.2], basketball_shot: [1.2, 2.7], shoot: [0.6, 2.4], front_kick_01: [0.2, 1.6], angry_02: [0.3, 1.5], jump: [0, 2.2],
   football_pass: [2.4, 3.6], victory_celebration: [0.5, 2.6], box_03: [0.2, 1.6], dig: [5.5, 7.5],
+  angry_03: [1.1, 3.0], dive: [0.5, 2.4], jump_down: [0.8, 3.0], sing_02: [6.4, 9.0], golf: [6.0, 8.6],
 };
 
 function trim(doc, input, output, [t0, t1]) {
@@ -115,7 +116,7 @@ for (const [id, s] of Object.entries(state)) {
   await io.write(out, doc);
   // Low-detail twin for phones and Low quality: ~35% of the triangles, 256px textures.
   let lo = null;
-  if (asset.group !== 'prop' && asset.group !== 'pack') { // pack models are opt-in HD, no low twin
+  if (asset.group !== 'prop' && asset.group !== 'pack' && asset.group !== 'decor') { // pack models are opt-in HD, no low twin
     const ld = await io.read(out);
     await ld.transform(
       simplify({ simplifier: MeshoptSimplifier, ratio: 0.35, error: 0.05 }),

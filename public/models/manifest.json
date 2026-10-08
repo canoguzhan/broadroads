@@ -4,17 +4,18 @@
   "lo": "garrok.lo.glb",
   "group": "champion",
   "clips": [
-   "death",
-   "run",
    "idle",
+   "run",
    "attack",
+   "cast",
+   "death",
    "stun",
    "dance",
    "cheer",
    "laugh",
-   "cast"
+   "ult"
   ],
-  "v": "muymu79b"
+  "v": "muzefl0g"
  },
  "lyra": {
   "file": "lyra.glb",
@@ -29,9 +30,10 @@
    "dance",
    "cheer",
    "laugh",
-   "attack"
+   "attack",
+   "ult"
   ],
-  "v": "muymu7u2"
+  "v": "muzeffg1"
  },
  "kaelen": {
   "file": "kaelen.glb",
@@ -46,9 +48,10 @@
    "cheer",
    "laugh",
    "attack",
-   "cast"
+   "cast",
+   "ult"
   ],
-  "v": "muymu8bz"
+  "v": "muzefg2t"
  },
  "hale": {
   "file": "hale.glb",
@@ -63,9 +66,10 @@
    "dance",
    "cheer",
    "laugh",
-   "cast"
+   "cast",
+   "ult"
   ],
-  "v": "muymu8xb"
+  "v": "muzefgpu"
  },
  "thorne": {
   "file": "thorne.glb",
@@ -80,9 +84,10 @@
    "dance",
    "cheer",
    "laugh",
-   "cast"
+   "cast",
+   "ult"
   ],
-  "v": "muymu9g7"
+  "v": "muzefhbt"
  },
  "mira": {
   "file": "mira.glb",
@@ -97,9 +102,10 @@
    "cheer",
    "laugh",
    "attack",
-   "cast"
+   "cast",
+   "ult"
   ],
-  "v": "muymua1f"
+  "v": "muzefhwj"
  },
  "zarak": {
   "file": "zarak.glb",
@@ -108,15 +114,16 @@
   "clips": [
    "idle",
    "run",
+   "attack",
    "cast",
    "death",
    "stun",
    "dance",
    "cheer",
    "laugh",
-   "attack"
+   "ult"
   ],
-  "v": "muymual7"
+  "v": "muzeflzi"
  },
  "nyra": {
   "file": "nyra.glb",
@@ -133,7 +140,7 @@
    "laugh",
    "cast"
   ],
-  "v": "muymub4s"
+  "v": "muzefids"
  },
  "brakka": {
   "file": "brakka.glb",
@@ -148,9 +155,10 @@
    "cheer",
    "laugh",
    "attack",
-   "cast"
+   "cast",
+   "ult"
   ],
-  "v": "muymubql"
+  "v": "muzefiyg"
  },
  "rook": {
   "file": "rook.glb",
@@ -160,14 +168,15 @@
    "idle",
    "run",
    "attack",
+   "cast",
    "death",
    "stun",
    "dance",
    "cheer",
    "laugh",
-   "cast"
+   "ult"
   ],
-  "v": "muymuc9i"
+  "v": "muzefmrx"
  },
  "minion_melee_blue": {
   "file": "minion_melee_blue.glb",
@@ -425,7 +434,7 @@
    "attack",
    "cast"
   ],
-  "v": "muymucuu"
+  "v": "muzefjix"
  },
  "borrin": {
   "file": "borrin.glb",
@@ -440,9 +449,10 @@
    "cheer",
    "laugh",
    "attack",
-   "cast"
+   "cast",
+   "ult"
   ],
-  "v": "muymudgt"
+  "v": "muzefk52"
  },
  "hd_tree_oak": {
   "file": "hd_tree_oak.glb",
@@ -478,5 +488,53 @@
   "bytes": 200932,
   "clips": [],
   "v": "muwp9hqm"
+ },
+ "decor_pillar": {
+  "file": "decor_pillar.glb",
+  "group": "decor",
+  "clips": [],
+  "v": "muzeeyb3"
+ },
+ "decor_rocks": {
+  "file": "decor_rocks.glb",
+  "group": "decor",
+  "clips": [],
+  "v": "muzeeym4"
+ },
+ "decor_banner": {
+  "file": "decor_banner.glb",
+  "group": "decor",
+  "clips": [],
+  "v": "muzeeywe"
+ },
+ "decor_brazier": {
+  "file": "decor_brazier.glb",
+  "group": "decor",
+  "clips": [],
+  "v": "muzeez5u"
+ },
+ "decor_lantern": {
+  "file": "decor_lantern.glb",
+  "group": "decor",
+  "clips": [],
+  "v": "muzeezfl"
+ },
+ "decor_wall": {
+  "file": "decor_wall.glb",
+  "group": "decor",
+  "clips": [],
+  "v": "muzeezq7"
+ },
+ "decor_statue": {
+  "file": "decor_statue.glb",
+  "group": "decor",
+  "clips": [],
+  "v": "muzef00c"
+ },
+ "decor_shrine": {
+  "file": "decor_shrine.glb",
+  "group": "decor",
+  "clips": [],
+  "v": "muzef09x"
  }
 }

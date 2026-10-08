@@ -69,10 +69,14 @@ async function generate(asset) {
   if (state[id]?.done && !force) state[id].done = false; // adding clips
   if (force) { delete state[id]; fs.rmSync(file, { force: true }); fs.rmSync(path.join(OUT, id), { recursive: true, force: true }); }
   console.log(`▶ ${id}`);
-  const model = await step(id, 'model', () => api('POST', '/generation/text-to-model', {
-    prompt: asset.prompt, model: 'v3.1-20260211', negative_prompt: 'multiple objects, base, pedestal, ground plane, text, blurry, broken mesh',
-    texture: true, pbr: true, texture_quality: 'standard', face_limit: asset.face, ...(asset.low ? { smart_low_poly: true } : {}),
-  }), 'model');
+  // Champions rebuilt from concept art (scripts/concept-art.mjs) use image-to-model; the rest text-to-model.
+  const concept = asset.concept && JSON.parse(fs.readFileSync(path.resolve(`models-src/concept/${id}.json`), 'utf8')).url;
+  const model = await step(id, 'model', () => (concept
+    ? api('POST', '/generation/image-to-model', { input: concept, model: 'v3.1-20260211', texture: true, pbr: true, texture_quality: 'detailed', face_limit: asset.face, texture_alignment: 'original_image' })
+    : api('POST', '/generation/text-to-model', {
+      prompt: asset.prompt, model: 'v3.1-20260211', negative_prompt: 'multiple objects, base, pedestal, ground plane, text, blurry, broken mesh',
+      texture: true, pbr: true, texture_quality: 'standard', face_limit: asset.face, ...(asset.low ? { smart_low_poly: true } : {}),
+    })), 'model');
   const s = state[id];
   s.kind = asset.kind;
   if (asset.kind !== 'static') {

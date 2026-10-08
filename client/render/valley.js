@@ -70,6 +70,47 @@ function plantTrees(group, items, shadow) {
   }
 }
 
+/* Where the decoration kit goes: lanes (every ~14 tiles), towers, jungle camps, the epic
+   pits and the Cores, each on the nearest free forest-edge tile. Deterministic. */
+function planDecor(valley, trees) {
+  const edges = trees.filter(t => t[7]);
+  const used = new Set(), out = [];
+  const near = (x, y, maxD, avoid = 2.2) => {
+    let best = null, bd = maxD * maxD;
+    for (const t of edges) {
+      const k = `${t[0]},${t[1]}`;
+      if (used.has(k)) continue;
+      const d = (t[0] + 0.5 - x) ** 2 + (t[1] + 0.5 - y) ** 2;
+      if (d < bd && d > avoid * avoid) { bd = d; best = t; }
+    }
+    return best;
+  };
+  const put = (id, x, y, maxD, scale = 1) => {
+    const t = near(x, y, maxD);
+    if (!t) return;
+    used.add(`${t[0]},${t[1]}`);
+    const rot = Math.atan2(y - (t[1] + 0.5), x - (t[0] + 0.5));
+    out.push({ id, tx: t[0], ty: t[1], x: t[0] + 0.5 + Math.cos(rot) * 0.7, y: t[1] + 0.5 + Math.sin(rot) * 0.7, rot, scale: scale * 1.45 });
+  };
+  const LANE = ['decor_pillar', 'decor_lantern', 'decor_wall', 'decor_banner', 'decor_rocks'];
+  let n = 0;
+  for (const team of ['blue', 'red']) {
+    const T = valley.teams[team];
+    for (const lane of Object.keys(T.paths)) {
+      const pts = T.paths[lane];
+      for (let i = 1; i < pts.length; i++) {
+        const a = pts[i - 1], b = pts[i], len = Math.hypot(b.x - a.x, b.y - a.y);
+        for (let d = 7; d < len; d += 14) { const k = d / len; put(LANE[n++ % LANE.length], a.x + (b.x - a.x) * k, a.y + (b.y - a.y) * k, 6); }
+      }
+    }
+    for (const t of [...T.towers, ...T.spires]) put('decor_brazier', t.x, t.y, 6);
+    for (const c of T.camps) { put('decor_shrine', c.x, c.y, 6, 0.9); put('decor_rocks', c.x, c.y, 7); }
+    put('decor_banner', T.core.x, T.core.y, 9, 1.2); put('decor_banner', T.core.x, T.core.y, 9, 1.2);
+  }
+  for (const p of Object.values(valley.epic)) for (let i = 0; i < 2; i++) put('decor_statue', p.x, p.y, 9, 1.3);
+  return out;
+}
+
 function chunked(group, list, geometry, material, place, opts = {}) {
   const buckets = new Map();
   for (const item of list) {
@@ -261,10 +302,15 @@ export function buildValley(valley, quality) {
   const yAxis = new THREE.Vector3(0, 1, 0);
 
   const leaf = new THREE.Color(0x2c5a26);
-  const treeData = trees.map(([x, y, edge]) => [x, y, 0.85 + rand() * 0.7, x + 0.5 + (rand() - 0.5) * 0.4, y + 0.5 + (rand() - 0.5) * 0.4, rand() * Math.PI, leaf.clone().offsetHSL((rand() - 0.5) * 0.05, 0, (rand() - 0.5) * 0.12), edge]);
+  const allTrees = trees.map(([x, y, edge]) => [x, y, 0.85 + rand() * 0.7, x + 0.5 + (rand() - 0.5) * 0.4, y + 0.5 + (rand() - 0.5) * 0.4, rand() * Math.PI, leaf.clone().offsetHSL((rand() - 0.5) * 0.05, 0, (rand() - 0.5) * 0.12), edge]);
   const shadow = { castShadow: quality === 'high' };
   const treeGroup = new THREE.Group(), bushGroup = new THREE.Group(), fountainGroup = new THREE.Group();
   group.add(treeGroup, bushGroup, fountainGroup);
+  // Decoration kit (not on Low): props take some forest-edge tiles, whose trees make way.
+  const decor = quality === 'low' ? [] : planDecor(valley, allTrees);
+  const treeData = allTrees.filter(([x, y]) => !decor.some(d => (x + 0.5 - d.x) ** 2 + (y + 0.5 - d.y) ** 2 < 2.4)); // clear room around each prop
+  const decorGroup = new THREE.Group();
+  group.add(decorGroup);
   plantTrees(treeGroup, treeData, shadow);
 
   // Bushes: clumps of tall grass.
@@ -296,7 +342,7 @@ export function buildValley(valley, quality) {
     group.add(ring, glow);
     fountainGroup.add(pillar);
   }
-  return { group, water: water.mat, treeGroup, bushGroup, fountainGroup, treeData, bushData, quality, minimapCanvas: canvas };
+  return { group, water: water.mat, treeGroup, bushGroup, fountainGroup, decorGroup, decor, treeData, bushData, quality, minimapCanvas: canvas };
 }
 
 /* ---------------- Tripo prop models ---------------- */
@@ -376,6 +422,28 @@ export function upgradeValley(terrain, valley, loadModel) {
       });
     });
   }
+
+  // Decoration kit: one instanced batch per prop type.
+  const ids = [...new Set(terrain.decor.map(d => d.id))];
+  const HEIGHT = { decor_pillar: 2.6, decor_rocks: 1.2, decor_banner: 3.4, decor_brazier: 1.4, decor_lantern: 2.6, decor_wall: 1.3, decor_statue: 3.2, decor_shrine: 1.6 };
+  for (const id of ids) loadModel(id).then(gltf => {
+    const parts = gltf && propParts(gltf, HEIGHT[id] || 2);
+    if (!parts || !terrain.group.parent) return;
+    const items = terrain.decor.filter(d => d.id === id).map(d => [d.tx, d.ty, d]);
+    for (const part of parts) {
+      chunked(terrain.decorGroup, items, part.geometry, part.material, (mesh, i, [, , d]) => {
+        q.setFromAxisAngle(yAxis, -d.rot + Math.PI / 2);
+        m4.compose(p.set(d.x, 0, d.y), q, s.setScalar(d.scale));
+        mesh.setMatrixAt(i, m4);
+      }, shadow);
+    }
+    if (id === 'decor_brazier' || id === 'decor_lantern') for (const [, , d] of items) { // a warm glow on the fire
+      const g = new THREE.Sprite(new THREE.SpriteMaterial({ map: makeGlowTexture(), color: 0xffa94d, transparent: true, opacity: 0.75, depthWrite: false, blending: THREE.AdditiveBlending }));
+      g.scale.setScalar(id === 'decor_brazier' ? 2.2 : 1.4);
+      g.position.set(d.x, (HEIGHT[id] || 2) * (id === 'decor_brazier' ? 0.85 : 0.75), d.y);
+      terrain.decorGroup.add(g);
+    }
+  });
 
   for (const team of ['blue', 'red']) {
     loadModel(`fountain_${team}`).then(gltf => {

@@ -264,7 +264,7 @@ export class Game {
     // Play the cast animation immediately when the cast will succeed.
     const info = this.myChamp(), rank = me ? me.rk[slot] : 0;
     if (me && rank > 0 && (me.cd[slot] || 0) <= 0 && !me.dead && me.mp >= (info?.abilities[slot]?.mana[Math.min(info.abilities[slot].mana.length - 1, rank - 1)] || 0)) {
-      this.renderer.trigger(this.world.youId, 'cast');
+      this.renderer.trigger(this.world.youId, slot === 'r' ? 'ult' : 'cast');
       this.renderer.localCastAt = performance.now();
       this.world.predict = null;
     }

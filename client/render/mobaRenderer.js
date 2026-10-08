@@ -4,6 +4,7 @@ import { buildValley, upgradeValley, TEAM_HEX } from './valley.js';
 import { abilityProjectile, abilityArea, abilityEvent, abilityCast } from './abilityFx.js';
 import { buildChampion, buildMinion, buildTower, buildSpire, buildCore, buildWard, buildTrap, buildMobaMonster, buildMobaProjectile, buildMobaArea } from './mobaModels.js';
 import { FxSystem } from './fx.js';
+import { smokeTexture } from './glow.js';
 import { loadModel, assetFor, attachModel, animateModel, animateDying } from './assetModels.js';
 import { F } from '../../shared/constants.js';
 
@@ -144,7 +145,16 @@ export class MobaRenderer {
     this.views.set(e.id, v);
     const asset = assetFor(e, e.kind === 'hero' ? 1.9 * (built.parts.body.scale.x / 1.15) : 0);
     const skin = e.kind === 'hero' && this.skins ? this.skins.get(e.id) : null;
-    if (asset) loadModel(asset[0]).then(gltf => { if (gltf && this.views.get(e.id) === v) attachModel(v, gltf, asset[1], skin); });
+    if (asset) loadModel(asset[0]).then(gltf => { if (gltf && this.views.get(e.id) === v) attachModel(v, gltf, asset[1], skin, this.lookFor(e), asset[0]); });
+  }
+
+  /** Outline / rim colour by relationship: you gold, allies blue, enemies red (team colours when spectating). */
+  lookFor(e) {
+    const rel = e.id === this.youId ? 0xfacc15 : this.team === 'spectator' ? TEAM_HEX[e.tm] : e.tm === this.team ? 0x60a5fa : 0xf87171;
+    if (e.kind === 'hero') return { color: rel, outline: true, rim: 0.3 };
+    if (e.kind === 'minion') return { color: rel, rim: 0.2 };
+    if (e.kind === 'monster') return { color: 0xfde68a, rim: 0.15 };
+    return null;
   }
 
   champColorFromStyle(style) {
@@ -180,6 +190,7 @@ export class MobaRenderer {
           root.position.set(e.x, (e.fl & F.AIRBORNE) ? 0.8 + Math.sin(v.phase * 8) * 0.1 : 0, e.y);
           root.rotation.y = Math.PI / 2 - e.f;
           if (v.model) animateModel(v, e, dead, e.moving > 0.2, dt, now);
+          if (v.look && e.kind === 'hero') this.heroDissolve(v, dead, now);
           else this.animateProcedural(v, e, dead, dt);
           if (v.parts.ring) { v.parts.ring.material.opacity = dead ? 0.15 : 0.75; v.parts.ring.visible = !(e.fl & F.BUSH) || e.tm === this.team; }
           this.status(v, e, now);
@@ -198,7 +209,7 @@ export class MobaRenderer {
           break;
         }
         case 'tower': case 'spire': case 'core':
-          root.position.set(e.x, dead ? -1.5 : 0, e.y);
+          root.position.set(e.x, this.structureDamage(v, e, dead, dt), e.y);
           if (v.parts.crystal) { v.parts.crystal.rotation.y += dt; v.parts.crystal.visible = !dead; }
           if (v.parts.glow) v.parts.glow.visible = !dead;
           if (v.parts.shards) v.parts.shards.rotation.y += dt * 0.5;
@@ -234,13 +245,14 @@ export class MobaRenderer {
       const d = this.dying[i];
       d.t += dt;
       if (animateDying(d.view, dt)) {
-        // Rigged units play their death clip, then sink.
-        if (d.t > 0.9) d.view.root.position.y -= dt * 1.5;
+        // Rigged units play their death clip, then burn away (or sink, without a look).
+        if (d.view.look) d.view.look.setDissolve((d.t - 0.7) / 0.8);
+        else if (d.t > 0.9) d.view.root.position.y -= dt * 1.5;
         if (d.t < 1.6) continue;
         this.disposeView(d.view); this.dying.splice(i, 1); continue;
       }
-      d.view.root.position.y -= dt;
-      d.view.root.scale.multiplyScalar(1 - dt * 0.9);
+      if (d.view.look) d.view.look.setDissolve(d.t / 0.8);
+      else { d.view.root.position.y -= dt; d.view.root.scale.multiplyScalar(1 - dt * 0.9); }
       if (d.t > 0.9) { this.disposeView(d.view); this.dying.splice(i, 1); }
     }
   }
@@ -256,6 +268,54 @@ export class MobaRenderer {
     if (c.wiggle) v.root.rotation.z = Math.sin(performance.now() / 60) * 0.4;
     if (c.droplets && Math.random() < 0.4) this.fx.burst(e.x, e.y, { y: 1.1, color: 0xbae6fd, count: 3, speed: 1, up: 1, life: 0.4, size: 0.12 });
     if (c.frost && Math.random() < 0.5) this.fx.burst(e.x, e.y, { y: 1.1, color: 0xf0f9ff, count: 3, speed: 1.5, up: 0.5, life: 0.6, size: 0.15 });
+  }
+
+  /** Damage states for towers, spires and Cores: smoke below 66% health, fire and sparks below 33%,
+      and a crumble (debris, dust, a slow tilted sink) when destroyed. Returns the root's height. */
+  structureDamage(v, e, dead, dt) {
+    const frac = e.mh ? Math.max(0, e.hp) / e.mh : 1;
+    const stage = dead ? 3 : frac < 0.33 ? 2 : frac < 0.66 ? 1 : 0;
+    const h = e.kind === 'core' ? 5 : e.kind === 'tower' ? 4.6 : 2.6;
+    const fx = this.fx;
+    if (v.stage === undefined) { v.stage = stage; v.sink = dead ? 1 : 0; }
+    if (stage > v.stage) { // crossing a threshold: a chunk breaks off
+      fx.burst(e.x, e.y, { y: h * 0.7, color: 0x78716c, count: stage === 3 ? 40 : 14, speed: stage === 3 ? 7 : 4, life: 1.1, size: 0.3 });
+      fx.smoke(e.x, e.y, { count: stage === 3 ? 12 : 4, radius: stage === 3 ? 3 : 1.5, color: 0x57534e, life: stage === 3 ? 3 : 1.6 });
+      if (stage === 3) { fx.shockwave(e.x, e.y, { color: 0xa8a29e, radius: 5, height: 1.5, life: 0.7 }); fx.scorch(e.x, e.y, 3, 30); }
+    }
+    if (stage !== v.stage) {
+      v.stage = stage;
+      for (const m of v.mats) { m.c0 ??= m.m.color?.clone(); if (m.c0) m.m.color.copy(m.c0).multiplyScalar(1 - Math.min(2, stage) * 0.18); }
+    }
+    v.smokeT = (v.smokeT || 0) - dt;
+    if (stage >= 1 && stage < 3 && v.smokeT <= 0) {
+      v.smokeT = stage === 2 ? 0.12 : 0.28;
+      fx.sprite(e.x + (Math.random() - 0.5) * 0.8, h * 0.8, e.y + (Math.random() - 0.5) * 0.8, { tex: smokeTexture(), color: 0x292524, size: 2.2, grow: 2.6, life: 2.6, additive: false, opacity: 0.8, rise: 3.2 });
+      if (stage === 2) {
+        fx.sprite(e.x + (Math.random() - 0.5), h * (0.4 + Math.random() * 0.4), e.y + (Math.random() - 0.5), { color: Math.random() < 0.5 ? 0xf97316 : 0xfbbf24, size: 1.8, grow: 0.5, life: 0.6, rise: 1.6 });
+        if (Math.random() < 0.25) fx.sparks(e.x, e.y, { y: h * 0.6, color: 0xfde68a, count: 4, speed: 2, life: 0.5 });
+      }
+    }
+    // Destroyed: sink and tilt over ~1.6 s instead of dropping instantly.
+    v.sink = dead ? Math.min(1, (v.sink || 0) + dt / 1.6) : 0;
+    v.root.rotation.z = v.sink * 0.12;
+    return -v.sink * 1.8;
+  }
+
+  /** Dead champions burn away after their death animation and materialize again on respawn. */
+  heroDissolve(v, dead, now) {
+    if (dead) {
+      v.deadAt ??= now;
+      v.look.setDissolve((now - v.deadAt - 1300) / 900);
+    } else if (v.deadAt != null) {
+      v.deadAt = null;
+      v.respawnAt = now;
+    }
+    if (!dead && v.respawnAt != null) {
+      const k = (now - v.respawnAt) / 500;
+      v.look.setDissolve(1 - k);
+      if (k >= 1) v.respawnAt = null;
+    }
   }
 
   animateProcedural(v, e, dead, dt) {
@@ -360,7 +420,7 @@ export class MobaRenderer {
       case 'atk': this.trigger(ev.id); break;
       case 'emote': { const v = this.views.get(ev.id); if (v) v.emote = { k: ev.k, until: performance.now() + (ev.k === 'dance' ? 8000 : 3800) }; break; }
       case 'cast': {
-        if (!(ev.id === this.youId && performance.now() - (this.localCastAt || 0) < 600)) this.trigger(ev.id, 'cast'); // already played locally
+        if (!(ev.id === this.youId && performance.now() - (this.localCastAt || 0) < 600)) this.trigger(ev.id, ev.sl === 'r' ? 'ult' : 'cast'); // already played locally
         const accent = (this.champInfo[ev.c] || {}).accent || 0xffffff, ult = ev.sl === 'r';
         const x = ent ? ent.x : ev.x, y = ent ? ent.y : ev.y;
         if (abilityCast(`${ev.c}_${ev.sl}`, { ...k, x, y })) { if (ult) fx.glow(x, y, { color: accent, size: 3, life: 0.3 }); break; }

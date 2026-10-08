@@ -4,6 +4,8 @@
    machine; structures, props and flying/hopping creatures are static.
    Anything without a model, or whose model hasn't loaded yet, keeps its
    procedural look from mobaModels.js / valley.js. */
+import { applyLook } from './readability.js';
+import { applyCreatureMotion } from './creatureMotion.js';
 import { packInstalled } from './assetPack.js';
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
@@ -15,7 +17,10 @@ import { SKINS } from '../../shared/moba/progression.js';
 const BASE = `${import.meta.env.BASE_URL || '/'}models/`;
 // One-shot clips play faster than authored, within these bounds (seconds); each champion's
 // clip keeps its own pacing (a quick jab stays quick, a big lift a little longer).
-const ONE_SHOT = { attack: [0.45, 0.65], cast: [0.6, 1.0] };
+const ONE_SHOT = { attack: [0.45, 0.65], cast: [0.6, 1.0], ult: [0.7, 1.2] };
+// Bones above the hips: a one-shot started while moving plays on these over the running legs.
+const UPPER = /^(Waist|Spine|Neck|Head|[LR]_(Clavicle|Upperarm|Forearm|Hand))/;
+const splitClip = (clip, upper, name) => new THREE.AnimationClip(name, clip.duration, clip.tracks.filter(t => UPPER.test(t.name.split('.')[0]) === upper));
 const oneShotLen = clip => Math.min(ONE_SHOT[clip.name][1], Math.max(ONE_SHOT[clip.name][0], clip.duration / 2.2));
 const RIG_YAW = -Math.PI / 2; // Tripo rigs face 90° off the procedural models' forward (+Z)
 const loader = new GLTFLoader().setMeshoptDecoder(MeshoptDecoder);
@@ -132,12 +137,14 @@ function adopt(view, model, skin) {
 }
 
 /** Replaces a procedural entity with its Tripo model. */
-export function attachModel(view, gltf, height, skin) {
+export function attachModel(view, gltf, height, skin, look, assetId) {
   const animated = gltf.animations.length > 0;
   const model = animated ? cloneSkinned(gltf.scene) : gltf.scene.clone();
   model.rotation.y = gltf.userData.yaw ?? (animated ? RIG_YAW : 0);
   fit(model, height);
   adopt(view, model, skin);
+  if (!animated) view.creature = applyCreatureMotion(model, assetId); // before the look: its patch chains onto this one
+  if (look) view.look = applyLook(model, look);
   view.model = model;
   view.modelY = model.position.y;
   if (!animated) return;
@@ -148,8 +155,14 @@ export function attachModel(view, gltf, height, skin) {
     if (ONE_SHOT[clip.name] || clip.name === 'death' || clip.name === 'cheer' || clip.name === 'laugh') { a.setLoop(THREE.LoopOnce, 1); a.clampWhenFinished = true; }
     if (ONE_SHOT[clip.name]) { a.userData = { len: oneShotLen(clip) }; a.timeScale = clip.duration / a.userData.len; }
     actions[clip.name] = a;
+    if (ONE_SHOT[clip.name]) { // upper-body copy for casting on the move
+      const up = mixer.clipAction(splitClip(clip, true, `${clip.name}_upper`));
+      up.setLoop(THREE.LoopOnce, 1); up.clampWhenFinished = true; up.timeScale = a.timeScale; up.userData = a.userData;
+      actions[`${clip.name}_upper`] = up;
+    }
   }
-  view.anim = { model, mixer, actions, current: null, oneShotUntil: 0 };
+  if (actions.run) { const legs = mixer.clipAction(splitClip(actions.run.getClip(), false, 'run_lower')); actions.run_lower = legs; }
+  view.anim = { model, mixer, actions, current: null, oneShotUntil: 0, layer: null };
   play(view.anim, actions.idle ? 'idle' : 'run', 0);
   if (!actions.idle) actions.run.timeScale = 0;
 }
@@ -173,9 +186,22 @@ export function animateModel(view, e, dead, moving, dt, now) {
     if (dead) play(anim, 'death', 0.1);
     else if (stunned && anim.actions.stun) { play(anim, 'stun', 0.12); view.oneShot = null; anim.oneShotUntil = 0; }
     else if (view.oneShot) {
-      const name = anim.actions[view.oneShot] ? view.oneShot : 'attack';
-      if (anim.actions[name]) { play(anim, name, 0.08, true); anim.oneShotUntil = now + (anim.actions[name].userData?.len || 0.6) * 1000; }
+      const name = anim.actions[view.oneShot] ? view.oneShot : view.oneShot === 'ult' && anim.actions.cast ? 'cast' : 'attack';
+      const upper = anim.actions[`${name}_upper`];
+      if (moving && upper && anim.actions.run_lower) {
+        // On the move: legs keep running, the upper body plays the strike or cast.
+        play(anim, 'run_lower', 0.1);
+        if (anim.layer && anim.layer !== upper) anim.layer.fadeOut(0.08);
+        upper.reset().setEffectiveWeight(1).fadeIn(0.06).play();
+        anim.layer = upper;
+        anim.layerUntil = now + (upper.userData?.len || 0.6) * 1000;
+      } else if (anim.actions[name]) { play(anim, name, 0.08, true); anim.oneShotUntil = now + (anim.actions[name].userData?.len || 0.6) * 1000; }
       view.oneShot = null;
+    } else if (anim.layer && now >= anim.layerUntil) {
+      anim.layer.fadeOut(0.12); anim.layer = null;
+      play(anim, moving ? 'run' : 'idle', 0.15);
+    } else if (anim.layer) {
+      // keep the legs running under the upper-body layer
     } else if (now >= anim.oneShotUntil) {
       if (!anim.actions.idle) anim.actions.run.timeScale = moving ? 1 : 0; // walk-only rigs freeze when standing
       // Emotes play while standing still; moving cancels them.
@@ -195,6 +221,7 @@ export function animateModel(view, e, dead, moving, dt, now) {
     else if (style === 'stride') y = step * 0.06 + Math.sin(t * 1.6) * 0.02; // breathing when idle
     model.position.y = view.modelY + y;
     model.position.z = lunge * (e.t === 'wyrm' ? 0.8 : 0.4);
+    if (view.creature) { view.creature.uTime.value = t; view.creature.uMove.value += ((moving ? 1 : 0) - view.creature.uMove.value) * Math.min(1, dt * 6); view.creature.uAttack.value = lunge; }
     model.rotation.x = style === 'hop' ? -step * 0.15 : style === 'stride' && moving ? Math.sin(t * 9) * 0.03 : 0;
   }
   // Stun wobble for models without a stun clip, and a quick backward flinch when hit.
