@@ -1,4 +1,5 @@
 /* In-match client controller. */
+import { Pathfinder } from '../../shared/moba/pathfind.js';
 import { ClientWorld } from './world.js';
 import { isMuted } from '../ui/social.js';
 import { canRankUp } from '../../shared/moba/champions.js';
@@ -182,9 +183,15 @@ export class Game {
       }
     }
     if (w.time >= 20 && !this.minionsAnnounced) { this.minionsAnnounced = true; sfx.announce('vo_minions', 2); }
-    const focus = this.input.keys.has('Space') && you ? you : you;
-    const pan = this.renderer.locked ? null : this.input.edgePan(this.renderer.width, this.renderer.height);
-    if (this.input.keys.has('Space') && you) { this.renderer.camTarget.x = you.x; this.renderer.camTarget.z = you.y; }
+    // Camera: you, unless watching a teammate (clicked in the top-left) or, while dead, your killer.
+    let focus = you;
+    const dead = you && (you.fl & F.DEAD);
+    if (dead && this.deathCamId) { const k = w.entities.get(this.deathCamId); if (k && !(k.fl & F.DEAD)) focus = k; }
+    else if (!dead && this.deathCamId) this.deathCamId = null; // respawned: back to you
+    if (this.camFocusId && !dead) { const t = w.entities.get(this.camFocusId); if (t) focus = t; else this.setCamFocus(null); }
+    if (this.input.keys.has('Space') && you) { if (this.camFocusId) this.setCamFocus(null); focus = you; this.renderer.camTarget.x = you.x; this.renderer.camTarget.z = you.y; }
+    this.renderer.forceFollow = focus !== you;
+    const pan = this.renderer.locked || this.renderer.forceFollow ? null : this.input.edgePan(this.renderer.width, this.renderer.height);
     this.renderer.frame(dt, w, focus, pan);
     this.labels.update(w, this.renderer, dt);
     if (w.me) this.hud.updateSelf(w.me);
@@ -219,6 +226,13 @@ export class Game {
     // Start moving right away (attack orders stop short of the target, so only plain moves are predicted).
     if (!target && !attackMove) this.world.predictMove(p.x, p.y); else this.world.predict = null;
     if (!quiet) this.renderer.showMoveMarker(p.x, p.y, !!target || attackMove);
+    // Trace the route (same pathfinder as the server) for plain moves.
+    const me = this.world.you();
+    if (!target && me) {
+      this.pathfinder ||= new Pathfinder(this.world.map);
+      const route = this.pathfinder.find(me.x, me.y, p.x, p.y);
+      if (route.length) this.renderer.showPath([{ x: me.x, y: me.y }, ...route]); else this.renderer.clearPath();
+    } else this.renderer.clearPath();
   }
 
   /** Target for touch casting: nearest visible enemy (champions first). */
@@ -269,6 +283,12 @@ export class Game {
       this.world.predict = null;
     }
     this.send({ t: 'cast', sl: slot, x: round2(p.x), y: round2(p.y), id });
+  }
+
+  /** Watch a teammate (top-left frames): click again, press Space or pick yourself to come back. */
+  setCamFocus(id) {
+    this.camFocusId = id && id !== this.world.youId && this.camFocusId !== id ? id : null;
+    this.hud.markFocused(this.camFocusId);
   }
 
   toggleLock(v) {
@@ -344,6 +364,7 @@ export class Game {
         at(`${ev.c}_${ev.sl}`, { gap: 0.1, vol: ev.id === you ? 1 : 0.8 });
         if (ev.sl === 'r') this.champLine(ev.c, 'ult', ev.id, 0);
         break;
+      case 'kill': if (ev.v === you && ev.k) { this.deathCamId = ev.k; this.setCamFocus(null); } break; // watch who killed you
       case 'summ': at(SPELL_SOUND[ev.k] || 'blink', { gap: 0.2 }); break;
       case 'boom': case 'shock': case 'nova': case 'beam':
         // Abilities whose payoff lands after the cast (zone explosions, beams) have their own impact sound.

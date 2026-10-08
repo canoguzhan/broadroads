@@ -1166,3 +1166,6 @@ body.studio-clean #hud { visibility: hidden; }
 .cd-splash { height: 150px; margin: -4px -4px 12px; border-radius: 12px; background: center 30% / cover no-repeat; box-shadow: inset 0 -60px 50px -20px rgba(11, 10, 16, .85); }
 .sel-splash { position: absolute; inset: 0; background: center / cover no-repeat; opacity: .32; pointer-events: none; }
 .sel-splash::after { content: ''; position: absolute; inset: 0; background: radial-gradient(ellipse at center, rgba(11, 10, 16, .2), rgba(11, 10, 16, .85)); }
+.m-ally { cursor: pointer; transition: border-color .15s, box-shadow .15s; }
+.m-ally:hover { border-color: rgba(147, 197, 253, .8); }
+.m-ally.focused { border-color: #facc15; box-shadow: 0 0 0 2px rgba(250, 204, 21, .35); }

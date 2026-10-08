@@ -491,6 +491,52 @@ export class MobaRenderer {
 
   showAim(p) { this.aimMarker.visible = !!p; if (p) this.aimMarker.position.set(p.x, 0.12, p.y); }
 
+  /** Traces the route your champion will walk: glowing dots every ~0.7 tiles along the path,
+      eaten up as you walk; cleared on arrival or a new order. */
+  showPath(points) {
+    if (!this.pathDots) {
+      const geo = new THREE.CircleGeometry(0.11, 10).rotateX(-Math.PI / 2);
+      const mat = new THREE.MeshBasicMaterial({ color: 0xa7f3d0, transparent: true, opacity: 0.85, depthWrite: false, blending: THREE.AdditiveBlending });
+      this.pathDots = new THREE.InstancedMesh(geo, mat, 600);
+      this.pathDots.frustumCulled = false;
+      this.pathDots.renderOrder = 2;
+      this.scene.add(this.pathDots);
+    }
+    const dots = [];
+    for (let i = 1; i < points.length; i++) {
+      const a = points[i - 1], b = points[i], len = Math.hypot(b.x - a.x, b.y - a.y);
+      for (let d = i === 1 ? 0.9 : 0; d < len && dots.length < 600; d += 0.7) dots.push({ x: a.x + (b.x - a.x) * d / len, y: a.y + (b.y - a.y) * d / len });
+    }
+    this.path = { dots, next: 0, born: this.time };
+    this.drawPath();
+  }
+
+  clearPath() { this.path = null; if (this.pathDots) this.pathDots.count = 0; }
+
+  drawPath() {
+    const p = this.path, m4 = new THREE.Matrix4();
+    let n = 0;
+    for (let i = p.next; i < p.dots.length; i++) {
+      const s = Math.min(1, (this.time - p.born) * 6 - (i - p.next) * 0.04); // ripples out from you
+      if (s <= 0) continue;
+      m4.makeScale(s, 1, s).setPosition(p.dots[i].x, 0.07, p.dots[i].y);
+      this.pathDots.setMatrixAt(n++, m4);
+    }
+    this.pathDots.count = n;
+    this.pathDots.instanceMatrix.needsUpdate = true;
+  }
+
+  updatePath(you) {
+    const p = this.path;
+    if (!p) return;
+    if (!you || (you.fl & F.DEAD)) return this.clearPath();
+    while (p.next < p.dots.length && Math.hypot(p.dots[p.next].x - you.x, p.dots[p.next].y - you.y) < 0.9) p.next++;
+    // Skip dots we've cut past (string-pulled corners): drop any dot behind a closer later one.
+    for (let k = p.next + 1; k < Math.min(p.dots.length, p.next + 6); k++) if (Math.hypot(p.dots[k].x - you.x, p.dots[k].y - you.y) < 0.9) p.next = k + 1;
+    if (p.next >= p.dots.length) return this.clearPath();
+    this.drawPath();
+  }
+
   showMoveMarker(x, y, attack = false) {
     this.moveMarker.position.set(x, 0.1, y);
     this.moveMarker.material.color.set(attack ? 0xef4444 : 0x4ade80);
@@ -501,7 +547,8 @@ export class MobaRenderer {
   frame(dt, world, focus, edgePan) {
     this.time += dt;
     this.world = world;
-    if (this.locked && focus) {
+    this.updatePath(world.entities.get(this.youId));
+    if ((this.locked || this.forceFollow) && focus) {
       this.camTarget.x = THREE.MathUtils.lerp(this.camTarget.x, focus.x, Math.min(1, dt * 8));
       this.camTarget.z = THREE.MathUtils.lerp(this.camTarget.z, focus.y, Math.min(1, dt * 8));
     } else if (edgePan) {

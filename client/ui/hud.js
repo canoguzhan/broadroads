@@ -335,12 +335,14 @@ export class Hud {
       const e = g.world.entities.get(p.id);
       const pct = e && !p.dead ? Math.max(0, e.hp / e.mh) * 100 : 0;
       const info = g.champInfo[p.c];
-      this.teamEl.append(h(`div.m-ally${p.dead ? '.dead' : ''}`, { title: p.name },
+      this.teamEl.append(h(`div.m-ally${p.dead ? '.dead' : ''}${g.camFocusId === p.id ? '.focused' : ''}`, { title: `${p.name} — click to watch`, dataset: { id: p.id }, onclick: () => g.setCamFocus(p.id) },
         h('div.ma-icon', {}, pic(champKey(p.c), info ? info.icon : '?'), h('span.ma-lvl', { text: p.l })),
         h('div.ma-mid', {}, h('span.ma-name', { text: p.name, translate: 'no' }), h('div.ma-bar', {}, h('div.ma-fill', { style: { width: `${pct}%` } }))),
         p.dead ? h('div.ma-rs', { text: p.rs }) : null));
     }
   }
+
+  markFocused(id) { for (const el of this.teamEl.children) el.classList.toggle('focused', Number(el.dataset.id) === id); }
 
   feed(killer, victim, assists) {
     const g = this.game;

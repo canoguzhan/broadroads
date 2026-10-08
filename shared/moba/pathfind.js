@@ -87,11 +87,13 @@ export class Pathfinder {
     this.g[start] = 0; this.stamp[start] = gen; this.came[start] = -1;
     heap.push(start, h(s[0], s[1]));
     let found = false, expanded = 0;
+    let best = start, bestH = h(s[0], s[1]); // closest reached cell, for unreachable goals
     while (heap.size) {
       const cur = heap.pop();
       if (this.closed[cur] === gen) continue;
       this.closed[cur] = gen;
       if (cur === goal) { found = true; break; }
+      { const hx = cur % W, hh = h(hx, (cur - hx) / W); if (hh < bestH) { bestH = hh; best = cur; } }
       if (++expanded > maxNodes) break;
       const cx = cur % W, cy = (cur - cx) / W;
       for (const [dx, dy, cost] of DIRS) {
@@ -106,13 +108,18 @@ export class Pathfinder {
         heap.push(ni, ng + h(nx, ny));
       }
     }
-    if (!found) return [];
+    // Unreachable goal (walled-off pocket, search budget hit): walk to the closest reachable cell
+    // instead of standing still.
+    const end = found ? goal : best;
+    if (end === start) return [];
     const cells = [];
-    for (let c = goal; c !== -1; c = this.came[c]) cells.push(c);
+    for (let c = end; c !== -1; c = this.came[c]) cells.push(c);
     cells.reverse();
     const pts = cells.map(c => ({ x: (c % W) + 0.5, y: Math.floor(c / W) + 0.5 }));
-    pts[pts.length - 1] = { x: tx, y: ty };
-    if (!map.walkableAt(tx, ty)) pts[pts.length - 1] = { x: t[0] + 0.5, y: t[1] + 0.5 };
+    if (found) {
+      pts[pts.length - 1] = { x: tx, y: ty };
+      if (!map.walkableAt(tx, ty)) pts[pts.length - 1] = { x: t[0] + 0.5, y: t[1] + 0.5 };
+    }
     // String pulling.
     const out = [];
     let ax = sx, ay = sy, i = 0;

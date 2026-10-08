@@ -7,7 +7,7 @@ import { makeGlowTexture } from './glow.js';
 import { mergeGeometries, mergeVertices } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
 import { packInstalled } from './assetPack.js';
 
-const PX = 10;
+let PX = 10; // ground texture pixels per tile (raised on Medium / High in buildValley)
 const CHUNK = 16;
 export const TEAM_HEX = { blue: 0x3b82f6, red: 0xef4444, neutral: 0xa3a3a3 };
 
@@ -70,44 +70,51 @@ function plantTrees(group, items, shadow) {
   }
 }
 
-/* Where the decoration kit goes: lanes (every ~14 tiles), towers, jungle camps, the epic
-   pits and the Cores, each on the nearest free forest-edge tile. Deterministic. */
+/* Where the decoration kit goes, composed rather than scattered: lanterns line each lane at a
+   steady rhythm, one ruin pair (pillar + wall) per lane, a brazier per tower, a shrine per jungle
+   camp, statues on opposite sides of the epic pits and banners flanking each Core. Every prop
+   keeps its distance (6 tiles from any prop, 16 from one of the same kind), on the nearest free
+   forest-edge tile. Deterministic. */
 function planDecor(valley, trees) {
   const edges = trees.filter(t => t[7]);
-  const used = new Set(), out = [];
-  const near = (x, y, maxD, avoid = 2.2) => {
+  const out = [];
+  const MIN_ANY = 6, MIN_SAME = 16;
+  const clear = (id, x, y) => out.every(d => { const dd = Math.hypot(d.x - x, d.y - y); return dd >= MIN_ANY && (d.id !== id || dd >= MIN_SAME); });
+  const put = (id, x, y, maxD, scale = 1) => {
     let best = null, bd = maxD * maxD;
     for (const t of edges) {
-      const k = `${t[0]},${t[1]}`;
-      if (used.has(k)) continue;
-      const d = (t[0] + 0.5 - x) ** 2 + (t[1] + 0.5 - y) ** 2;
-      if (d < bd && d > avoid * avoid) { bd = d; best = t; }
+      const tx = t[0] + 0.5, ty = t[1] + 0.5, d = (tx - x) ** 2 + (ty - y) ** 2;
+      if (d < bd && d > 4.8 && clear(id, tx, ty)) { bd = d; best = t; }
     }
-    return best;
+    if (!best) return false;
+    const rot = Math.atan2(y - (best[1] + 0.5), x - (best[0] + 0.5));
+    out.push({ id, tx: best[0], ty: best[1], x: best[0] + 0.5 + Math.cos(rot) * 0.7, y: best[1] + 0.5 + Math.sin(rot) * 0.7, rot, scale: scale * 1.45 });
+    return true;
   };
-  const put = (id, x, y, maxD, scale = 1) => {
-    const t = near(x, y, maxD);
-    if (!t) return;
-    used.add(`${t[0]},${t[1]}`);
-    const rot = Math.atan2(y - (t[1] + 0.5), x - (t[0] + 0.5));
-    out.push({ id, tx: t[0], ty: t[1], x: t[0] + 0.5 + Math.cos(rot) * 0.7, y: t[1] + 0.5 + Math.sin(rot) * 0.7, rot, scale: scale * 1.45 });
-  };
-  const LANE = ['decor_pillar', 'decor_lantern', 'decor_wall', 'decor_banner', 'decor_rocks'];
-  let n = 0;
+  // Landmarks first, so they get the best spots.
   for (const team of ['blue', 'red']) {
     const T = valley.teams[team];
-    for (const lane of Object.keys(T.paths)) {
-      const pts = T.paths[lane];
-      for (let i = 1; i < pts.length; i++) {
-        const a = pts[i - 1], b = pts[i], len = Math.hypot(b.x - a.x, b.y - a.y);
-        for (let d = 7; d < len; d += 14) { const k = d / len; put(LANE[n++ % LANE.length], a.x + (b.x - a.x) * k, a.y + (b.y - a.y) * k, 6); }
-      }
-    }
+    put('decor_banner', T.core.x - 4, T.core.y - 4, 14, 1.2);
+    put('decor_banner', T.core.x + 4, T.core.y + 4, 14, 1.2);
     for (const t of [...T.towers, ...T.spires]) put('decor_brazier', t.x, t.y, 6);
-    for (const c of T.camps) { put('decor_shrine', c.x, c.y, 6, 0.9); put('decor_rocks', c.x, c.y, 7); }
-    put('decor_banner', T.core.x, T.core.y, 9, 1.2); put('decor_banner', T.core.x, T.core.y, 9, 1.2);
+    for (const c of T.camps) put('decor_shrine', c.x, c.y, 7, 0.9);
   }
-  for (const p of Object.values(valley.epic)) for (let i = 0; i < 2; i++) put('decor_statue', p.x, p.y, 9, 1.3);
+  for (const p of Object.values(valley.epic)) { put('decor_statue', p.x - 5, p.y + 5, 7, 1.3); put('decor_statue', p.x + 5, p.y - 5, 7, 1.3); }
+  // Lanes: a ruin pair at each lane's middle, lanterns every ~18 tiles (blue's half and red's half).
+  const lanes = valley.teams.blue.paths;
+  for (const lane of Object.keys(lanes)) {
+    const pts = lanes[lane];
+    let total = 0;
+    const segs = [];
+    for (let i = 1; i < pts.length; i++) { const len = Math.hypot(pts[i].x - pts[i - 1].x, pts[i].y - pts[i - 1].y); segs.push([pts[i - 1], pts[i], total, len]); total += len; }
+    const at = d => { for (const [a, b, s0, len] of segs) if (d <= s0 + len) { const k = (d - s0) / len; return { x: a.x + (b.x - a.x) * k, y: a.y + (b.y - a.y) * k }; } return pts[pts.length - 1]; };
+    const mid = at(total / 2);
+    put('decor_pillar', mid.x, mid.y, 7);
+    put('decor_wall', mid.x, mid.y, 9);
+    for (let d = 12; d < total - 12; d += 18) { const q = at(d); put('decor_lantern', q.x, q.y, 6); }
+  }
+  // A few boulders, sparse.
+  for (const team of ['blue', 'red']) for (const c of valley.teams[team].camps) put('decor_rocks', c.x + 6, c.y - 6, 6);
   return out;
 }
 
@@ -224,8 +231,85 @@ function bakeGround(map, size) {
   for (const [fx, fy, k] of flowers) { ctx.fillStyle = ['#f9e27a', '#f4f4f5', '#c4b5fd'][k]; ctx.fillRect(fx, fy, 1.4, 1.4); }
   const tex = new THREE.CanvasTexture(canvas);
   tex.colorSpace = THREE.SRGBColorSpace;
-  tex.anisotropy = 4;
+  tex.anisotropy = 8;
   return { tex, canvas };
+}
+
+/* Close-up detail for the ground (Medium / High): three tileable grey textures (grass blades,
+   dirt with pebbles, cut flagstones) blended per surface by a soft splat map and multiplied into
+   the painted map, so the ground stays crisp however close the camera is. */
+function detailTexture(kind, S = 512) {
+  const c = document.createElement('canvas');
+  c.width = c.height = S;
+  const g = c.getContext('2d');
+  const r = mulberry32(kind === 'grass' ? 11 : kind === 'dirt' ? 22 : 33);
+  g.fillStyle = '#808080'; g.fillRect(0, 0, S, S);
+  const wrap = draw => { for (const ox of [-S, 0, S]) for (const oy of [-S, 0, S]) { g.save(); g.translate(ox, oy); draw(); g.restore(); } };
+  // soft mottling
+  for (let i = 0; i < 260; i++) {
+    const x = r() * S, y = r() * S, rad = 6 + r() * 30, v = 110 + r() * 40;
+    wrap(() => { const gr = g.createRadialGradient(x, y, 0, x, y, rad); gr.addColorStop(0, `rgba(${v},${v},${v},0.35)`); gr.addColorStop(1, 'rgba(128,128,128,0)'); g.fillStyle = gr; g.fillRect(x - rad, y - rad, rad * 2, rad * 2); });
+  }
+  if (kind === 'grass') {
+    g.lineCap = 'round';
+    for (let i = 0; i < 9000; i++) {
+      const x = r() * S, y = r() * S, len = 4 + r() * 9, lean = (r() - 0.5) * 5, v = r() < 0.5 ? 175 + r() * 50 : 55 + r() * 40;
+      g.strokeStyle = `rgba(${v},${v},${v},${0.35 + r() * 0.35})`; g.lineWidth = 0.8 + r() * 1.2;
+      wrap(() => { g.beginPath(); g.moveTo(x, y); g.quadraticCurveTo(x + lean * 0.3, y - len * 0.6, x + lean, y - len); g.stroke(); });
+    }
+  } else if (kind === 'dirt') {
+    for (let i = 0; i < 26000; i++) { const x = r() * S, y = r() * S, v = 70 + r() * 120; g.fillStyle = `rgba(${v},${v},${v},0.5)`; g.fillRect(x, y, 1 + r() * 1.5, 1 + r() * 1.5); }
+    for (let i = 0; i < 420; i++) {
+      const x = r() * S, y = r() * S, rx = 2 + r() * 6, ry = rx * (0.6 + r() * 0.4), v = 140 + r() * 70;
+      wrap(() => { g.fillStyle = 'rgba(40,40,40,0.35)'; g.beginPath(); g.ellipse(x + 1.2, y + 1.6, rx, ry, 0, 0, Math.PI * 2); g.fill(); g.fillStyle = `rgb(${v},${v},${v})`; g.beginPath(); g.ellipse(x, y, rx, ry, 0, 0, Math.PI * 2); g.fill(); });
+    }
+  } else {
+    const n = 4, cell = S / n;
+    for (let row = 0; row < n; row++) for (let col = 0; col < n; col++) {
+      const off = (row % 2) * cell / 2, x = col * cell + off, y = row * cell, v = 115 + r() * 45;
+      wrap(() => { g.fillStyle = `rgb(${v},${v},${v})`; g.fillRect(x + 3, y + 3, cell - 6, cell - 6); g.strokeStyle = 'rgba(30,30,30,0.85)'; g.lineWidth = 4; g.strokeRect(x + 1, y + 1, cell - 2, cell - 2); });
+      for (let k = 0; k < 3; k++) { const cx = x + r() * cell, cy = y + r() * cell; wrap(() => { g.strokeStyle = 'rgba(50,50,50,0.5)'; g.lineWidth = 1; g.beginPath(); g.moveTo(cx, cy); g.lineTo(cx + (r() - 0.5) * 40, cy + (r() - 0.5) * 40); g.stroke(); }); }
+    }
+    for (let i = 0; i < 14000; i++) { const x = r() * S, y = r() * S, v = 90 + r() * 90; g.fillStyle = `rgba(${v},${v},${v},0.35)`; g.fillRect(x, y, 1, 1); }
+  }
+  const t = new THREE.CanvasTexture(c);
+  t.wrapS = t.wrapT = THREE.RepeatWrapping;
+  t.anisotropy = 8;
+  return t;
+}
+
+function splatTexture(map) {
+  const S = 4, small = document.createElement('canvas');
+  small.width = map.w; small.height = map.h;
+  const g = small.getContext('2d'), img = g.createImageData(map.w, map.h);
+  for (let y = 0; y < map.h; y++) for (let x = 0; x < map.w; x++) {
+    const t = map.get(x, y), i = (y * map.w + x) * 4;
+    const road = t === TILE.ROAD || t === TILE.SAND || t === TILE.BRIDGE, stone = t === TILE.PLAZA || t === TILE.RUG || t === TILE.FLOOR;
+    img.data[i] = road || stone ? 0 : 255; img.data[i + 1] = road ? 255 : 0; img.data[i + 2] = stone ? 255 : 0; img.data[i + 3] = 255;
+  }
+  g.putImageData(img, 0, 0);
+  const big = document.createElement('canvas');
+  big.width = map.w * S; big.height = map.h * S;
+  const bg = big.getContext('2d');
+  bg.imageSmoothingEnabled = true; bg.imageSmoothingQuality = 'high';
+  bg.drawImage(small, 0, 0, big.width, big.height);
+  return new THREE.CanvasTexture(big);
+}
+
+function addGroundDetail(mat, map) {
+  const u = { uSplat: { value: splatTexture(map) }, uDetGrass: { value: detailTexture('grass') }, uDetDirt: { value: detailTexture('dirt') }, uDetStone: { value: detailTexture('stone') }, uTiles: { value: map.w } };
+  mat.onBeforeCompile = shader => {
+    Object.assign(shader.uniforms, u);
+    shader.fragmentShader = shader.fragmentShader
+      .replace('#include <common>', '#include <common>\nuniform sampler2D uSplat, uDetGrass, uDetDirt, uDetStone; uniform float uTiles;')
+      .replace('#include <map_fragment>', `#include <map_fragment>
+  vec4 sp = texture2D(uSplat, vMapUv);
+  vec2 wuv = vMapUv * uTiles; // world tiles
+  float dg = texture2D(uDetGrass, wuv * 0.45).r, dd = texture2D(uDetDirt, wuv * 0.4).r, ds = texture2D(uDetStone, wuv * 0.25).r;
+  float det = (dg * sp.r + dd * sp.g + ds * sp.b) / max(1e-3, sp.r + sp.g + sp.b);
+  diffuseColor.rgb *= 0.5 + det;`);
+  };
+  mat.customProgramCacheKey = () => 'ground-detail';
 }
 
 /* Animated river: one plane over the whole map, masked to river tiles,
@@ -281,8 +365,11 @@ function buildWater(map) {
 export function buildValley(valley, quality) {
   const map = valley.map;
   const group = new THREE.Group();
+  PX = quality === 'high' ? 20 : quality === 'medium' ? 16 : 10;
   const { tex, canvas } = bakeGround(map, valley.size);
-  const ground = new THREE.Mesh(new THREE.PlaneGeometry(map.w, map.h), new THREE.MeshLambertMaterial({ map: tex }));
+  const groundMat = new THREE.MeshLambertMaterial({ map: tex });
+  if (quality !== 'low') addGroundDetail(groundMat, map);
+  const ground = new THREE.Mesh(new THREE.PlaneGeometry(map.w, map.h), groundMat);
   ground.rotation.x = -Math.PI / 2;
   ground.position.set(map.w / 2, 0, map.h / 2);
   ground.receiveShadow = true;
