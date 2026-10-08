@@ -3,7 +3,7 @@
    results to YouTube. Listens on 127.0.0.1 (Caddy terminates TLS in front of it).
    Env: STUDIO_TOKEN or ADMIN_TOKEN (login), STUDIO_SECRET or TOKEN_SECRET (cookie/token
    signing), ELEVENLABS_API_KEY, YOUTUBE_CLIENT_ID/YOUTUBE_CLIENT_SECRET, optional
-   ANTHROPIC_API_KEY, STUDIO_PORT (8090), STUDIO_DIR, STUDIO_PUBLIC_URL, GAME_URL. */
+   GEMINI_API_KEY (+ GEMINI_MODEL), STUDIO_PORT (8090), STUDIO_DIR, STUDIO_PUBLIC_URL, GAME_URL. */
 import http from 'node:http';
 import fs from 'node:fs';
 import path from 'node:path';
@@ -25,7 +25,7 @@ const env = process.env;
 
 export const DEFAULT_SETTINGS = {
   autopilot: false, everyHours: 24, autoUpload: false, privacy: 'private', fights: 3, fps: 30, quality: 'medium',
-  voiceId: DEFAULT_VOICE, useClaude: true, synthetic: false, renderWorkers: 2, busyMatches: 8, keepEpisodes: 14,
+  voiceId: DEFAULT_VOICE, useAI: true, synthetic: false, renderWorkers: 2, busyMatches: 8, keepEpisodes: 14,
   maxUploadsPerDay: 10, // YouTube caps uploads per channel per rolling 24 h (low for new channels)
   languages: ['es', 'pt', 'tr', 'id'], // besides English: localized titles/descriptions and subtitles
   captionsFor: 'episode', // subtitle tracks on: 'episode' | 'all' (episode + shorts) | 'none'
@@ -36,7 +36,7 @@ export function cleanSettings(cur, patch) {
   const s = { ...cur };
   const num = (k, lo, hi) => { if (patch[k] !== undefined) { const v = Number(patch[k]); if (Number.isFinite(v)) s[k] = Math.max(lo, Math.min(hi, Math.round(v))); } };
   const bool = k => { if (patch[k] !== undefined) s[k] = !!patch[k]; };
-  bool('autopilot'); bool('autoUpload'); bool('useClaude'); bool('synthetic');
+  bool('autopilot'); bool('autoUpload'); bool('useAI'); bool('synthetic');
   num('everyHours', 1, 168); num('fights', 1, 5); num('fps', 24, 60); num('renderWorkers', 1, 4); num('busyMatches', 1, 100); num('keepEpisodes', 3, 100); num('maxUploadsPerDay', 1, 100);
   if (PRIVACY.includes(patch.privacy)) s.privacy = patch.privacy;
   if (['low', 'medium', 'high'].includes(patch.quality)) s.quality = patch.quality;
@@ -65,6 +65,7 @@ export async function startStudio(opts = {}) {
   const settingsFile = path.join(cfg.dir, 'settings.json');
   let settings = { ...DEFAULT_SETTINGS };
   try { settings = { ...settings, ...JSON.parse(fs.readFileSync(settingsFile, 'utf8')) }; } catch { /* first run */ }
+  if (settings.useClaude !== undefined) { settings.useAI = settings.useClaude; delete settings.useClaude; } // renamed when Gemini replaced Claude
   const saveSettings = () => fs.writeFileSync(settingsFile, JSON.stringify(settings, null, 1));
 
   const youtube = new YouTube({
@@ -331,7 +332,7 @@ export async function startStudio(opts = {}) {
         autopilot: { enabled: settings.autopilot, next: settings.autopilot ? Math.max(Date.now(), lastAuto + settings.everyHours * 3600e3) : null },
         youtube: { configured: youtube.configured, connected: youtube.connected, canCaption: youtube.connected && youtube.canCaption, channel, redirectUri: youtube.redirectUri },
         languages: EXTRA_LANGS.map(l => ({ code: l, name: LANGS[l].name })),
-        keys: { elevenlabs: !!env.ELEVENLABS_API_KEY, anthropic: !!env.ANTHROPIC_API_KEY },
+        keys: { elevenlabs: !!env.ELEVENLABS_API_KEY, gemini: !!env.GEMINI_API_KEY },
         uploads: { last24h: recentUploads().length, max: settings.maxUploadsPerDay, pausedUntil: uploadGate.pausedUntil(), reason: uploadPause?.until > Date.now() ? uploadPause.reason : null },
         episodes: listEps().slice(0, 40).map(id => summary(loadEp(id))),
       });

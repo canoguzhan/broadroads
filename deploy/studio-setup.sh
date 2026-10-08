@@ -2,7 +2,7 @@
 # One-time setup of the social studio on the game server (run as root):
 #   sh deploy/studio-setup.sh
 # 1. Installs the tools the studio needs but the game doesn't (Playwright + Chromium, ffmpeg,
-#    the optional Anthropic SDK) into /opt/broadroads-studio-tools.
+#    into /opt/broadroads-studio-tools.
 # 2. Creates /etc/broadroads/studio.env for the studio's keys (fill it in afterwards).
 # 3. Installs and starts broadroads-studio.service.
 # 4. Adds social.broadroads.com to Caddy (needs a DNS A record pointing at this server).
@@ -15,7 +15,7 @@ mkdir -p "$TOOLS"
 cd "$TOOLS"
 [ -f package.json ] || echo '{ "name": "broadroads-studio-tools", "private": true }' > package.json
 PW=$(node -p "require('$APP/package.json').devDependencies.playwright")
-npm install --no-audit --no-fund --loglevel=error "playwright@$PW" ffmpeg-static@5 @anthropic-ai/sdk
+npm install --no-audit --no-fund --loglevel=error "playwright@$PW" ffmpeg-static@5
 PLAYWRIGHT_BROWSERS_PATH="$TOOLS/browsers" npx playwright install chromium
 chown -R broadroads:broadroads "$TOOLS"
 
@@ -30,8 +30,8 @@ ELEVENLABS_API_KEY=
 # redirect URI https://$DOMAIN/oauth/youtube/callback
 YOUTUBE_CLIENT_ID=
 YOUTUBE_CLIENT_SECRET=
-# Optional: Claude writes the commentary and titles.
-ANTHROPIC_API_KEY=
+# Optional: Google Gemini (AI Studio key) writes the commentary, titles and subtitle translations.
+GEMINI_API_KEY=
 STUDIO_PUBLIC_URL=https://$DOMAIN
 EOF
   chmod 600 /etc/broadroads/studio.env

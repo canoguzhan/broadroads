@@ -15,6 +15,7 @@ import { Mix, thinSounds } from '../server/studio/mixer.js';
 import { trCase, fill, EXTRA_LANGS } from '../server/studio/i18n.js';
 import { toVtt, wrap, cuesFor } from '../server/studio/captions.js';
 import { withMainUrl } from '../server/studio/metadata.js';
+import { aiCommentary, aiTranslate, aiMetadata } from '../server/studio/gemini.js';
 
 const hit = (t, s, v, n = 100, hp = 50) => ({ t, e: 'hit', s, v, n, hp, x: 50, y: 50 });
 const kill = (t, k, v, team, a = []) => ({ t, e: 'kill', k, v, a, team });
@@ -450,5 +451,55 @@ describe('languages', () => {
     assert.match(cap.opts.headers['Content-Type'], /^multipart\/related; boundary=/);
     assert.match(cap.opts.body.toString(), /"language":"pt-BR"/);
     fs.rmSync(dir, { recursive: true, force: true });
+  });
+});
+
+describe('Gemini text writer', () => {
+  const answer = obj => new Response(JSON.stringify({ candidates: [{ finishReason: 'STOP', content: { parts: [{ text: 'thinking…', thought: true }, { text: JSON.stringify(obj) }] } }] }), { status: 200 });
+  let saved;
+  before(() => { saved = { key: process.env.GEMINI_API_KEY, model: process.env.GEMINI_MODEL }; process.env.GEMINI_API_KEY = 'test-key'; delete process.env.GEMINI_MODEL; });
+  after(() => { if (saved.key === undefined) delete process.env.GEMINI_API_KEY; else process.env.GEMINI_API_KEY = saved.key; if (saved.model !== undefined) process.env.GEMINI_MODEL = saved.model; });
+
+  test('asks for schema-shaped JSON and turns it into timed commentary lines', async () => {
+    const calls = [];
+    const fetchImpl = async (url, opts) => { calls.push({ url, body: JSON.parse(opts.body), headers: opts.headers }); return answer({ lines: [{ at: 1, text: '[excited] Garrok goes in!', priority: 3 }, { at: 8, text: 'Lyra is down!', priority: 6 }, { at: 11, text: '[shouting] DOUBLE!', priority: 9 }] }); };
+    const lines = await aiCommentary(fixtureFight(), { seed: 1 }, { fetchImpl });
+    assert.match(calls[0].url, /models\/gemini-pro-latest:generateContent$/);
+    assert.equal(calls[0].headers['x-goog-api-key'], 'test-key');
+    assert.equal(calls[0].body.generationConfig.responseMimeType, 'application/json');
+    assert.ok(calls[0].body.generationConfig.responseJsonSchema.properties.lines);
+    assert.equal(lines.length, 3);
+    assert.equal(lines[0].at, 97, 'clip seconds become match time');
+    assert.equal(lines[1].text, '[excited] Lyra is down!', 'a delivery tag is added when missing');
+  });
+
+  test('falls back to the Flash model when the first one fails, and translates line for line', async () => {
+    const urls = [];
+    const fetchImpl = async url => { urls.push(url); return url.includes('pro') ? new Response(JSON.stringify({ error: { message: 'not allowed' } }), { status: 403 }) : answer({ translations: { es: ['¡Uno!', '¡Dos!'], tr: ['Bir!', 'İki!'] } }); };
+    const t = await aiTranslate(['One!', 'Two!'], ['es', 'tr'], { fetchImpl });
+    assert.deepEqual(t, { es: ['¡Uno!', '¡Dos!'], tr: ['Bir!', 'İki!'] });
+    assert.ok(urls[0].includes('gemini-pro-latest') && urls.at(-1).includes('gemini-flash-latest'));
+  });
+
+  test('unusable answers are rejected so the templates take over', async () => {
+    const short = await aiTranslate(['One!', 'Two!'], ['es'], { fetchImpl: async () => answer({ translations: { es: ['¡Uno!'] } }) });
+    assert.equal(short, null, 'a missing line means no translation');
+    const meta = await aiMetadata('main', {}, { title: 'T', chapters: ['0:00 Intro'] }, { fetchImpl: async () => answer({ title: 'New', description: 'no chapters here', tags: [], hook: '' }) });
+    assert.equal(meta, null, 'chapters must survive');
+    const blocked = aiCommentary(fixtureFight(), {}, { fetchImpl: async () => new Response(JSON.stringify({ candidates: [{ finishReason: 'SAFETY' }] }), { status: 200 }) });
+    await assert.rejects(blocked, /SAFETY/);
+  });
+
+  test('without a key nothing is called', async () => {
+    delete process.env.GEMINI_API_KEY;
+    let called = false;
+    assert.equal(await aiTranslate(['x'], ['es'], { fetchImpl: async () => { called = true; } }), null);
+    assert.equal(called, false);
+    process.env.GEMINI_API_KEY = 'test-key';
+  });
+
+  test('the old Claude setting carries over', () => {
+    assert.equal(DEFAULT_SETTINGS.useAI, true);
+    assert.equal(cleanSettings(DEFAULT_SETTINGS, { useAI: false }).useAI, false);
   });
 });
