@@ -491,6 +491,49 @@ export class MobaRenderer {
 
   showAim(p) { this.aimMarker.visible = !!p; if (p) this.aimMarker.position.set(p.x, 0.12, p.y); }
 
+  /** Ability aim indicator while a key is held: range ring around you plus the ability's shape
+      (lane, cone, impact circle, effect ring or target highlight). null hides it. */
+  setAimIndicator(aim) {
+    if (!this.aimGroup) {
+      const mat = (c, o) => new THREE.MeshBasicMaterial({ color: c, transparent: true, opacity: o, side: THREE.DoubleSide, depthWrite: false });
+      const g = this.aimGroup = new THREE.Group();
+      g.renderOrder = 3;
+      const flat = geo => geo.rotateX(-Math.PI / 2);
+      this.aimParts = {
+        range: new THREE.Mesh(flat(new THREE.RingGeometry(0.97, 1, 96)), mat(0x93c5fd, 0.55)),
+        lane: new THREE.Mesh(flat(new THREE.PlaneGeometry(1, 1).translate(0, 0.5, 0)), mat(0x60a5fa, 0.38)),
+        laneEdge: new THREE.Mesh(flat(new THREE.PlaneGeometry(1, 1).translate(0, 0.5, 0)), mat(0xbfdbfe, 0.5)),
+        circle: new THREE.Mesh(flat(new THREE.CircleGeometry(1, 48)), mat(0x60a5fa, 0.25)),
+        circleEdge: new THREE.Mesh(flat(new THREE.RingGeometry(0.94, 1, 64)), mat(0xbfdbfe, 0.85)),
+        cone: new THREE.Mesh(flat(new THREE.CircleGeometry(1, 32, Math.PI / 2 - 0.55, 1.1)), mat(0x60a5fa, 0.42)),
+        coneEdge: new THREE.Mesh(flat(new THREE.RingGeometry(0.95, 1, 32, 1, Math.PI / 2 - 0.55, 1.1)), mat(0xbfdbfe, 0.9)),
+        target: new THREE.Mesh(flat(new THREE.RingGeometry(0.75, 0.95, 40)), mat(0xfacc15, 0.9)),
+      };
+      for (const m of Object.values(this.aimParts)) { m.position.y = 0.09; g.add(m); }
+      this.scene.add(g);
+    }
+    const P = this.aimParts;
+    this.aimGroup.visible = !!aim;
+    if (!aim) return;
+    for (const m of Object.values(P)) m.visible = false;
+    const { from, to, shape } = aim;
+    const ang = Math.atan2(to.y - from.y, to.x - from.x);
+    if (shape.range) { P.range.visible = true; P.range.position.set(from.x, 0.08, from.y); P.range.scale.setScalar(shape.range); }
+    if (shape.kind === 'line') {
+      for (const [m, w] of [[P.lane, shape.width], [P.laneEdge, shape.width * 0.12]]) {
+        m.visible = true; m.position.set(from.x, 0.09, from.y); m.rotation.y = -ang - Math.PI / 2; m.scale.set(w, 1, shape.range);
+      }
+      P.laneEdge.position.y = 0.1;
+    } else if (shape.kind === 'cone') {
+      for (const m of [P.cone, P.coneEdge]) { m.visible = true; m.position.set(from.x, 0.09, from.y); m.rotation.y = -ang - Math.PI / 2; m.scale.setScalar(shape.range); }
+    } else if (shape.kind === 'point' || shape.kind === 'self') {
+      const d = Math.hypot(to.x - from.x, to.y - from.y), k = shape.kind === 'self' ? 0 : Math.min(1, shape.range / Math.max(0.01, d));
+      const cx = from.x + (to.x - from.x) * k, cy = from.y + (to.y - from.y) * k, r = shape.radius || 0.8;
+      for (const m of [P.circle, P.circleEdge]) { m.visible = true; m.position.set(cx, 0.09, cy); m.scale.setScalar(r); }
+    }
+    if (aim.target) { P.target.visible = true; P.target.position.set(aim.target.x, 0.11, aim.target.y); P.target.scale.setScalar(1 + Math.sin(this.time * 8) * 0.06); }
+  }
+
   /** Traces the route your champion will walk: glowing dots every ~0.7 tiles along the path,
       eaten up as you walk; cleared on arrival or a new order. */
   showPath(points) {

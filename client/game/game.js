@@ -1,4 +1,5 @@
 /* In-match client controller. */
+import { aimShape, SPELL_SHAPE } from './aimShapes.js';
 import { portalBreak } from '../portal.js';
 import { Pathfinder } from '../../shared/moba/pathfind.js';
 import { ClientWorld } from './world.js';
@@ -193,6 +194,7 @@ export class Game {
     if (this.input.keys.has('Space') && you) { if (this.camFocusId) this.setCamFocus(null); focus = you; this.renderer.camTarget.x = you.x; this.renderer.camTarget.z = you.y; }
     this.renderer.forceFollow = focus !== you;
     const pan = this.renderer.locked || this.renderer.forceFollow ? null : this.input.edgePan(this.renderer.width, this.renderer.height);
+    this.updateAim();
     this.renderer.frame(dt, w, focus, pan);
     this.labels.update(w, this.renderer, dt);
     if (w.me) this.hud.updateSelf(w.me);
@@ -286,6 +288,20 @@ export class Game {
     this.send({ t: 'cast', sl: slot, x: round2(p.x), y: round2(p.y), id });
   }
 
+  castMode() { return this.settings.castMode || 'release'; }
+
+  /** Aim indicator for the ability being aimed (drawn every frame while a key is held). */
+  updateAim() {
+    const you = this.world.you();
+    if (!this.aiming || !you || (you.fl & F.DEAD)) { this.aiming = null; this.renderer.setAimIndicator(null); return; }
+    const slot = this.aiming.slot;
+    const shape = slot === 'd' ? SPELL_SHAPE.blink : slot === 'f' ? SPELL_SHAPE.default : aimShape(this.myChampId(), slot); // D is always Blink
+    if (!shape) return this.renderer.setAimIndicator(null);
+    const to = this.cursorWorld();
+    const target = shape.kind === 'unit' && this.hover && !(this.hover.fl & F.DEAD) ? this.hover : null;
+    this.renderer.setAimIndicator({ shape, from: { x: you.x, y: you.y }, to, target });
+  }
+
   /** Watch a teammate (top-left frames): click again, press Space or pick yourself to come back. */
   setCamFocus(id) {
     this.camFocusId = id && id !== this.world.youId && this.camFocusId !== id ? id : null;
@@ -303,11 +319,21 @@ export class Game {
     sfx.init();
     if (this.spectating && !['score', 'scoreUp', 'zoom', 'escape', 'help', 'chat'].includes(a)) return; // watching: camera and panels only
     switch (a) {
-      case 'rclick': this.rmbT = 0.15; return this.issueMove(false);
-      case 'lclick': if (this.amovePending) { this.amovePending = false; this.issueMove(true); } return;
+      case 'rclick': if (this.aiming) { this.aiming = null; return; } this.rmbT = 0.15; return this.issueMove(false); // right click cancels aiming
+      case 'lclick': if (this.aiming && this.castMode() === 'confirm') { const s = this.aiming.slot; this.aiming = null; return this.castKey(s); } if (this.amovePending) { this.amovePending = false; this.issueMove(true); } return;
+      case 'qUp': case 'wUp': case 'eUp': case 'rUp': case 'dUp': case 'fUp': {
+        const s = a[0];
+        if (this.aiming?.slot === s && this.castMode() === 'release') { this.aiming = null; this.castKey(s); }
+        return;
+      }
       case 'amove': this.issueMove(true); this.rangeT = 1.2; return;
       case 'stop': this.world.predict = null; return this.send({ t: 'stop' });
-      case 'q': case 'w': case 'e': case 'r': case 'd': case 'f': case 'ward': return this.castKey(a);
+      case 'q': case 'w': case 'e': case 'r': case 'd': case 'f':
+        // Quick cast fires on press; the other modes show the aim indicator first.
+        if (this.input.isTouch || this.castMode() === 'quick') return this.castKey(a);
+        this.aiming = { slot: a };
+        return;
+      case 'ward': return this.castKey(a);
       case 'level': this.sfxSkill(); return this.send({ t: 'lvl', sl: ev });
       case 'recall': return this.send({ t: 'recall' });
       case 'item0': case 'item1': case 'item2': case 'item3': case 'item4': case 'item5': return this.send({ t: 'use', slot: Number(a.slice(4)) });
@@ -320,7 +346,7 @@ export class Game {
       case 'emotes': return this.emotes?.toggle();
       case 'ping': { const p = this.cursorWorld(); const k = ev.ctrlKey ? 'danger' : ev.shiftKey ? 'help' : 'go'; return this.send({ t: 'mping', x: round2(p.x), y: round2(p.y), k }); }
       case 'zoom': this.renderer.zoom = Math.max(0.65, Math.min(1.5, this.renderer.zoom + ev * 0.07)); return;
-      case 'escape': if (this.panels.current && this.panels.current !== 'end') return this.panels.close(); return this.panels.open('settings');
+      case 'escape': if (this.aiming) { this.aiming = null; return; } if (this.panels.current && this.panels.current !== 'end') return this.panels.close(); return this.panels.open('settings');
       default:
     }
   }

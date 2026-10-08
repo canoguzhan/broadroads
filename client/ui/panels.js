@@ -151,6 +151,12 @@ export class Panels {
       content: h('div', {},
         h('label.field', {}, h('span', { text: 'Graphics quality' }), quality),
         h('label.field', {}, h('span', { text: 'Language (reloads the page)' }), langPicker()),
+        g.input.isTouch ? null : (() => {
+          const sel = h('select', {}, ...[['release', 'Show the aim, cast when you release the key'], ['quick', 'Quick cast (instantly at the cursor)'], ['confirm', 'Show the aim, click to cast']].map(([v, t]) => h('option', { value: v, text: t })));
+          sel.value = g.castMode();
+          sel.addEventListener('change', () => g.setSetting('castMode', sel.value));
+          return h('label.field', {}, h('span', { text: 'Ability casting' }), sel);
+        })(),
         h('label.field', {}, h('span', { text: 'Master volume' }), vol),
         h('label.field', {}, h('span', { text: 'Music & ambience volume' }), music),
         h('label.field.row', {}, lock, h('span', { text: 'Lock camera to champion (Y)' })),
